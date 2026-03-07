@@ -1,0 +1,5 @@
+{
+  "name": "Personal Finance SMS Tracker",
+  "description": "A web-based personal finance tracker that parses bank SMS messages to log transactions and calculate balances locally.",
+  "requestFramePermissions": []
+}
