@@ -1,188 +1,368 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
-import { format } from 'date-fns';
-import { ArrowDownRight, ArrowUpRight, Trash2, Search } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, isWithinInterval, isToday, isYesterday, parseISO, startOfDay, endOfDay } from 'date-fns';
+import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+
+const CATEGORY_ICONS: Record<string, string> = {
+  'Food': '🍔',
+  'Transport': '🚗',
+  'Rent': '🏠',
+  'Shopping': '🛍️',
+  'Bills': '⚡',
+  'Entertainment': '🎬',
+  'Salary': '💰',
+  'Transfer': '💸',
+  'Other': '📝'
+};
+
+const CATEGORY_COLORS: Record<string, string> = {
+  'Food': 'bg-orange-100 text-orange-600',
+  'Transport': 'bg-blue-100 text-blue-600',
+  'Rent': 'bg-purple-100 text-purple-600',
+  'Shopping': 'bg-pink-100 text-pink-600',
+  'Bills': 'bg-yellow-100 text-yellow-600',
+  'Entertainment': 'bg-red-100 text-red-600',
+  'Salary': 'bg-emerald-100 text-emerald-600',
+  'Transfer': 'bg-indigo-100 text-indigo-600',
+  'Other': 'bg-gray-100 text-gray-600'
+};
 
 export default function Transactions() {
-  const transactions = useLiveQuery(() => db.transactions.orderBy('dateTime').reverse().toArray()) || [];
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<{ start: Date; end: Date } | null>(null);
+  const [tempStartDate, setTempStartDate] = useState('');
+  const [tempEndDate, setTempEndDate] = useState('');
+  const [selectedTx, setSelectedTx] = useState<any | null>(null);
+
+  const allTransactions = useLiveQuery(() => db.transactions.orderBy('dateTime').reverse().toArray()) || [];
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
-  const [searchQuery, setSearchQuery] = useState('');
+  
+  const filterStart = dateRange ? dateRange.start : startOfMonth(currentMonth);
+  const filterEnd = dateRange ? dateRange.end : endOfMonth(currentMonth);
+
+  const filteredTransactions = allTransactions.filter(tx => 
+    isWithinInterval(tx.dateTime, { start: filterStart, end: filterEnd })
+  );
+
+  const expenses = filteredTransactions.filter(tx => tx.type === 'DEBIT');
+  const income = filteredTransactions.filter(tx => tx.type === 'CREDIT');
+
+  const totalExpense = expenses.reduce((sum, tx) => sum + tx.amount, 0);
+  const totalIncome = income.reduce((sum, tx) => sum + tx.amount, 0);
+  const balance = totalIncome - totalExpense;
+
+  const handlePrevMonth = () => {
+    if (dateRange) setDateRange(null);
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    if (dateRange) setDateRange(null);
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  };
+
+  const openDatePicker = () => {
+    if (dateRange) {
+      setTempStartDate(format(dateRange.start, 'yyyy-MM-dd'));
+      setTempEndDate(format(dateRange.end, 'yyyy-MM-dd'));
+    } else {
+      setTempStartDate(format(filterStart, 'yyyy-MM-dd'));
+      setTempEndDate(format(filterEnd, 'yyyy-MM-dd'));
+    }
+    setIsDatePickerOpen(true);
+  };
+
+  const applyDateFilter = () => {
+    if (tempStartDate && tempEndDate) {
+      setDateRange({
+        start: startOfDay(parseISO(tempStartDate)),
+        end: endOfDay(parseISO(tempEndDate))
+      });
+    } else if (tempStartDate) {
+      setDateRange({
+        start: startOfDay(parseISO(tempStartDate)),
+        end: endOfDay(parseISO(tempStartDate))
+      });
+    }
+    setIsDatePickerOpen(false);
+  };
+
+  const clearDateFilter = () => {
+    setDateRange(null);
+    setIsDatePickerOpen(false);
+  };
 
   const handleDelete = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this transaction?')) {
       await db.transactions.delete(id);
+      setSelectedTx(null);
     }
   };
 
-  const filteredTransactions = transactions.filter(tx => {
-    const query = searchQuery.toLowerCase();
-    return (
-      tx.note.toLowerCase().includes(query) ||
-      tx.category.toLowerCase().includes(query)
-    );
-  });
+  // Group transactions by date
+  const groupedTransactions = filteredTransactions.reduce((groups, tx) => {
+    const dateKey = format(tx.dateTime, 'yyyy-MM-dd');
+    if (!groups[dateKey]) {
+      groups[dateKey] = [];
+    }
+    groups[dateKey].push(tx);
+    return groups;
+  }, {} as Record<string, typeof allTransactions>);
+
+  const formatDateHeader = (dateString: string) => {
+    const date = new Date(dateString);
+    if (isToday(date)) return `Today, ${format(date, 'MMMM d')}`;
+    if (isYesterday(date)) return `Yesterday, ${format(date, 'MMMM d')}`;
+    return format(date, 'EEEE, MMMM d');
+  };
+
+  const getHeaderText = () => {
+    if (dateRange) {
+      const startStr = format(dateRange.start, 'MMM d, yyyy');
+      const endStr = format(dateRange.end, 'MMM d, yyyy');
+      return startStr === endStr ? startStr : `${startStr} - ${endStr}`;
+    }
+    return format(currentMonth, 'MMMM yyyy');
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-900">All Transactions</h1>
-        <div className="relative w-full sm:w-64">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
+    <div className="relative min-h-[calc(100vh-8rem)] pb-20">
+      {/* Header */}
+      <header className="sticky top-0 bg-gray-50 z-10 pb-4 pt-2 -mx-4 px-4 md:-mx-8 md:px-8">
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={handlePrevMonth} className="p-2 text-gray-500 hover:bg-gray-200 rounded-full transition-colors">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button 
+            onClick={openDatePicker}
+            className="flex items-center gap-2 px-4 py-2 hover:bg-gray-200 rounded-lg transition-colors"
+          >
+            <h2 className="text-lg font-semibold text-gray-900">{getHeaderText()}</h2>
+            <CalendarIcon className="w-4 h-4 text-gray-500" />
+          </button>
+          <button onClick={handleNextMonth} className="p-2 text-gray-500 hover:bg-gray-200 rounded-full transition-colors">
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <div className="flex gap-3 overflow-x-auto hide-scrollbar">
+          <div className="flex-1 min-w-[100px] bg-emerald-50 text-emerald-700 p-3 rounded-xl border border-emerald-100">
+            <p className="text-xs font-medium mb-1">In</p>
+            <p className="font-bold">₹{totalIncome.toLocaleString('en-IN')}</p>
           </div>
-          <input
-            type="text"
-            placeholder="Search notes or categories..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition duration-150 ease-in-out"
-          />
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {/* Desktop Table View */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-100 text-sm font-medium text-gray-500 uppercase tracking-wider">
-                <th className="p-4">Date</th>
-                <th className="p-4">Details</th>
-                <th className="p-4">Category</th>
-                <th className="p-4">Account</th>
-                <th className="p-4 text-right">Amount</th>
-                <th className="p-4 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredTransactions.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-8 text-center text-gray-500">
-                    {searchQuery ? 'No transactions match your search.' : 'No transactions found.'}
-                  </td>
-                </tr>
-              ) : (
-                filteredTransactions.map(tx => {
-                  const account = accounts.find(a => a.id === tx.accountId);
-                  return (
-                    <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="p-4 text-sm text-gray-500 whitespace-nowrap">
-                        {format(tx.dateTime, 'MMM dd, yyyy')}
-                        <br />
-                        <span className="text-xs">{format(tx.dateTime, 'hh:mm a')}</span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                            tx.type === 'CREDIT' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
-                          }`}>
-                            {tx.type === 'CREDIT' ? <ArrowDownRight className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{tx.party || tx.note || 'No note'}</p>
-                            {(tx.paymentMethod || (tx.party && tx.note)) && (
-                              <p className="text-xs text-gray-500 mt-0.5">
-                                {tx.party && tx.note ? `${tx.note} • ` : ''}
-                                {tx.paymentMethod === 'UPI' ? `UPI (${tx.upiApp})` : tx.paymentMethod === 'Bank' ? 'Bank Transfer' : ''}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                          {tx.category}
-                        </span>
-                      </td>
-                      <td className="p-4 text-sm text-gray-500">
-                        {account ? `${account.bankName} ****${account.accountLast4}` : 'Unknown'}
-                      </td>
-                      <td className={`p-4 text-right font-semibold whitespace-nowrap ${
-                        tx.type === 'CREDIT' ? 'text-emerald-600' : 'text-gray-900'
-                      }`}>
-                        {tx.type === 'CREDIT' ? '+' : '-'}₹{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="p-4 text-center">
-                        <button
-                          onClick={() => handleDelete(tx.id!)}
-                          className="text-gray-400 hover:text-red-600 transition-colors p-1 rounded-full hover:bg-red-50 inline-flex"
-                          title="Delete Transaction"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+          <div className="flex-1 min-w-[100px] bg-rose-50 text-rose-700 p-3 rounded-xl border border-rose-100">
+            <p className="text-xs font-medium mb-1">Out</p>
+            <p className="font-bold">₹{totalExpense.toLocaleString('en-IN')}</p>
+          </div>
+          <div className="flex-1 min-w-[100px] bg-indigo-50 text-indigo-700 p-3 rounded-xl border border-indigo-100">
+            <p className="text-xs font-medium mb-1">Left</p>
+            <p className="font-bold">₹{balance.toLocaleString('en-IN')}</p>
+          </div>
         </div>
 
-        {/* Mobile List View */}
-        <div className="md:hidden divide-y divide-gray-100">
-          {filteredTransactions.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              {searchQuery ? 'No transactions match your search.' : 'No transactions found.'}
-            </div>
-          ) : (
-            filteredTransactions.map(tx => {
-              const account = accounts.find(a => a.id === tx.accountId);
-              return (
-                <div key={tx.id} className="p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                        tx.type === 'CREDIT' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
-                      }`}>
-                        {tx.type === 'CREDIT' ? <ArrowDownRight className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{tx.party || tx.note || 'No note'}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {format(tx.dateTime, 'MMM dd, yyyy • hh:mm a')}
-                        </p>
-                      </div>
+        <div className="mt-4 flex justify-end">
+          <Link 
+            to={`/transactions/table?start=${filterStart.toISOString()}&end=${filterEnd.toISOString()}`}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors shadow-sm"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+            View as Spreadsheet
+          </Link>
+        </div>
+      </header>
+
+      {/* Transaction List */}
+      <main className="space-y-6 mt-2">
+        {Object.keys(groupedTransactions).length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            No transactions found for this period.
+          </div>
+        ) : (
+          Object.entries(groupedTransactions).map(([date, txs]) => (
+            <div key={date}>
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                {formatDateHeader(date)}
+              </h3>
+              <div className="space-y-3">
+                {txs.map(tx => (
+                  <div 
+                    key={tx.id} 
+                    onClick={() => setSelectedTx(tx)}
+                    className="flex items-center gap-4 p-3 bg-white rounded-xl shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0 ${CATEGORY_COLORS[tx.category] || CATEGORY_COLORS['Other']}`}>
+                      {CATEGORY_ICONS[tx.category] || '📝'}
                     </div>
-                    <div className="text-right">
-                      <p className={`font-semibold whitespace-nowrap ${
-                        tx.type === 'CREDIT' ? 'text-emerald-600' : 'text-gray-900'
-                      }`}>
-                        {tx.type === 'CREDIT' ? '+' : '-'}₹{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-semibold text-gray-900 truncate">
+                        {tx.party || tx.note || tx.category}
+                      </h4>
+                      <p className="text-xs text-gray-500 truncate mt-0.5">
+                        {tx.paymentMethod === 'UPI' ? `UPI${tx.upiApp ? ` • ${tx.upiApp}` : ''}` : tx.paymentMethod === 'Bank' ? 'Bank' : 'Cash'} • {format(tx.dateTime, 'h:mm a')}
                       </p>
                     </div>
+                    <div className={`text-sm font-bold shrink-0 ${tx.type === 'CREDIT' ? 'text-emerald-600' : 'text-gray-900'}`}>
+                      {tx.type === 'CREDIT' ? '+' : '-'} ₹{tx.amount.toLocaleString('en-IN')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        )}
+      </main>
+
+      {/* FAB */}
+      <Link 
+        to="/"
+        className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-indigo-700 transition-transform active:scale-95 z-20"
+      >
+        <Plus className="w-6 h-6" />
+      </Link>
+
+      {/* Date Picker Modal */}
+      {isDatePickerOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-xl">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">Select Date Range</h3>
+              <button onClick={() => setIsDatePickerOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                <input 
+                  type="date" 
+                  value={tempStartDate}
+                  onChange={(e) => setTempStartDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Date (Optional)</label>
+                <input 
+                  type="date" 
+                  value={tempEndDate}
+                  onChange={(e) => setTempEndDate(e.target.value)}
+                  min={tempStartDate}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">Leave empty for a single day</p>
+              </div>
+            </div>
+            
+            <div className="p-4 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row gap-3 justify-end">
+              {dateRange && (
+                <button 
+                  onClick={clearDateFilter}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg font-medium transition-colors sm:mr-auto"
+                >
+                  Clear Filter
+                </button>
+              )}
+              <button 
+                onClick={() => setIsDatePickerOpen(false)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={applyDateFilter}
+                disabled={!tempStartDate}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transaction Details Modal */}
+      {selectedTx && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-xl">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">Transaction Details</h3>
+              <button onClick={() => setSelectedTx(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center text-3xl mb-3 ${CATEGORY_COLORS[selectedTx.category] || CATEGORY_COLORS['Other']}`}>
+                  {CATEGORY_ICONS[selectedTx.category] || '📝'}
+                </div>
+                <h2 className={`text-3xl font-bold ${selectedTx.type === 'CREDIT' ? 'text-emerald-600' : 'text-gray-900'}`}>
+                  {selectedTx.type === 'CREDIT' ? '+' : '-'} ₹{selectedTx.amount.toLocaleString('en-IN')}
+                </h2>
+                <p className="text-gray-500 mt-1 font-medium">{selectedTx.party || selectedTx.category}</p>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                <div className="grid grid-cols-2 gap-y-4 gap-x-4 text-sm">
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">Date & Time</p>
+                    <p className="font-medium text-gray-900">{format(selectedTx.dateTime, 'MMM d, yyyy')}</p>
+                    <p className="text-gray-600 text-xs">{format(selectedTx.dateTime, 'h:mm a')}</p>
                   </div>
                   
-                  <div className="flex items-center justify-between mt-3 pl-13">
-                    <div className="flex flex-wrap gap-2">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                        {tx.category}
-                      </span>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200">
-                        {account ? `${account.bankName} ****${account.accountLast4}` : 'Unknown'}
-                      </span>
-                      {(tx.paymentMethod || (tx.party && tx.note)) && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200">
-                          {tx.party && tx.note ? `${tx.note} • ` : ''}
-                          {tx.paymentMethod === 'UPI' ? `UPI (${tx.upiApp})` : tx.paymentMethod === 'Bank' ? 'Bank' : ''}
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => handleDelete(tx.id!)}
-                      className="text-gray-400 hover:text-red-600 transition-colors p-1.5 rounded-full hover:bg-red-50 shrink-0"
-                      title="Delete Transaction"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">Category</p>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-800">
+                      {selectedTx.category}
+                    </span>
+                  </div>
+                  
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">Payment Method</p>
+                    <p className="font-medium text-gray-900">
+                      {selectedTx.paymentMethod === 'UPI' ? `UPI${selectedTx.upiApp ? ` (${selectedTx.upiApp})` : ''}` : selectedTx.paymentMethod === 'Bank' ? 'Bank Transfer' : 'Cash'}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">Account</p>
+                    <p className="font-medium text-gray-900">
+                      {accounts.find(a => a.id === selectedTx.accountId)?.bankName || 'Unknown'} 
+                      {accounts.find(a => a.id === selectedTx.accountId)?.accountLast4 ? ` ••••${accounts.find(a => a.id === selectedTx.accountId)?.accountLast4}` : ''}
+                    </p>
+                  </div>
+                  
+                  <div className="col-span-2 pt-2 border-t border-gray-200">
+                    <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">Note / Reason</p>
+                    <p className="font-medium text-gray-900 whitespace-pre-wrap">{selectedTx.note || '—'}</p>
                   </div>
                 </div>
-              );
-            })
-          )}
+              </div>
+            </div>
+            
+            <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+              <button 
+                onClick={() => handleDelete(selectedTx.id!)}
+                className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors mr-auto flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+              <button 
+                onClick={() => setSelectedTx(null)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 hover:bg-gray-300 rounded-lg font-medium transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import Accounts from './pages/Accounts';
 import Summary from './pages/Summary';
 import SMSParser from './pages/SMSParser';
 import Accounting from './pages/Accounting';
+import TransactionTable from './pages/TransactionTable';
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="accounting" element={<Accounting />} />
           <Route path="parse" element={<SMSParser />} />
         </Route>
+        <Route path="/transactions/table" element={<TransactionTable />} />
       </Routes>
     </BrowserRouter>
   );
