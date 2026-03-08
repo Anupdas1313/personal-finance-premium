@@ -19,6 +19,8 @@ export interface Transaction {
   paymentMethod?: 'Bank' | 'UPI';
   upiApp?: string;
   party?: string;
+  isPersonalExpense?: boolean;
+  expenseType?: 'Personal' | 'Home' | 'Miscellaneous' | 'Other';
 }
 
 export interface MonthlyClose {

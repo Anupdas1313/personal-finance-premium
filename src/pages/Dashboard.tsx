@@ -26,6 +26,8 @@ export default function Dashboard() {
   );
   const [paymentMethod, setPaymentMethod] = useState<'Bank' | 'UPI'>('Bank');
   const [upiApp, setUpiApp] = useState<string>('');
+  const [expenseType, setExpenseType] = useState<'Personal' | 'Home' | 'Miscellaneous' | 'Other'>('Other');
+  const [isPersonalExpense, setIsPersonalExpense] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -47,6 +49,8 @@ export default function Dashboard() {
         paymentMethod,
         upiApp: paymentMethod === 'UPI' ? upiApp : undefined,
         party: partyName,
+        isPersonalExpense,
+        expenseType,
       });
       
       setStatus('success');
@@ -61,6 +65,8 @@ export default function Dashboard() {
         setTransactionDate(new Date().toISOString().slice(0, 16));
         setPaymentMethod('Bank');
         setUpiApp('');
+        setExpenseType('Other');
+        setIsPersonalExpense(false);
       }, 1500);
     } catch (error) {
       setStatus('error');
@@ -223,6 +229,67 @@ export default function Dashboard() {
             </div>
             
             <div className="p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="checkbox"
+                  id="isPersonalExpense"
+                  checked={isPersonalExpense}
+                  onChange={(e) => {
+                    setIsPersonalExpense(e.target.checked);
+                    if (e.target.checked) setExpenseType('Personal');
+                  }}
+                  className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                />
+                <label htmlFor="isPersonalExpense" className="text-sm font-medium text-gray-700">
+                  Personal Expense
+                </label>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mb-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExpenseType(expenseType === 'Personal' ? 'Other' : 'Personal');
+                    setIsPersonalExpense(expenseType !== 'Personal');
+                  }}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    expenseType === 'Personal' 
+                      ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-500' 
+                      : 'bg-gray-100 text-gray-600 border-2 border-transparent hover:bg-gray-200'
+                  }`}
+                >
+                  Personal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExpenseType(expenseType === 'Home' ? 'Other' : 'Home');
+                    if (expenseType !== 'Home') setIsPersonalExpense(false);
+                  }}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    expenseType === 'Home' 
+                      ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-500' 
+                      : 'bg-gray-100 text-gray-600 border-2 border-transparent hover:bg-gray-200'
+                  }`}
+                >
+                  Home
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExpenseType(expenseType === 'Miscellaneous' ? 'Other' : 'Miscellaneous');
+                    if (expenseType !== 'Miscellaneous') setIsPersonalExpense(false);
+                  }}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    expenseType === 'Miscellaneous' 
+                      ? 'bg-amber-100 text-amber-700 border-2 border-amber-500' 
+                      : 'bg-gray-100 text-gray-600 border-2 border-transparent hover:bg-gray-200'
+                  }`}
+                >
+                  Miscellaneous
+                </button>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Amount *</label>
