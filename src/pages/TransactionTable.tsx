@@ -373,27 +373,36 @@ export default function TransactionTable() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     
     try {
-      const file = new File([blob], fileName, { type: 'text/csv' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          title: 'Transactions Export',
-          files: [file]
-        });
-        return;
+      if (navigator.canShare) {
+        const file = new File([blob], fileName, { type: 'text/csv' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: 'Transactions Export',
+            files: [file]
+          });
+          return;
+        }
       }
     } catch (err) {
       console.error('Share failed:', err);
     }
 
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', fileName);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+      const dataUrl = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+      const newWin = window.open(dataUrl, '_blank');
+      if (!newWin) window.location.href = dataUrl;
+    } else {
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', fileName);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
   };
 
   const handleExportPDF = async () => {
@@ -435,20 +444,29 @@ export default function TransactionTable() {
     const fileName = `transactions_report_${startDate || 'all'}_to_${endDate || 'all'}.pdf`;
 
     try {
-      const blob = doc.output('blob');
-      const file = new File([blob], fileName, { type: 'application/pdf' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          title: 'Transaction Report',
-          files: [file]
-        });
-        return;
+      if (navigator.canShare) {
+        const blob = doc.output('blob');
+        const file = new File([blob], fileName, { type: 'application/pdf' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: 'Transaction Report',
+            files: [file]
+          });
+          return;
+        }
       }
     } catch (err) {
       console.error('Share failed:', err);
     }
 
-    doc.save(fileName);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+      const dataUrl = doc.output('datauristring');
+      const newWin = window.open(dataUrl, '_blank');
+      if (!newWin) window.location.href = dataUrl;
+    } else {
+      doc.save(fileName);
+    }
   };
 
   const handleShareSummary = async () => {
