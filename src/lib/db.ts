@@ -20,7 +20,7 @@ export interface Transaction {
   upiApp?: string;
   party?: string;
   isPersonalExpense?: boolean;
-  expenseType?: 'Personal' | 'Home' | 'Miscellaneous' | 'Other';
+  expenseType?: 'Personal' | 'Home' | 'Miscellaneous' | 'Tenant / Customer' | 'Other' | '';
 }
 
 export interface MonthlyClose {

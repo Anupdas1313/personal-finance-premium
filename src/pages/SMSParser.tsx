@@ -21,8 +21,7 @@ export default function SMSParser() {
   const [upiApp, setUpiApp] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
   const [type, setType] = useState<'CREDIT' | 'DEBIT' | ''>('');
-  const [expenseType, setExpenseType] = useState<'Personal' | 'Home' | 'Miscellaneous' | 'Other'>('Other');
-  const [isPersonalExpense, setIsPersonalExpense] = useState(false);
+  const [expenseType, setExpenseType] = useState<'Personal' | 'Home' | 'Miscellaneous' | 'Tenant / Customer' | ''>('');
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -70,9 +69,9 @@ export default function SMSParser() {
   };
 
   const handleSave = async () => {
-    if (!amount || !type || !selectedAccountId) {
+    if (!amount || !type || !selectedAccountId || !expenseType) {
       setStatus('error');
-      setErrorMessage('Missing required fields (Amount, Type, or Account).');
+      setErrorMessage('Missing required fields (Amount, Type, Account, or Expense Type).');
       return;
     }
 
@@ -88,7 +87,6 @@ export default function SMSParser() {
         paymentMethod,
         upiApp: paymentMethod === 'UPI' ? upiApp : undefined,
         party: partyName,
-        isPersonalExpense,
         expenseType,
       });
       
@@ -97,8 +95,7 @@ export default function SMSParser() {
       setParsedData(null);
       setNote('');
       setPartyName('');
-      setExpenseType('Other');
-      setIsPersonalExpense(false);
+      setExpenseType('');
       
       setTimeout(() => {
         navigate('/transactions');
@@ -143,29 +140,10 @@ export default function SMSParser() {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-indigo-100 border-t-4 border-t-indigo-500 animate-in fade-in slide-in-from-bottom-4">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">Extracted Details</h2>
           
-          <div className="flex items-center gap-2 mb-2">
-            <input
-              type="checkbox"
-              id="isPersonalExpenseSms"
-              checked={isPersonalExpense}
-              onChange={(e) => {
-                setIsPersonalExpense(e.target.checked);
-                if (e.target.checked) setExpenseType('Personal');
-              }}
-              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-            />
-            <label htmlFor="isPersonalExpenseSms" className="text-sm font-medium text-gray-700">
-              Personal Expense
-            </label>
-          </div>
-
           <div className="flex flex-wrap gap-2 mb-6">
             <button
               type="button"
-              onClick={() => {
-                setExpenseType(expenseType === 'Personal' ? 'Other' : 'Personal');
-                setIsPersonalExpense(expenseType !== 'Personal');
-              }}
+              onClick={() => setExpenseType(expenseType === 'Personal' ? '' : 'Personal')}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 expenseType === 'Personal' 
                   ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-500' 
@@ -176,10 +154,7 @@ export default function SMSParser() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                setExpenseType(expenseType === 'Home' ? 'Other' : 'Home');
-                if (expenseType !== 'Home') setIsPersonalExpense(false);
-              }}
+              onClick={() => setExpenseType(expenseType === 'Home' ? '' : 'Home')}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 expenseType === 'Home' 
                   ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-500' 
@@ -190,10 +165,7 @@ export default function SMSParser() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                setExpenseType(expenseType === 'Miscellaneous' ? 'Other' : 'Miscellaneous');
-                if (expenseType !== 'Miscellaneous') setIsPersonalExpense(false);
-              }}
+              onClick={() => setExpenseType(expenseType === 'Miscellaneous' ? '' : 'Miscellaneous')}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 expenseType === 'Miscellaneous' 
                   ? 'bg-amber-100 text-amber-700 border-2 border-amber-500' 
@@ -201,6 +173,17 @@ export default function SMSParser() {
               }`}
             >
               Miscellaneous
+            </button>
+            <button
+              type="button"
+              onClick={() => setExpenseType(expenseType === 'Tenant / Customer' ? '' : 'Tenant / Customer')}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                expenseType === 'Tenant / Customer' 
+                  ? 'bg-rose-100 text-rose-700 border-2 border-rose-500' 
+                  : 'bg-gray-100 text-gray-600 border-2 border-transparent hover:bg-gray-200'
+              }`}
+            >
+              Tenant / Customer
             </button>
           </div>
 

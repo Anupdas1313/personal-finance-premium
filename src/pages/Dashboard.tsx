@@ -26,15 +26,14 @@ export default function Dashboard() {
   );
   const [paymentMethod, setPaymentMethod] = useState<'Bank' | 'UPI'>('Bank');
   const [upiApp, setUpiApp] = useState<string>('');
-  const [expenseType, setExpenseType] = useState<'Personal' | 'Home' | 'Miscellaneous' | 'Other'>('Other');
-  const [isPersonalExpense, setIsPersonalExpense] = useState(false);
+  const [expenseType, setExpenseType] = useState<'Personal' | 'Home' | 'Miscellaneous' | 'Tenant / Customer' | ''>('');
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
   const handleSaveManual = async () => {
-    if (!amount || !type || !selectedAccountId) {
+    if (!amount || !type || !selectedAccountId || !expenseType) {
       setStatus('error');
-      setErrorMessage('Missing required fields (Amount, Type, or Account).');
+      setErrorMessage('Missing required fields (Amount, Type, Account, or Expense Type).');
       return;
     }
 
@@ -49,7 +48,6 @@ export default function Dashboard() {
         paymentMethod,
         upiApp: paymentMethod === 'UPI' ? upiApp : undefined,
         party: partyName,
-        isPersonalExpense,
         expenseType,
       });
       
@@ -65,8 +63,7 @@ export default function Dashboard() {
         setTransactionDate(new Date().toISOString().slice(0, 16));
         setPaymentMethod('Bank');
         setUpiApp('');
-        setExpenseType('Other');
-        setIsPersonalExpense(false);
+        setExpenseType('');
       }, 1500);
     } catch (error) {
       setStatus('error');
@@ -203,7 +200,7 @@ export default function Dashboard() {
                         </p>
                       </div>
                     </div>
-                    <p className={`font-semibold ${tx.type === 'CREDIT' ? 'text-emerald-600' : 'text-gray-900'}`}>
+                    <p className={`font-semibold ${tx.type === 'CREDIT' ? 'text-emerald-600' : 'text-rose-600'}`}>
                       {tx.type === 'CREDIT' ? '+' : '-'}₹{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
@@ -229,29 +226,10 @@ export default function Dashboard() {
             </div>
             
             <div className="p-6 space-y-4">
-              <div className="flex items-center gap-2 mb-2">
-                <input
-                  type="checkbox"
-                  id="isPersonalExpense"
-                  checked={isPersonalExpense}
-                  onChange={(e) => {
-                    setIsPersonalExpense(e.target.checked);
-                    if (e.target.checked) setExpenseType('Personal');
-                  }}
-                  className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                />
-                <label htmlFor="isPersonalExpense" className="text-sm font-medium text-gray-700">
-                  Personal Expense
-                </label>
-              </div>
-
               <div className="flex flex-wrap gap-2 mb-4">
                 <button
                   type="button"
-                  onClick={() => {
-                    setExpenseType(expenseType === 'Personal' ? 'Other' : 'Personal');
-                    setIsPersonalExpense(expenseType !== 'Personal');
-                  }}
+                  onClick={() => setExpenseType(expenseType === 'Personal' ? '' : 'Personal')}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                     expenseType === 'Personal' 
                       ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-500' 
@@ -262,10 +240,7 @@ export default function Dashboard() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setExpenseType(expenseType === 'Home' ? 'Other' : 'Home');
-                    if (expenseType !== 'Home') setIsPersonalExpense(false);
-                  }}
+                  onClick={() => setExpenseType(expenseType === 'Home' ? '' : 'Home')}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                     expenseType === 'Home' 
                       ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-500' 
@@ -276,10 +251,7 @@ export default function Dashboard() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setExpenseType(expenseType === 'Miscellaneous' ? 'Other' : 'Miscellaneous');
-                    if (expenseType !== 'Miscellaneous') setIsPersonalExpense(false);
-                  }}
+                  onClick={() => setExpenseType(expenseType === 'Miscellaneous' ? '' : 'Miscellaneous')}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                     expenseType === 'Miscellaneous' 
                       ? 'bg-amber-100 text-amber-700 border-2 border-amber-500' 
@@ -287,6 +259,17 @@ export default function Dashboard() {
                   }`}
                 >
                   Miscellaneous
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExpenseType(expenseType === 'Tenant / Customer' ? '' : 'Tenant / Customer')}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    expenseType === 'Tenant / Customer' 
+                      ? 'bg-rose-100 text-rose-700 border-2 border-rose-500' 
+                      : 'bg-gray-100 text-gray-600 border-2 border-transparent hover:bg-gray-200'
+                  }`}
+                >
+                  Tenant / Customer
                 </button>
               </div>
 
