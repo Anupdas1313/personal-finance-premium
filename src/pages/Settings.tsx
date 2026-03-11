@@ -1,12 +1,16 @@
 import { useState, useRef } from 'react';
 import { db } from '../lib/db';
-import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as SettingsIcon, Database } from 'lucide-react';
+import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as SettingsIcon, Database, ListPlus, X } from 'lucide-react';
+import { useCategories } from '../hooks/useCategories';
 
 export default function Settings() {
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [newCategory, setNewCategory] = useState('');
+  
+  const { categories, addCategory, removeCategory, resetCategories } = useCategories();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -112,6 +116,16 @@ export default function Settings() {
     }
   };
 
+  const handleAddCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (addCategory(newCategory)) {
+      setNewCategory('');
+      showMessage('success', 'Category added successfully');
+    } else {
+      showMessage('error', 'Category already exists or is invalid');
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-4 mb-8">
@@ -132,6 +146,67 @@ export default function Settings() {
           <p className="font-bold">{message.text}</p>
         </div>
       )}
+
+      {/* App Settings */}
+      <div className="bg-white rounded-[24px] border border-[#EBEBEB] shadow-[0_6px_16px_rgba(0,0,0,0.04)] overflow-hidden">
+        <div className="p-6 border-b border-[#EBEBEB]">
+          <h2 className="text-xl font-bold text-[#222222] flex items-center gap-2">
+            <ListPlus className="w-5 h-5 text-[#717171]" />
+            App Settings
+          </h2>
+          <p className="text-[#717171] font-medium mt-1">Customize your transaction categories.</p>
+        </div>
+
+        <div className="p-6 space-y-6">
+          <div>
+            <h3 className="font-bold text-[#222222] mb-3">Transaction Categories</h3>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {categories.map((category) => (
+                <div key={category} className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 text-[#222222] rounded-full text-sm font-medium">
+                  {category}
+                  <button
+                    onClick={() => removeCategory(category)}
+                    className="text-[#717171] hover:text-rose-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            
+            <form onSubmit={handleAddCategory} className="flex gap-2">
+              <input
+                type="text"
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                placeholder="Add new category..."
+                className="flex-1 px-4 py-2 bg-neutral-50 border border-[#EBEBEB] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#222222] focus:border-transparent transition-all"
+              />
+              <button
+                type="submit"
+                disabled={!newCategory.trim()}
+                className="px-5 py-2 bg-[#222222] text-white rounded-xl font-bold hover:bg-black transition-colors disabled:opacity-50"
+              >
+                Add
+              </button>
+            </form>
+            
+            <div className="mt-4 pt-4 border-t border-[#EBEBEB]">
+              <button
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to reset categories to default?')) {
+                    resetCategories();
+                    showMessage('success', 'Categories reset to default');
+                  }
+                }}
+                className="text-sm text-[#717171] hover:text-[#222222] font-medium transition-colors"
+              >
+                Reset to default categories
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="bg-white rounded-[24px] border border-[#EBEBEB] shadow-[0_6px_16px_rgba(0,0,0,0.04)] overflow-hidden">
         <div className="p-6 border-b border-[#EBEBEB]">

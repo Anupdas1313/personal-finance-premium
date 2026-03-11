@@ -4,6 +4,7 @@ import { db } from '../lib/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { MessageSquareText, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useCategories } from '../hooks/useCategories';
 
 const CATEGORIES = ['Food', 'Transport', 'Rent', 'Shopping', 'Bills', 'Entertainment', 'Salary', 'Transfer', 'Other'];
 
@@ -21,12 +22,14 @@ export default function SMSParser() {
   const [upiApp, setUpiApp] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
   const [type, setType] = useState<'CREDIT' | 'DEBIT' | ''>('');
-  const [expenseType, setExpenseType] = useState<'Personal' | 'Home' | 'Miscellaneous' | 'Tenant / Customer' | ''>('');
+  const [expenseType, setExpenseType] = useState<string>('');
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
   const navigate = useNavigate();
+  
+  const { categories: appCategories } = useCategories();
 
   const handleParse = () => {
     if (!smsText.trim()) return;
@@ -141,50 +144,20 @@ export default function SMSParser() {
           <h2 className="text-lg font-bold text-[#222222] mb-6">Extracted Details</h2>
           
           <div className="flex flex-wrap gap-2 mb-6">
-            <button
-              type="button"
-              onClick={() => setExpenseType(expenseType === 'Personal' ? '' : 'Personal')}
-              className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${
-                expenseType === 'Personal' 
-                  ? 'bg-neutral-100 text-[#222222] border-2 border-[#222222]' 
-                  : 'bg-white text-[#717171] border-2 border-[#EBEBEB] hover:border-[#222222]'
-              }`}
-            >
-              Personal
-            </button>
-            <button
-              type="button"
-              onClick={() => setExpenseType(expenseType === 'Home' ? '' : 'Home')}
-              className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${
-                expenseType === 'Home' 
-                  ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500' 
-                  : 'bg-white text-[#717171] border-2 border-[#EBEBEB] hover:border-[#222222]'
-              }`}
-            >
-              Home
-            </button>
-            <button
-              type="button"
-              onClick={() => setExpenseType(expenseType === 'Miscellaneous' ? '' : 'Miscellaneous')}
-              className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${
-                expenseType === 'Miscellaneous' 
-                  ? 'bg-amber-50 text-amber-700 border-2 border-amber-500' 
-                  : 'bg-white text-[#717171] border-2 border-[#EBEBEB] hover:border-[#222222]'
-              }`}
-            >
-              Miscellaneous
-            </button>
-            <button
-              type="button"
-              onClick={() => setExpenseType(expenseType === 'Tenant / Customer' ? '' : 'Tenant / Customer')}
-              className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${
-                expenseType === 'Tenant / Customer' 
-                  ? 'bg-rose-50 text-rose-700 border-2 border-rose-500' 
-                  : 'bg-white text-[#717171] border-2 border-[#EBEBEB] hover:border-[#222222]'
-              }`}
-            >
-              Tenant / Customer
-            </button>
+            {appCategories.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setExpenseType(expenseType === cat ? '' : cat)}
+                className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${
+                  expenseType === cat 
+                    ? 'bg-neutral-100 text-[#222222] border-2 border-[#222222]' 
+                    : 'bg-white text-[#717171] border-2 border-[#EBEBEB] hover:border-[#222222]'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">

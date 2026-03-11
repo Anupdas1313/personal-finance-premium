@@ -4,6 +4,7 @@ import { ArrowUpRight, ArrowDownRight, Wallet, Plus, X, AlertCircle, CheckCircle
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import { useCategories } from '../hooks/useCategories';
 
 const CATEGORIES = ['Food', 'Transport', 'Rent', 'Shopping', 'Bills', 'Entertainment', 'Salary', 'Transfer', 'Other'];
 
@@ -26,9 +27,11 @@ export default function Dashboard() {
   );
   const [paymentMethod, setPaymentMethod] = useState<'Bank' | 'UPI'>('Bank');
   const [upiApp, setUpiApp] = useState<string>('');
-  const [expenseType, setExpenseType] = useState<'Personal' | 'Home' | 'Miscellaneous' | 'Tenant / Customer' | ''>('');
+  const [expenseType, setExpenseType] = useState<string>('');
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  
+  const { categories: appCategories } = useCategories();
 
   const handleSaveManual = async () => {
     if (!amount || !type || !selectedAccountId || !expenseType) {
@@ -227,50 +230,20 @@ export default function Dashboard() {
             
             <div className="p-6 space-y-5">
               <div className="flex flex-wrap gap-2 mb-4">
-                <button
-                  type="button"
-                  onClick={() => setExpenseType(expenseType === 'Personal' ? '' : 'Personal')}
-                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-                    expenseType === 'Personal' 
-                      ? 'bg-[#222222] text-white border-2 border-[#222222]' 
-                      : 'bg-white text-[#222222] border-2 border-[#EBEBEB] hover:border-[#222222]'
-                  }`}
-                >
-                  Personal
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setExpenseType(expenseType === 'Home' ? '' : 'Home')}
-                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-                    expenseType === 'Home' 
-                      ? 'bg-[#222222] text-white border-2 border-[#222222]' 
-                      : 'bg-white text-[#222222] border-2 border-[#EBEBEB] hover:border-[#222222]'
-                  }`}
-                >
-                  Home
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setExpenseType(expenseType === 'Miscellaneous' ? '' : 'Miscellaneous')}
-                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-                    expenseType === 'Miscellaneous' 
-                      ? 'bg-[#222222] text-white border-2 border-[#222222]' 
-                      : 'bg-white text-[#222222] border-2 border-[#EBEBEB] hover:border-[#222222]'
-                  }`}
-                >
-                  Miscellaneous
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setExpenseType(expenseType === 'Tenant / Customer' ? '' : 'Tenant / Customer')}
-                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-                    expenseType === 'Tenant / Customer' 
-                      ? 'bg-[#222222] text-white border-2 border-[#222222]' 
-                      : 'bg-white text-[#222222] border-2 border-[#EBEBEB] hover:border-[#222222]'
-                  }`}
-                >
-                  Tenant / Customer
-                </button>
+                {appCategories.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setExpenseType(expenseType === cat ? '' : cat)}
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+                      expenseType === cat 
+                        ? 'bg-[#222222] text-white border-2 border-[#222222]' 
+                        : 'bg-white text-[#222222] border-2 border-[#EBEBEB] hover:border-[#222222]'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

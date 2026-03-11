@@ -4,6 +4,7 @@ import { format, startOfMonth, endOfMonth, isWithinInterval, isToday, isYesterda
 import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, Trash2, ArrowDownLeft, ArrowUpRight, Wallet, Share2, Filter } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useCategories } from '../hooks/useCategories';
 
 const CATEGORY_ICONS: Record<string, string> = {
   'Food': '🍔',
@@ -39,7 +40,9 @@ export default function Transactions() {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [entryTypeFilter, setEntryTypeFilter] = useState<'ALL' | 'CREDIT' | 'DEBIT'>('ALL');
   const [datePreset, setDatePreset] = useState<'CUSTOM' | 'LAST_30' | 'LAST_10' | 'THIS_WEEK'>('CUSTOM');
-  const [sortTypeFilter, setSortTypeFilter] = useState<'ALL' | 'Personal' | 'Home' | 'Miscellaneous'>('ALL');
+  const [sortTypeFilter, setSortTypeFilter] = useState<string>('ALL');
+
+  const { categories: appCategories } = useCategories();
 
   const allTransactions = useLiveQuery(() => db.transactions.orderBy('dateTime').reverse().toArray()) || [];
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
@@ -302,10 +305,10 @@ export default function Transactions() {
               <div>
                 <label className="block text-xs font-bold text-[#717171] uppercase tracking-wider mb-2">Sort Type</label>
                 <div className="flex flex-wrap gap-2">
-                  {['ALL', 'Personal', 'Home', 'Miscellaneous'].map(type => (
+                  {['ALL', ...appCategories].map(type => (
                     <button
                       key={type}
-                      onClick={() => setSortTypeFilter(type as any)}
+                      onClick={() => setSortTypeFilter(type)}
                       className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
                         sortTypeFilter === type 
                           ? 'bg-[#222222] text-white' 

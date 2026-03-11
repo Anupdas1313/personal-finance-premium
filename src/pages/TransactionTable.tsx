@@ -8,6 +8,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toBlob } from 'html-to-image';
 import { motion, useSpring, useTransform } from 'framer-motion';
+import { useCategories } from '../hooks/useCategories';
 
 function CountUp({ value, prefix = '', suffix = '' }: { value: number, prefix?: string, suffix?: string }) {
   const spring = useSpring(0, { bounce: 0, duration: 1500 });
@@ -97,6 +98,8 @@ export default function TransactionTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const summaryRef = useRef<HTMLDivElement>(null);
+  
+  const { categories: appCategories } = useCategories();
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.3));
@@ -939,10 +942,9 @@ export default function TransactionTable() {
                   className="w-full px-3 py-2 border border-[#EBEBEB] rounded-xl text-sm focus:ring-2 focus:ring-[#222222] outline-none bg-white font-medium text-[#222222]"
                 >
                   <option value="ALL">Sort Types</option>
-                  <option value="Personal">Personal</option>
-                  <option value="Home">Home</option>
-                  <option value="Miscellaneous">Miscellaneous</option>
-                  <option value="Tenant / Customer">Tenant / Customer</option>
+                  {appCategories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
                   <option value="Other">Other</option>
                 </select>
 
