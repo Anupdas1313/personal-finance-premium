@@ -527,54 +527,54 @@ export default function Dashboard() {
             </div>
 
             {/* 4. Identity, Remarks & Payment Group */}
-            <div className="bg-[#1C1C22] rounded-2xl border border-white/5 divide-y divide-white/5">
+            <div className="bg-[#1C1C22] rounded-xl border border-white/5 divide-y divide-white/5">
               {/* Paid via / Received from (Hide for Transfer) */}
               {type !== 'TRANSFER' && (
-                <div className="flex items-center gap-3 p-3">
-                  <div className="w-9 h-9 rounded-xl bg-black/40 flex items-center justify-center shrink-0 border border-white/5">
-                    <User className="w-[18px] h-[18px] text-[#A0A0A5]" />
+                <div className="flex items-center gap-2.5 p-2">
+                  <div className="w-7 h-7 rounded-lg bg-black/40 flex items-center justify-center shrink-0 border border-white/5">
+                    <User className="w-3.5 h-3.5 text-[#A0A0A5]" />
                   </div>
                   <input 
                     type="text"
                     value={partyName}
                     onChange={e => setPartyName(e.target.value)}
                     placeholder={type === 'DEBIT' ? 'Paid to...' : 'Received from...'}
-                    className="bg-transparent flex-1 text-[16px] font-medium text-white outline-none placeholder:text-[#4A4A52]"
+                    className="bg-transparent flex-1 text-[14px] font-medium text-white outline-none placeholder:text-[#4A4A52]"
                   />
                 </div>
               )}
 
               {/* Remarks */}
-              <div className="flex items-center gap-3 p-3">
-                <div className="w-9 h-9 rounded-xl bg-black/40 flex items-center justify-center shrink-0 border border-white/5">
-                  <AlignLeft className="w-[18px] h-[18px] text-[#A0A0A5]" />
+              <div className="flex items-center gap-2.5 p-2">
+                <div className="w-7 h-7 rounded-lg bg-black/40 flex items-center justify-center shrink-0 border border-white/5">
+                  <AlignLeft className="w-3.5 h-3.5 text-[#A0A0A5]" />
                 </div>
                 <input 
                   type="text"
                   value={note}
                   onChange={e => setNote(e.target.value)}
                   placeholder="Add remarks..."
-                  className="bg-transparent flex-1 text-[14px] text-white/90 outline-none placeholder:text-[#4A4A52]"
+                  className="bg-transparent flex-1 text-[13px] text-white/90 outline-none placeholder:text-[#4A4A52]"
                 />
               </div>
 
               {/* Payment Mode Selector (Compact Grid) */}
-              <div className="p-3 space-y-3">
+              <div className="p-2 space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-bold text-[#A0A0A5] uppercase tracking-wider">Payment Method</p>
-                  {paymentMethod && <span className="text-[10px] font-bold text-[#6C6CF0]">{paymentMethod}</span>}
+                  <p className="text-[9px] font-bold text-[#A0A0A5] uppercase tracking-wider">Payment Method</p>
+                  {paymentMethod && <span className="text-[9px] font-bold text-[#6C6CF0]">{paymentMethod}</span>}
                 </div>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-4 gap-1.5">
                   {[
-                    { id: 'UPI', label: 'UPI', icon: <Smartphone className="w-3.5 h-3.5" /> },
-                    { id: 'Bank Transfer', label: 'Bank', icon: <Landmark className="w-3.5 h-3.5" /> },
-                    { id: 'Credit Card', label: 'Card', icon: <CreditCard className="w-3.5 h-3.5" /> },
-                    { id: 'Cash', label: 'Cash', icon: <Coins className="w-3.5 h-3.5" /> },
+                    { id: 'UPI', label: 'UPI', icon: <Smartphone className="w-3 h-3" /> },
+                    { id: 'Bank Transfer', label: 'Bank', icon: <Landmark className="w-3 h-3" /> },
+                    { id: 'Credit Card', label: 'Card', icon: <CreditCard className="w-3 h-3" /> },
+                    { id: 'Cash', label: 'Cash', icon: <Coins className="w-3 h-3" /> },
                   ].map((method) => (
                     <button 
                       key={method.id} 
                       onClick={() => setPaymentMethod(method.id as any)}
-                      className={`py-2 rounded-xl text-[11px] font-bold transition-all flex flex-col items-center gap-1 border ${
+                      className={`py-1.5 rounded-lg text-[10px] font-bold transition-all flex flex-col items-center gap-1 border ${
                         paymentMethod === method.id 
                           ? 'bg-[#3B3B98] border-[#3B3B98] text-white shadow-lg scale-95' 
                           : 'bg-black/20 border-white/5 text-[#A0A0A5] active:scale-95'
