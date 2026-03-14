@@ -13,7 +13,7 @@ import { ThemeProvider } from './components/ThemeProvider';
 
 export default function App() {
   return (
-    <ThemeProvider defaultTheme="system" storageKey="app-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="app-theme">
       <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout />}>

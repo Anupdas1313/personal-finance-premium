@@ -158,37 +158,7 @@ export default function Settings() {
         </div>
       )}
 
-      {/* SECTION: PREFERENCES */}
-      <section>
-        <h2 className="text-xs font-bold text-[#717171] dark:text-[#A0A0A0] uppercase tracking-wider mb-3 px-2">Appearance</h2>
-        <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222]">
-          
-          <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4 text-[#222222] dark:text-[#F7F7F7]">
-              <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0">
-                <Palette className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="font-bold text-[#222222] dark:text-[#F7F7F7]">Theme Preference</p>
-                <p className="text-sm font-medium text-[#717171] dark:text-[#A0A0A0] mt-0.5">Select your app visual style</p>
-              </div>
-            </div>
-            
-            <div className="flex bg-neutral-100 dark:bg-[#222222] p-1.5 rounded-2xl w-full sm:w-auto overflow-hidden">
-              <button onClick={() => setTheme('light')} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${theme === 'light' ? 'bg-white dark:bg-[#333333] shadow-sm text-[#222222] dark:text-[#F7F7F7]' : 'text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7]'}`}>
-                <Sun className="w-4 h-4" /> <span className="hidden sm:inline">Light</span>
-              </button>
-              <button onClick={() => setTheme('dark')} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${theme === 'dark' ? 'bg-white dark:bg-[#333333] shadow-sm text-[#222222] dark:text-[#F7F7F7]' : 'text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7]'}`}>
-                <Moon className="w-4 h-4" /> <span className="hidden sm:inline">Dark</span>
-              </button>
-              <button onClick={() => setTheme('system')} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${theme === 'system' ? 'bg-white dark:bg-[#333333] shadow-sm text-[#222222] dark:text-[#F7F7F7]' : 'text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7]'}`}>
-                <Monitor className="w-4 h-4" /> <span className="hidden sm:inline">System</span>
-              </button>
-            </div>
-          </div>
 
-        </div>
-      </section>
 
       {/* SECTION: CATEGORIES */}
       <section>

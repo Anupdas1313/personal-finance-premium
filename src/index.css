@@ -8,14 +8,14 @@
 }
 
 body {
-  background-color: #F7F7F7;
-  color: #222222;
+  background-color: #060608;
+  color: #F7F7F7;
   -webkit-font-smoothing: antialiased;
 }
 
-.dark body {
-  background-color: #060608;
-  color: #F7F7F7;
+.light body {
+  background-color: #F7F7F7;
+  color: #222222;
 }
 
 .dark {
