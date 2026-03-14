@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
-import { ArrowUpRight, ArrowDownRight, Wallet, Plus, X, AlertCircle, CheckCircle2, Search, ChevronDown, Landmark, Smartphone, ArrowLeft, Calendar, Clock, Calculator, MoreHorizontal, User, AlignLeft, Hash, Paperclip, Save, ChevronRight } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Wallet, Plus, X, AlertCircle, CheckCircle2, Search, ChevronDown, Landmark, Smartphone, ArrowLeft, Calendar, Clock, Calculator, MoreHorizontal, User, AlignLeft, Hash, Paperclip, Save, ChevronRight, CreditCard, Coins } from 'lucide-react';
 import { format, startOfMonth, startOfYear, isToday, isYesterday } from 'date-fns';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useState, useMemo, useEffect } from 'react';
@@ -68,7 +68,7 @@ export default function Dashboard() {
   const [transactionDate, setTransactionDate] = useState<string>(
     new Date().toISOString().slice(0, 16)
   );
-  const [paymentMethod, setPaymentMethod] = useState<'Bank' | 'UPI'>('Bank');
+  const [paymentMethod, setPaymentMethod] = useState<'Bank' | 'UPI' | 'Credit Card' | 'Cash' | 'Bank Transfer'>('Bank');
   const [upiApp, setUpiApp] = useState<string>('');
   const [expenseType, setExpenseType] = useState<string>('');
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -340,8 +340,11 @@ export default function Dashboard() {
                           {tx.party || tx.note || tx.category}
                         </p>
                         <div className="flex items-center text-xs text-[#717171] dark:text-[#A0A0A0] font-medium mt-0.5 gap-1.5">
-                          {tx.paymentMethod === 'UPI' ? <Smartphone className="w-3.5 h-3.5" /> : tx.paymentMethod === 'Bank' ? <Landmark className="w-3.5 h-3.5" /> : <Wallet className="w-3.5 h-3.5" />}
-                          <span>{tx.paymentMethod === 'UPI' ? `UPI${tx.upiApp ? ` (${tx.upiApp})` : ''}` : tx.paymentMethod === 'Bank' ? 'Bank' : 'Cash'}</span>
+                          {tx.paymentMethod === 'UPI' ? <Smartphone className="w-3.5 h-3.5" /> : 
+                           tx.paymentMethod === 'Bank' || tx.paymentMethod === 'Bank Transfer' ? <Landmark className="w-3.5 h-3.5" /> : 
+                           tx.paymentMethod === 'Credit Card' ? <CreditCard className="w-3.5 h-3.5" /> :
+                           <Coins className="w-3.5 h-3.5" />}
+                          <span>{tx.paymentMethod === 'UPI' ? `UPI${tx.upiApp ? ` (${tx.upiApp})` : ''}` : tx.paymentMethod}</span>
                         </div>
                       </div>
                     </div>
@@ -484,26 +487,30 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Payment Mode */}
+            {/* Payment Mode (One-tap Pills) */}
             <div className="space-y-1.5">
               <p className="text-[10px] font-bold text-[#A0A0A5] uppercase tracking-wider px-1">Payment Method</p>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setPaymentMethod('Bank')}
-                  className={`flex-1 py-1.5 rounded-[10px] text-[13px] font-bold transition-all flex items-center justify-center gap-1.5 ${
-                    paymentMethod === 'Bank' ? 'bg-[#3B3B98] text-white shadow-sm' : 'bg-[#1C1C22] text-[#A0A0A5] border border-white/5'
-                  }`}
-                >
-                  <Landmark className="w-3.5 h-3.5" /> Bank
-                </button>
-                <button 
-                  onClick={() => setPaymentMethod('UPI')}
-                  className={`flex-1 py-1.5 rounded-[10px] text-[13px] font-bold transition-all flex items-center justify-center gap-1.5 ${
-                    paymentMethod === 'UPI' ? 'bg-[#3B3B98] text-white shadow-sm' : 'bg-[#1C1C22] text-[#A0A0A5] border border-white/5'
-                  }`}
-                >
-                  <Smartphone className="w-3.5 h-3.5" /> UPI
-                </button>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-3 px-3">
+                {[
+                  { id: 'UPI', label: 'UPI', icon: <Smartphone className="w-3.5 h-3.5" /> },
+                  { id: 'Bank Transfer', label: 'Bank Transfer', icon: <Landmark className="w-3.5 h-3.5" /> },
+                  { id: 'Credit Card', label: 'Credit Card', icon: <CreditCard className="w-3.5 h-3.5" /> },
+                  { id: 'Cash', label: 'Cash', icon: <Coins className="w-3.5 h-3.5" /> },
+                  { id: 'Bank', label: 'Bank', icon: <Wallet className="w-3.5 h-3.5" /> },
+                ].map((method) => (
+                  <button 
+                    key={method.id} 
+                    onClick={() => setPaymentMethod(method.id as any)}
+                    className={`px-3 py-1.5 rounded-[10px] text-[13px] font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                      paymentMethod === method.id 
+                        ? 'bg-[#3B3B98] text-white shadow-sm scale-100' 
+                        : 'bg-[#1C1C22] text-[#A0A0A5] border border-white/5 active:scale-95'
+                    }`}
+                  >
+                    {method.icon}
+                    {method.label}
+                  </button>
+                ))}
               </div>
 
               {/* UPI App Wrapper */}

@@ -16,7 +16,7 @@ export interface Transaction {
   note: string;
   category: string;
   balanceAfterTransaction?: number;
-  paymentMethod?: 'Bank' | 'UPI';
+  paymentMethod?: 'Bank' | 'UPI' | 'Credit Card' | 'Cash' | 'Bank Transfer';
   upiApp?: string;
   party?: string;
   isPersonalExpense?: boolean;
