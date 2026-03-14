@@ -401,18 +401,18 @@ export default function Dashboard() {
               </button>
             </div>
 
-            {/* 2. Important Filter Tags (#personal, #home) */}
-            <div className="bg-[#1C1C22] p-3 rounded-2xl border border-white/5 space-y-2">
-              <p className="text-[10px] font-bold text-[#A0A0A5] uppercase tracking-wider">Classification Tags</p>
-              <div className="flex flex-wrap gap-2">
+            {/* 2. Important Filter Tags (#personal, #home) - Ultra Compact Scrollable */}
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold text-[#A0A0A5] uppercase tracking-wider px-1">Tags</p>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
                 {appCategories.map(cat => (
                   <button 
                     key={cat} 
                     onClick={() => setExpenseType(expenseType === cat ? '' : cat)}
-                    className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border ${
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border whitespace-nowrap ${
                       expenseType === cat 
-                        ? 'bg-[#E1E1E5] text-black border-transparent' 
-                        : 'bg-black/20 border-white/5 text-[#A0A0A5]'
+                        ? 'bg-[#6C6CF0] text-white border-transparent' 
+                        : 'bg-[#1C1C22] border-white/5 text-[#A0A0A5]'
                     }`}
                   >
                     #{cat}
