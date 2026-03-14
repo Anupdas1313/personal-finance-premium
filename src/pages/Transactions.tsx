@@ -259,8 +259,8 @@ export default function Transactions() {
                 >
                   <Filter className="w-5 h-5" />
                 </button>
-                <button className="p-2.5 bg-[#111111] border border-[#222222] rounded-full text-[#A0A0A0] hover:text-white transition-colors shadow-sm" title="Download">
-                  <Download className="w-5 h-5" />
+                <button className="p-2.5 bg-[#111111] border border-[#222222] rounded-full text-[#A0A0A0] hover:text-white transition-colors shadow-sm" title="Calendar View">
+                  <CalendarIcon className="w-5 h-5" />
                 </button>
               </div>
             </>
