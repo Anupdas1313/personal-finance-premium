@@ -468,9 +468,10 @@ export default function Dashboard() {
             )}
 
             {/* 3. Amount & Account Row */}
-            <div className={`space-y-4`}>
-              {/* Amount Input (Full Width on Left) */}
-              <div className="bg-[#1C1C22] p-4 rounded-2xl border border-white/5 flex items-center gap-3 focus-within:border-white/20 transition-all shadow-inner">
+            <div className={`bg-[#1C1C22] rounded-2xl border border-white/5 flex ${type === 'TRANSFER' ? 'flex-col divide-y' : 'divide-x'} divide-white/5 overflow-hidden shadow-inner`}>
+              
+              {/* Amount Input (Left) */}
+              <div className={`flex items-center gap-2 p-4 ${type === 'TRANSFER' ? 'w-full' : 'w-1/2'} focus-within:bg-white/[0.02] transition-colors shrink-0`}>
                 <span className="text-xl font-bold text-[#A0A0A5]">₹</span>
                 <input 
                   type="number"
@@ -480,17 +481,13 @@ export default function Dashboard() {
                   onChange={e => setAmount(e.target.value)}
                   placeholder="0.00"
                   step="0.01"
-                  className="bg-transparent text-[32px] font-bold text-white outline-none w-full placeholder:text-[#2C2C34]"
+                  className="bg-transparent text-[26px] font-bold text-white outline-none w-full placeholder:text-[#2C2C34] min-w-0"
                 />
               </div>
 
-              {/* Account Selection (Source/Transfer) */}
-              <div className="space-y-2">
-                <p className="text-[10px] font-bold text-[#A0A0A5] uppercase tracking-wider px-1">
-                  {type === 'TRANSFER' ? 'Select Accounts' : 'Choose Account'}
-                </p>
-                
-                <div className="flex gap-2.5 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
+              {/* Account Selection (Right) */}
+              <div className={`p-2 flex-1 flex items-center overflow-x-auto no-scrollbar bg-black/10`}>
+                <div className="flex gap-2 items-center px-1">
                   {accounts.map(acc => (
                     <button 
                       key={acc.id} 
@@ -503,24 +500,25 @@ export default function Dashboard() {
                           setSelectedAccountId(acc.id!);
                         }
                       }}
-                      className={`min-w-[120px] p-3 rounded-2xl border transition-all flex flex-col items-center gap-2 group relative ${
+                      className={`shrink-0 flex flex-col items-center justify-center gap-1.5 p-2 rounded-[14px] border transition-all group relative ${
                         selectedAccountId === acc.id || toAccountId === acc.id
-                          ? 'bg-[#3B3B98]/20 border-[#3B3B98] text-white' 
-                          : 'bg-[#1C1C22] border-white/5 text-[#A0A0A5]'
+                          ? 'bg-[#3B3B98]/20 border-[#3B3B98] text-white shadow-sm' 
+                          : 'bg-[#1C1C22] border-white/5 text-[#A0A0A5] hover:bg-[#2C2C34]'
                       }`}
+                      style={{ minWidth: '64px' }}
                     >
-                      {selectedAccountId === acc.id && (
-                        <div className="absolute -top-1.5 -left-1.5 bg-[#3B3B98] text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-lg">FROM</div>
+                      {selectedAccountId === acc.id && type === 'TRANSFER' && (
+                        <div className="absolute -top-1.5 bg-[#3B3B98] text-[7px] font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-white/10">FROM</div>
                       )}
-                      {toAccountId === acc.id && (
-                        <div className="absolute -top-1.5 -right-1.5 bg-indigo-500 text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-lg">TO</div>
+                      {toAccountId === acc.id && type === 'TRANSFER' && (
+                        <div className="absolute -top-1.5 bg-indigo-500 text-[7px] font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-white/10">TO</div>
                       )}
                       
-                      <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center p-2 shadow-sm group-active:scale-95 transition-transform">
+                      <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center p-1.5 shadow-sm">
                         <BankLogo bankName={acc.bankName} className="w-full h-full" />
                       </div>
-                      <span className="text-[11px] font-bold whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">
-                        {acc.bankName}
+                      <span className="text-[9px] font-bold whitespace-nowrap overflow-hidden text-ellipsis w-full text-center tracking-wide">
+                        {acc.bankName.substring(0, 10)}
                       </span>
                     </button>
                   ))}
