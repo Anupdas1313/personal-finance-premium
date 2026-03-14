@@ -250,12 +250,11 @@ export default function Transactions() {
                 </Link>
                 <button 
                   onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                  className={cn(
-                    "p-2.5 border rounded-full transition-all shadow-sm",
+                  className={`p-2.5 border rounded-full transition-all shadow-sm ${
                     isFiltersOpen 
                       ? "bg-white border-white text-[#111111]" 
                       : "bg-[#111111] border-[#222222] text-[#A0A0A0] hover:text-white"
-                  )}
+                  }`}
                   title="Filters"
                 >
                   <Filter className="w-5 h-5" />
@@ -325,8 +324,6 @@ export default function Transactions() {
           </button>
         </div>
 
-        </div>
-
         {isFiltersOpen && (
           <div className="mt-4 bg-[#111111] rounded-[24px] border border-[#222222] shadow-xl p-5 space-y-5 animate-in slide-in-from-top-2 duration-300">
             <div>
@@ -338,7 +335,7 @@ export default function Transactions() {
                   >
                     {type.label}
                   </button>
-                ))}
+                )) }
               </div>
             </div>
             <div>
@@ -350,7 +347,7 @@ export default function Transactions() {
                   >
                     {opt.label}
                   </button>
-                ))}
+                )) }
               </div>
             </div>
             <div>
@@ -362,7 +359,7 @@ export default function Transactions() {
                   >
                     {type}
                   </button>
-                ))}
+                )) }
               </div>
             </div>
           </div>
