@@ -459,7 +459,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* 4. Identity & Remarks Group */}
+            {/* 4. Identity, Remarks & Payment Group */}
             <div className="bg-[#1C1C22] rounded-2xl border border-white/5 divide-y divide-white/5">
               {/* Paid via / Received from */}
               <div className="flex items-center gap-3 p-3">
@@ -488,6 +488,52 @@ export default function Dashboard() {
                   className="bg-transparent flex-1 text-[14px] text-white/90 outline-none placeholder:text-[#4A4A52]"
                 />
               </div>
+
+              {/* Payment Mode Selector (Compact Grid) */}
+              <div className="p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-bold text-[#A0A0A5] uppercase tracking-wider">Payment Method</p>
+                  {paymentMethod && <span className="text-[10px] font-bold text-[#6C6CF0]">{paymentMethod}</span>}
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'UPI', label: 'UPI', icon: <Smartphone className="w-3.5 h-3.5" /> },
+                    { id: 'Bank Transfer', label: 'Bank', icon: <Landmark className="w-3.5 h-3.5" /> },
+                    { id: 'Cash', label: 'Cash', icon: <Coins className="w-3.5 h-3.5" /> },
+                  ].map((method) => (
+                    <button 
+                      key={method.id} 
+                      onClick={() => setPaymentMethod(method.id as any)}
+                      className={`py-2 rounded-xl text-[12px] font-bold transition-all flex flex-col items-center gap-1 border ${
+                        paymentMethod === method.id 
+                          ? 'bg-[#3B3B98] border-[#3B3B98] text-white shadow-lg scale-95' 
+                          : 'bg-black/20 border-white/5 text-[#A0A0A5] active:scale-95'
+                      }`}
+                    >
+                      {method.icon}
+                      {method.label}
+                    </button>
+                  ))}
+                </div>
+
+                {paymentMethod === 'UPI' && (
+                  <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-1">
+                    {['GPay', 'PhonePe', 'Paytm'].map(app => (
+                      <button 
+                        key={app} 
+                        onClick={() => setUpiApp(app)}
+                        className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${
+                          upiApp === app 
+                            ? 'bg-[#6C6CF0]/20 border-[#6C6CF0]/40 text-[#8C8CFF]' 
+                            : 'bg-black/20 border-white/5 text-[#717171]'
+                        }`}
+                      >
+                        {app}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* 5. Quick Selectors (Category, Account, Payment) */}
@@ -515,50 +561,7 @@ export default function Dashboard() {
 
 
 
-              {/* Payment Mode */}
-              <div className="space-y-1.5">
-                <p className="text-[10px] font-bold text-[#A0A0A5] uppercase tracking-wider px-1">Payment via</p>
-                <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4">
-                  {[
-                    { id: 'UPI', label: 'UPI', icon: <Smartphone className="w-3.5 h-3.5" /> },
-                    { id: 'Bank Transfer', label: 'Bank Transfer', icon: <Landmark className="w-3.5 h-3.5" /> },
-                    { id: 'Credit Card', label: 'Credit Card', icon: <CreditCard className="w-3.5 h-3.5" /> },
-                    { id: 'Cash', label: 'Cash', icon: <Coins className="w-3.5 h-3.5" /> },
-                    { id: 'Bank', label: 'Bank', icon: <Wallet className="w-3.5 h-3.5" /> },
-                  ].map((method) => (
-                    <button 
-                      key={method.id} 
-                      onClick={() => setPaymentMethod(method.id as any)}
-                      className={`px-4 py-2.5 rounded-xl text-[13px] font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-                        paymentMethod === method.id 
-                          ? 'bg-[#3B3B98] text-white shadow-md' 
-                          : 'bg-[#1C1C22] text-[#A0A0A5] border border-white/5 active:scale-95'
-                      }`}
-                    >
-                      {method.icon}
-                      {method.label}
-                    </button>
-                  ))}
-                </div>
 
-                {paymentMethod === 'UPI' && (
-                  <div className="flex gap-2 overflow-x-auto no-scrollbar pt-1 pb-1 -mx-4 px-4 animate-in fade-in slide-in-from-top-1">
-                    {['GPay', 'PhonePe', 'Paytm', 'Other'].map(app => (
-                      <button 
-                        key={app} 
-                        onClick={() => setUpiApp(app)}
-                        className={`px-3 py-1.5 rounded-lg text-[12px] font-bold whitespace-nowrap transition-all border border-transparent ${
-                          upiApp === app 
-                            ? 'bg-[#6C6CF0]/20 border-[#6C6CF0]/40 text-[#8C8CFF]' 
-                            : 'bg-[#1C1C22] border-white/5 text-[#A0A0A5]'
-                        }`}
-                      >
-                        {app}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
 
 
