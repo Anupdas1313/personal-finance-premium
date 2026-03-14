@@ -363,269 +363,222 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Manual Entry Modal - Native Android Clone Redesign */}
+      {/* Manual Entry Modal - Compact Pill-Based UX Redesign */}
       {isAddingManual && createPortal(
         <div className="fixed inset-0 bg-[#0F0F13] text-white z-[9999] flex flex-col animate-in fade-in slide-in-from-bottom-5 duration-300 font-sans">
-          {/* Header */}
-          <div className="flex items-center px-2 py-4 gap-2 shrink-0 pt-safe-top">
-            <button onClick={closeMenu} className="p-2 rounded-full hover:bg-white/10 transition-colors active:bg-white/20">
-              <ArrowLeft className="w-6 h-6 text-[#E1E1E5]" />
+          {/* Top Navbar */}
+          <div className="flex items-center justify-between px-4 py-4 pt-safe-top bg-[#1C1C22]/80 backdrop-blur-xl border-b border-white/5 z-20">
+            <button onClick={closeMenu} className="text-[#A0A0A5] hover:text-white font-medium text-[15px] px-2 py-1">
+              Cancel
             </button>
-            <h2 className="text-xl font-medium tracking-wide text-[#F7F7F7]">Add transaction</h2>
-          </div>
-
-          <div className="flex-1 overflow-y-auto w-full px-5 pb-20 space-y-4 scrollbar-hide no-scrollbar">
-            {/* Segmented Control */}
-            <div className="flex bg-[#1C1C22] p-1 rounded-full w-full max-w-sm mx-auto mt-2">
+            <div className="flex bg-black/40 p-1 rounded-xl">
               <button 
-                type="button"
                 onClick={() => setType('DEBIT')}
-                className={`flex-1 py-2 px-4 rounded-full text-sm font-medium transition-colors ${type === 'DEBIT' ? 'bg-[#2A2A32] text-white shadow-sm' : 'text-neutral-400 hover:text-neutral-300'}`}
+                className={`px-4 py-1.5 text-[13px] font-bold rounded-lg transition-all ${type === 'DEBIT' ? 'bg-[#3B3B98] text-white shadow-md' : 'text-[#A0A0A5]'}`}
               >
                 Expense
               </button>
               <button 
-                type="button"
                 onClick={() => setType('CREDIT')}
-                className={`flex-1 py-2 px-4 rounded-full text-sm font-medium transition-colors ${type === 'CREDIT' ? 'bg-[#2A2A32] text-white shadow-sm' : 'text-neutral-400 hover:text-neutral-300'}`}
+                className={`px-4 py-1.5 text-[13px] font-bold rounded-lg transition-all ${type === 'CREDIT' ? 'bg-emerald-600 text-white shadow-md' : 'text-[#A0A0A5]'}`}
               >
                 Income
               </button>
-              <button disabled className="flex-1 py-2 px-4 rounded-full text-sm font-medium text-neutral-500 opacity-50 cursor-not-allowed">
-                Transfer
-              </button>
             </div>
-
-            {/* Date and Time Row */}
-            <div className="flex items-center gap-6 py-1">
-              <label className="flex items-center gap-3 text-[#E1E1E5] relative cursor-pointer group flex-1">
-                <Calendar className="w-5 h-5 text-[#A0A0A5]" />
-                <span className="text-[15px] font-medium tracking-wide">{format(new Date(transactionDate), 'dd MMM yyyy')}</span>
-                <input 
-                  type="date" 
-                  value={transactionDate.split('T')[0]} 
-                  onChange={(e) => setTransactionDate(e.target.value + 'T' + transactionDate.split('T')[1])}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full custom-date-input"
-                />
-              </label>
-              <label className="flex items-center gap-3 text-[#E1E1E5] relative cursor-pointer group flex-1">
-                <Clock className="w-5 h-5 text-[#A0A0A5]" />
-                <span className="text-[15px] font-medium tracking-wide">{format(new Date(transactionDate), 'hh:mm a')}</span>
-                <input 
-                  type="time" 
-                  value={transactionDate.split('T')[1]} 
-                  onChange={(e) => setTransactionDate(transactionDate.split('T')[0] + 'T' + e.target.value)}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full custom-time-input"
-                />
-              </label>
-            </div>
-
-            {/* Amount */}
-            <div className="py-1">
-              <label className="text-xs text-[#A0A0A5] mb-1 block font-medium">Amount</label>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 flex-1">
-                  <span className="text-3xl text-[#E1E1E5] font-medium">₹</span>
-                  <input 
-                    type="number"
-                    value={amount}
-                    onChange={e => setAmount(e.target.value)}
-                    placeholder="0"
-                    step="0.01"
-                    className="bg-transparent text-4xl text-white outline-none w-full placeholder:text-[#4A4A52] font-normal"
-                  />
-                </div>
-                <button className="w-10 h-10 rounded-full bg-[#1C1C22] flex items-center justify-center shrink-0 hover:bg-[#2A2A32] transition-colors">
-                  <Calculator className="w-5 h-5 text-[#A0A0A5]" />
-                </button>
-              </div>
-            </div>
-
-            {/* Field List */}
-            <div className="space-y-4 pt-1">
-              {/* Category */}
-              <label className="flex items-center justify-between cursor-pointer relative group">
-                <div className="flex items-center gap-4">
-                  <MoreHorizontal className="w-[20px] h-[20px] text-[#A0A0A5]" />
-                  <div>
-                    <p className="text-xs text-[#A0A0A5] mb-0">Category</p>
-                    <p className="text-[14px] font-medium text-[#E1E1E5]">{category}</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 text-[#A0A0A5]" />
-                <select 
-                  value={category} 
-                  onChange={e => setCategory(e.target.value)}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                >
-                  {CATEGORIES.map(c => <option key={c} value={c} className="text-black">{c}</option>)}
-                </select>
-              </label>
-
-              {/* Payment Mode */}
-              <label className="flex items-center justify-between cursor-pointer relative group">
-                <div className="flex items-center gap-4">
-                  <Wallet className="w-[20px] h-[20px] text-[#A0A0A5]" />
-                  <div>
-                    <p className="text-xs text-[#A0A0A5] mb-0">Payment mode</p>
-                    <p className="text-[14px] font-medium text-[#E1E1E5]">{paymentMethod}</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 text-[#A0A0A5]" />
-                <select 
-                  value={paymentMethod} 
-                  onChange={e => setPaymentMethod(e.target.value as 'Bank'|'UPI')}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                >
-                  <option value="Bank" className="text-black">Bank</option>
-                  <option value="UPI" className="text-black">UPI</option>
-                </select>
-              </label>
-
-              {/* UPI App (conditional) */}
-              {paymentMethod === 'UPI' && (
-                <label className="flex items-center justify-between cursor-pointer relative group animate-in fade-in slide-in-from-top-2">
-                  <div className="flex items-center gap-4">
-                    <Smartphone className="w-[20px] h-[20px] text-[#A0A0A5]" />
-                    <div>
-                      <p className="text-xs text-[#A0A0A5] mb-0">UPI App *</p>
-                      <p className="text-[14px] font-medium text-[#E1E1E5]">{upiApp || 'Select App'}</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-[#A0A0A5]" />
-                  <select 
-                    value={upiApp} 
-                    onChange={e => setUpiApp(e.target.value)}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                  >
-                    <option value="" disabled className="text-black">Select App</option>
-                    <option value="GPay" className="text-black">GPay</option>
-                    <option value="PhonePe" className="text-black">PhonePe</option>
-                    <option value="Paytm" className="text-black">Paytm</option>
-                    <option value="Other" className="text-black">Other</option>
-                  </select>
-                </label>
-              )}
-
-              {/* Account */}
-              <label className="flex items-center justify-between cursor-pointer relative group">
-                <div className="flex items-center gap-4">
-                  <Landmark className="w-[20px] h-[20px] text-[#A0A0A5]" />
-                  <div>
-                    <p className="text-xs text-[#A0A0A5] mb-0">Account *</p>
-                    <p className="text-[14px] font-medium text-[#E1E1E5]">
-                      {selectedAccountId ? accounts.find(a => a.id === selectedAccountId)?.bankName || 'Unknown Bank' : 'Select Account'}
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 text-[#A0A0A5]" />
-                <select 
-                  value={selectedAccountId} 
-                  onChange={e => setSelectedAccountId(Number(e.target.value))}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                >
-                  <option value="" disabled className="text-black">Select Account</option>
-                  {accounts.map(a => <option key={a.id} value={a.id} className="text-black">{a.bankName}</option>)}
-                </select>
-              </label>
-
-              {/* Party Name */}
-              <label className="flex items-center justify-between cursor-pointer relative group">
-                <div className="flex items-center gap-4 w-full">
-                  <User className="w-[20px] h-[20px] text-[#A0A0A5] shrink-0" />
-                  <div className="w-full">
-                    <p className="text-xs text-[#A0A0A5] mb-0">{type === 'DEBIT' ? 'Paid To *' : 'Received From *'}</p>
-                    <input 
-                      type="text"
-                      value={partyName}
-                      onChange={e => setPartyName(e.target.value)}
-                      placeholder="Enter name"
-                      className="bg-transparent text-[14px] font-medium text-[#E1E1E5] outline-none w-full placeholder:text-[#4A4A52]"
-                    />
-                  </div>
-                </div>
-              </label>
-            </div>
-
-            {/* Other details Header */}
-            <div className="pt-2">
-              <h3 className="text-[12px] font-semibold text-[#E1E1E5] tracking-wide mb-3">Other details</h3>
-              
-              <div className="space-y-4">
-                {/* Note */}
-                <div className="flex items-center gap-4">
-                  <AlignLeft className="w-[20px] h-[20px] text-[#A0A0A5] shrink-0" />
-                  <input 
-                    type="text"
-                    value={note}
-                    onChange={e => setNote(e.target.value)}
-                    placeholder="Write a note"
-                    className="bg-transparent text-[14px] text-[#E1E1E5] outline-none w-full placeholder:text-[#4A4A52] font-medium"
-                  />
-                </div>
-
-                {/* Tags (Expense Type) */}
-                <div>
-                  <div className="flex items-center gap-4 mb-2">
-                    <Hash className="w-[20px] h-[20px] text-[#A0A0A5] shrink-0" />
-                    <span className="text-[14px] text-[#4A4A52] font-medium">Add tags (Expense Type)</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2 pl-[36px]">
-                    {appCategories.map(cat => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => setExpenseType(expenseType === cat ? '' : cat)}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[13px] font-medium transition-colors ${
-                          expenseType === cat 
-                            ? 'bg-[#2A2A32] text-[#E1E1E5]' 
-                            : 'bg-[#1C1C22] text-[#A0A0A5] hover:bg-[#2A2A32]'
-                        }`}
-                      >
-                        <div className={`w-2.5 h-2.5 rounded-full ${expenseType === cat ? 'bg-indigo-500' : 'bg-[#2A2A32]'}`}></div>
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Attachment */}
-                <div className="flex items-center justify-between cursor-not-allowed opacity-50 pt-1">
-                  <div className="flex items-center gap-4">
-                    <Paperclip className="w-[20px] h-[20px] text-[#A0A0A5] shrink-0" />
-                    <span className="text-[14px] text-[#A0A0A5] font-medium">Add attachment</span>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-[#A0A0A5]" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Status Messages */}
-          {(status === 'error' || status === 'success') && (
-            <div className="absolute bottom-28 left-4 right-24 z-10 animate-in fade-in slide-in-from-bottom-2">
-              {status === 'error' && (
-                <div className="p-3 bg-rose-500/10 text-rose-500 rounded-xl flex items-center gap-3 text-[13px] font-medium border border-rose-500/20 shadow-lg backdrop-blur-md">
-                  <AlertCircle className="w-5 h-5 shrink-0" /> {errorMessage}
-                </div>
-              )}
-              {status === 'success' && (
-                <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl flex items-center gap-3 text-[13px] font-medium border border-emerald-500/20 shadow-lg backdrop-blur-md">
-                  <CheckCircle2 className="w-5 h-5 shrink-0" /> Transaction saved!
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Floating Action Button for Save */}
-          <div className="absolute bottom-6 right-6 z-20">
-            <button
+            <button 
               onClick={handleSaveManual}
               disabled={!amount || !type || !partyName || !selectedAccountId || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
-              className="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="text-[#6C6CF0] hover:text-[#5050D0] font-bold text-[15px] px-2 py-1 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              <Save className="w-7 h-7" />
+              Save
             </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto w-full px-4 pt-6 pb-20 space-y-6 scrollbar-hide no-scrollbar">
+            
+            {/* Amount Section */}
+            <div className="flex flex-col items-center justify-center space-y-1">
+              <span className="text-[#A0A0A5] text-[13px] font-medium tracking-wide">Amount</span>
+              <div className="flex items-center justify-center gap-1.5 border-b-2 border-transparent focus-within:border-[#3B3B98] transition-colors pb-1 px-4">
+                <span className="text-2xl font-medium text-[#A0A0A5]">₹</span>
+                <input 
+                  type="number"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  placeholder="0"
+                  step="0.01"
+                  className="bg-transparent text-[44px] font-bold text-white outline-none w-[180px] text-center placeholder:text-[#4A4A52]"
+                />
+              </div>
+            </div>
+
+            {/* Error/Success Messages positioned below amount */}
+            {(status === 'error' || status === 'success') && (
+              <div className="flex justify-center animate-in fade-in zoom-in-95 duration-200">
+                {status === 'error' && (
+                  <div className="px-4 py-2 bg-rose-500/10 text-rose-500 rounded-full flex items-center gap-2 text-[13px] font-bold border border-rose-500/20">
+                    <AlertCircle className="w-4 h-4 shrink-0" /> {errorMessage}
+                  </div>
+                )}
+                {status === 'success' && (
+                  <div className="px-4 py-2 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center gap-2 text-[13px] font-bold border border-emerald-500/20">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" /> Transaction saved!
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Party Name Input */}
+            <div className="bg-[#1C1C22] rounded-[16px] p-4 flex items-center gap-4 border border-white/5 focus-within:border-white/20 transition-colors">
+              <div className="w-8 h-8 rounded-full bg-black/40 flex items-center justify-center shrink-0">
+                <User className="w-[18px] h-[18px] text-[#A0A0A5]" />
+              </div>
+              <input 
+                type="text"
+                value={partyName}
+                onChange={e => setPartyName(e.target.value)}
+                placeholder={type === 'DEBIT' ? 'Paid to...' : 'Received from...'}
+                className="bg-transparent flex-1 text-[16px] font-medium text-white outline-none placeholder:text-[#5A5A62]"
+              />
+            </div>
+
+            {/* Account Selector (One-tap Pills) */}
+            <div className="space-y-2.5">
+              <p className="text-[11px] font-bold text-[#A0A0A5] uppercase tracking-wider px-1">Account</p>
+              <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4">
+                {accounts.map(acc => (
+                  <button 
+                    key={acc.id} 
+                    onClick={() => setSelectedAccountId(acc.id!)}
+                    className={`px-4 py-2.5 rounded-[12px] text-[14px] font-bold whitespace-nowrap transition-all shadow-sm flex items-center gap-2 ${
+                      selectedAccountId === acc.id 
+                        ? 'bg-white text-black scale-100' 
+                        : 'bg-[#1C1C22] text-[#A0A0A5] border border-white/5 active:scale-95'
+                    }`}
+                  >
+                    <Landmark className="w-4 h-4" />
+                    {acc.bankName}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Category Selector (One-tap Pills) */}
+            <div className="space-y-2.5">
+              <p className="text-[11px] font-bold text-[#A0A0A5] uppercase tracking-wider px-1">Category</p>
+              <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4">
+                {CATEGORIES.map(cat => (
+                  <button 
+                    key={cat} 
+                    onClick={() => setCategory(cat)}
+                    className={`px-4 py-2.5 rounded-[12px] text-[14px] font-bold whitespace-nowrap transition-all shadow-sm flex items-center gap-2 ${
+                      category === cat 
+                        ? 'bg-white text-black scale-100' 
+                        : 'bg-[#1C1C22] text-[#A0A0A5] border border-white/5 active:scale-95'
+                    }`}
+                  >
+                    <span>{CATEGORY_ICONS[cat] || '📝'}</span>
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Payment Mode */}
+            <div className="space-y-2.5">
+              <p className="text-[11px] font-bold text-[#A0A0A5] uppercase tracking-wider px-1">Payment Method</p>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setPaymentMethod('Bank')}
+                  className={`flex-1 py-3 rounded-[12px] text-[14px] font-bold transition-all shadow-sm flex items-center justify-center gap-2 ${
+                    paymentMethod === 'Bank' ? 'bg-[#3B3B98] text-white' : 'bg-[#1C1C22] text-[#A0A0A5] border border-white/5'
+                  }`}
+                >
+                  <Landmark className="w-4 h-4" /> Bank
+                </button>
+                <button 
+                  onClick={() => setPaymentMethod('UPI')}
+                  className={`flex-1 py-3 rounded-[12px] text-[14px] font-bold transition-all shadow-sm flex items-center justify-center gap-2 ${
+                    paymentMethod === 'UPI' ? 'bg-[#3B3B98] text-white' : 'bg-[#1C1C22] text-[#A0A0A5] border border-white/5'
+                  }`}
+                >
+                  <Smartphone className="w-4 h-4" /> UPI
+                </button>
+              </div>
+
+              {/* UPI App Wrapper */}
+              {paymentMethod === 'UPI' && (
+                <div className="flex gap-2.5 overflow-x-auto no-scrollbar pt-2 pb-2 -mx-4 px-4 animate-in fade-in slide-in-from-top-2">
+                  {['GPay', 'PhonePe', 'Paytm', 'Other'].map(app => (
+                    <button 
+                      key={app} 
+                      onClick={() => setUpiApp(app)}
+                      className={`px-5 py-2 rounded-[10px] text-[13px] font-bold whitespace-nowrap transition-all border ${
+                        upiApp === app 
+                          ? 'bg-[#6C6CF0]/20 border-[#6C6CF0] text-[#8C8CFF]' 
+                          : 'bg-[#1C1C22] border-white/5 text-[#A0A0A5]'
+                      }`}
+                    >
+                      {app}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Tags (Expense Type) */}
+            <div className="space-y-2.5">
+              <p className="text-[11px] font-bold text-[#A0A0A5] uppercase tracking-wider px-1 flex items-center gap-1.5">
+                <Hash className="w-3.5 h-3.5" /> Tags
+              </p>
+              <div className="flex flex-wrap gap-2.5">
+                {appCategories.map(cat => (
+                  <button 
+                    key={cat} 
+                    onClick={() => setExpenseType(expenseType === cat ? '' : cat)}
+                    className={`px-3 py-1.5 rounded-full text-[12px] font-bold transition-all border ${
+                      expenseType === cat 
+                        ? 'bg-white text-black border-transparent' 
+                        : 'bg-transparent border-white/10 text-[#A0A0A5] hover:bg-white/5'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Additional Details Grouped Card */}
+            <div className="bg-[#1C1C22] rounded-[16px] p-1 border border-white/5">
+              <div className="flex items-center gap-4 p-3 border-b border-white/5">
+                <div className="w-7 h-7 rounded-lg bg-black/30 flex items-center justify-center shrink-0">
+                  <AlignLeft className="w-4 h-4 text-[#A0A0A5]" />
+                </div>
+                <input 
+                  type="text"
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
+                  placeholder="Add a note (optional)..."
+                  className="bg-transparent flex-1 text-[14px] text-white outline-none placeholder:text-[#5A5A62]"
+                />
+              </div>
+
+              <div className="flex items-center gap-4 p-3 relative cursor-pointer group">
+                <div className="w-7 h-7 rounded-lg bg-black/30 flex items-center justify-center shrink-0">
+                  <Calendar className="w-4 h-4 text-[#A0A0A5] group-hover:text-white transition-colors" />
+                </div>
+                <span className="text-[14px] flex-1 font-medium text-[#E1E1E5]">
+                  {format(new Date(transactionDate), 'dd MMM yyyy, hh:mm a')}
+                </span>
+                <input 
+                  type="datetime-local" 
+                  value={transactionDate} 
+                  onChange={e => setTransactionDate(e.target.value)}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                />
+              </div>
+            </div>
+
           </div>
         </div>,
         document.body
