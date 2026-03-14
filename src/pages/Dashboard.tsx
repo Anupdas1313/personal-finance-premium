@@ -362,11 +362,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Manual Entry Modal - Mobile Bottom Sheet Redesign */}
+      {/* Manual Entry Modal - Full Screen Mobile Redesign */}
       {isAddingManual && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center z-[100] md:p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-[#0C0C0F] w-full md:max-w-2xl rounded-t-[32px] md:rounded-[24px] shadow-2xl max-h-[90vh] flex flex-col animate-in slide-in-from-bottom-5 duration-300">
-            <div className="p-5 md:p-6 border-b border-[#EBEBEB] dark:border-[#1A1A1E] flex justify-between items-center sticky top-0 bg-white dark:bg-[#0C0C0F] z-10 rounded-t-[32px] md:rounded-[24px]">
+        <div className="fixed inset-0 bg-white dark:bg-[#0C0C0F] md:bg-black/50 md:backdrop-blur-sm z-[100] flex flex-col md:items-center md:justify-center md:p-4 animate-in slide-in-from-bottom-5 md:fade-in md:slide-in-from-bottom-0 duration-300">
+          <div className="bg-white dark:bg-[#0C0C0F] w-full h-full md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-[24px] shadow-2xl flex flex-col pt-safe-top">
+            <div className="p-4 md:p-6 border-b border-[#EBEBEB] dark:border-[#1A1A1E] flex justify-between items-center bg-white dark:bg-[#0C0C0F] z-10 md:rounded-t-[24px] shrink-0">
               <h2 className="text-xl font-extrabold text-[#222222] dark:text-[#F7F7F7]">Add Transaction</h2>
               <button
                 onClick={closeMenu}
@@ -376,7 +376,7 @@ export default function Dashboard() {
               </button>
             </div>
             
-            <div className="p-4 md:p-5 space-y-4 overflow-y-auto w-full no-scrollbar">
+            <div className="flex-1 p-4 md:p-6 space-y-5 overflow-y-auto w-full flex flex-col">
               {/* Transaction Type Segmented Control */}
               <div className="flex p-1 bg-neutral-100 dark:bg-[#15151A] rounded-[14px]">
                 <button 
@@ -539,11 +539,11 @@ export default function Dashboard() {
               )}
 
               {/* Save Button */}
-              <div className="pt-2 pb-safe">
+              <div className="pt-2 pb-safe mt-auto">
                 <button
                   onClick={handleSaveManual}
                   disabled={!amount || !type || !partyName || !selectedAccountId || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
-                  className="w-full py-4 bg-gradient-to-r from-[#3B3B98] to-[#6C6CF0] text-white font-black text-base rounded-[16px] shadow-md hover:shadow-lg transform transition-all disabled:opacity-50"
+                  className="w-full py-4 bg-gradient-to-r from-[#3B3B98] to-[#6C6CF0] text-white font-black text-lg rounded-[16px] shadow-md hover:shadow-lg transform transition-all disabled:opacity-50"
                 >
                   Save Transaction
                 </button>
