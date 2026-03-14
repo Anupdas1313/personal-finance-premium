@@ -374,7 +374,7 @@ export default function Dashboard() {
             <h2 className="text-xl font-medium tracking-wide text-[#F7F7F7]">Add transaction</h2>
           </div>
 
-          <div className="flex-1 overflow-y-auto w-full px-5 pb-28 space-y-6 scrollbar-hide no-scrollbar">
+          <div className="flex-1 overflow-y-auto w-full px-5 pb-20 space-y-4 scrollbar-hide no-scrollbar">
             {/* Segmented Control */}
             <div className="flex bg-[#1C1C22] p-1 rounded-full w-full max-w-sm mx-auto mt-2">
               <button 
@@ -397,7 +397,7 @@ export default function Dashboard() {
             </div>
 
             {/* Date and Time Row */}
-            <div className="flex items-center gap-8 py-2">
+            <div className="flex items-center gap-6 py-1">
               <label className="flex items-center gap-3 text-[#E1E1E5] relative cursor-pointer group flex-1">
                 <Calendar className="w-5 h-5 text-[#A0A0A5]" />
                 <span className="text-[15px] font-medium tracking-wide">{format(new Date(transactionDate), 'dd MMM yyyy')}</span>
@@ -421,8 +421,8 @@ export default function Dashboard() {
             </div>
 
             {/* Amount */}
-            <div className="py-2">
-              <label className="text-xs text-[#A0A0A5] mb-2 block font-medium">Amount</label>
+            <div className="py-1">
+              <label className="text-xs text-[#A0A0A5] mb-1 block font-medium">Amount</label>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 flex-1">
                   <span className="text-3xl text-[#E1E1E5] font-medium">₹</span>
@@ -442,14 +442,14 @@ export default function Dashboard() {
             </div>
 
             {/* Field List */}
-            <div className="space-y-6 pt-2">
+            <div className="space-y-4 pt-1">
               {/* Category */}
               <label className="flex items-center justify-between cursor-pointer relative group">
-                <div className="flex items-center gap-5">
-                  <MoreHorizontal className="w-[22px] h-[22px] text-[#A0A0A5]" />
+                <div className="flex items-center gap-4">
+                  <MoreHorizontal className="w-[20px] h-[20px] text-[#A0A0A5]" />
                   <div>
-                    <p className="text-xs text-[#A0A0A5] mb-0.5">Category</p>
-                    <p className="text-[15px] font-medium text-[#E1E1E5]">{category}</p>
+                    <p className="text-xs text-[#A0A0A5] mb-0">Category</p>
+                    <p className="text-[14px] font-medium text-[#E1E1E5]">{category}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-[#A0A0A5]" />
@@ -464,11 +464,11 @@ export default function Dashboard() {
 
               {/* Payment Mode */}
               <label className="flex items-center justify-between cursor-pointer relative group">
-                <div className="flex items-center gap-5">
-                  <Wallet className="w-[22px] h-[22px] text-[#A0A0A5]" />
+                <div className="flex items-center gap-4">
+                  <Wallet className="w-[20px] h-[20px] text-[#A0A0A5]" />
                   <div>
-                    <p className="text-xs text-[#A0A0A5] mb-0.5">Payment mode</p>
-                    <p className="text-[15px] font-medium text-[#E1E1E5]">{paymentMethod}</p>
+                    <p className="text-xs text-[#A0A0A5] mb-0">Payment mode</p>
+                    <p className="text-[14px] font-medium text-[#E1E1E5]">{paymentMethod}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-[#A0A0A5]" />
@@ -485,11 +485,11 @@ export default function Dashboard() {
               {/* UPI App (conditional) */}
               {paymentMethod === 'UPI' && (
                 <label className="flex items-center justify-between cursor-pointer relative group animate-in fade-in slide-in-from-top-2">
-                  <div className="flex items-center gap-5">
-                    <Smartphone className="w-[22px] h-[22px] text-[#A0A0A5]" />
+                  <div className="flex items-center gap-4">
+                    <Smartphone className="w-[20px] h-[20px] text-[#A0A0A5]" />
                     <div>
-                      <p className="text-xs text-[#A0A0A5] mb-0.5">UPI App *</p>
-                      <p className="text-[15px] font-medium text-[#E1E1E5]">{upiApp || 'Select App'}</p>
+                      <p className="text-xs text-[#A0A0A5] mb-0">UPI App *</p>
+                      <p className="text-[14px] font-medium text-[#E1E1E5]">{upiApp || 'Select App'}</p>
                     </div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-[#A0A0A5]" />
@@ -509,11 +509,11 @@ export default function Dashboard() {
 
               {/* Account */}
               <label className="flex items-center justify-between cursor-pointer relative group">
-                <div className="flex items-center gap-5">
-                  <Landmark className="w-[22px] h-[22px] text-[#A0A0A5]" />
+                <div className="flex items-center gap-4">
+                  <Landmark className="w-[20px] h-[20px] text-[#A0A0A5]" />
                   <div>
-                    <p className="text-xs text-[#A0A0A5] mb-0.5">Account *</p>
-                    <p className="text-[15px] font-medium text-[#E1E1E5]">
+                    <p className="text-xs text-[#A0A0A5] mb-0">Account *</p>
+                    <p className="text-[14px] font-medium text-[#E1E1E5]">
                       {selectedAccountId ? accounts.find(a => a.id === selectedAccountId)?.bankName || 'Unknown Bank' : 'Select Account'}
                     </p>
                   </div>
@@ -531,16 +531,16 @@ export default function Dashboard() {
 
               {/* Party Name */}
               <label className="flex items-center justify-between cursor-pointer relative group">
-                <div className="flex items-center gap-5 w-full">
-                  <User className="w-[22px] h-[22px] text-[#A0A0A5] shrink-0" />
+                <div className="flex items-center gap-4 w-full">
+                  <User className="w-[20px] h-[20px] text-[#A0A0A5] shrink-0" />
                   <div className="w-full">
-                    <p className="text-xs text-[#A0A0A5] mb-0.5">{type === 'DEBIT' ? 'Paid To *' : 'Received From *'}</p>
+                    <p className="text-xs text-[#A0A0A5] mb-0">{type === 'DEBIT' ? 'Paid To *' : 'Received From *'}</p>
                     <input 
                       type="text"
                       value={partyName}
                       onChange={e => setPartyName(e.target.value)}
                       placeholder="Enter name"
-                      className="bg-transparent text-[15px] font-medium text-[#E1E1E5] outline-none w-full placeholder:text-[#4A4A52]"
+                      className="bg-transparent text-[14px] font-medium text-[#E1E1E5] outline-none w-full placeholder:text-[#4A4A52]"
                     />
                   </div>
                 </div>
@@ -548,29 +548,29 @@ export default function Dashboard() {
             </div>
 
             {/* Other details Header */}
-            <div className="pt-4">
-              <h3 className="text-[13px] font-semibold text-[#E1E1E5] tracking-wide mb-6">Other details</h3>
+            <div className="pt-2">
+              <h3 className="text-[12px] font-semibold text-[#E1E1E5] tracking-wide mb-3">Other details</h3>
               
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Note */}
-                <div className="flex items-center gap-5">
-                  <AlignLeft className="w-[22px] h-[22px] text-[#A0A0A5] shrink-0" />
+                <div className="flex items-center gap-4">
+                  <AlignLeft className="w-[20px] h-[20px] text-[#A0A0A5] shrink-0" />
                   <input 
                     type="text"
                     value={note}
                     onChange={e => setNote(e.target.value)}
                     placeholder="Write a note"
-                    className="bg-transparent text-[15px] text-[#E1E1E5] outline-none w-full placeholder:text-[#4A4A52] font-medium"
+                    className="bg-transparent text-[14px] text-[#E1E1E5] outline-none w-full placeholder:text-[#4A4A52] font-medium"
                   />
                 </div>
 
                 {/* Tags (Expense Type) */}
                 <div>
-                  <div className="flex items-center gap-5 mb-3">
-                    <Hash className="w-[22px] h-[22px] text-[#A0A0A5] shrink-0" />
-                    <span className="text-[15px] text-[#4A4A52] font-medium">Add tags (Expense Type)</span>
+                  <div className="flex items-center gap-4 mb-2">
+                    <Hash className="w-[20px] h-[20px] text-[#A0A0A5] shrink-0" />
+                    <span className="text-[14px] text-[#4A4A52] font-medium">Add tags (Expense Type)</span>
                   </div>
-                  <div className="flex flex-wrap gap-2 pl-[42px]">
+                  <div className="flex flex-wrap gap-2 pl-[36px]">
                     {appCategories.map(cat => (
                       <button
                         key={cat}
@@ -590,10 +590,10 @@ export default function Dashboard() {
                 </div>
 
                 {/* Attachment */}
-                <div className="flex items-center justify-between cursor-not-allowed opacity-50">
-                  <div className="flex items-center gap-5">
-                    <Paperclip className="w-[22px] h-[22px] text-[#A0A0A5] shrink-0" />
-                    <span className="text-[15px] text-[#A0A0A5] font-medium">Add attachment</span>
+                <div className="flex items-center justify-between cursor-not-allowed opacity-50 pt-1">
+                  <div className="flex items-center gap-4">
+                    <Paperclip className="w-[20px] h-[20px] text-[#A0A0A5] shrink-0" />
+                    <span className="text-[14px] text-[#A0A0A5] font-medium">Add attachment</span>
                   </div>
                   <ChevronRight className="w-5 h-5 text-[#A0A0A5]" />
                 </div>
