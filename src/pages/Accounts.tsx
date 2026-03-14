@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
-import { Plus, Trash2, Pencil } from 'lucide-react';
+import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import { BankLogo } from '../components/BankLogo';
 import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
 
@@ -12,6 +12,16 @@ export default function Accounts() {
   const [bankName, setBankName] = useState('');
   const [accountLast4, setAccountLast4] = useState('');
   const [startingBalance, setStartingBalance] = useState('');
+  
+  const allTransactions = useLiveQuery(() => db.transactions.toArray()) || [];
+
+  const accountBreakdown = accounts.reduce((acc, account) => {
+    const txs = allTransactions.filter(tx => tx.accountId === account.id);
+    const inflow = txs.filter(tx => tx.type === 'CREDIT').reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    const outflow = txs.filter(tx => tx.type === 'DEBIT').reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    acc[account.id!] = { inflow, outflow };
+    return acc;
+  }, {} as Record<number, { inflow: number, outflow: number }>);
 
   const handleAddAccount = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -201,11 +211,33 @@ export default function Accounts() {
               <h3 className="text-xl font-bold text-[#222222] dark:text-[#F7F7F7]">{account.bankName}</h3>
               <p className="text-[#717171] dark:text-[#A0A0A0] font-medium mt-1">**** {account.accountLast4}</p>
             </div>
-            <div className="mt-6 pt-5 border-t border-[#EBEBEB] dark:border-[#222222]">
-              <p className="text-sm font-semibold text-[#717171] dark:text-[#A0A0A0]">Starting Balance</p>
-              <p className="text-lg font-bold text-[#222222] dark:text-[#F7F7F7] mt-0.5">
-                ₹{account.startingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-              </p>
+            <div className="mt-4 pt-4 border-t border-[#EBEBEB] dark:border-[#222222] space-y-3">
+              <div className="flex justify-between items-center">
+                <p className="text-xs font-bold text-[#717171] dark:text-[#A0A0A0] uppercase tracking-wider">Starting</p>
+                <p className="text-sm font-bold text-[#222222] dark:text-[#F7F7F7]">
+                  ₹{account.startingBalance.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-emerald-50 dark:bg-emerald-900/10 p-2.5 rounded-xl border border-emerald-100 dark:border-emerald-900/20">
+                  <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 mb-1">
+                    <ArrowDownLeft className="w-3 h-3" />
+                    <span className="text-[10px] font-black uppercase tracking-tight">Inflow</span>
+                  </div>
+                  <p className="text-sm font-black text-emerald-700 dark:text-emerald-300">
+                    ₹{(accountBreakdown[account.id!]?.inflow || 0).toLocaleString('en-IN')}
+                  </p>
+                </div>
+                <div className="bg-rose-50 dark:bg-rose-900/10 p-2.5 rounded-xl border border-rose-100 dark:border-rose-900/20">
+                  <div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 mb-1">
+                    <ArrowUpRight className="w-3 h-3" />
+                    <span className="text-[10px] font-black uppercase tracking-tight">Outflow</span>
+                  </div>
+                  <p className="text-sm font-black text-rose-700 dark:text-rose-300">
+                    ₹{(accountBreakdown[account.id!]?.outflow || 0).toLocaleString('en-IN')}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         ))}
