@@ -422,10 +422,9 @@ export default function Dashboard() {
             </div>
 
             {/* 3. Amount Section (Compact) */}
-            <div className="flex flex-col items-center py-2">
-              <span className="text-[#A0A0A5] text-[10px] font-bold tracking-widest uppercase mb-1">Enter Amount</span>
-              <div className="flex items-center gap-2 group transition-transform active:scale-95">
-                <span className="text-2xl font-bold text-[#A0A0A5]">₹</span>
+            <div className="flex flex-col items-center py-1">
+              <div className="flex items-center gap-1.5 active:scale-95 transition-transform">
+                <span className="text-lg font-bold text-[#A0A0A5]">₹</span>
                 <input 
                   type="number"
                   inputMode="decimal"
@@ -434,7 +433,7 @@ export default function Dashboard() {
                   onChange={e => setAmount(e.target.value)}
                   placeholder="0.00"
                   step="0.01"
-                  className="bg-transparent text-[42px] font-semibold text-white outline-none w-[180px] text-center placeholder:text-[#2C2C34]"
+                  className="bg-transparent text-[32px] font-bold text-white outline-none w-[140px] text-center placeholder:text-[#1C1C22]"
                 />
               </div>
             </div>
