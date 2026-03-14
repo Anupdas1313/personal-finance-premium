@@ -237,20 +237,6 @@ export default function Transactions() {
               <h1 className="text-3xl font-bold text-white tracking-tight">Analysis</h1>
               <div className="flex items-center gap-1.5">
                 <button 
-                  onClick={() => setIsSearchOpen(true)}
-                  className="p-2.5 bg-[#111111] border border-[#222222] rounded-full text-[#A0A0A0] hover:text-white transition-colors shadow-sm"
-                  title="Search"
-                >
-                  <Search className="w-5 h-5" />
-                </button>
-                <Link 
-                  to={`/transactions/table?start=${filterStart.toISOString()}&end=${filterEnd.toISOString()}`}
-                  className="p-2.5 bg-[#111111] border border-[#222222] rounded-full text-[#A0A0A0] hover:text-white transition-colors shadow-sm"
-                  title="View Table Report"
-                >
-                  <ListOrdered className="w-5 h-5" />
-                </Link>
-                <button 
                   onClick={() => setIsFiltersOpen(!isFiltersOpen)}
                   className={`p-2.5 border rounded-full transition-all shadow-sm ${
                     isFiltersOpen 
@@ -319,19 +305,29 @@ export default function Transactions() {
           ))}
         </div>
 
-        <div className="bg-[#111111] p-3 rounded-[28px] border border-[#222222] flex items-center justify-between shadow-sm">
-          <button onClick={handlePrevMonth} className="p-3 text-[#A0A0A0] hover:text-white transition-colors">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <div className="text-center">
-            <h2 className="text-lg font-bold text-[#F7F7F7] leading-none mb-1">{getHeaderText()}</h2>
-            <p className="text-[10px] font-black text-[#666666] tracking-[0.1em] uppercase">
-              {filteredTransactions.length} TRANSACTIONS
-            </p>
+        <div className="flex gap-2 items-stretch">
+          <div className="flex-1 bg-[#111111] p-1.5 rounded-2xl border border-[#222222] flex items-center justify-between shadow-sm">
+            <button onClick={handlePrevMonth} className="p-2 text-[#A0A0A0] hover:text-white transition-colors">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="text-center">
+              <h2 className="text-sm font-bold text-[#F7F7F7] leading-tight">{getHeaderText()}</h2>
+              <p className="text-[9px] font-black text-[#666666] tracking-[0.05em] uppercase">
+                {filteredTransactions.length} TXS
+              </p>
+            </div>
+            <button onClick={handleNextMonth} className="p-2 text-[#A0A0A0] hover:text-white transition-colors">
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
-          <button onClick={handleNextMonth} className="p-3 text-[#A0A0A0] hover:text-white transition-colors">
-            <ChevronRight className="w-5 h-5" />
-          </button>
+
+          <Link 
+            to={`/transactions/table?start=${filterStart.toISOString()}&end=${filterEnd.toISOString()}`}
+            className="w-1/3 flex items-center justify-center gap-2 bg-[#F7F7F7] text-[#111111] hover:bg-white rounded-2xl font-bold transition-all shadow-sm text-xs active:scale-95"
+          >
+            <ListOrdered className="w-4 h-4" />
+            Report
+          </Link>
         </div>
 
         {isFiltersOpen && (
@@ -489,25 +485,25 @@ export default function Transactions() {
                 <div className="bg-white dark:bg-[#111111] rounded-[20px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_6px_16px_rgba(0,0,0,0.04)] overflow-hidden">
                   <div className="divide-y divide-[#EBEBEB] dark:divide-[#222222]">
                     {txs.map(tx => (
-                      <div key={tx.id} onClick={() => { setSelectedTx(tx); setIsEditing(false); }} className="flex items-center gap-3 sm:gap-4 p-4 hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] transition-colors cursor-pointer group">
-                        <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xl sm:text-2xl shrink-0 ${CATEGORY_COLORS[tx.category] || CATEGORY_COLORS['Other']} group-hover:scale-105 transition-transform`}>
+                      <div key={tx.id} onClick={() => { setSelectedTx(tx); setIsEditing(false); }} className="flex items-center gap-3 p-3 hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] transition-colors cursor-pointer group">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0 ${CATEGORY_COLORS[tx.category] || CATEGORY_COLORS['Other']} group-hover:scale-105 transition-transform`}>
                           {CATEGORY_ICONS[tx.category] || '📝'}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <h4 className="text-base font-bold text-[#222222] dark:text-[#F7F7F7] truncate">
+                            <h4 className="text-sm font-bold text-[#222222] dark:text-[#F7F7F7] truncate">
                               <HighlightText text={tx.party || tx.category} highlight={searchTerm} />
                             </h4>
-                            {tx.expenseType && (<span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-100 dark:bg-[#222222] text-[#717171] dark:text-[#A0A0A0] whitespace-nowrap">{tx.expenseType}</span>)}
+                            {tx.expenseType && (<span className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-neutral-100 dark:bg-[#222222] text-[#717171] dark:text-[#A0A0A0] whitespace-nowrap">{tx.expenseType}</span>)}
                           </div>
-                          {tx.note && (<p className="text-sm text-[#717171] dark:text-[#A0A0A0] truncate mt-0.5"><HighlightText text={tx.note} highlight={searchTerm} /></p>)}
-                          <p className="text-xs font-medium text-[#B0B0B0] dark:text-[#666666] truncate mt-1 flex items-center gap-1">
+                          {tx.note && (<p className="text-xs text-[#717171] dark:text-[#A0A0A0] truncate mt-0.5"><HighlightText text={tx.note} highlight={searchTerm} /></p>)}
+                          <p className="text-[10px] font-medium text-[#B0B0B0] dark:text-[#666666] truncate mt-0.5 flex items-center gap-1">
                             {tx.paymentMethod === 'UPI' ? `UPI${tx.upiApp ? ` • ${tx.upiApp}` : ''}` : tx.paymentMethod === 'Bank' ? 'Bank' : 'Cash'}
                             <span className="w-1 h-1 rounded-full bg-[#EBEBEB] dark:bg-[#333333] mx-1"></span>
                             {format(tx.dateTime, 'h:mm a')}
                           </p>
                         </div>
-                        <div className={`text-lg font-black shrink-0 ${tx.type === 'CREDIT' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        <div className={`text-base font-black shrink-0 ${tx.type === 'CREDIT' ? 'text-emerald-600' : 'text-rose-600'}`}>
                           {tx.type === 'CREDIT' ? '+' : '-'} ₹{tx.amount.toLocaleString('en-IN')}
                         </div>
                       </div>
