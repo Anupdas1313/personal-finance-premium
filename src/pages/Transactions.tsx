@@ -291,7 +291,24 @@ export default function Transactions() {
           )}
         </div>
 
-        <div className="bg-[#0C0C0F] p-1 rounded-2xl flex items-center mb-6">
+        {/* Month Navigation Card - Full Width */}
+        <div className="bg-[#111111] p-1.5 rounded-2xl border border-[#222222] flex items-center justify-between shadow-sm mb-4">
+          <button onClick={handlePrevMonth} className="p-2 text-[#A0A0A0] hover:text-white transition-colors">
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <div className="text-center">
+            <h2 className="text-sm font-bold text-[#F7F7F7] leading-tight">{getHeaderText()}</h2>
+            <p className="text-[9px] font-black text-[#666666] tracking-[0.05em] uppercase">
+              {filteredTransactions.length} TXS
+            </p>
+          </div>
+          <button onClick={handleNextMonth} className="p-2 text-[#A0A0A0] hover:text-white transition-colors">
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Date Presets Selector */}
+        <div className="bg-[#0C0C0F] p-1 rounded-2xl flex items-center mb-4">
           {(['WEEK', 'MONTH', 'YEAR', 'CUSTOM'] as const).map((p) => (
             <button
               key={p}
@@ -305,30 +322,14 @@ export default function Transactions() {
           ))}
         </div>
 
-        <div className="flex gap-2 items-stretch">
-          <div className="flex-1 bg-[#111111] p-1.5 rounded-2xl border border-[#222222] flex items-center justify-between shadow-sm">
-            <button onClick={handlePrevMonth} className="p-2 text-[#A0A0A0] hover:text-white transition-colors">
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <div className="text-center">
-              <h2 className="text-sm font-bold text-[#F7F7F7] leading-tight">{getHeaderText()}</h2>
-              <p className="text-[9px] font-black text-[#666666] tracking-[0.05em] uppercase">
-                {filteredTransactions.length} TXS
-              </p>
-            </div>
-            <button onClick={handleNextMonth} className="p-2 text-[#A0A0A0] hover:text-white transition-colors">
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          <Link 
-            to={`/transactions/table?start=${filterStart.toISOString()}&end=${filterEnd.toISOString()}`}
-            className="w-1/3 flex items-center justify-center gap-2 bg-[#F7F7F7] text-[#111111] hover:bg-white rounded-2xl font-bold transition-all shadow-sm text-xs active:scale-95"
-          >
-            <ListOrdered className="w-4 h-4" />
-            Report
-          </Link>
-        </div>
+        {/* Report Button - Full Width */}
+        <Link 
+          to={`/transactions/table?start=${filterStart.toISOString()}&end=${filterEnd.toISOString()}`}
+          className="w-full py-3 flex items-center justify-center gap-2 bg-[#F7F7F7] text-[#111111] hover:bg-white rounded-2xl font-bold transition-all shadow-sm text-sm active:scale-95 mb-6"
+        >
+          <ListOrdered className="w-4 h-4" />
+          View Detailed Table Report
+        </Link>
 
         {isFiltersOpen && (
           <div className="mt-4 bg-[#111111] rounded-[24px] border border-[#222222] shadow-xl p-5 space-y-5 animate-in slide-in-from-top-2 duration-300">
