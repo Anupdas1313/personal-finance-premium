@@ -413,15 +413,15 @@ export default function Dashboard() {
       {/* Manual Entry Modal - Compact Pill-Based UX Redesign */}
       {isAddingManual && createPortal(
         <div className="fixed inset-0 bg-[#0F0F13] text-white z-[9999] flex flex-col animate-in fade-in slide-in-from-bottom-5 duration-300 font-sans">
-          <div className="flex items-center justify-between px-4 py-3.5 pt-safe-top bg-[#1C1C22] border-b border-white/5 z-20">
-            <button onClick={closeMenu} className="text-[#A0A0A5] hover:text-white p-2 -ml-2 transition-colors">
-              <ArrowLeft className="w-6 h-6" />
+          <div className="flex items-center justify-between px-4 py-2 pt-safe-top bg-[#1C1C22] border-b border-white/5 z-20">
+            <button onClick={closeMenu} className="text-[#A0A0A5] hover:text-white p-1.5 -ml-1 transition-colors">
+              <ArrowLeft className="w-5 h-5" />
             </button>
-            <h2 className="text-[17px] font-bold text-white tracking-tight">Add Transaction</h2>
-            <div className="w-10" /> {/* Spacer to balance back arrow */}
+            <h2 className="text-[15px] font-bold text-white tracking-tight">Add Transaction</h2>
+            <div className="w-8" /> {/* Spacer to balance back arrow */}
           </div>
 
-          <div className="flex-1 overflow-y-auto w-full px-4 pt-4 pb-safe space-y-5 scrollbar-hide no-scrollbar">
+          <div className="flex-1 overflow-y-auto w-full px-4 pt-3 pb-safe space-y-5 scrollbar-hide no-scrollbar">
             
             {/* 1. Transaction Type Toggle (Top Priority) */}
             <div className="flex bg-[#1C1C22] p-1 rounded-2xl border border-white/5">
