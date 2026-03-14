@@ -4,6 +4,7 @@ import { ArrowUpRight, ArrowDownRight, Wallet, Plus, X, AlertCircle, CheckCircle
 import { format, startOfMonth, startOfYear, isToday, isYesterday } from 'date-fns';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useCategories } from '../hooks/useCategories';
 
 const CATEGORIES = ['Food', 'Transport', 'Rent', 'Shopping', 'Bills', 'Entertainment', 'Salary', 'Transfer', 'Other'];
@@ -363,8 +364,8 @@ export default function Dashboard() {
       </div>
 
       {/* Manual Entry Modal - Full Screen Mobile Redesign */}
-      {isAddingManual && (
-        <div className="fixed inset-0 bg-white dark:bg-[#0C0C0F] md:bg-black/50 md:backdrop-blur-sm z-[100] flex flex-col md:items-center md:justify-center md:p-4 animate-in slide-in-from-bottom-5 md:fade-in md:slide-in-from-bottom-0 duration-300">
+      {isAddingManual && createPortal(
+        <div className="fixed inset-0 bg-white dark:bg-[#0C0C0F] text-[#222222] dark:text-[#F7F7F7] md:bg-black/50 md:backdrop-blur-sm z-[9999] flex flex-col md:items-center md:justify-center md:p-4 animate-in slide-in-from-bottom-5 md:fade-in md:slide-in-from-bottom-0 duration-300">
           <div className="bg-white dark:bg-[#0C0C0F] w-full h-full md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-[24px] shadow-2xl flex flex-col pt-safe-top">
             <div className="p-4 md:p-6 border-b border-[#EBEBEB] dark:border-[#1A1A1E] flex justify-between items-center bg-white dark:bg-[#0C0C0F] z-10 md:rounded-t-[24px] shrink-0">
               <h2 className="text-xl font-extrabold text-[#222222] dark:text-[#F7F7F7]">Add Transaction</h2>
@@ -550,7 +551,8 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
