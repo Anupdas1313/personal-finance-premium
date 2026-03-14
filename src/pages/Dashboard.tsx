@@ -631,48 +631,48 @@ export default function Dashboard() {
 
 
 
-
+              {/* Compact Actions inside the form */}
+              <div className="pt-2 space-y-3">
+                {status === 'success' && (
+                  <div className="flex items-center justify-center gap-2 py-1 text-emerald-500 font-bold text-xs animate-in fade-in slide-in-from-bottom-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Transaction saved successfully
+                  </div>
+                )}
+                {status === 'error' && (
+                  <div className="flex items-center justify-center gap-2 py-1 text-rose-500 font-bold text-xs">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    {errorMessage}
+                  </div>
+                )}
+                
+                <div className="flex gap-2">
+                  <button 
+                    onClick={closeMenu}
+                    className="flex-1 py-3 rounded-xl font-bold text-[14px] text-[#A0A0A5] bg-[#1C1C22] border border-white/5 hover:bg-[#2C2C34] transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleSaveManual}
+                    disabled={!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
+                    className={`flex-[2] py-3 rounded-xl font-extrabold text-[14px] transition-all transform active:scale-[0.98] ${
+                      (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
+                      ? 'bg-[#2C2C34] text-[#5A5A62] cursor-not-allowed opacity-50'
+                      : 'bg-[#3B3B98] text-white shadow-lg hover:bg-[#4545B0]'
+                    }`}
+                  >
+                    {status === 'success' ? 'Saved!' : 'Save Transaction'}
+                  </button>
+                </div>
+              </div>
             </div>
 
 
 
           </div>
 
-          {/* Bottom Action Bar */}
-          <div className="p-4 bg-[#1C1C22] border-t border-white/5 pb-safe-bottom">
-            {status === 'success' && (
-              <div className="flex items-center justify-center gap-2 pb-4 text-emerald-500 font-bold text-sm animate-in fade-in slide-in-from-bottom-2">
-                <CheckCircle2 className="w-4 h-4" />
-                Transaction saved successfully
-              </div>
-            )}
-            {status === 'error' && (
-              <div className="flex items-center justify-center gap-2 pb-4 text-rose-500 font-bold text-sm">
-                <AlertCircle className="w-4 h-4" />
-                {errorMessage}
-              </div>
-            )}
-            
-            <div className="flex gap-3">
-              <button 
-                onClick={closeMenu}
-                className="flex-1 py-4 rounded-2xl font-bold text-[15px] text-[#A0A0A5] bg-[#2C2C34] hover:bg-[#34343C] transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleSaveManual}
-                disabled={!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
-                className={`flex-[2] py-4 rounded-2xl font-extrabold text-[15px] transition-all transform active:scale-[0.98] ${
-                  (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
-                  ? 'bg-[#2C2C34] text-[#5A5A62] cursor-not-allowed opacity-50'
-                  : 'bg-[#3B3B98] text-white shadow-[0_8px_24px_rgba(59,59,152,0.3)] hover:bg-[#4545B0]'
-                }`}
-              >
-                {status === 'success' ? 'Saved!' : 'Save Transaction'}
-              </button>
-            </div>
-          </div>
+
         </div>,
         document.body
       )}
