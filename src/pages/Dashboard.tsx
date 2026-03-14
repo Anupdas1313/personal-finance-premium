@@ -444,6 +444,28 @@ export default function Dashboard() {
                 Transfer
               </button>
             </div>
+            {/* Date and Time Selector */}
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold text-[#A0A0A5] uppercase tracking-wider px-1">Date & Time</p>
+              <div className="relative">
+                <div className="bg-[#1C1C22] p-3 rounded-xl border border-white/5 flex items-center justify-between active:bg-[#2C2C34] transition-colors">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="w-4 h-4 text-[#6C6CF0]" />
+                    <span className="text-[13px] font-bold text-white">
+                      {isToday(new Date(transactionDate)) ? 'Today, ' : isYesterday(new Date(transactionDate)) ? 'Yesterday, ' : format(new Date(transactionDate), 'dd MMM, ')}
+                      {format(new Date(transactionDate), 'hh:mm a')}
+                    </span>
+                  </div>
+                  <input 
+                    type="datetime-local"
+                    value={transactionDate}
+                    onChange={(e) => setTransactionDate(e.target.value)}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  />
+                  <ChevronDown className="w-4 h-4 text-[#717171]" />
+                </div>
+              </div>
+            </div>
 
             {/* 2. Important Filter Tags (#personal, #home) - Ultra Compact Scrollable */}
             {type !== 'TRANSFER' && (
