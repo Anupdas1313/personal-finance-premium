@@ -1,21 +1,63 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
-import { ArrowUpRight, ArrowDownRight, Wallet, Plus, X, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { ArrowUpRight, ArrowDownRight, Wallet, Plus, X, AlertCircle, CheckCircle2, Search, ChevronDown, Landmark, Smartphone } from 'lucide-react';
+import { format, startOfMonth, startOfYear, isToday, isYesterday } from 'date-fns';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
 import { useCategories } from '../hooks/useCategories';
 
 const CATEGORIES = ['Food', 'Transport', 'Rent', 'Shopping', 'Bills', 'Entertainment', 'Salary', 'Transfer', 'Other'];
+
+const CATEGORY_ICONS: Record<string, string> = {
+  'Food': '🍔',
+  'Transport': '🚗',
+  'Rent': '🏠',
+  'Shopping': '🛍️',
+  'Bills': '⚡',
+  'Entertainment': '🎬',
+  'Salary': '💰',
+  'Transfer': '💸',
+  'Other': '📝'
+};
+
+const CATEGORY_COLORS: Record<string, string> = {
+  'Food': 'bg-orange-900/40 text-orange-500',
+  'Transport': 'bg-blue-900/40 text-blue-500',
+  'Rent': 'bg-purple-900/40 text-purple-500',
+  'Shopping': 'bg-pink-900/40 text-pink-500',
+  'Bills': 'bg-yellow-900/40 text-yellow-500',
+  'Entertainment': 'bg-red-900/40 text-red-500',
+  'Salary': 'bg-emerald-900/40 text-emerald-500',
+  'Transfer': 'bg-[#1C1C24] text-[#A0A0A0]',
+  'Other': 'bg-[#1C1C24] text-[#A0A0A0]'
+};
 
 import { IndusIndLogo } from '../components/IndusIndLogo';
 import { UnionBankLogo } from '../components/UnionBankLogo';
 
 export default function Dashboard() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
   const transactions = useLiveQuery(() => db.transactions.orderBy('dateTime').reverse().limit(5).toArray()) || [];
 
-  const [isAddingManual, setIsAddingManual] = useState(false);
+  const [isAddingManual, setIsAddingManual] = useState(searchParams.get('add') === 'true');
+
+  // Sync state with URL
+  useEffect(() => {
+    if (searchParams.get('add') === 'true') {
+      setIsAddingManual(true);
+    }
+  }, [searchParams]);
+
+  const closeMenu = () => {
+    setIsAddingManual(false);
+    if (searchParams.get('add')) {
+      navigate('/', { replace: true });
+    }
+  };
+
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<'CREDIT' | 'DEBIT' | ''>('');
   const [category, setCategory] = useState('Other');
@@ -30,6 +72,7 @@ export default function Dashboard() {
   const [expenseType, setExpenseType] = useState<string>('');
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [timeFilter, setTimeFilter] = useState<'All Time' | 'This Month' | 'This Year'>('All Time');
   
   const { categories: appCategories } = useCategories();
 
@@ -56,7 +99,7 @@ export default function Dashboard() {
       
       setStatus('success');
       setTimeout(() => {
-        setIsAddingManual(false);
+        closeMenu();
         setStatus('idle');
         setAmount('');
         setType('');
@@ -106,49 +149,126 @@ export default function Dashboard() {
     return { ...acc, currentBalance };
   });
 
+  const filteredTransactions = useMemo(() => {
+    const now = new Date();
+    if (timeFilter === 'This Month') {
+      const monthStart = startOfMonth(now);
+      return allTransactions.filter(tx => tx.dateTime >= monthStart);
+    }
+    if (timeFilter === 'This Year') {
+      const yearStart = startOfYear(now);
+      return allTransactions.filter(tx => tx.dateTime >= yearStart);
+    }
+    return allTransactions;
+  }, [allTransactions, timeFilter]);
+
+  const { totalIncome, totalSpending } = useMemo(() => {
+    return filteredTransactions.reduce(
+      (acc, tx) => {
+        if (tx.type === 'CREDIT') acc.totalIncome += tx.amount;
+        if (tx.type === 'DEBIT') acc.totalSpending += tx.amount;
+        return acc;
+      },
+      { totalIncome: 0, totalSpending: 0 }
+    );
+  }, [filteredTransactions]);
+
+  const netBalance = totalIncome - totalSpending;
+
   const totalBalance = balances.reduce((sum, acc) => sum + acc.currentBalance, 0);
+
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }, []);
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-[#222222] dark:text-[#F7F7F7]">Dashboard</h1>
-        <button
-          onClick={() => setIsAddingManual(true)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl hover:bg-black dark:hover:bg-neutral-200 transition-colors font-semibold shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Add Transaction
-        </button>
+      {/* Greeting Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-semibold text-[#717171] dark:text-[#A0A0A0] tracking-wide">{greeting},</p>
+          <h1 className="text-2xl font-extrabold text-[#222222] dark:text-[#F7F7F7] leading-tight">Anup 👋</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsAddingManual(true)}
+            title="Add Transaction"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-neutral-100 dark:bg-[#0C0C0F] text-[#222222] dark:text-[#F7F7F7] hover:bg-neutral-200 dark:hover:bg-[#15151A] transition-colors border border-transparent dark:border-[#1A1A1E]"
+          >
+            <Search className="w-5 h-5" />
+          </button>
+          <div
+            title="Anup"
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#3B3B98] to-[#6C6CF0] flex items-center justify-center text-white font-bold text-sm select-none shadow-md cursor-pointer"
+          >
+            A
+          </div>
+        </div>
       </div>
 
-      {/* Total Balance Card */}
-      <div className="bg-white dark:bg-[#111111] p-6 rounded-[20px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] dark:border-[#222222] flex items-center justify-between">
-        <div>
-          <p className="text-sm font-semibold text-[#717171] dark:text-[#A0A0A0]">Total Balance</p>
-          <p className="text-4xl font-bold text-[#222222] dark:text-[#F7F7F7] mt-1 tracking-tight">
-            ₹{totalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-          </p>
+      {/* Cash Flow Hero Card */}
+      <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#1C1C24] via-[#1E1A22] to-[#1C1F26] p-6 shadow-xl border border-white/5">
+        {/* Subtle glowing orb effects */}
+        <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+
+        <div className="relative z-10 flex items-center justify-between mb-8">
+          <h2 className="text-xs font-bold text-white/60 tracking-widest uppercase">Cash Flow</h2>
+          <div className="relative">
+            <select
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(e.target.value as any)}
+              className="appearance-none bg-white/10 hover:bg-white/15 text-white/90 text-sm font-semibold px-4 py-1.5 rounded-full pr-8 cursor-pointer outline-none transition-colors border border-white/10 backdrop-blur-md"
+            >
+              <option className="text-black bg-white" value="This Month">This Month</option>
+              <option className="text-black bg-white" value="This Year">This Year</option>
+              <option className="text-black bg-white" value="All Time">All Time</option>
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70 pointer-events-none" />
+          </div>
         </div>
-        <div className="w-16 h-16 bg-neutral-100 dark:bg-[#1A1A1A] rounded-full flex items-center justify-center">
-          <Wallet className="w-8 h-8 text-[#222222] dark:text-[#F7F7F7]" />
+
+        <div className="relative z-10 flex justify-between items-end mb-8">
+          <div>
+            <p className="text-xs font-bold text-rose-400/90 tracking-wider uppercase mb-1">Spending</p>
+            <p className="text-3xl font-bold text-white tracking-tight">
+              ₹{totalSpending.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs font-bold text-emerald-400/90 tracking-wider uppercase mb-1">Income</p>
+            <p className="text-3xl font-bold text-white tracking-tight">
+              ₹{totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+        </div>
+
+        <div className="relative z-10 bg-white/5 border border-white/10 rounded-2xl p-4 flex justify-between items-center backdrop-blur-sm">
+          <p className="text-sm font-semibold text-white/50 border-b border-dashed border-white/20 pb-0.5">Net Balance</p>
+          <p className={`text-lg font-bold ${netBalance >= 0 ? 'text-white' : 'text-rose-400'}`}>
+            {netBalance < 0 ? '-' : ''}₹{Math.abs(netBalance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+          </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Accounts List */}
-        <div className="bg-white dark:bg-[#111111] rounded-[20px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] dark:border-[#222222] overflow-hidden">
-          <div className="p-6 border-b border-[#EBEBEB] dark:border-[#222222] flex justify-between items-center">
+        <div className="bg-white dark:bg-[#0C0C0F] rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] dark:border-[#1A1A1E] overflow-hidden">
+          <div className="p-6 border-b border-[#EBEBEB] dark:border-[#1A1A1E] flex justify-between items-center">
             <h2 className="text-lg font-bold text-[#222222] dark:text-[#F7F7F7]">Your Accounts</h2>
-            <Link to="/accounts" className="text-sm font-semibold text-[#222222] dark:text-[#F7F7F7] hover:underline">Manage</Link>
+            <Link to="/accounts" className="text-sm font-semibold text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7] transition-colors">Manage</Link>
           </div>
-          <div className="divide-y divide-[#EBEBEB]">
+          <div className="divide-y divide-[#EBEBEB] dark:divide-[#1A1A1E]">
             {balances.length === 0 ? (
               <div className="p-6 text-center text-[#717171] dark:text-[#A0A0A0] text-sm">No accounts added yet.</div>
             ) : (
               balances.map(acc => (
-                <div key={acc.id} className="p-4 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] transition-colors">
+                <div key={acc.id} className="p-4 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-[#15151A] transition-colors group cursor-pointer" onClick={() => navigate('/accounts')}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-neutral-100 dark:bg-[#1A1A1A] rounded-full flex items-center justify-center text-[#717171] dark:text-[#A0A0A0] font-bold overflow-hidden p-1">
+                    <div className="w-10 h-10 bg-neutral-100 dark:bg-[#15151A] rounded-full flex items-center justify-center text-[#717171] dark:text-[#A0A0A0] font-bold overflow-hidden p-1 border border-transparent dark:border-[#1A1A1E]">
                       {acc.bankName.toLowerCase().includes('canara') ? (
                         <img src="https://crystalpng.com/wp-content/uploads/2025/11/Canara-Bank-Logo.png" alt="Canara Bank" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                       ) : acc.bankName.toLowerCase().includes('indus') || acc.bankName.toLowerCase().includes('insus') ? (
@@ -161,7 +281,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <p className="font-bold text-[#222222] dark:text-[#F7F7F7]">{acc.bankName}</p>
-                      <p className="text-xs text-[#717171] dark:text-[#A0A0A0] font-medium">**** {acc.accountLast4}</p>
+                      <p className="text-xs text-[#717171] dark:text-[#A0A0A0] font-medium mt-0.5">**** {acc.accountLast4}</p>
                     </div>
                   </div>
                   <p className="font-bold text-[#222222] dark:text-[#F7F7F7]">
@@ -174,38 +294,58 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Transactions */}
-        <div className="bg-white dark:bg-[#111111] rounded-[20px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] dark:border-[#222222] overflow-hidden">
-          <div className="p-6 border-b border-[#EBEBEB] dark:border-[#222222] flex justify-between items-center">
+        <div className="bg-transparent overflow-hidden">
+          <div className="pb-4 flex justify-between items-center px-1">
             <h2 className="text-lg font-bold text-[#222222] dark:text-[#F7F7F7]">Recent Transactions</h2>
-            <Link to="/transactions" className="text-sm font-semibold text-[#222222] dark:text-[#F7F7F7] hover:underline">View All</Link>
+            <Link to="/transactions" className="text-sm font-semibold text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7] transition-colors">View All</Link>
           </div>
-          <div className="divide-y divide-[#EBEBEB]">
+          <div className="space-y-3">
             {transactions.length === 0 ? (
-              <div className="p-6 text-center text-[#717171] dark:text-[#A0A0A0] text-sm">No transactions yet.</div>
+              <div className="p-6 text-center text-[#717171] dark:text-[#A0A0A0] text-sm bg-white dark:bg-[#0C0C0F] rounded-[24px] border border-[#EBEBEB] dark:border-[#1A1A1E]">No transactions yet.</div>
             ) : (
               transactions.map(tx => {
                 const account = accounts.find(a => a.id === tx.accountId);
+                
+                // Format relative date
+                let dateStr = '';
+                if (isToday(tx.dateTime)) dateStr = 'Today';
+                else if (isYesterday(tx.dateTime)) dateStr = 'Yesterday';
+                else dateStr = format(tx.dateTime, 'MMM dd');
+
+                // Helper to get squircle icon styling based on dark mode category
+                const catColorClasses = CATEGORY_COLORS[tx.category] || CATEGORY_COLORS['Other'];
+
                 return (
-                  <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        tx.type === 'CREDIT' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                  <div key={tx.id} className="p-4 bg-white dark:bg-[#0C0C0F] border border-[#EBEBEB] dark:border-[#1A1A1E] rounded-[24px] flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-[#15151A] transition-colors shadow-sm group cursor-pointer" onClick={() => navigate('/transactions')}>
+                    <div className="flex items-center gap-4">
+                      {/* Squircle Icon */}
+                      <div className={`w-12 h-12 rounded-[16px] flex items-center justify-center text-xl shrink-0 ${
+                        document.documentElement.classList.contains('dark') ? catColorClasses : 'bg-neutral-100 text-neutral-800'
                       }`}>
-                        {tx.type === 'CREDIT' ? <ArrowDownRight className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+                        {CATEGORY_ICONS[tx.category] || '📝'}
                       </div>
+                      
+                      {/* Title & Subtext */}
                       <div>
-                        <p className="font-bold text-[#222222] dark:text-[#F7F7F7]">{tx.party || tx.note || tx.category}</p>
-                        <p className="text-xs text-[#717171] dark:text-[#A0A0A0] font-medium mt-0.5">
-                          {tx.note && tx.party ? `${tx.note} • ` : ''}
-                          {format(tx.dateTime, 'MMM dd, yyyy • hh:mm a')}
-                          {account && ` • ${account.bankName} ****${account.accountLast4}`}
-                          {tx.paymentMethod && ` • ${tx.paymentMethod === 'UPI' ? `UPI (${tx.upiApp})` : 'Bank'}`}
+                        <p className="font-bold text-[#222222] dark:text-[#F7F7F7] text-base group-hover:text-black dark:group-hover:text-white transition-colors">
+                          {tx.party || tx.note || tx.category}
                         </p>
+                        <div className="flex items-center text-xs text-[#717171] dark:text-[#A0A0A0] font-medium mt-0.5 gap-1.5">
+                          {tx.paymentMethod === 'UPI' ? <Smartphone className="w-3.5 h-3.5" /> : tx.paymentMethod === 'Bank' ? <Landmark className="w-3.5 h-3.5" /> : <Wallet className="w-3.5 h-3.5" />}
+                          <span>{tx.paymentMethod === 'UPI' ? `UPI${tx.upiApp ? ` (${tx.upiApp})` : ''}` : tx.paymentMethod === 'Bank' ? 'Bank' : 'Cash'}</span>
+                        </div>
                       </div>
                     </div>
-                    <p className={`font-semibold ${tx.type === 'CREDIT' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                      {tx.type === 'CREDIT' ? '+' : '-'}₹{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </p>
+                    
+                    {/* Amount & Date (Right Aligned) */}
+                    <div className="text-right">
+                      <p className={`font-bold text-base tracking-tight ${tx.type === 'CREDIT' ? 'text-emerald-500' : 'text-[#222222] dark:text-[#F7F7F7]'}`}>
+                        {tx.type === 'CREDIT' ? '+' : ''}₹{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-xs text-[#717171] dark:text-[#A0A0A0] font-medium mt-0.5">
+                        {dateStr}
+                      </p>
+                    </div>
                   </div>
                 );
               })
@@ -221,7 +361,7 @@ export default function Dashboard() {
             <div className="p-6 border-b border-[#EBEBEB] dark:border-[#222222] flex justify-between items-center sticky top-0 bg-white dark:bg-[#111111] z-10">
               <h2 className="text-xl font-bold text-[#222222] dark:text-[#F7F7F7]">Manual Transaction Entry</h2>
               <button
-                onClick={() => setIsAddingManual(false)}
+                onClick={closeMenu}
                 className="text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7] transition-colors p-2 hover:bg-neutral-100 dark:hover:bg-[#222222] dark:bg-[#1A1A1A] rounded-full"
               >
                 <X className="w-5 h-5" />
@@ -398,7 +538,7 @@ export default function Dashboard() {
 
               <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-[#EBEBEB] dark:border-[#222222]">
                 <button
-                  onClick={() => setIsAddingManual(false)}
+                  onClick={closeMenu}
                   className="px-6 py-3 text-[#222222] dark:text-[#F7F7F7] hover:bg-neutral-100 dark:hover:bg-[#222222] dark:bg-[#1A1A1A] font-bold rounded-xl transition-colors"
                 >
                   Cancel
