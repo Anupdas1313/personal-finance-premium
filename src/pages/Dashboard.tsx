@@ -35,6 +35,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 import { IndusIndLogo } from '../components/IndusIndLogo';
 import { UnionBankLogo } from '../components/UnionBankLogo';
+import { BankLogo } from '../components/BankLogo';
 
 export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -467,55 +468,10 @@ export default function Dashboard() {
             )}
 
             {/* 3. Amount & Account Row */}
-            <div className={`${type === 'TRANSFER' ? 'space-y-3' : 'grid grid-cols-2 gap-3'}`}>
-              <div className={`flex gap-3 ${type === 'TRANSFER' ? 'flex-col sm:flex-row' : ''}`}>
-                {/* Account Selection (Source or Only Account) */}
-                <div className="flex-1 bg-[#1C1C22] p-3.5 rounded-2xl border border-white/5 flex items-center gap-2 focus-within:border-white/20 transition-colors relative">
-                  <Landmark className="w-5 h-5 text-[#A0A0A5] shrink-0" />
-                  <div className="flex flex-col flex-1">
-                    {type === 'TRANSFER' && <span className="text-[8px] font-bold text-[#A0A0A5] uppercase mb-0.5">From Account</span>}
-                    <select 
-                      value={selectedAccountId}
-                      onChange={e => setSelectedAccountId(Number(e.target.value))}
-                      className="bg-transparent text-[14px] font-bold text-white outline-none w-full appearance-none pr-4 cursor-pointer"
-                    >
-                      <option value="" disabled className="bg-[#1C1C22] text-[#A0A0A5]">Select Account</option>
-                      {accounts.map(acc => (
-                        <option key={acc.id} value={acc.id} className="bg-[#1C1C22] text-white">
-                          {acc.bankName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4A4A52] pointer-events-none" />
-                </div>
-
-                {type === 'TRANSFER' && (
-                  <div className="flex-1 bg-[#1C1C22] p-3.5 rounded-2xl border border-white/5 flex items-center gap-2 focus-within:border-white/20 transition-colors relative animate-in fade-in slide-in-from-right-2">
-                    <ArrowUpRight className="w-5 h-5 text-indigo-500 shrink-0" />
-                    <div className="flex flex-col flex-1">
-                      <span className="text-[8px] font-bold text-[#A0A0A5] uppercase mb-0.5">To Account</span>
-                      <select 
-                        value={toAccountId}
-                        onChange={e => setToAccountId(Number(e.target.value))}
-                        className="bg-transparent text-[14px] font-bold text-white outline-none w-full appearance-none pr-4 cursor-pointer"
-                      >
-                        <option value="" disabled className="bg-[#1C1C22] text-[#A0A0A5]">Select Account</option>
-                        {accounts.map(acc => (
-                          <option key={acc.id} value={acc.id} className="bg-[#1C1C22] text-white">
-                            {acc.bankName}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4A4A52] pointer-events-none" />
-                  </div>
-                )}
-              </div>
-
-              {/* Amount Input */}
-              <div className="bg-[#1C1C22] p-3.5 rounded-2xl border border-white/5 flex items-center gap-2 focus-within:border-white/20 transition-colors">
-                <span className="text-lg font-bold text-[#A0A0A5]">₹</span>
+            <div className={`space-y-4`}>
+              {/* Amount Input (Full Width on Left) */}
+              <div className="bg-[#1C1C22] p-4 rounded-2xl border border-white/5 flex items-center gap-3 focus-within:border-white/20 transition-all shadow-inner">
+                <span className="text-xl font-bold text-[#A0A0A5]">₹</span>
                 <input 
                   type="number"
                   inputMode="decimal"
@@ -524,8 +480,51 @@ export default function Dashboard() {
                   onChange={e => setAmount(e.target.value)}
                   placeholder="0.00"
                   step="0.01"
-                  className="bg-transparent text-[22px] font-bold text-white outline-none w-full placeholder:text-[#2C2C34]"
+                  className="bg-transparent text-[32px] font-bold text-white outline-none w-full placeholder:text-[#2C2C34]"
                 />
+              </div>
+
+              {/* Account Selection (Source/Transfer) */}
+              <div className="space-y-2">
+                <p className="text-[10px] font-bold text-[#A0A0A5] uppercase tracking-wider px-1">
+                  {type === 'TRANSFER' ? 'Select Accounts' : 'Choose Account'}
+                </p>
+                
+                <div className="flex gap-2.5 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
+                  {accounts.map(acc => (
+                    <button 
+                      key={acc.id} 
+                      onClick={() => {
+                        if (type === 'TRANSFER') {
+                          if (!selectedAccountId) setSelectedAccountId(acc.id!);
+                          else if (selectedAccountId === acc.id) setSelectedAccountId('');
+                          else setToAccountId(acc.id!);
+                        } else {
+                          setSelectedAccountId(acc.id!);
+                        }
+                      }}
+                      className={`min-w-[120px] p-3 rounded-2xl border transition-all flex flex-col items-center gap-2 group relative ${
+                        selectedAccountId === acc.id || toAccountId === acc.id
+                          ? 'bg-[#3B3B98]/20 border-[#3B3B98] text-white' 
+                          : 'bg-[#1C1C22] border-white/5 text-[#A0A0A5]'
+                      }`}
+                    >
+                      {selectedAccountId === acc.id && (
+                        <div className="absolute -top-1.5 -left-1.5 bg-[#3B3B98] text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-lg">FROM</div>
+                      )}
+                      {toAccountId === acc.id && (
+                        <div className="absolute -top-1.5 -right-1.5 bg-indigo-500 text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-lg">TO</div>
+                      )}
+                      
+                      <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center p-2 shadow-sm group-active:scale-95 transition-transform">
+                        <BankLogo bankName={acc.bankName} className="w-full h-full" />
+                      </div>
+                      <span className="text-[11px] font-bold whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">
+                        {acc.bankName}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
