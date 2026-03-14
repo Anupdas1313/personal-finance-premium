@@ -254,48 +254,7 @@ export default function Transactions() {
           </button>
         </div>
         
-        <div className="relative bg-white dark:bg-[#111111] rounded-[24px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_6px_16px_rgba(0,0,0,0.04)] py-5">
-          <button className="absolute top-3 right-3 p-1.5 text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-100 dark:hover:bg-[#222222] rounded-full transition-colors border border-[#EBEBEB] dark:border-[#222222] shadow-sm bg-white dark:bg-[#111111] z-10">
-            <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </button>
-          
-          <div className="grid grid-cols-3 divide-x divide-[#EBEBEB] dark:divide-[#222222]">
-            <div className="flex flex-col items-center justify-center text-center px-1">
-              <div className="flex items-center justify-center gap-1.5 mb-2">
-                <ArrowDownLeft className="w-3.5 h-3.5 text-rose-500" />
-                <span className="text-[11px] sm:text-sm font-semibold text-[#717171] dark:text-[#A0A0A0]">Total Outflow</span>
-              </div>
-              <p className="text-base sm:text-2xl font-bold text-rose-600 tracking-tight truncate w-full">
-                -₹{totalExpense.toLocaleString('en-IN')}
-              </p>
-            </div>
-            <div className="flex flex-col items-center justify-center text-center px-1">
-              <div className="flex items-center justify-center gap-1.5 mb-2">
-                <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />
-                <span className="text-[11px] sm:text-sm font-semibold text-[#717171] dark:text-[#A0A0A0]">Total Inflow</span>
-              </div>
-              <p className="text-base sm:text-2xl font-bold text-emerald-600 tracking-tight truncate w-full">
-                +₹{totalIncome.toLocaleString('en-IN')}
-              </p>
-            </div>
-            <div className="flex flex-col items-center justify-center text-center px-1">
-              <div className="flex items-center justify-center gap-1.5 mb-2">
-                <Wallet className="w-3.5 h-3.5 text-[#222222] dark:text-[#F7F7F7]" />
-                <span className="text-[11px] sm:text-sm font-semibold text-[#717171] dark:text-[#A0A0A0]">Net Balance</span>
-              </div>
-              <p className={`text-base sm:text-2xl font-bold tracking-tight truncate w-full ${balance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                {balance >= 0 ? '+' : '-'}₹{Math.abs(balance).toLocaleString('en-IN')}
-              </p>
-            </div>
-          </div>
 
-          {/* Transaction Count Badge */}
-          <div className="mt-3 pt-3 border-t border-[#EBEBEB] dark:border-[#222222] text-center">
-            <span className="text-xs font-bold text-[#B0B0B0] dark:text-[#666666]">
-              {filteredTransactions.length} transaction{filteredTransactions.length !== 1 ? 's' : ''} found
-            </span>
-          </div>
-        </div>
 
         <div className="mt-4 flex flex-col gap-3">
           {/* Smart Search Bar */}
