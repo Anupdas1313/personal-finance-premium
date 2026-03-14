@@ -421,9 +421,10 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* 3. Amount Section (Compact) */}
-            <div className="flex flex-col items-center py-1">
-              <div className="flex items-center gap-1.5 active:scale-95 transition-transform">
+            {/* 3. Amount & Account Row */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Amount Input */}
+              <div className="bg-[#1C1C22] p-3.5 rounded-2xl border border-white/5 flex items-center gap-2 focus-within:border-white/20 transition-colors">
                 <span className="text-lg font-bold text-[#A0A0A5]">₹</span>
                 <input 
                   type="number"
@@ -433,8 +434,28 @@ export default function Dashboard() {
                   onChange={e => setAmount(e.target.value)}
                   placeholder="0.00"
                   step="0.01"
-                  className="bg-transparent text-[32px] font-bold text-white outline-none w-[140px] text-center placeholder:text-[#1C1C22]"
+                  className="bg-transparent text-[22px] font-bold text-white outline-none w-full placeholder:text-[#2C2C34]"
                 />
+              </div>
+
+              {/* Account Dropdown */}
+              <div className="bg-[#1C1C22] p-3.5 rounded-2xl border border-white/5 flex items-center gap-2 focus-within:border-white/20 transition-colors relative">
+                <Landmark className="w-5 h-5 text-[#A0A0A5] shrink-0" />
+                <select 
+                  value={selectedAccountId}
+                  onChange={e => setSelectedAccountId(Number(e.target.value))}
+                  className="bg-transparent text-[14px] font-bold text-white outline-none w-full appearance-none pr-4 cursor-pointer"
+                >
+                  <option value="" disabled className="bg-[#1C1C22] text-[#A0A0A5]">Select Account</option>
+                  {accounts.map(acc => (
+                    <option key={acc.id} value={acc.id} className="bg-[#1C1C22] text-white">
+                      {acc.bankName}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <ChevronDown className="w-4 h-4 text-[#4A4A52]" />
+                </div>
               </div>
             </div>
 
@@ -492,26 +513,7 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Source Account */}
-              <div className="space-y-1.5">
-                <p className="text-[10px] font-bold text-[#A0A0A5] uppercase tracking-wider px-1">Account</p>
-                <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4">
-                  {accounts.map(acc => (
-                    <button 
-                      key={acc.id} 
-                      onClick={() => setSelectedAccountId(acc.id!)}
-                      className={`px-3.5 py-2 rounded-xl text-[13px] font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-                        selectedAccountId === acc.id 
-                          ? 'bg-white text-black' 
-                          : 'bg-[#1C1C22] text-[#A0A0A5] border border-white/5'
-                      }`}
-                    >
-                      <Landmark className="w-3.5 h-3.5" />
-                      {acc.bankName}
-                    </button>
-                  ))}
-                </div>
-              </div>
+
 
               {/* Payment Mode */}
               <div className="space-y-1.5">
