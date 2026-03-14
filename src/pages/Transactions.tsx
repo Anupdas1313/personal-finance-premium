@@ -66,6 +66,7 @@ export default function Transactions() {
   const [editNote, setEditNote] = useState('');
   const [editParty, setEditParty] = useState('');
   const [editCategory, setEditCategory] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const { categories: appCategories } = useCategories();
 
@@ -229,10 +230,50 @@ export default function Transactions() {
     <div className="relative min-h-[calc(100vh-8rem)] pb-20 max-w-2xl mx-auto px-4">
       <header className="sticky top-0 bg-[#060608] z-30 pt-4 pb-2">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-white tracking-tight">Analysis</h1>
-          <button className="p-2.5 bg-[#111111] border border-[#222222] rounded-full text-[#A0A0A0] hover:text-white transition-colors shadow-sm">
-            <Download className="w-5 h-5" />
-          </button>
+          {!isSearchOpen ? (
+            <>
+              <h1 className="text-3xl font-bold text-white tracking-tight">Analysis</h1>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setIsSearchOpen(true)}
+                  className="p-2.5 bg-[#111111] border border-[#222222] rounded-full text-[#A0A0A0] hover:text-white transition-colors shadow-sm"
+                >
+                  <Search className="w-5 h-5" />
+                </button>
+                <button className="p-2.5 bg-[#111111] border border-[#222222] rounded-full text-[#A0A0A0] hover:text-white transition-colors shadow-sm">
+                  <Download className="w-5 h-5" />
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center gap-3 animate-in slide-in-from-right-4 duration-300">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#666666]" />
+                <input
+                  autoFocus
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search and analyze..."
+                  className="w-full pl-10 pr-10 py-2.5 bg-[#111111] border border-[#222222] text-white rounded-2xl focus:outline-none focus:ring-1 focus:ring-[#333333] font-medium"
+                />
+                {searchTerm && (
+                  <button 
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                  >
+                    <X className="w-4 h-4 text-[#A0A0A0]" />
+                  </button>
+                )}
+              </div>
+              <button 
+                onClick={() => { setIsSearchOpen(false); setSearchTerm(''); }}
+                className="text-sm font-bold text-[#A0A0A0] hover:text-white transition-colors px-1"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="bg-[#0C0C0F] p-1 rounded-2xl flex items-center mb-6">
@@ -265,24 +306,6 @@ export default function Transactions() {
         </div>
 
         <div className="mt-6 flex flex-col gap-4">
-          <div className="relative w-full">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-[#666666]" />
-            </div>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search amount, note, or party..."
-              className="w-full pl-11 pr-4 py-3 bg-[#111111] border border-[#222222] text-[#F7F7F7] rounded-2xl focus:outline-none focus:ring-1 focus:ring-[#333333] font-medium transition-shadow placeholder-[#666666]"
-            />
-            {searchTerm && (
-              <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-4 flex items-center">
-                <X className="h-4 w-4 text-[#A0A0A0] hover:text-white" />
-              </button>
-            )}
-          </div>
-
           <div className="flex gap-2">
             <Link 
               to={`/transactions/table?start=${filterStart.toISOString()}&end=${filterEnd.toISOString()}`}
