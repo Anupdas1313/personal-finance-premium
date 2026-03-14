@@ -16,10 +16,10 @@ export default function Layout() {
     { name: 'Home', path: '/', icon: LayoutDashboard },
     { name: 'Transactions', path: '/transactions', icon: ListOrdered },
     { name: 'Accounts', path: '/accounts', icon: Wallet },
-    { name: 'Summary', path: '/summary', icon: PieChart },
   ];
 
   const moreNavItems = [
+    { name: 'Summary', path: '/summary', icon: PieChart },
     { name: 'Budgets', path: '/budgets', icon: Target },
     { name: 'Accounting', path: '/accounting', icon: Calculator },
     { name: 'Parse SMS', path: '/parse', icon: MessageSquareText },
@@ -117,7 +117,7 @@ export default function Layout() {
             </Link>
           </div>
 
-          {mainNavItems.slice(2, 4).map((item) => {
+          {mainNavItems.slice(2).map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
             return (
