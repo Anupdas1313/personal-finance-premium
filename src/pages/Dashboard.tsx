@@ -60,11 +60,12 @@ export default function Dashboard() {
   };
 
   const [amount, setAmount] = useState('');
-  const [type, setType] = useState<'CREDIT' | 'DEBIT' | ''>('');
+  const [type, setType] = useState<'CREDIT' | 'DEBIT' | 'TRANSFER' | ''>('');
   const [category, setCategory] = useState('Other');
   const [note, setNote] = useState('');
   const [partyName, setPartyName] = useState('');
   const [selectedAccountId, setSelectedAccountId] = useState<number | ''>('');
+  const [toAccountId, setToAccountId] = useState<number | ''>('');
   const [transactionDate, setTransactionDate] = useState<string>(
     new Date().toISOString().slice(0, 16)
   );
@@ -78,25 +79,66 @@ export default function Dashboard() {
   const { categories: appCategories } = useCategories();
 
   const handleSaveManual = async () => {
-    if (!amount || !type || !selectedAccountId || !expenseType) {
+    if (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType)) {
       setStatus('error');
-      setErrorMessage('Missing required fields (Amount, Type, Account, or Expense Type).');
+      setErrorMessage('Missing required fields.');
       return;
     }
 
     try {
-      await db.transactions.add({
-        accountId: Number(selectedAccountId),
-        amount: parseFloat(amount),
-        type: type as 'CREDIT' | 'DEBIT',
-        dateTime: new Date(transactionDate),
-        note: note || '',
-        category,
-        paymentMethod,
-        upiApp: paymentMethod === 'UPI' ? upiApp : undefined,
-        party: partyName,
-        expenseType,
-      });
+      if (type === 'TRANSFER') {
+        if (!toAccountId) {
+          setStatus('error');
+          setErrorMessage('Please select a destination account for the transfer.');
+          return;
+        }
+        if (selectedAccountId === toAccountId) {
+          setStatus('error');
+          setErrorMessage('Source and destination accounts cannot be the same.');
+          return;
+        }
+
+        // Add DEBIT transaction for source account
+        await db.transactions.add({
+          accountId: Number(selectedAccountId),
+          amount: parseFloat(amount),
+          type: 'DEBIT',
+          dateTime: new Date(transactionDate),
+          note: note || `Transfer to ${accounts.find(a => a.id === toAccountId)?.bankName}`,
+          category: 'Transfer',
+          paymentMethod,
+          upiApp: paymentMethod === 'UPI' ? upiApp : undefined,
+          party: accounts.find(a => a.id === toAccountId)?.bankName || 'Other Account',
+          expenseType,
+        });
+
+        // Add CREDIT transaction for destination account
+        await db.transactions.add({
+          accountId: Number(toAccountId),
+          amount: parseFloat(amount),
+          type: 'CREDIT',
+          dateTime: new Date(transactionDate),
+          note: note || `Transfer from ${accounts.find(a => a.id === selectedAccountId)?.bankName}`,
+          category: 'Transfer',
+          paymentMethod,
+          upiApp: paymentMethod === 'UPI' ? upiApp : undefined,
+          party: accounts.find(a => a.id === selectedAccountId)?.bankName || 'Other Account',
+          expenseType,
+        });
+      } else {
+        await db.transactions.add({
+          accountId: Number(selectedAccountId),
+          amount: parseFloat(amount),
+          type: type as 'CREDIT' | 'DEBIT',
+          dateTime: new Date(transactionDate),
+          note: note || '',
+          category,
+          paymentMethod,
+          upiApp: paymentMethod === 'UPI' ? upiApp : undefined,
+          party: partyName,
+          expenseType,
+        });
+      }
       
       setStatus('success');
       setTimeout(() => {
@@ -111,6 +153,7 @@ export default function Dashboard() {
         setPaymentMethod('Bank');
         setUpiApp('');
         setExpenseType('');
+        setToAccountId('');
       }, 1500);
     } catch (error) {
       setStatus('error');
@@ -383,40 +426,93 @@ export default function Dashboard() {
             <div className="flex bg-[#1C1C22] p-1 rounded-2xl border border-white/5">
               <button 
                 onClick={() => setType('DEBIT')}
-                className={`flex-1 py-2 text-[13px] font-bold rounded-xl transition-all ${type === 'DEBIT' ? 'bg-[#3B3B98] text-white shadow-lg' : 'text-[#717171] hover:text-white'}`}
+                className={`flex-1 py-1.5 text-[12px] font-bold rounded-xl transition-all ${type === 'DEBIT' ? 'bg-[#3B3B98] text-white shadow-lg' : 'text-[#717171] hover:text-white'}`}
               >
                 Expense
               </button>
               <button 
                 onClick={() => setType('CREDIT')}
-                className={`flex-1 py-2 text-[13px] font-bold rounded-xl transition-all ${type === 'CREDIT' ? 'bg-emerald-600 text-white shadow-lg' : 'text-[#717171] hover:text-white'}`}
+                className={`flex-1 py-1.5 text-[12px] font-bold rounded-xl transition-all ${type === 'CREDIT' ? 'bg-emerald-600 text-white shadow-lg' : 'text-[#717171] hover:text-white'}`}
               >
                 Income
+              </button>
+              <button 
+                onClick={() => setType('TRANSFER')}
+                className={`flex-1 py-1.5 text-[12px] font-bold rounded-xl transition-all ${type === 'TRANSFER' ? 'bg-indigo-600 text-white shadow-lg' : 'text-[#717171] hover:text-white'}`}
+              >
+                Transfer
               </button>
             </div>
 
             {/* 2. Important Filter Tags (#personal, #home) - Ultra Compact Scrollable */}
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold text-[#A0A0A5] uppercase tracking-wider px-1">Tags</p>
-              <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
-                {['Personal', 'Home'].map(tagName => (
-                  <button 
-                    key={tagName} 
-                    onClick={() => setExpenseType(expenseType === tagName ? '' : tagName)}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border whitespace-nowrap ${
-                      expenseType === tagName 
-                        ? 'bg-[#6C6CF0] text-white border-transparent' 
-                        : 'bg-[#1C1C22] border-white/5 text-[#A0A0A5]'
-                    }`}
-                  >
-                    #{tagName}
-                  </button>
-                ))}
+            {type !== 'TRANSFER' && (
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-[#A0A0A5] uppercase tracking-wider px-1">Tags</p>
+                <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
+                  {['Personal', 'Home'].map(tagName => (
+                    <button 
+                      key={tagName} 
+                      onClick={() => setExpenseType(expenseType === tagName ? '' : tagName)}
+                      className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border whitespace-nowrap ${
+                        expenseType === tagName 
+                          ? 'bg-[#6C6CF0] text-white border-transparent' 
+                          : 'bg-[#1C1C22] border-white/5 text-[#A0A0A5]'
+                      }`}
+                    >
+                      #{tagName}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* 3. Amount & Account Row */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className={`${type === 'TRANSFER' ? 'space-y-3' : 'grid grid-cols-2 gap-3'}`}>
+              <div className={`flex gap-3 ${type === 'TRANSFER' ? 'flex-col sm:flex-row' : ''}`}>
+                {/* Account Selection (Source or Only Account) */}
+                <div className="flex-1 bg-[#1C1C22] p-3.5 rounded-2xl border border-white/5 flex items-center gap-2 focus-within:border-white/20 transition-colors relative">
+                  <Landmark className="w-5 h-5 text-[#A0A0A5] shrink-0" />
+                  <div className="flex flex-col flex-1">
+                    {type === 'TRANSFER' && <span className="text-[8px] font-bold text-[#A0A0A5] uppercase mb-0.5">From Account</span>}
+                    <select 
+                      value={selectedAccountId}
+                      onChange={e => setSelectedAccountId(Number(e.target.value))}
+                      className="bg-transparent text-[14px] font-bold text-white outline-none w-full appearance-none pr-4 cursor-pointer"
+                    >
+                      <option value="" disabled className="bg-[#1C1C22] text-[#A0A0A5]">Select Account</option>
+                      {accounts.map(acc => (
+                        <option key={acc.id} value={acc.id} className="bg-[#1C1C22] text-white">
+                          {acc.bankName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4A4A52] pointer-events-none" />
+                </div>
+
+                {type === 'TRANSFER' && (
+                  <div className="flex-1 bg-[#1C1C22] p-3.5 rounded-2xl border border-white/5 flex items-center gap-2 focus-within:border-white/20 transition-colors relative animate-in fade-in slide-in-from-right-2">
+                    <ArrowUpRight className="w-5 h-5 text-indigo-500 shrink-0" />
+                    <div className="flex flex-col flex-1">
+                      <span className="text-[8px] font-bold text-[#A0A0A5] uppercase mb-0.5">To Account</span>
+                      <select 
+                        value={toAccountId}
+                        onChange={e => setToAccountId(Number(e.target.value))}
+                        className="bg-transparent text-[14px] font-bold text-white outline-none w-full appearance-none pr-4 cursor-pointer"
+                      >
+                        <option value="" disabled className="bg-[#1C1C22] text-[#A0A0A5]">Select Account</option>
+                        {accounts.map(acc => (
+                          <option key={acc.id} value={acc.id} className="bg-[#1C1C22] text-white">
+                            {acc.bankName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4A4A52] pointer-events-none" />
+                  </div>
+                )}
+              </div>
+
               {/* Amount Input */}
               <div className="bg-[#1C1C22] p-3.5 rounded-2xl border border-white/5 flex items-center gap-2 focus-within:border-white/20 transition-colors">
                 <span className="text-lg font-bold text-[#A0A0A5]">₹</span>
@@ -431,43 +527,25 @@ export default function Dashboard() {
                   className="bg-transparent text-[22px] font-bold text-white outline-none w-full placeholder:text-[#2C2C34]"
                 />
               </div>
-
-              {/* Account Dropdown */}
-              <div className="bg-[#1C1C22] p-3.5 rounded-2xl border border-white/5 flex items-center gap-2 focus-within:border-white/20 transition-colors relative">
-                <Landmark className="w-5 h-5 text-[#A0A0A5] shrink-0" />
-                <select 
-                  value={selectedAccountId}
-                  onChange={e => setSelectedAccountId(Number(e.target.value))}
-                  className="bg-transparent text-[14px] font-bold text-white outline-none w-full appearance-none pr-4 cursor-pointer"
-                >
-                  <option value="" disabled className="bg-[#1C1C22] text-[#A0A0A5]">Select Account</option>
-                  {accounts.map(acc => (
-                    <option key={acc.id} value={acc.id} className="bg-[#1C1C22] text-white">
-                      {acc.bankName}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <ChevronDown className="w-4 h-4 text-[#4A4A52]" />
-                </div>
-              </div>
             </div>
 
             {/* 4. Identity, Remarks & Payment Group */}
             <div className="bg-[#1C1C22] rounded-2xl border border-white/5 divide-y divide-white/5">
-              {/* Paid via / Received from */}
-              <div className="flex items-center gap-3 p-3">
-                <div className="w-9 h-9 rounded-xl bg-black/40 flex items-center justify-center shrink-0 border border-white/5">
-                  <User className="w-[18px] h-[18px] text-[#A0A0A5]" />
+              {/* Paid via / Received from (Hide for Transfer) */}
+              {type !== 'TRANSFER' && (
+                <div className="flex items-center gap-3 p-3">
+                  <div className="w-9 h-9 rounded-xl bg-black/40 flex items-center justify-center shrink-0 border border-white/5">
+                    <User className="w-[18px] h-[18px] text-[#A0A0A5]" />
+                  </div>
+                  <input 
+                    type="text"
+                    value={partyName}
+                    onChange={e => setPartyName(e.target.value)}
+                    placeholder={type === 'DEBIT' ? 'Paid to...' : 'Received from...'}
+                    className="bg-transparent flex-1 text-[16px] font-medium text-white outline-none placeholder:text-[#4A4A52]"
+                  />
                 </div>
-                <input 
-                  type="text"
-                  value={partyName}
-                  onChange={e => setPartyName(e.target.value)}
-                  placeholder={type === 'DEBIT' ? 'Paid to...' : 'Received from...'}
-                  className="bg-transparent flex-1 text-[16px] font-medium text-white outline-none placeholder:text-[#4A4A52]"
-                />
-              </div>
+              )}
 
               {/* Remarks */}
               <div className="flex items-center gap-3 p-3">
@@ -578,9 +656,9 @@ export default function Dashboard() {
             )}
             <button 
               onClick={handleSaveManual}
-              disabled={!amount || !type || !partyName || !selectedAccountId || !expenseType || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
+              disabled={!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
               className={`w-full py-4 rounded-2xl font-extrabold text-[16px] transition-all transform active:scale-[0.98] ${
-                (!amount || !type || !partyName || !selectedAccountId || !expenseType || (paymentMethod === 'UPI' && !upiApp))
+                (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
                 ? 'bg-[#2C2C34] text-[#5A5A62] cursor-not-allowed opacity-50'
                 : 'bg-[#3B3B98] text-white shadow-[0_8px_24px_rgba(59,59,152,0.3)]'
               }`}

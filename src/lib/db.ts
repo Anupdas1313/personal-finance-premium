@@ -11,7 +11,7 @@ export interface Transaction {
   id?: number;
   accountId: number;
   amount: number;
-  type: 'DEBIT' | 'CREDIT';
+  type: 'DEBIT' | 'CREDIT' | 'TRANSFER';
   dateTime: Date;
   note: string;
   category: string;
