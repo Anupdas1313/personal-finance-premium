@@ -30,22 +30,10 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen bg-[#F7F7F7] dark:bg-[#060608] flex-col md:flex-row overflow-hidden">
-      {/* Mobile Header */}
-      <div className="md:hidden flex items-center justify-between bg-white dark:bg-[#0C0C0F] p-4 border-b border-[#EBEBEB] dark:border-[#1A1A1E] shrink-0 z-20 relative">
-        <h1 className="text-xl font-bold text-[#222222] dark:text-[#F7F7F7] flex items-center gap-2">
-          <Wallet className="text-[#222222] dark:text-[#F7F7F7]" />
-          Anup's Personal Expenses
-        </h1>
-      </div>
+      {/* Mobile Header Removed as per user request */}
 
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex bg-white dark:bg-[#0C0C0F] border-r border-[#EBEBEB] dark:border-[#1A1A1E] flex-col w-64 shrink-0 z-20">
-        <div className="p-6 border-b border-[#EBEBEB] dark:border-[#1A1A1E]">
-          <h1 className="text-xl font-bold text-[#222222] dark:text-[#F7F7F7] flex items-center gap-2">
-            <Wallet className="text-[#222222] dark:text-[#F7F7F7]" />
-            Anup's Personal Expenses
-          </h1>
-        </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {allNavItems.map((item) => {
             const isActive = location.pathname === item.path;
