@@ -233,14 +233,34 @@ export default function Transactions() {
           {!isSearchOpen ? (
             <>
               <h1 className="text-3xl font-bold text-white tracking-tight">Analysis</h1>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <button 
                   onClick={() => setIsSearchOpen(true)}
                   className="p-2.5 bg-[#111111] border border-[#222222] rounded-full text-[#A0A0A0] hover:text-white transition-colors shadow-sm"
+                  title="Search"
                 >
                   <Search className="w-5 h-5" />
                 </button>
-                <button className="p-2.5 bg-[#111111] border border-[#222222] rounded-full text-[#A0A0A0] hover:text-white transition-colors shadow-sm">
+                <Link 
+                  to={`/transactions/table?start=${filterStart.toISOString()}&end=${filterEnd.toISOString()}`}
+                  className="p-2.5 bg-[#111111] border border-[#222222] rounded-full text-[#A0A0A0] hover:text-white transition-colors shadow-sm"
+                  title="View Table Report"
+                >
+                  <ListOrdered className="w-5 h-5" />
+                </Link>
+                <button 
+                  onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+                  className={cn(
+                    "p-2.5 border rounded-full transition-all shadow-sm",
+                    isFiltersOpen 
+                      ? "bg-white border-white text-[#111111]" 
+                      : "bg-[#111111] border-[#222222] text-[#A0A0A0] hover:text-white"
+                  )}
+                  title="Filters"
+                >
+                  <Filter className="w-5 h-5" />
+                </button>
+                <button className="p-2.5 bg-[#111111] border border-[#222222] rounded-full text-[#A0A0A0] hover:text-white transition-colors shadow-sm" title="Download">
                   <Download className="w-5 h-5" />
                 </button>
               </div>
@@ -305,65 +325,48 @@ export default function Transactions() {
           </button>
         </div>
 
-        <div className="mt-6 flex flex-col gap-4">
-          <div className="flex gap-2">
-            <Link 
-              to={`/transactions/table?start=${filterStart.toISOString()}&end=${filterEnd.toISOString()}`}
-              className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-[#F7F7F7] text-[#111111] hover:bg-white rounded-2xl font-bold transition-all shadow-sm text-sm active:scale-95"
-            >
-              <ListOrdered className="w-4 h-4" />
-              View Report
-            </Link>
-            <button 
-              onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-              className={`flex items-center justify-center gap-2 px-4 py-3 border rounded-2xl font-bold transition-all shadow-sm text-sm active:scale-95 ${isFiltersOpen ? 'bg-white text-[#111111] border-white' : 'bg-[#111111] border-[#222222] text-[#A0A0A0] hover:text-white hover:border-[#333333]'}`}
-            >
-              <Filter className="w-4 h-4" />
-              Filters
-            </button>
-          </div>
-          
-          {isFiltersOpen && (
-            <div className="bg-[#111111] rounded-[24px] border border-[#222222] shadow-sm p-5 space-y-5 animate-in slide-in-from-top-2 duration-200">
-              <div>
-                <label className="block text-[10px] font-black text-[#666666] uppercase tracking-[0.1em] mb-3">Transaction Type</label>
-                <div className="flex flex-wrap gap-2">
-                  {[{ id: 'ALL', label: 'All' }, { id: 'CREDIT', label: 'Income' }, { id: 'DEBIT', label: 'Expense' }].map(type => (
-                    <button key={type.id} onClick={() => setEntryTypeFilter(type.id as any)}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${entryTypeFilter === type.id ? 'bg-white text-[#111111]' : 'bg-[#1A1A1A] text-[#717171] hover:text-[#A0A0A0]'}`}
-                    >
-                      {type.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-[#666666] uppercase tracking-[0.1em] mb-3">Sort Order</label>
-                <div className="flex flex-wrap gap-2">
-                  {SORT_OPTIONS.map(opt => (
-                    <button key={opt.id} onClick={() => setSortMode(opt.id)}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${sortMode === opt.id ? 'bg-white text-[#111111]' : 'bg-[#1A1A1A] text-[#717171] hover:text-[#A0A0A0]'}`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-[#666666] uppercase tracking-[0.1em] mb-3">Categories</label>
-                <div className="flex flex-wrap gap-2">
-                  {['ALL', ...appCategories].map(type => (
-                    <button key={type} onClick={() => setSortTypeFilter(type)}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${sortTypeFilter === type ? 'bg-white text-[#111111]' : 'bg-[#1A1A1A] text-[#717171] hover:text-[#A0A0A0]'}`}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
+        </div>
+
+        {isFiltersOpen && (
+          <div className="mt-4 bg-[#111111] rounded-[24px] border border-[#222222] shadow-xl p-5 space-y-5 animate-in slide-in-from-top-2 duration-300">
+            <div>
+              <label className="block text-[10px] font-black text-[#666666] uppercase tracking-[0.1em] mb-3">Transaction Type</label>
+              <div className="flex flex-wrap gap-2">
+                {[{ id: 'ALL', label: 'All' }, { id: 'CREDIT', label: 'Income' }, { id: 'DEBIT', label: 'Expense' }].map(type => (
+                  <button key={type.id} onClick={() => setEntryTypeFilter(type.id as any)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${entryTypeFilter === type.id ? 'bg-white text-[#111111]' : 'bg-[#1A1A1A] text-[#717171] hover:text-[#A0A0A0]'}`}
+                  >
+                    {type.label}
+                  </button>
+                ))}
               </div>
             </div>
-          )}
-        </div>
+            <div>
+              <label className="block text-[10px] font-black text-[#666666] uppercase tracking-[0.1em] mb-3">Sort Order</label>
+              <div className="flex flex-wrap gap-2">
+                {SORT_OPTIONS.map(opt => (
+                  <button key={opt.id} onClick={() => setSortMode(opt.id)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${sortMode === opt.id ? 'bg-white text-[#111111]' : 'bg-[#1A1A1A] text-[#717171] hover:text-[#A0A0A0]'}`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-[#666666] uppercase tracking-[0.1em] mb-3">Categories</label>
+              <div className="flex flex-wrap gap-2">
+                {['ALL', ...appCategories].map(type => (
+                  <button key={type} onClick={() => setSortTypeFilter(type)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${sortTypeFilter === type ? 'bg-white text-[#111111]' : 'bg-[#1A1A1A] text-[#717171] hover:text-[#A0A0A0]'}`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="space-y-6 mt-2">
