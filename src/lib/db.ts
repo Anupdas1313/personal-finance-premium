@@ -23,6 +23,13 @@ export interface Transaction {
   expenseType?: string;
 }
 
+export interface Budget {
+  id?: number;
+  category: string;
+  amount: number;
+  month: string; // 'YYYY-MM'
+}
+
 export interface MonthlyClose {
   id?: number;
   month: string; // 'YYYY-MM'
@@ -37,6 +44,7 @@ export class FinanceDatabase extends Dexie {
   accounts!: Table<Account, number>;
   transactions!: Table<Transaction, number>;
   monthlyClosings!: Table<MonthlyClose, number>;
+  budgets!: Table<Budget, number>;
 
   constructor() {
     super('FinanceDatabase');
@@ -46,6 +54,9 @@ export class FinanceDatabase extends Dexie {
     });
     this.version(2).stores({
       monthlyClosings: '++id, &month'
+    });
+    this.version(3).stores({
+      budgets: '++id, category, month, [category+month]'
     });
   }
 }

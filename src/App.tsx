@@ -8,16 +8,20 @@ import SMSParser from './pages/SMSParser';
 import Accounting from './pages/Accounting';
 import TransactionTable from './pages/TransactionTable';
 import Settings from './pages/Settings';
+import Budgets from './pages/Budgets';
+import { ThemeProvider } from './components/ThemeProvider';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <ThemeProvider defaultTheme="system" storageKey="app-theme">
+      <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="transactions" element={<Transactions />} />
           <Route path="accounts" element={<Accounts />} />
           <Route path="summary" element={<Summary />} />
+          <Route path="budgets" element={<Budgets />} />
           <Route path="accounting" element={<Accounting />} />
           <Route path="parse" element={<SMSParser />} />
           <Route path="settings" element={<Settings />} />
@@ -25,5 +29,6 @@ export default function App() {
         <Route path="/transactions/table" element={<TransactionTable />} />
       </Routes>
     </BrowserRouter>
+    </ThemeProvider>
   );
 }

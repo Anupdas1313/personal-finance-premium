@@ -45,33 +45,33 @@ export default function Summary() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-[#222222]">Monthly Summary</h1>
-        <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] w-full sm:w-auto justify-between sm:justify-start">
-          <button onClick={handlePrevMonth} className="text-[#717171] hover:text-[#222222] font-bold">&lt;</button>
-          <span className="font-bold text-[#222222] min-w-[120px] text-center">
+        <h1 className="text-2xl font-bold text-[#222222] dark:text-[#F7F7F7]">Monthly Summary</h1>
+        <div className="flex items-center gap-4 bg-white dark:bg-[#111111] px-4 py-2 rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] dark:border-[#222222] w-full sm:w-auto justify-between sm:justify-start">
+          <button onClick={handlePrevMonth} className="text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7] font-bold">&lt;</button>
+          <span className="font-bold text-[#222222] dark:text-[#F7F7F7] min-w-[120px] text-center">
             {format(currentMonth, 'MMMM yyyy')}
           </span>
-          <button onClick={handleNextMonth} className="text-[#717171] hover:text-[#222222] font-bold">&gt;</button>
+          <button onClick={handleNextMonth} className="text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7] font-bold">&gt;</button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] flex flex-col justify-center items-center">
-          <p className="text-sm font-bold text-[#717171] mb-1">Total Income</p>
+        <div className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] dark:border-[#222222] flex flex-col justify-center items-center">
+          <p className="text-sm font-bold text-[#717171] dark:text-[#A0A0A0] mb-1">Total Income</p>
           <p className="text-3xl font-bold text-emerald-600">
             +₹{totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </p>
         </div>
-        <div className="bg-white p-6 rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] flex flex-col justify-center items-center">
-          <p className="text-sm font-bold text-[#717171] mb-1">Total Expenses</p>
+        <div className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] dark:border-[#222222] flex flex-col justify-center items-center">
+          <p className="text-sm font-bold text-[#717171] dark:text-[#A0A0A0] mb-1">Total Expenses</p>
           <p className="text-3xl font-bold text-rose-600">
             -₹{totalExpense.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </p>
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB]">
-        <h2 className="text-lg font-bold text-[#222222] mb-6">Expenses by Category</h2>
+      <div className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] dark:border-[#222222]">
+        <h2 className="text-lg font-bold text-[#222222] dark:text-[#F7F7F7] mb-6">Expenses by Category</h2>
         {pieData.length > 0 ? (
           <div className="h-[300px] sm:h-[400px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -97,7 +97,7 @@ export default function Summary() {
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="text-center py-12 text-[#717171] font-bold">
+          <div className="text-center py-12 text-[#717171] dark:text-[#A0A0A0] font-bold">
             No expenses recorded for this month.
           </div>
         )}

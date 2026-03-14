@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import { db } from '../lib/db';
-import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as SettingsIcon, Database, ListPlus, X } from 'lucide-react';
+import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as SettingsIcon, X, Moon, Sun, Monitor, Palette, Tag, ShieldAlert } from 'lucide-react';
 import { useCategories } from '../hooks/useCategories';
+import { useTheme } from '../components/ThemeProvider';
 
 export default function Settings() {
   const [isExporting, setIsExporting] = useState(false);
@@ -11,6 +12,7 @@ export default function Settings() {
   const [newCategory, setNewCategory] = useState('');
   
   const { categories, addCategory, removeCategory, resetCategories } = useCategories();
+  const { theme, setTheme } = useTheme();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -24,12 +26,14 @@ export default function Settings() {
       setIsExporting(true);
       const transactions = await db.transactions.toArray();
       const accounts = await db.accounts.toArray();
+      const budgets = await db.budgets.toArray();
       
       const data = {
         version: 1,
         exportDate: new Date().toISOString(),
         transactions,
-        accounts
+        accounts,
+        budgets
       };
 
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -72,15 +76,19 @@ export default function Settings() {
         return;
       }
 
-      await db.transaction('rw', db.transactions, db.accounts, async () => {
+      await db.transaction('rw', db.transactions, db.accounts, db.budgets, async () => {
         await db.transactions.clear();
         await db.accounts.clear();
+        await db.budgets.clear();
         
         if (data.accounts.length > 0) {
           await db.accounts.bulkAdd(data.accounts);
         }
         if (data.transactions.length > 0) {
           await db.transactions.bulkAdd(data.transactions);
+        }
+        if (data.budgets && data.budgets.length > 0) {
+          await db.budgets.bulkAdd(data.budgets);
         }
       });
 
@@ -103,9 +111,10 @@ export default function Settings() {
 
     try {
       setIsClearing(true);
-      await db.transaction('rw', db.transactions, db.accounts, async () => {
+      await db.transaction('rw', db.transactions, db.accounts, db.budgets, async () => {
         await db.transactions.clear();
         await db.accounts.clear();
+        await db.budgets.clear();
       });
       showMessage('success', 'All data has been cleared');
     } catch (error) {
@@ -127,155 +136,200 @@ export default function Settings() {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="p-3 bg-neutral-100 text-[#222222] rounded-2xl">
+    <div className="space-y-8 max-w-3xl mx-auto pb-8">
+      <div className="flex items-center gap-4 mb-2">
+        <div className="p-3 bg-neutral-100 dark:bg-[#222222] text-[#222222] dark:text-[#F7F7F7] rounded-2xl">
           <SettingsIcon className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#222222]">Settings</h1>
-          <p className="text-[#717171] font-medium mt-1">Manage your app data and preferences</p>
+          <h1 className="text-3xl font-bold tracking-tight text-[#222222] dark:text-[#F7F7F7]">Settings</h1>
+          <p className="text-[#717171] dark:text-[#A0A0A0] font-medium mt-1">Manage app preferences and data</p>
         </div>
       </div>
 
       {message && (
-        <div className={`p-4 rounded-[20px] flex items-center gap-3 ${
-          message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+        <div className={`p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${
+          message.type === 'success' 
+            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' 
+            : 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20'
         }`}>
           {message.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
           <p className="font-bold">{message.text}</p>
         </div>
       )}
 
-      {/* App Settings */}
-      <div className="bg-white rounded-[24px] border border-[#EBEBEB] shadow-[0_6px_16px_rgba(0,0,0,0.04)] overflow-hidden">
-        <div className="p-6 border-b border-[#EBEBEB]">
-          <h2 className="text-xl font-bold text-[#222222] flex items-center gap-2">
-            <ListPlus className="w-5 h-5 text-[#717171]" />
-            App Settings
-          </h2>
-          <p className="text-[#717171] font-medium mt-1">Customize your transaction categories.</p>
-        </div>
-
-        <div className="p-6 space-y-6">
-          <div>
-            <h3 className="font-bold text-[#222222] mb-3">Transaction Categories</h3>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {categories.map((category) => (
-                <div key={category} className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 text-[#222222] rounded-full text-sm font-medium">
-                  {category}
-                  <button
-                    onClick={() => removeCategory(category)}
-                    className="text-[#717171] hover:text-rose-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+      {/* SECTION: PREFERENCES */}
+      <section>
+        <h2 className="text-xs font-bold text-[#717171] dark:text-[#A0A0A0] uppercase tracking-wider mb-3 px-2">Appearance</h2>
+        <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222]">
+          
+          <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4 text-[#222222] dark:text-[#F7F7F7]">
+              <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0">
+                <Palette className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-bold text-[#222222] dark:text-[#F7F7F7]">Theme Preference</p>
+                <p className="text-sm font-medium text-[#717171] dark:text-[#A0A0A0] mt-0.5">Select your app visual style</p>
+              </div>
             </div>
             
-            <form onSubmit={handleAddCategory} className="flex gap-2">
-              <input
-                type="text"
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                placeholder="Add new category..."
-                className="flex-1 px-4 py-2 bg-neutral-50 border border-[#EBEBEB] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#222222] focus:border-transparent transition-all"
-              />
-              <button
-                type="submit"
-                disabled={!newCategory.trim()}
-                className="px-5 py-2 bg-[#222222] text-white rounded-xl font-bold hover:bg-black transition-colors disabled:opacity-50"
-              >
-                Add
+            <div className="flex bg-neutral-100 dark:bg-[#222222] p-1.5 rounded-2xl w-full sm:w-auto overflow-hidden">
+              <button onClick={() => setTheme('light')} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${theme === 'light' ? 'bg-white dark:bg-[#333333] shadow-sm text-[#222222] dark:text-[#F7F7F7]' : 'text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7]'}`}>
+                <Sun className="w-4 h-4" /> <span className="hidden sm:inline">Light</span>
               </button>
-            </form>
-            
-            <div className="mt-4 pt-4 border-t border-[#EBEBEB]">
-              <button
-                onClick={() => {
-                  if (window.confirm('Are you sure you want to reset categories to default?')) {
-                    resetCategories();
-                    showMessage('success', 'Categories reset to default');
-                  }
-                }}
-                className="text-sm text-[#717171] hover:text-[#222222] font-medium transition-colors"
-              >
-                Reset to default categories
+              <button onClick={() => setTheme('dark')} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${theme === 'dark' ? 'bg-white dark:bg-[#333333] shadow-sm text-[#222222] dark:text-[#F7F7F7]' : 'text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7]'}`}>
+                <Moon className="w-4 h-4" /> <span className="hidden sm:inline">Dark</span>
+              </button>
+              <button onClick={() => setTheme('system')} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${theme === 'system' ? 'bg-white dark:bg-[#333333] shadow-sm text-[#222222] dark:text-[#F7F7F7]' : 'text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7]'}`}>
+                <Monitor className="w-4 h-4" /> <span className="hidden sm:inline">System</span>
               </button>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="bg-white rounded-[24px] border border-[#EBEBEB] shadow-[0_6px_16px_rgba(0,0,0,0.04)] overflow-hidden">
-        <div className="p-6 border-b border-[#EBEBEB]">
-          <h2 className="text-xl font-bold text-[#222222] flex items-center gap-2">
-            <Database className="w-5 h-5 text-[#717171]" />
-            Data Management
-          </h2>
-          <p className="text-[#717171] font-medium mt-1">Export your data for backup, or import from a previous backup.</p>
         </div>
+      </section>
 
-        <div className="p-6 space-y-6">
-          {/* Export */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#EBEBEB]">
-            <div>
-              <h3 className="font-bold text-[#222222]">Export Data</h3>
-              <p className="text-sm text-[#717171] font-medium mt-1">Download all your transactions and accounts as a JSON file.</p>
+      {/* SECTION: CATEGORIES */}
+      <section>
+        <h2 className="text-xs font-bold text-[#717171] dark:text-[#A0A0A0] uppercase tracking-wider mb-3 px-2">Categories</h2>
+        <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222]">
+          
+          <div className="p-5 flex flex-col gap-5">
+            <div className="flex items-center gap-4 text-[#222222] dark:text-[#F7F7F7]">
+              <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0">
+                <Tag className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-bold text-[#222222] dark:text-[#F7F7F7]">Manage Categories</p>
+                <p className="text-sm font-medium text-[#717171] dark:text-[#A0A0A0] mt-0.5">Customize tags for tracking your spending</p>
+              </div>
+            </div>
+
+            <div className="pl-0 sm:pl-[3.25rem] space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {categories.map((category) => (
+                  <div key={category} className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 dark:bg-[#222222] text-[#222222] dark:text-[#F7F7F7] rounded-full text-sm font-bold border border-transparent dark:border-[#333333]">
+                    {category}
+                    <button onClick={() => removeCategory(category)} className="text-[#B0B0B0] dark:text-[#666666] hover:text-rose-600 transition-colors">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <form onSubmit={handleAddCategory} className="flex flex-1 gap-2">
+                  <input
+                    type="text"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    placeholder="E.g., Pet Supplies"
+                    className="flex-1 px-4 py-2.5 bg-neutral-50 dark:bg-[#1A1A1A] border border-[#EBEBEB] dark:border-[#333333] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] transition-all text-sm font-medium text-[#222222] dark:text-[#F7F7F7] placeholder-[#B0B0B0] dark:placeholder-[#666666]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newCategory.trim()}
+                    className="px-5 py-2.5 bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl font-bold hover:bg-black dark:hover:bg-neutral-200 transition-colors disabled:opacity-50 text-sm"
+                  >
+                    Add
+                  </button>
+                </form>
+
+                <button
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to restore default categories?')) {
+                      resetCategories();
+                      showMessage('success', 'Categories reset to default');
+                    }
+                  }}
+                  className="px-4 py-2.5 text-sm font-bold text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7] hover:bg-neutral-100 dark:hover:bg-[#222222] rounded-xl transition-colors"
+                >
+                  Reset Defaults
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* SECTION: DATA MANAGEMENT */}
+      <section>
+        <h2 className="text-xs font-bold text-[#717171] dark:text-[#A0A0A0] uppercase tracking-wider mb-3 px-2">Data & Storage</h2>
+        <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222]">
+          
+          <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4 text-[#222222] dark:text-[#F7F7F7]">
+              <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0">
+                <Download className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-bold text-[#222222] dark:text-[#F7F7F7]">Export Backup</p>
+                <p className="text-sm font-medium text-[#717171] dark:text-[#A0A0A0] mt-0.5">Save a local file with all transactions</p>
+              </div>
             </div>
             <button
               onClick={handleExportData}
               disabled={isExporting}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-[#B0B0B0] text-[#222222] rounded-xl hover:border-[#222222] transition-colors disabled:opacity-50 font-bold shrink-0"
+              className="px-5 py-2.5 bg-white dark:bg-[#111111] border-2 border-[#EBEBEB] dark:border-[#333333] text-[#222222] dark:text-[#F7F7F7] rounded-xl font-bold hover:border-[#B0B0B0] dark:hover:border-[#666666] transition-colors disabled:opacity-50 text-sm w-full sm:w-auto text-center shadow-sm"
             >
-              <Download className="w-4 h-4" />
               {isExporting ? 'Exporting...' : 'Export JSON'}
             </button>
           </div>
 
-          {/* Import */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#EBEBEB]">
-            <div>
-              <h3 className="font-bold text-[#222222]">Import Data</h3>
-              <p className="text-sm text-[#717171] font-medium mt-1">Restore your data from a previously exported JSON backup file.</p>
+          <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4 text-[#222222] dark:text-[#F7F7F7]">
+              <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0">
+                <Upload className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-bold text-[#222222] dark:text-[#F7F7F7]">Import Backup</p>
+                <p className="text-sm font-medium text-[#717171] dark:text-[#A0A0A0] mt-0.5">Restore data from a JSON file</p>
+              </div>
             </div>
-            <div>
-              <input
-                type="file"
-                accept=".json"
-                ref={fileInputRef}
-                onChange={handleImportData}
-                className="hidden"
-                id="import-file"
-              />
+            <div className="w-full sm:w-auto">
+              <input type="file" accept=".json" ref={fileInputRef} onChange={handleImportData} className="hidden" id="import-file" />
               <label
                 htmlFor="import-file"
-                className={`flex items-center justify-center gap-2 px-5 py-2.5 bg-neutral-100 text-[#222222] rounded-xl hover:bg-neutral-200 transition-colors font-bold cursor-pointer shrink-0 ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}
+                className={`block w-full sm:w-auto px-5 py-2.5 bg-white dark:bg-[#111111] border-2 border-[#EBEBEB] dark:border-[#333333] text-[#222222] dark:text-[#F7F7F7] rounded-xl font-bold hover:border-[#B0B0B0] dark:hover:border-[#666666] transition-colors cursor-pointer text-center text-sm shadow-sm ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}
               >
-                <Upload className="w-4 h-4" />
                 {isImporting ? 'Importing...' : 'Import JSON'}
               </label>
             </div>
           </div>
 
-          {/* Clear Data */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h3 className="font-bold text-rose-600">Clear All Data</h3>
-              <p className="text-sm text-[#717171] font-medium mt-1">Permanently delete all transactions and accounts from this device.</p>
+        </div>
+      </section>
+
+      {/* SECTION: DANGER ZONE */}
+      <section>
+        <h2 className="text-xs font-bold text-rose-500 uppercase tracking-wider mb-3 px-2">Danger Zone</h2>
+        <div className="bg-rose-50/50 dark:bg-rose-500/5 rounded-3xl border border-rose-100 dark:border-rose-500/20 shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden divide-y divide-rose-100 dark:divide-rose-500/20">
+          
+          <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4 text-rose-600 dark:text-rose-400">
+              <div className="p-2.5 bg-rose-100 dark:bg-rose-500/20 rounded-xl flex-shrink-0">
+                <ShieldAlert className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-bold text-rose-700 dark:text-rose-400">Clear All Data</p>
+                <p className="text-sm font-medium text-rose-600/70 dark:text-rose-400/70 mt-0.5">Permanently delete everything on this device</p>
+              </div>
             </div>
             <button
               onClick={handleClearData}
               disabled={isClearing}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-rose-200 text-rose-600 rounded-xl hover:bg-rose-50 transition-colors disabled:opacity-50 font-bold shrink-0"
+              className="px-5 py-2.5 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition-colors disabled:opacity-50 text-sm w-full sm:w-auto flex justify-center items-center gap-2 shadow-sm"
             >
-              <Trash2 className="w-4 h-4" />
-              {isClearing ? 'Clearing...' : 'Clear Data'}
+              <Trash2 className="w-4 h-4"/>
+              {isClearing ? 'Clearing...' : 'Wipe Data'}
             </button>
           </div>
+
         </div>
-      </div>
+      </section>
+
     </div>
   );
 }

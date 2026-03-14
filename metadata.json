@@ -1,5 +1,5 @@
 {
-  "name": "Personal Finance SMS Tracker",
+  "name": "Anup's Personal Expenses",
   "description": "A web-based personal finance tracker that parses bank SMS messages to log transactions and calculate balances locally.",
   "requestFramePermissions": []
 }

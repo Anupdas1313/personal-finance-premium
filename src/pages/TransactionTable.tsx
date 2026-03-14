@@ -290,7 +290,7 @@ export default function TransactionTable() {
         content: `${largestTx.party || largestTx.note || largestTx.category || 'Unknown'}`,
         value: `₹${(largestTx.amount || 0).toLocaleString('en-IN')}`,
         subtext: safeFormatDate(largestTx.dateTime, 'MMM d, yyyy'),
-        icon: <Sparkles className="w-6 h-6 text-[#B0B0B0]" />
+        icon: <Sparkles className="w-6 h-6 text-[#B0B0B0] dark:text-[#666666]" />
       });
     }
     
@@ -299,7 +299,7 @@ export default function TransactionTable() {
         id: 'pattern',
         title: 'Spending Pattern',
         content: patternMessage,
-        icon: <TrendingUp className="w-6 h-6 text-[#B0B0B0]" />
+        icon: <TrendingUp className="w-6 h-6 text-[#B0B0B0] dark:text-[#666666]" />
       });
     }
     
@@ -309,7 +309,7 @@ export default function TransactionTable() {
         title: 'Most Frequent Merchant',
         content: mostFrequentMerchant,
         value: `${maxCount} times`,
-        icon: <Landmark className="w-6 h-6 text-[#B0B0B0]" />
+        icon: <Landmark className="w-6 h-6 text-[#B0B0B0] dark:text-[#666666]" />
       });
     }
     
@@ -318,7 +318,7 @@ export default function TransactionTable() {
       title: 'Total Transactions',
       content: 'In this period',
       value: filteredAndSortedTransactions.length.toString(),
-      icon: <FileText className="w-6 h-6 text-[#B0B0B0]" />
+      icon: <FileText className="w-6 h-6 text-[#B0B0B0] dark:text-[#666666]" />
     });
 
     return {
@@ -346,8 +346,8 @@ export default function TransactionTable() {
   };
 
   const SortIcon = ({ columnKey }: { columnKey: string }) => {
-    if (sortConfig.key !== columnKey) return <ChevronDown className="w-4 h-4 text-[#B0B0B0] opacity-0 group-hover:opacity-100" />;
-    return sortConfig.direction === 'asc' ? <ChevronUp className="w-4 h-4 text-[#222222]" /> : <ChevronDown className="w-4 h-4 text-[#222222]" />;
+    if (sortConfig.key !== columnKey) return <ChevronDown className="w-4 h-4 text-[#B0B0B0] dark:text-[#666666] opacity-0 group-hover:opacity-100" />;
+    return sortConfig.direction === 'asc' ? <ChevronUp className="w-4 h-4 text-[#222222] dark:text-[#F7F7F7]" /> : <ChevronDown className="w-4 h-4 text-[#222222] dark:text-[#F7F7F7]" />;
   };
 
   const handleExportCSV = async () => {
@@ -606,39 +606,39 @@ export default function TransactionTable() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#222222] flex flex-col">
-      <header className="bg-white border-b border-[#EBEBEB] px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-0 z-10">
+    <div className="min-h-screen bg-white dark:bg-[#111111] text-[#222222] dark:text-[#F7F7F7] flex flex-col">
+      <header className="bg-white dark:bg-[#111111] border-b border-[#EBEBEB] dark:border-[#222222] px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-0 z-10">
         <div className="flex items-start sm:items-center gap-3 sm:gap-4">
           <button 
             onClick={() => navigate('/transactions')} 
-            className="p-2 -ml-2 sm:ml-0 text-[#717171] hover:bg-neutral-100 rounded-full transition-colors shrink-0"
+            className="p-2 -ml-2 sm:ml-0 text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-100 dark:hover:bg-[#222222] dark:bg-[#1A1A1A] rounded-full transition-colors shrink-0"
             title="Go Back"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-lg sm:text-xl font-bold text-[#222222]">Transaction Report</h1>
-            <p className="text-xs sm:text-sm text-[#717171] font-medium mt-0.5">
+            <h1 className="text-lg sm:text-xl font-bold text-[#222222] dark:text-[#F7F7F7]">Transaction Report</h1>
+            <p className="text-xs sm:text-sm text-[#717171] dark:text-[#A0A0A0] font-medium mt-0.5">
               {filteredAndSortedTransactions.length} of {allTransactionsRaw.length} transactions
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-          <div className="flex items-center bg-neutral-100 rounded-xl p-1">
-            <button onClick={handleZoomOut} className="p-1.5 text-[#717171] hover:bg-white hover:shadow-sm rounded-lg transition-all" title="Zoom Out">
+          <div className="flex items-center bg-neutral-100 dark:bg-[#1A1A1A] rounded-xl p-1">
+            <button onClick={handleZoomOut} className="p-1.5 text-[#717171] dark:text-[#A0A0A0] hover:bg-white dark:bg-[#111111] hover:shadow-sm rounded-lg transition-all" title="Zoom Out">
               <ZoomOut className="w-4 h-4" />
             </button>
-            <button onClick={handleZoomReset} className="px-2 text-xs font-bold text-[#222222] hover:bg-white hover:shadow-sm rounded-lg transition-all h-7" title="Reset Zoom">
+            <button onClick={handleZoomReset} className="px-2 text-xs font-bold text-[#222222] dark:text-[#F7F7F7] hover:bg-white dark:bg-[#111111] hover:shadow-sm rounded-lg transition-all h-7" title="Reset Zoom">
               {Math.round(zoom * 100)}%
             </button>
-            <button onClick={handleZoomIn} className="p-1.5 text-[#717171] hover:bg-white hover:shadow-sm rounded-lg transition-all" title="Zoom In">
+            <button onClick={handleZoomIn} className="p-1.5 text-[#717171] dark:text-[#A0A0A0] hover:bg-white dark:bg-[#111111] hover:shadow-sm rounded-lg transition-all" title="Zoom In">
               <ZoomIn className="w-4 h-4" />
             </button>
           </div>
           <div className="flex items-center gap-2">
             <button 
               onClick={handleExportPDF}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-[#EBEBEB] text-[#222222] hover:bg-neutral-50 rounded-xl font-bold transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-[#222222] text-[#222222] dark:text-[#F7F7F7] hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] rounded-xl font-bold transition-colors"
               title="Download PDF Report"
             >
               <FileText className="w-4 h-4" />
@@ -646,7 +646,7 @@ export default function TransactionTable() {
             </button>
             <button 
               onClick={handleExportCSV}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-[#222222] text-white hover:bg-black rounded-xl font-bold transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] hover:bg-black dark:hover:bg-neutral-200 rounded-xl font-bold transition-colors"
               title="Download CSV"
             >
               <Download className="w-4 h-4" />
@@ -656,15 +656,15 @@ export default function TransactionTable() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-auto p-4 sm:p-6 bg-[#F7F7F7] flex flex-col gap-6">
+      <main className="flex-1 overflow-auto p-4 sm:p-6 bg-[#F7F7F7] dark:bg-[#0A0A0A] flex flex-col gap-6">
         {/* Monthly Insights Dashboard */}
         <div className="relative">
-          <div ref={summaryRef} className="flex flex-col gap-4 p-2 -m-2 rounded-xl bg-[#F7F7F7]">
+          <div ref={summaryRef} className="flex flex-col gap-4 p-2 -m-2 rounded-xl bg-[#F7F7F7] dark:bg-[#0A0A0A]">
             {/* KPI Cards */}
-            <div className="relative bg-white rounded-[24px] border border-[#EBEBEB] shadow-[0_6px_16px_rgba(0,0,0,0.04)] py-5">
+            <div className="relative bg-white dark:bg-[#111111] rounded-[24px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_6px_16px_rgba(0,0,0,0.04)] py-5">
               <button 
                 onClick={handleShareSummary}
-                className="absolute top-3 right-3 p-1.5 text-[#717171] hover:bg-neutral-100 rounded-full transition-colors border border-[#EBEBEB] shadow-sm bg-white z-10"
+                className="absolute top-3 right-3 p-1.5 text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-100 dark:hover:bg-[#222222] dark:bg-[#1A1A1A] rounded-full transition-colors border border-[#EBEBEB] dark:border-[#222222] shadow-sm bg-white dark:bg-[#111111] z-10"
                 title="Share Dashboard"
               >
                 <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -674,7 +674,7 @@ export default function TransactionTable() {
                 <div className="flex flex-col items-center justify-center text-center px-1">
                   <div className="flex items-center justify-center gap-1.5 mb-2">
                     <ArrowDownLeft className="w-3.5 h-3.5 text-rose-500" />
-                    <span className="text-[11px] sm:text-sm font-bold text-[#717171]">Total Outflow</span>
+                    <span className="text-[11px] sm:text-sm font-bold text-[#717171] dark:text-[#A0A0A0]">Total Outflow</span>
                   </div>
                   <div className="text-base sm:text-2xl font-bold text-rose-600 tracking-tight truncate w-full">
                     <CountUp value={summary.spent} prefix="-₹" />
@@ -683,7 +683,7 @@ export default function TransactionTable() {
                 <div className="flex flex-col items-center justify-center text-center px-1">
                   <div className="flex items-center justify-center gap-1.5 mb-2">
                     <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />
-                    <span className="text-[11px] sm:text-sm font-bold text-[#717171]">Total Inflow</span>
+                    <span className="text-[11px] sm:text-sm font-bold text-[#717171] dark:text-[#A0A0A0]">Total Inflow</span>
                   </div>
                   <div className="text-base sm:text-2xl font-bold text-emerald-600 tracking-tight truncate w-full">
                     <CountUp value={summary.received} prefix="+₹" />
@@ -691,8 +691,8 @@ export default function TransactionTable() {
                 </div>
                 <div className="flex flex-col items-center justify-center text-center px-1">
                   <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <Wallet className="w-3.5 h-3.5 text-[#222222]" />
-                    <span className="text-[11px] sm:text-sm font-bold text-[#717171]">Net Balance</span>
+                    <Wallet className="w-3.5 h-3.5 text-[#222222] dark:text-[#F7F7F7]" />
+                    <span className="text-[11px] sm:text-sm font-bold text-[#717171] dark:text-[#A0A0A0]">Net Balance</span>
                   </div>
                   <div className={`text-base sm:text-2xl font-bold tracking-tight truncate w-full ${summary.received - summary.spent >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                     <CountUp value={Math.abs(summary.received - summary.spent)} prefix={summary.received - summary.spent >= 0 ? '+₹' : '-₹'} />
@@ -705,25 +705,25 @@ export default function TransactionTable() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Top Categories */}
               <div 
-                className="bg-white p-5 rounded-[24px] border border-[#EBEBEB] shadow-[0_6px_16px_rgba(0,0,0,0.04)] cursor-pointer hover:shadow-md transition-all flex flex-col"
+                className="bg-white dark:bg-[#111111] p-5 rounded-[24px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_6px_16px_rgba(0,0,0,0.04)] cursor-pointer hover:shadow-md transition-all flex flex-col"
                 onClick={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-bold text-[#222222] flex items-center gap-2">
-                    <div className="p-1.5 bg-neutral-100 text-[#222222] rounded-xl">
+                  <h3 className="text-sm font-bold text-[#222222] dark:text-[#F7F7F7] flex items-center gap-2">
+                    <div className="p-1.5 bg-neutral-100 dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7] rounded-xl">
                       <PieChart className="w-4 h-4"/>
                     </div>
                     Top Spending Categories
                   </h3>
-                  <div className="p-1.5 bg-neutral-50 rounded-xl text-[#717171] hover:bg-neutral-100 transition-colors">
+                  <div className="p-1.5 bg-neutral-50 dark:bg-[#1A1A1A] rounded-xl text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-100 dark:hover:bg-[#222222] dark:bg-[#1A1A1A] transition-colors">
                     {isCategoriesExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </div>
                 </div>
                 
                 {!isCategoriesExpanded && (
-                  <div className="text-sm font-medium text-[#717171] mt-2 pl-1">
+                  <div className="text-sm font-medium text-[#717171] dark:text-[#A0A0A0] mt-2 pl-1">
                     {insights.topCategories.length > 0 
-                      ? <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#222222]"></span>{insights.topCategories[0][0]} <span className="text-[#222222] font-bold ml-auto">₹{insights.topCategories[0][1].toLocaleString('en-IN')}</span></div>
+                      ? <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#222222] dark:bg-[#F7F7F7]"></span>{insights.topCategories[0][0]} <span className="text-[#222222] dark:text-[#F7F7F7] font-bold ml-auto">₹{insights.topCategories[0][1].toLocaleString('en-IN')}</span></div>
                       : 'No spending data available.'}
                   </div>
                 )}
@@ -731,25 +731,25 @@ export default function TransactionTable() {
                 {isCategoriesExpanded && (
                   <div className="space-y-4 mt-4 flex-1 overflow-y-auto pr-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     {insights.topCategories.map(([cat, amount], index) => {
-                      const colors = ['bg-[#222222]', 'bg-[#717171]', 'bg-[#B0B0B0]'];
-                      const lightColors = ['bg-neutral-100', 'bg-neutral-50', 'bg-neutral-50'];
-                      const textColors = ['text-[#222222]', 'text-[#717171]', 'text-[#717171]'];
+                      const colors = ['bg-[#222222] dark:bg-[#F7F7F7]', 'bg-[#717171]', 'bg-[#B0B0B0]'];
+                      const lightColors = ['bg-neutral-100 dark:bg-[#1A1A1A]', 'bg-neutral-50 dark:bg-[#1A1A1A]', 'bg-neutral-50 dark:bg-[#1A1A1A]'];
+                      const textColors = ['text-[#222222] dark:text-[#F7F7F7]', 'text-[#717171] dark:text-[#A0A0A0]', 'text-[#717171] dark:text-[#A0A0A0]'];
                       const colorClass = colors[index % colors.length];
                       const lightClass = lightColors[index % lightColors.length];
                       const textClass = textColors[index % textColors.length];
                       
                       return (
-                        <div key={cat} className="p-3 bg-white rounded-xl border border-[#EBEBEB] shadow-sm">
+                        <div key={cat} className="p-3 bg-white dark:bg-[#111111] rounded-xl border border-[#EBEBEB] dark:border-[#222222] shadow-sm">
                           <div className="flex justify-between items-center text-sm mb-2">
                             <div className="flex items-center gap-2">
                               <div className={`w-6 h-6 rounded-lg ${lightClass} ${textClass} flex items-center justify-center text-[10px] font-bold`}>
                                 {index + 1}
                               </div>
-                              <span className="font-bold text-[#222222]">{cat}</span>
+                              <span className="font-bold text-[#222222] dark:text-[#F7F7F7]">{cat}</span>
                             </div>
-                            <span className="text-[#222222] font-bold">₹{amount.toLocaleString('en-IN')}</span>
+                            <span className="text-[#222222] dark:text-[#F7F7F7] font-bold">₹{amount.toLocaleString('en-IN')}</span>
                           </div>
-                          <div className="w-full bg-neutral-100 rounded-full h-1.5 overflow-hidden">
+                          <div className="w-full bg-neutral-100 dark:bg-[#1A1A1A] rounded-full h-1.5 overflow-hidden">
                             <motion.div 
                               className={`${colorClass} h-full rounded-full`}
                               initial={{ width: 0 }}
@@ -760,32 +760,32 @@ export default function TransactionTable() {
                         </div>
                       );
                     })}
-                    {insights.topCategories.length === 0 && <div className="text-sm font-medium text-[#717171] text-center py-6 bg-neutral-50 rounded-xl border border-[#EBEBEB] border-dashed">No spending data available.</div>}
+                    {insights.topCategories.length === 0 && <div className="text-sm font-medium text-[#717171] dark:text-[#A0A0A0] text-center py-6 bg-neutral-50 dark:bg-[#1A1A1A] rounded-xl border border-[#EBEBEB] dark:border-[#222222] border-dashed">No spending data available.</div>}
                   </div>
                 )}
               </div>
 
               {/* Account Breakdown */}
               <div 
-                className="bg-white p-5 rounded-[24px] border border-[#EBEBEB] shadow-[0_6px_16px_rgba(0,0,0,0.04)] cursor-pointer hover:shadow-md transition-all flex flex-col"
+                className="bg-white dark:bg-[#111111] p-5 rounded-[24px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_6px_16px_rgba(0,0,0,0.04)] cursor-pointer hover:shadow-md transition-all flex flex-col"
                 onClick={() => setIsAccountBreakdownExpanded(!isAccountBreakdownExpanded)}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-bold text-[#222222] flex items-center gap-2">
-                    <div className="p-1.5 bg-neutral-100 text-[#222222] rounded-xl">
+                  <h3 className="text-sm font-bold text-[#222222] dark:text-[#F7F7F7] flex items-center gap-2">
+                    <div className="p-1.5 bg-neutral-100 dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7] rounded-xl">
                       <Landmark className="w-4 h-4" />
                     </div>
                     Account Breakdown
                   </h3>
-                  <div className="p-1.5 bg-neutral-50 rounded-xl text-[#717171] hover:bg-neutral-100 transition-colors">
+                  <div className="p-1.5 bg-neutral-50 dark:bg-[#1A1A1A] rounded-xl text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-100 dark:hover:bg-[#222222] dark:bg-[#1A1A1A] transition-colors">
                     {isAccountBreakdownExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </div>
                 </div>
 
                 {!isAccountBreakdownExpanded && (
-                  <div className="text-sm font-medium text-[#717171] mt-2 pl-1">
+                  <div className="text-sm font-medium text-[#717171] dark:text-[#A0A0A0] mt-2 pl-1">
                     {accounts.length > 0 
-                      ? <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#222222]"></span>{accounts.length} Active Accounts</div>
+                      ? <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#222222] dark:bg-[#F7F7F7]"></span>{accounts.length} Active Accounts</div>
                       : 'No account data available.'}
                   </div>
                 )}
@@ -802,11 +802,11 @@ export default function TransactionTable() {
                     const receivedPct = totalVolume > 0 ? (received / totalVolume) * 100 : 0;
 
                     return (
-                      <div key={acc.id} className="p-3.5 bg-white rounded-xl border border-[#EBEBEB] shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+                      <div key={acc.id} className="p-3.5 bg-white dark:bg-[#111111] rounded-xl border border-[#EBEBEB] dark:border-[#222222] shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-emerald-400 to-rose-400 opacity-60"></div>
                         <div className="flex items-center justify-between mb-3 pl-2">
-                          <div className="font-bold text-[#222222] text-sm flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-full bg-neutral-50 flex items-center justify-center text-[10px] font-bold text-[#717171] border border-[#EBEBEB] shadow-sm">
+                          <div className="font-bold text-[#222222] dark:text-[#F7F7F7] text-sm flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-full bg-neutral-50 dark:bg-[#1A1A1A] flex items-center justify-center text-[10px] font-bold text-[#717171] dark:text-[#A0A0A0] border border-[#EBEBEB] dark:border-[#222222] shadow-sm">
                               {acc.bankName.substring(0, 2).toUpperCase()}
                             </div>
                             {acc.bankName}
@@ -815,7 +815,7 @@ export default function TransactionTable() {
                         
                         <div className="pl-2 space-y-2">
                           <div className="flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-1.5 text-[#717171]">
+                            <div className="flex items-center gap-1.5 text-[#717171] dark:text-[#A0A0A0]">
                               <div className="p-1 bg-emerald-50 rounded-md text-emerald-600"><ArrowDownLeft className="w-3 h-3"/></div>
                               <span className="font-medium">In</span>
                             </div>
@@ -823,7 +823,7 @@ export default function TransactionTable() {
                           </div>
                           
                           <div className="flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-1.5 text-[#717171]">
+                            <div className="flex items-center gap-1.5 text-[#717171] dark:text-[#A0A0A0]">
                               <div className="p-1 bg-rose-50 rounded-md text-rose-600"><ArrowUpRight className="w-3 h-3"/></div>
                               <span className="font-medium">Out</span>
                             </div>
@@ -831,7 +831,7 @@ export default function TransactionTable() {
                           </div>
                           
                           {/* Visual Bar */}
-                          <div className="w-full h-1.5 flex rounded-full overflow-hidden bg-neutral-100 mt-3">
+                          <div className="w-full h-1.5 flex rounded-full overflow-hidden bg-neutral-100 dark:bg-[#1A1A1A] mt-3">
                             {received > 0 && <motion.div initial={{ width: 0 }} animate={{ width: `${receivedPct}%` }} transition={{ duration: 1, delay: 0.1 }} className="bg-emerald-400 h-full" />}
                             {spent > 0 && <motion.div initial={{ width: 0 }} animate={{ width: `${spentPct}%` }} transition={{ duration: 1, delay: 0.1 }} className="bg-rose-400 h-full" />}
                           </div>
@@ -840,7 +840,7 @@ export default function TransactionTable() {
                     );
                   })}
                   {accounts.every(acc => !(insights.spentByAccount[acc.id!] || insights.receivedByAccount[acc.id!])) && (
-                    <div className="text-sm font-medium text-[#717171] text-center py-6 bg-neutral-50 rounded-xl border border-[#EBEBEB] border-dashed">No account data available.</div>
+                    <div className="text-sm font-medium text-[#717171] dark:text-[#A0A0A0] text-center py-6 bg-neutral-50 dark:bg-[#1A1A1A] rounded-xl border border-[#EBEBEB] dark:border-[#222222] border-dashed">No account data available.</div>
                   )}
                   </div>
                 )}
@@ -850,23 +850,23 @@ export default function TransactionTable() {
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white p-3 sm:p-4 rounded-[24px] border border-[#EBEBEB] shadow-[0_6px_16px_rgba(0,0,0,0.04)] flex flex-col gap-3 sm:gap-4">
+        <div className="bg-white dark:bg-[#111111] p-3 sm:p-4 rounded-[24px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_6px_16px_rgba(0,0,0,0.04)] flex flex-col gap-3 sm:gap-4">
           <div className="flex items-center gap-2">
             {/* Search */}
             <div className="flex-1 relative">
-              <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-[#717171]" />
+              <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-[#717171] dark:text-[#A0A0A0]" />
               <input
                 type="text"
                 placeholder="Search anything (merchant, UPI, amount...)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-[#EBEBEB] rounded-xl focus:ring-2 focus:ring-[#222222] focus:border-[#222222] outline-none transition-all text-sm font-medium text-[#222222] placeholder-[#B0B0B0]"
+                className="w-full pl-10 pr-4 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] focus:border-[#222222] dark:focus:border-[#F7F7F7] outline-none transition-all text-sm font-medium text-[#222222] dark:text-[#F7F7F7] placeholder-[#B0B0B0]"
               />
             </div>
             {/* Filter Toggle Button */}
             <button 
               onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
-              className={`p-2.5 rounded-xl border flex items-center justify-center transition-colors shrink-0 ${isFiltersExpanded ? 'bg-neutral-100 border-[#EBEBEB] text-[#222222]' : 'bg-white border-[#EBEBEB] text-[#717171] hover:bg-neutral-50'}`}
+              className={`p-2.5 rounded-xl border flex items-center justify-center transition-colors shrink-0 ${isFiltersExpanded ? 'bg-neutral-100 dark:bg-[#1A1A1A] border-[#EBEBEB] dark:border-[#222222] text-[#222222] dark:text-[#F7F7F7]' : 'bg-white dark:bg-[#111111] border-[#EBEBEB] dark:border-[#222222] text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-50 dark:hover:bg-[#1A1A1A]'}`}
               title="Toggle Filters"
             >
               <Filter className="w-5 h-5" />
@@ -879,7 +879,7 @@ export default function TransactionTable() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="flex flex-col gap-3 pt-2 border-t border-[#EBEBEB]"
+              className="flex flex-col gap-3 pt-2 border-t border-[#EBEBEB] dark:border-[#222222]"
             >
               <div className="flex flex-col sm:flex-row gap-3">
                 {/* Date Range */}
@@ -887,7 +887,7 @@ export default function TransactionTable() {
                   <select
                     value={datePreset}
                     onChange={(e) => handleDatePresetChange(e.target.value)}
-                    className="w-full sm:w-auto px-3 py-2 border border-[#EBEBEB] rounded-xl text-sm focus:ring-2 focus:ring-[#222222] outline-none bg-white font-medium text-[#222222]"
+                    className="w-full sm:w-auto px-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-sm focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#111111] font-medium text-[#222222] dark:text-[#F7F7F7]"
                   >
                     <option value="ALL_TIME">All Time</option>
                     <option value="TODAY">Today</option>
@@ -902,22 +902,22 @@ export default function TransactionTable() {
                   {datePreset === 'CUSTOM' && (
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                       <div className="relative flex-1 sm:flex-none">
-                        <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#717171]" />
+                        <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#717171] dark:text-[#A0A0A0]" />
                         <input
                           type="date"
                           value={startDate}
                           onChange={(e) => setStartDate(e.target.value)}
-                          className="w-full pl-9 pr-3 py-2 border border-[#EBEBEB] rounded-xl text-sm focus:ring-2 focus:ring-[#222222] outline-none font-medium text-[#222222]"
+                          className="w-full pl-9 pr-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-sm focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none font-medium text-[#222222] dark:text-[#F7F7F7]"
                         />
                       </div>
-                      <span className="text-[#717171] text-sm font-medium">to</span>
+                      <span className="text-[#717171] dark:text-[#A0A0A0] text-sm font-medium">to</span>
                       <div className="relative flex-1 sm:flex-none">
-                        <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#717171]" />
+                        <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#717171] dark:text-[#A0A0A0]" />
                         <input
                           type="date"
                           value={endDate}
                           onChange={(e) => setEndDate(e.target.value)}
-                          className="w-full pl-9 pr-3 py-2 border border-[#EBEBEB] rounded-xl text-sm focus:ring-2 focus:ring-[#222222] outline-none font-medium text-[#222222]"
+                          className="w-full pl-9 pr-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-sm focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none font-medium text-[#222222] dark:text-[#F7F7F7]"
                         />
                       </div>
                     </div>
@@ -929,7 +929,7 @@ export default function TransactionTable() {
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#EBEBEB] rounded-xl text-sm focus:ring-2 focus:ring-[#222222] outline-none bg-white font-medium text-[#222222]"
+                  className="w-full px-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-sm focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#111111] font-medium text-[#222222] dark:text-[#F7F7F7]"
                 >
                   <option value="ALL">Entry Types</option>
                   <option value="CREDIT">Received (Credit)</option>
@@ -939,7 +939,7 @@ export default function TransactionTable() {
                 <select
                   value={filterExpenseType}
                   onChange={(e) => setFilterExpenseType(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#EBEBEB] rounded-xl text-sm focus:ring-2 focus:ring-[#222222] outline-none bg-white font-medium text-[#222222]"
+                  className="w-full px-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-sm focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#111111] font-medium text-[#222222] dark:text-[#F7F7F7]"
                 >
                   <option value="ALL">Sort Types</option>
                   {appCategories.map(cat => (
@@ -951,7 +951,7 @@ export default function TransactionTable() {
                 <select
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#EBEBEB] rounded-xl text-sm focus:ring-2 focus:ring-[#222222] outline-none bg-white font-medium text-[#222222]"
+                  className="w-full px-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-sm focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#111111] font-medium text-[#222222] dark:text-[#F7F7F7]"
                 >
                   <option value="ALL">All Categories</option>
                   {uniqueCategories.map(cat => (
@@ -962,7 +962,7 @@ export default function TransactionTable() {
                 <select
                   value={filterAccount}
                   onChange={(e) => setFilterAccount(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#EBEBEB] rounded-xl text-sm focus:ring-2 focus:ring-[#222222] outline-none bg-white font-medium text-[#222222]"
+                  className="w-full px-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-sm focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#111111] font-medium text-[#222222] dark:text-[#F7F7F7]"
                 >
                   <option value="ALL">All Accounts</option>
                   {accounts.map(acc => (
@@ -973,7 +973,7 @@ export default function TransactionTable() {
                 <select
                   value={filterPaymentMethod}
                   onChange={(e) => setFilterPaymentMethod(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#EBEBEB] rounded-xl text-sm focus:ring-2 focus:ring-[#222222] outline-none bg-white font-medium text-[#222222]"
+                  className="w-full px-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-sm focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#111111] font-medium text-[#222222] dark:text-[#F7F7F7]"
                 >
                   <option value="ALL">All Payment Methods</option>
                   <option value="UPI">UPI</option>
@@ -986,23 +986,23 @@ export default function TransactionTable() {
         </div>
 
         {/* Table */}
-        <div className="bg-white border border-[#EBEBEB] rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] w-full overflow-x-auto flex-1 flex flex-col">
+        <div className="bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-[#222222] rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] w-full overflow-x-auto flex-1 flex flex-col">
           <div style={{ zoom: zoom as any }} className="min-w-max flex-1">
             <table className="w-full text-left text-sm whitespace-nowrap">
-            <thead className="bg-neutral-50 border-b border-[#EBEBEB] text-[#717171] font-bold">
+            <thead className="bg-neutral-50 dark:bg-[#1A1A1A] border-b border-[#EBEBEB] dark:border-[#222222] text-[#717171] dark:text-[#A0A0A0] font-bold">
               <tr>
-                <th className="px-4 py-3 cursor-pointer group hover:bg-neutral-100 transition-colors" onClick={() => handleSort('date')}>
+                <th className="px-4 py-3 cursor-pointer group hover:bg-neutral-100 dark:hover:bg-[#222222] dark:bg-[#1A1A1A] transition-colors" onClick={() => handleSort('date')}>
                   <div className="flex items-center gap-1">Date <SortIcon columnKey="date" /></div>
                 </th>
                 <th className="px-4 py-3">Time</th>
                 <th className="px-4 py-3">Entry Type</th>
-                <th className="px-4 py-3 cursor-pointer group hover:bg-neutral-100 transition-colors" onClick={() => handleSort('category')}>
+                <th className="px-4 py-3 cursor-pointer group hover:bg-neutral-100 dark:hover:bg-[#222222] dark:bg-[#1A1A1A] transition-colors" onClick={() => handleSort('category')}>
                   <div className="flex items-center gap-1">Category <SortIcon columnKey="category" /></div>
                 </th>
                 <th className="px-4 py-3">Type</th>
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Note</th>
-                <th className="px-4 py-3 cursor-pointer group hover:bg-neutral-100 transition-colors text-right" onClick={() => handleSort('amount')}>
+                <th className="px-4 py-3 cursor-pointer group hover:bg-neutral-100 dark:hover:bg-[#222222] dark:bg-[#1A1A1A] transition-colors text-right" onClick={() => handleSort('amount')}>
                   <div className="flex items-center justify-end gap-1">Amount <SortIcon columnKey="amount" /></div>
                 </th>
                 <th className="px-4 py-3">Payment Method</th>
@@ -1012,41 +1012,41 @@ export default function TransactionTable() {
             </thead>
             <tbody className="divide-y divide-[#EBEBEB]">
               {paginatedTransactions.map(tx => (
-                <tr key={tx.id} className="hover:bg-neutral-50 transition-colors group border-b border-[#EBEBEB] last:border-0">
-                  <td className="px-4 py-3 font-bold text-[#222222]">{safeFormatDate(tx.dateTime, 'yyyy-MM-dd')}</td>
-                  <td className="px-4 py-3 text-[#717171] font-medium">{safeFormatDate(tx.dateTime, 'hh:mm a')}</td>
+                <tr key={tx.id} className="hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] transition-colors group border-b border-[#EBEBEB] dark:border-[#222222] last:border-0">
+                  <td className="px-4 py-3 font-bold text-[#222222] dark:text-[#F7F7F7]">{safeFormatDate(tx.dateTime, 'yyyy-MM-dd')}</td>
+                  <td className="px-4 py-3 text-[#717171] dark:text-[#A0A0A0] font-medium">{safeFormatDate(tx.dateTime, 'hh:mm a')}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold tracking-wide ${tx.type === 'CREDIT' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
                       {tx.type === 'CREDIT' ? 'CREDIT' : 'DEBIT'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 font-bold text-[#222222]">{tx.category}</td>
-                  <td className="px-4 py-3 font-medium text-[#717171]">
+                  <td className="px-4 py-3 font-bold text-[#222222] dark:text-[#F7F7F7]">{tx.category}</td>
+                  <td className="px-4 py-3 font-medium text-[#717171] dark:text-[#A0A0A0]">
                     {tx.expenseType ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold bg-neutral-100 text-[#222222]">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold bg-neutral-100 dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]">
                         {tx.expenseType}
                       </span>
                     ) : '—'}
                   </td>
-                  <td className="px-4 py-3 font-bold text-[#222222] max-w-[150px] truncate" title={tx.party}>
+                  <td className="px-4 py-3 font-bold text-[#222222] dark:text-[#F7F7F7] max-w-[150px] truncate" title={tx.party}>
                     {tx.party || '—'}
                   </td>
-                  <td className="px-4 py-3 text-[#717171] font-medium max-w-[150px] truncate" title={tx.note}>
+                  <td className="px-4 py-3 text-[#717171] dark:text-[#A0A0A0] font-medium max-w-[150px] truncate" title={tx.note}>
                     {tx.note || '—'}
                   </td>
                   <td className={`px-4 py-3 text-right font-black text-base ${tx.type === 'CREDIT' ? 'text-emerald-600' : 'text-rose-600'}`}>
                     {tx.type === 'CREDIT' ? '+' : '-'} ₹{(tx.amount || 0).toLocaleString('en-IN')}
                   </td>
-                  <td className="px-4 py-3 text-[#222222] font-bold">
+                  <td className="px-4 py-3 text-[#222222] dark:text-[#F7F7F7] font-bold">
                     {tx.paymentMethod === 'UPI' ? `UPI${tx.upiApp ? ` (${tx.upiApp})` : ''}` : tx.paymentMethod === 'Bank' ? 'Bank' : 'Cash'}
                   </td>
-                  <td className="px-4 py-3 text-[#222222] font-bold">
+                  <td className="px-4 py-3 text-[#222222] dark:text-[#F7F7F7] font-bold">
                     {accounts.find(a => a.id === tx.accountId)?.bankName || '—'}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <button 
                       onClick={() => handleShareTransaction(tx)}
-                      className="p-2 text-[#717171] hover:text-[#222222] hover:bg-neutral-100 rounded-xl transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                      className="p-2 text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7] hover:bg-neutral-100 dark:hover:bg-[#222222] dark:bg-[#1A1A1A] rounded-xl transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
                       title="Share Transaction"
                     >
                       <Share2 className="w-4 h-4" />
@@ -1057,9 +1057,9 @@ export default function TransactionTable() {
               {paginatedTransactions.length === 0 && (
                 <tr>
                   <td colSpan={10} className="px-4 py-16 text-center">
-                    <div className="flex flex-col items-center justify-center text-[#717171]">
-                      <Search className="w-10 h-10 mb-4 text-[#B0B0B0]" />
-                      <p className="text-lg font-bold text-[#222222]">No transactions found</p>
+                    <div className="flex flex-col items-center justify-center text-[#717171] dark:text-[#A0A0A0]">
+                      <Search className="w-10 h-10 mb-4 text-[#B0B0B0] dark:text-[#666666]" />
+                      <p className="text-lg font-bold text-[#222222] dark:text-[#F7F7F7]">No transactions found</p>
                       <p className="text-sm mt-1 font-medium">Try adjusting your filters or search query.</p>
                     </div>
                   </td>
@@ -1071,25 +1071,25 @@ export default function TransactionTable() {
           
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="border-t border-[#EBEBEB] px-4 py-3 flex items-center justify-between bg-neutral-50 rounded-b-[24px] sticky bottom-0">
-              <div className="text-sm text-[#717171] font-medium">
-                Showing <span className="font-bold text-[#222222]">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-bold text-[#222222]">{Math.min(currentPage * itemsPerPage, filteredAndSortedTransactions.length)}</span> of <span className="font-bold text-[#222222]">{filteredAndSortedTransactions.length}</span> results
+            <div className="border-t border-[#EBEBEB] dark:border-[#222222] px-4 py-3 flex items-center justify-between bg-neutral-50 dark:bg-[#1A1A1A] rounded-b-[24px] sticky bottom-0">
+              <div className="text-sm text-[#717171] dark:text-[#A0A0A0] font-medium">
+                Showing <span className="font-bold text-[#222222] dark:text-[#F7F7F7]">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-bold text-[#222222] dark:text-[#F7F7F7]">{Math.min(currentPage * itemsPerPage, filteredAndSortedTransactions.length)}</span> of <span className="font-bold text-[#222222] dark:text-[#F7F7F7]">{filteredAndSortedTransactions.length}</span> results
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="p-1.5 rounded-xl border border-[#EBEBEB] bg-white text-[#717171] hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 rounded-xl border border-[#EBEBEB] dark:border-[#222222] bg-white dark:bg-[#111111] text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="text-sm font-bold text-[#222222] px-2">
+                <span className="text-sm font-bold text-[#222222] dark:text-[#F7F7F7] px-2">
                   Page {currentPage} of {totalPages}
                 </span>
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="p-1.5 rounded-xl border border-[#EBEBEB] bg-white text-[#717171] hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 rounded-xl border border-[#EBEBEB] dark:border-[#222222] bg-white dark:bg-[#111111] text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
@@ -1100,31 +1100,31 @@ export default function TransactionTable() {
 
         {/* Notable Activity Carousel */}
         <div className="mt-2">
-          <h3 className="text-lg font-bold text-[#222222] mb-4 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#222222]"/> Notable Activity
+          <h3 className="text-lg font-bold text-[#222222] dark:text-[#F7F7F7] mb-4 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-[#222222] dark:text-[#F7F7F7]"/> Notable Activity
           </h3>
           <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {insights.insightCards.map((card) => (
               <div 
                 key={card.id} 
-                className="min-w-[280px] max-w-[320px] flex-shrink-0 snap-center bg-[#222222] p-5 rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] text-white relative overflow-hidden"
+                className="min-w-[280px] max-w-[320px] flex-shrink-0 snap-center bg-[#222222] dark:bg-[#F7F7F7] p-5 rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] text-white dark:text-[#111111] relative overflow-hidden"
               >
                 <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
                   {card.icon}
                 </div>
                 <div className="flex items-center gap-2 mb-3">
                   {card.icon}
-                  <h4 className="text-xs font-bold text-[#B0B0B0] uppercase tracking-wider">{card.title}</h4>
+                  <h4 className="text-xs font-bold text-[#B0B0B0] dark:text-[#666666] uppercase tracking-wider">{card.title}</h4>
                 </div>
-                <div className="bg-white/5 rounded-xl p-4 backdrop-blur-md border border-white/10 h-full flex flex-col justify-center">
+                <div className="bg-white dark:bg-[#111111]/5 rounded-xl p-4 backdrop-blur-md border border-white/10 h-full flex flex-col justify-center">
                   <div className="font-medium text-sm text-[#F7F7F7] mb-1">{card.content}</div>
                   {card.value && <div className="text-2xl font-bold mt-1">{card.value}</div>}
-                  {card.subtext && <div className="text-xs text-[#B0B0B0] mt-2">{card.subtext}</div>}
+                  {card.subtext && <div className="text-xs text-[#B0B0B0] dark:text-[#666666] mt-2">{card.subtext}</div>}
                 </div>
               </div>
             ))}
             {insights.insightCards.length === 0 && (
-              <div className="text-sm font-medium text-[#717171]">Not enough data to generate insights yet.</div>
+              <div className="text-sm font-medium text-[#717171] dark:text-[#A0A0A0]">Not enough data to generate insights yet.</div>
             )}
           </div>
         </div>
