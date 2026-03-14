@@ -414,11 +414,11 @@ export default function Dashboard() {
       {isAddingManual && createPortal(
         <div className="fixed inset-0 bg-[#0F0F13] text-white z-[9999] flex flex-col animate-in fade-in slide-in-from-bottom-5 duration-300 font-sans">
           <div className="flex items-center justify-between px-4 py-3.5 pt-safe-top bg-[#1C1C22] border-b border-white/5 z-20">
-            <button onClick={closeMenu} className="text-[#A0A0A5] hover:text-white font-medium text-[15px] px-2 py-1">
-              Cancel
+            <button onClick={closeMenu} className="text-[#A0A0A5] hover:text-white p-2 -ml-2 transition-colors">
+              <ArrowLeft className="w-6 h-6" />
             </button>
-            <h2 className="text-[15px] font-bold text-white tracking-tight">New Transaction</h2>
-            <div className="w-[60px]" /> {/* Spacer to balance header */}
+            <h2 className="text-[17px] font-bold text-white tracking-tight">Add Transaction</h2>
+            <div className="w-10" /> {/* Spacer to balance back arrow */}
           </div>
 
           <div className="flex-1 overflow-y-auto w-full px-4 pt-4 pb-safe space-y-5 scrollbar-hide no-scrollbar">
@@ -639,30 +639,39 @@ export default function Dashboard() {
           </div>
 
           {/* Bottom Action Bar */}
-          <div className="p-4 bg-[#1C1C22] border-t border-white/5 space-y-3 pb-safe-bottom">
+          <div className="p-4 bg-[#1C1C22] border-t border-white/5 pb-safe-bottom">
             {status === 'success' && (
-              <div className="flex items-center justify-center gap-2 py-2 text-emerald-500 font-bold text-sm animate-in fade-in slide-in-from-bottom-2">
+              <div className="flex items-center justify-center gap-2 pb-4 text-emerald-500 font-bold text-sm animate-in fade-in slide-in-from-bottom-2">
                 <CheckCircle2 className="w-4 h-4" />
                 Transaction saved successfully
               </div>
             )}
             {status === 'error' && (
-              <div className="flex items-center justify-center gap-2 py-2 text-rose-500 font-bold text-sm">
+              <div className="flex items-center justify-center gap-2 pb-4 text-rose-500 font-bold text-sm">
                 <AlertCircle className="w-4 h-4" />
                 {errorMessage}
               </div>
             )}
-            <button 
-              onClick={handleSaveManual}
-              disabled={!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
-              className={`w-full py-4 rounded-2xl font-extrabold text-[16px] transition-all transform active:scale-[0.98] ${
-                (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
-                ? 'bg-[#2C2C34] text-[#5A5A62] cursor-not-allowed opacity-50'
-                : 'bg-[#3B3B98] text-white shadow-[0_8px_24px_rgba(59,59,152,0.3)]'
-              }`}
-            >
-              Save Transaction
-            </button>
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={closeMenu}
+                className="flex-1 py-4 rounded-2xl font-bold text-[15px] text-[#A0A0A5] bg-[#2C2C34] hover:bg-[#34343C] transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveManual}
+                disabled={!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
+                className={`flex-[2] py-4 rounded-2xl font-extrabold text-[15px] transition-all transform active:scale-[0.98] ${
+                  (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
+                  ? 'bg-[#2C2C34] text-[#5A5A62] cursor-not-allowed opacity-50'
+                  : 'bg-[#3B3B98] text-white shadow-[0_8px_24px_rgba(59,59,152,0.3)] hover:bg-[#4545B0]'
+                }`}
+              >
+                {status === 'success' ? 'Saved!' : 'Save Transaction'}
+              </button>
+            </div>
           </div>
         </div>,
         document.body
