@@ -425,7 +425,7 @@ export default function TransactionTable() {
       <main className="flex-1 overflow-auto p-4 sm:p-6 bg-[#F7F7F7] dark:bg-[#0A0A0A] flex flex-col gap-6">
         <div className="relative">
           <div ref={summaryRef} className="flex flex-col gap-4 p-2 -m-2 rounded-xl bg-[#F7F7F7] dark:bg-[#0A0A0A]">
-            <div className="relative bg-white dark:bg-[#111111] rounded-[24px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_6px_16_rgba(0,0,0,0.04)] py-5">
+            <div className="relative bg-white dark:bg-[#111111] rounded-[24px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_6px_16px_rgba(0,0,0,0.04)] py-5">
               <button onClick={handleShareSummary} className="absolute top-3 right-3 p-1.5 text-[#717171] dark:text-[#A0A0A0] rounded-full border border-[#EBEBEB] dark:border-[#222222] bg-white dark:bg-[#111111]">
                 <Share2 className="w-4 h-4" />
               </button>
@@ -511,59 +511,37 @@ export default function TransactionTable() {
           )}
         </div>
 
-        <div className="bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-[#222222] rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-neutral-50 dark:bg-[#1A1A1A] border-b border-[#EBEBEB] dark:border-[#222222] text-[#717171] dark:text-[#A0A0A0] font-bold">
-                <tr>
-                  <th className="px-4 py-3 cursor-pointer" onClick={() => handleSort('date')}>Date <SortIcon columnKey="date" /></th>
-                  <th className="hidden md:table-cell px-4 py-3">Type</th>
-                  <th className="hidden sm:table-cell px-4 py-3">Category</th>
-                  <th className="px-4 py-3">Name</th>
-                  <th className="hidden lg:table-cell px-4 py-3">Note</th>
-                  <th className="px-4 py-3 text-right" onClick={() => handleSort('amount')}>Amount <SortIcon columnKey="amount" /></th>
-                  <th className="hidden md:table-cell px-4 py-3">Account</th>
+        <div className="bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-[#222222] rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] overflow-x-auto">
+          <table className="w-full text-left text-sm whitespace-nowrap">
+            <thead className="bg-neutral-50 dark:bg-[#1A1A1A] border-b border-[#EBEBEB] dark:border-[#222222] text-[#717171] dark:text-[#A0A0A0] font-bold">
+              <tr>
+                <th className="px-4 py-3 cursor-pointer" onClick={() => handleSort('date')}>Date <SortIcon columnKey="date" /></th>
+                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">Category</th>
+                <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3 text-right" onClick={() => handleSort('amount')}>Amount <SortIcon columnKey="amount" /></th>
+                <th className="px-4 py-3">Account</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#EBEBEB] dark:divide-[#222222]">
+              {paginatedTransactions.map(tx => (
+                <tr key={tx.id} className="hover:bg-neutral-50 dark:hover:bg-[#1A1A1A]">
+                  <td className="px-4 py-3 font-bold">{safeFormatDate(tx.dateTime, 'yyyy-MM-dd')}</td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${tx.type === 'CREDIT' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                      {tx.type}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 font-medium">{tx.category}</td>
+                  <td className="px-4 py-3 font-medium">{tx.party || '—'}</td>
+                  <td className={`px-4 py-3 text-right font-bold ${tx.type === 'CREDIT' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {tx.type === 'CREDIT' ? '+' : '-'}₹{(tx.amount || 0).toLocaleString('en-IN')}
+                  </td>
+                  <td className="px-4 py-3 font-medium">{accounts.find(a => a.id === tx.accountId)?.bankName || '—'}</td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-[#EBEBEB] dark:divide-[#222222]">
-                {paginatedTransactions.map(tx => (
-                  <tr key={tx.id} className="hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] transition-colors">
-                    <td className="px-4 py-4 sm:py-3">
-                      <div className="font-bold text-[#222222] dark:text-[#F7F7F7]">
-                        {safeFormatDate(tx.dateTime, 'MMM d, yyyy')}
-                      </div>
-                      <div className="text-[10px] text-[#717171] dark:text-[#A0A0A0] md:hidden">
-                        {safeFormatDate(tx.dateTime, 'hh:mm a')}
-                      </div>
-                    </td>
-                    <td className="hidden md:table-cell px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${tx.type === 'CREDIT' ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400'}`}>
-                        {tx.type}
-                      </span>
-                    </td>
-                    <td className="hidden sm:table-cell px-4 py-3 font-medium text-[#717171] dark:text-[#A0A0A0]">{tx.category}</td>
-                    <td className="px-4 py-3">
-                      <div className="font-bold text-[#222222] dark:text-[#F7F7F7] max-w-[120px] sm:max-w-[200px] truncate">
-                        {tx.party || '—'}
-                      </div>
-                      <div className="text-[10px] text-[#717171] dark:text-[#A0A0A0] lg:hidden max-w-[120px] truncate">
-                        {tx.note}
-                      </div>
-                    </td>
-                    <td className="hidden lg:table-cell px-4 py-3 font-medium text-[#717171] dark:text-[#A0A0A0] max-w-[200px] truncate">
-                      {tx.note || '—'}
-                    </td>
-                    <td className={`px-4 py-3 text-right font-black ${tx.type === 'CREDIT' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                      {tx.type === 'CREDIT' ? '+' : '-'}₹{(tx.amount || 0).toLocaleString('en-IN')}
-                    </td>
-                    <td className="hidden md:table-cell px-4 py-3 font-medium text-[#717171] dark:text-[#A0A0A0]">
-                      {accounts.find(a => a.id === tx.accountId)?.bankName || '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
           
           {totalPages > 1 && (
             <div className="px-4 py-3 flex items-center justify-between border-t border-[#EBEBEB] dark:border-[#222222]">
