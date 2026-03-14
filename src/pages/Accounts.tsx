@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
 import { Plus, Trash2, Pencil } from 'lucide-react';
-
-import { IndusIndLogo } from '../components/IndusIndLogo';
-import { UnionBankLogo } from '../components/UnionBankLogo';
+import { BankLogo } from '../components/BankLogo';
+import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
 
 export default function Accounts() {
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
@@ -88,16 +87,46 @@ export default function Accounts() {
           </h2>
           <form onSubmit={handleAddAccount} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div>
-                <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Bank Name</label>
+              <div className="md:col-span-3">
+                <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5 flex justify-between items-center">
+                  <span>Bank Name</span>
+                  {getBankByPattern(bankName) && (
+                    <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">Logo Detected</span>
+                  )}
+                </label>
                 <input
                   type="text"
                   value={bankName}
                   onChange={(e) => setBankName(e.target.value)}
-                  placeholder="e.g., SBI, HDFC"
-                  className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] focus:border-[#222222] dark:focus:border-[#F7F7F7] outline-none transition-shadow"
+                  placeholder="e.g., State Bank of India or just 'SBI'"
+                  className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] focus:border-[#222222] dark:focus:border-[#F7F7F7] outline-none transition-shadow mb-3"
                   required
                 />
+                
+                {/* Auto-detect / Express select row */}
+                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-2 px-2">
+                  {INDIAN_BANKS.map(bank => {
+                    const isSelected = getBankByPattern(bankName)?.id === bank.id;
+                    const Icon = bank.logo;
+                    return (
+                      <button
+                        key={bank.id}
+                        type="button"
+                        onClick={() => setBankName(bank.name)}
+                        className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all ${
+                          isSelected
+                            ? 'bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] border-transparent shadow-sm'
+                            : 'bg-white dark:bg-[#111111] text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] border-[#EBEBEB] dark:border-[#222222]'
+                        }`}
+                      >
+                        <div className="w-5 h-5 bg-white rounded flex items-center justify-center p-0.5 shadow-sm shrink-0">
+                          <Icon className="w-full h-full object-contain" />
+                        </div>
+                        <span className="text-[11px] font-bold">{bank.id}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Account Last 4 Digits</label>
@@ -149,16 +178,8 @@ export default function Accounts() {
           <div key={account.id} className="bg-white dark:bg-[#111111] p-6 rounded-[20px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] dark:border-[#222222] flex flex-col justify-between hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-shadow">
             <div>
               <div className="flex justify-between items-start mb-5">
-                <div className="w-12 h-12 bg-neutral-100 dark:bg-[#1A1A1A] rounded-full flex items-center justify-center text-[#222222] dark:text-[#F7F7F7] font-bold text-lg overflow-hidden p-1">
-                  {account.bankName.toLowerCase().includes('canara') ? (
-                    <img src="https://crystalpng.com/wp-content/uploads/2025/11/Canara-Bank-Logo.png" alt="Canara Bank" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-                  ) : account.bankName.toLowerCase().includes('indus') || account.bankName.toLowerCase().includes('insus') ? (
-                    <IndusIndLogo className="w-full h-full object-contain" />
-                  ) : account.bankName.toLowerCase().includes('union') ? (
-                    <UnionBankLogo className="w-full h-full object-contain" />
-                  ) : (
-                    account.bankName.substring(0, 2).toUpperCase()
-                  )}
+                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center p-2 shadow-sm border border-[#EBEBEB] shrink-0">
+                  <BankLogo bankName={account.bankName} className="w-full h-full object-contain" />
                 </div>
                 <div className="flex items-center gap-1">
                   <button
