@@ -3,11 +3,16 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
 import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Download, ZoomIn, ZoomOut, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Calendar, FileText, Share2, ArrowUpRight, ArrowDownLeft, Wallet, Landmark, Filter } from 'lucide-react';
+import { 
+  ArrowLeft, Download, ZoomIn, ZoomOut, Search, ChevronUp, ChevronDown, 
+  ChevronLeft, ChevronRight, Calendar, FileText, Share2, ArrowUpRight, 
+  ArrowDownLeft, Wallet, Filter, Printer, MoreHorizontal, CheckCircle2,
+  Clock, Tag, CreditCard, Banknote, User
+} from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toBlob } from 'html-to-image';
-import { motion, useSpring, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion';
 import { useCategories } from '../hooks/useCategories';
 
 function CountUp({ value, prefix = '', suffix = '' }: { value: number, prefix?: string, suffix?: string }) {
@@ -47,10 +52,10 @@ export default function TransactionTable() {
   const [filterAccount, setFilterAccount] = useState('ALL');
   const [filterPaymentMethod, setFilterPaymentMethod] = useState('ALL');
   const [filterExpenseType, setFilterExpenseType] = useState('ALL');
-  const [datePreset, setDatePreset] = useState('CUSTOM');
+  const [datePreset, setDatePreset] = useState(startParam ? 'CUSTOM' : 'THIS_MONTH');
   
-  const [startDate, setStartDate] = useState(startParam ? format(new Date(startParam), 'yyyy-MM-dd') : '');
-  const [endDate, setEndDate] = useState(endParam ? format(new Date(endParam), 'yyyy-MM-dd') : '');
+  const [startDate, setStartDate] = useState(startParam ? format(new Date(startParam), 'yyyy-MM-dd') : format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState(endParam ? format(new Date(endParam), 'yyyy-MM-dd') : format(endOfMonth(new Date()), 'yyyy-MM-dd'));
 
   const handleDatePresetChange = (preset: string) => {
     setDatePreset(preset);
@@ -69,10 +74,6 @@ export default function TransactionTable() {
         setStartDate(format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd'));
         setEndDate(format(endOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd'));
         break;
-      case 'LAST_10_DAYS':
-        setStartDate(format(subDays(today, 9), 'yyyy-MM-dd'));
-        setEndDate(format(today, 'yyyy-MM-dd'));
-        break;
       case 'LAST_30_DAYS':
         setStartDate(format(subDays(today, 29), 'yyyy-MM-dd'));
         setEndDate(format(today, 'yyyy-MM-dd'));
@@ -85,22 +86,19 @@ export default function TransactionTable() {
         setStartDate('');
         setEndDate('');
         break;
-      case 'CUSTOM':
-        // keep current dates
-        break;
     }
   };
 
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
   const [sortConfig, setSortConfig] = useState<{key: string, direction: 'asc' | 'desc'}>({ key: 'date', direction: 'desc' });
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-  const summaryRef = useRef<HTMLDivElement>(null);
+  const itemsPerPage = 12;
+  const reportRef = useRef<HTMLDivElement>(null);
   
   const { categories: appCategories } = useCategories();
 
-  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2));
-  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.3));
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 1.5));
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5));
   const handleZoomReset = () => setZoom(1);
 
   const allTransactionsRaw = useLiveQuery(() => db.transactions.toArray()) || [];
@@ -114,7 +112,6 @@ export default function TransactionTable() {
   const filteredAndSortedTransactions = useMemo(() => {
     let result = [...allTransactionsRaw];
 
-    // 1. Date Range Filter
     if (startDate && endDate) {
       try {
         const start = startOfDay(new Date(startDate)).getTime();
@@ -123,433 +120,352 @@ export default function TransactionTable() {
           const txDate = new Date(tx.dateTime).getTime();
           return txDate >= start && txDate <= end;
         });
-      } catch (e) {
-        // Ignore invalid dates
-      }
+      } catch (e) {}
     }
 
-    // 2. Global Search
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(tx => {
-        const partyMatch = tx.party?.toLowerCase().includes(query);
-        const noteMatch = tx.note?.toLowerCase().includes(query);
-        const accountMatch = accounts.find(a => a.id === tx.accountId)?.bankName.toLowerCase().includes(query);
-        const categoryMatch = tx.category?.toLowerCase().includes(query);
-        
-        const resolvedMethod = tx.paymentMethod === 'UPI' ? 'upi' : tx.paymentMethod === 'Bank' ? 'bank' : 'cash';
-        const methodMatch = resolvedMethod.includes(query);
-        
-        const upiAppMatch = tx.upiApp?.toLowerCase().includes(query);
-        const amountMatch = tx.amount?.toString().includes(query);
-        const typeMatch = tx.type?.toLowerCase().includes(query);
-        
-        return partyMatch || noteMatch || accountMatch || categoryMatch || methodMatch || upiAppMatch || amountMatch || typeMatch;
-      });
+      const q = searchQuery.toLowerCase();
+      result = result.filter(tx => 
+        tx.party?.toLowerCase().includes(q) || 
+        tx.note?.toLowerCase().includes(q) ||
+        tx.category?.toLowerCase().includes(q) ||
+        tx.amount?.toString().includes(q)
+      );
     }
 
-    // 3. Multi-Filters
-    if (filterType !== 'ALL') {
-      result = result.filter(tx => tx.type === filterType);
-    }
-    if (filterCategory !== 'ALL') {
-      result = result.filter(tx => tx.category === filterCategory);
-    }
-    if (filterAccount !== 'ALL') {
-      result = result.filter(tx => String(tx.accountId) === filterAccount);
-    }
-    if (filterPaymentMethod !== 'ALL') {
-      result = result.filter(tx => {
-        const resolvedMethod = tx.paymentMethod === 'UPI' ? 'UPI' : tx.paymentMethod === 'Bank' ? 'Bank' : 'Cash';
-        return resolvedMethod === filterPaymentMethod;
-      });
-    }
-    if (filterExpenseType !== 'ALL') {
-      result = result.filter(tx => tx.expenseType === filterExpenseType);
-    }
+    if (filterType !== 'ALL') result = result.filter(tx => tx.type === filterType);
+    if (filterCategory !== 'ALL') result = result.filter(tx => tx.category === filterCategory);
+    if (filterAccount !== 'ALL') result = result.filter(tx => String(tx.accountId) === filterAccount);
+    if (filterExpenseType !== 'ALL') result = result.filter(tx => tx.expenseType === filterExpenseType);
 
-    // 4. Sorting
     result.sort((a, b) => {
-      if (sortConfig.key === 'date') {
-        const dateA = new Date(a.dateTime).getTime();
-        const dateB = new Date(b.dateTime).getTime();
-        return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
-      }
-      if (sortConfig.key === 'amount') {
-        const amountA = a.amount || 0;
-        const amountB = b.amount || 0;
-        return sortConfig.direction === 'asc' ? amountA - amountB : amountB - amountA;
-      }
-      if (sortConfig.key === 'category') {
-        const catA = a.category || '';
-        const catB = b.category || '';
-        return sortConfig.direction === 'asc' ? catA.localeCompare(catB) : catB.localeCompare(catA);
-      }
+      const dir = sortConfig.direction === 'asc' ? 1 : -1;
+      if (sortConfig.key === 'date') return (new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime()) * dir;
+      if (sortConfig.key === 'amount') return ((a.amount || 0) - (b.amount || 0)) * dir;
+      if (sortConfig.key === 'category') return (a.category || '').localeCompare(b.category || '') * dir;
       return 0;
     });
 
     return result;
-  }, [allTransactionsRaw, accounts, startDate, endDate, searchQuery, filterType, filterCategory, filterAccount, filterPaymentMethod, filterExpenseType, sortConfig]);
+  }, [allTransactionsRaw, startDate, endDate, searchQuery, filterType, filterCategory, filterAccount, filterExpenseType, sortConfig]);
 
-  // Reset pagination when filters change
-  useMemo(() => {
-    setCurrentPage(1);
-  }, [searchQuery, filterType, filterCategory, filterAccount, filterPaymentMethod, filterExpenseType, startDate, endDate, sortConfig]);
-
-  // Summary calculations
   const summary = useMemo(() => {
-    return filteredAndSortedTransactions.reduce((acc, tx) => {
+    const res = filteredAndSortedTransactions.reduce((acc, tx) => {
       if (tx.type === 'CREDIT') acc.received += (tx.amount || 0);
-      if (tx.type === 'DEBIT') acc.spent += (tx.amount || 0);
+      else acc.spent += (tx.amount || 0);
       return acc;
     }, { received: 0, spent: 0 });
+    return { ...res, net: res.received - res.spent };
   }, [filteredAndSortedTransactions]);
 
-  // Pagination
   const totalPages = Math.max(1, Math.ceil(filteredAndSortedTransactions.length / itemsPerPage));
-  const paginatedTransactions = filteredAndSortedTransactions.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const paginatedTransactions = filteredAndSortedTransactions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleSort = (key: string) => {
-    setSortConfig(prev => {
-      if (prev.key === key) {
-        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
-      }
-      return { key, direction: 'desc' }; // Default to desc for new column
-    });
+    setSortConfig(prev => ({ key, direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc' }));
   };
 
   const SortIcon = ({ columnKey }: { columnKey: string }) => {
-    if (sortConfig.key !== columnKey) return <ChevronDown className="w-4 h-4 text-[#B0B0B0] dark:text-[#666666] opacity-0 group-hover:opacity-100" />;
-    return sortConfig.direction === 'asc' ? <ChevronUp className="w-4 h-4 text-[#222222] dark:text-[#F7F7F7]" /> : <ChevronDown className="w-4 h-4 text-[#222222] dark:text-[#F7F7F7]" />;
+    if (sortConfig.key !== columnKey) return <ChevronDown className="w-3 h-3 opacity-20" />;
+    return sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3 text-[#222222] dark:text-[#F7F7F7]" /> : <ChevronDown className="w-3 h-3 text-[#222222] dark:text-[#F7F7F7]" />;
   };
 
-  const handleExportCSV = async () => {
-    const headers = ['Date', 'Time', 'Type', 'Category', 'Name', 'Note', 'Amount', 'Payment Method', 'Account'];
-    const rows = filteredAndSortedTransactions.map(tx => {
-      const typeLabel = tx.type === 'CREDIT' ? '(Received/Credited)' : '(Paid to / Debit)';
-      return [
-        safeFormatDate(tx.dateTime, 'yyyy-MM-dd'),
-        safeFormatDate(tx.dateTime, 'HH:mm:ss'),
-        typeLabel,
-        tx.category,
-        `"${(tx.party || '').replace(/"/g, '""')}"`,
-        `"${(tx.note || '').replace(/"/g, '""')}"`,
-        tx.amount || 0,
-        tx.paymentMethod === 'UPI' ? `UPI (${tx.upiApp || ''})` : tx.paymentMethod,
-        accounts.find(a => a.id === tx.accountId)?.bankName || ''
-      ];
-    });
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n');
-
-    const fileName = `transactions_${startDate || 'all'}_to_${endDate || 'all'}.csv`;
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isAndroid = /Android/.test(navigator.userAgent);
-    
-    if (isIOS || isAndroid) {
-      const reader = new FileReader();
-      reader.onload = function() {
-        const dataUrl = reader.result as string;
-        const link = document.createElement('a');
-        link.href = dataUrl;
-        link.download = fileName;
-        link.click();
-      };
-      reader.readAsDataURL(blob);
-    } else {
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', fileName);
-      link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }
-  };
-
-  const handleExportPDF = async () => {
-    const doc = new jsPDF();
-    
-    doc.setFontSize(18);
-    doc.text('Transaction Report', 14, 22);
-    
-    doc.setFontSize(11);
+  const exportPDF = async () => {
+    const doc = new jsPDF('l', 'mm', 'a4');
+    doc.setFontSize(22);
+    doc.text('Transaction Table Report', 14, 20);
+    doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Period: ${startDate || 'All'} to ${endDate || 'All'}`, 14, 30);
-    doc.text(`Total Spent: Rs. ${summary.spent.toLocaleString('en-IN')}`, 14, 36);
-    doc.text(`Total Received: Rs. ${summary.received.toLocaleString('en-IN')}`, 14, 42);
-
-    const tableColumn = ["Date", "Type", "Category", "Name", "Note", "Amount", "Account"];
-    const tableRows = filteredAndSortedTransactions.map(tx => {
-      const typeLabel = tx.type === 'CREDIT' ? 'Credit' : 'Debit';
-      return [
-        safeFormatDate(tx.dateTime, 'yyyy-MM-dd'),
-        typeLabel,
-        tx.category || '',
-        tx.party || '',
-        tx.note || '',
-        `${tx.type === 'CREDIT' ? '+' : '-'} Rs. ${tx.amount || 0}`,
-        accounts.find(a => a.id === tx.accountId)?.bankName || ''
-      ];
-    });
+    doc.text(`Generated on: ${format(new Date(), 'PPP p')} | Period: ${startDate || 'All'} to ${endDate || 'All'}`, 14, 28);
+    
+    const tableData = filteredAndSortedTransactions.map(tx => [
+      format(new Date(tx.dateTime), 'yyyy-MM-dd HH:mm'),
+      tx.type,
+      tx.category || '-',
+      tx.party || '-',
+      tx.note || '-',
+      tx.type === 'CREDIT' ? `+${tx.amount}` : `-${tx.amount}`,
+      accounts.find(a => a.id === tx.accountId)?.bankName || '-'
+    ]);
 
     autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 55,
+      head: [['DateTime', 'Type', 'Category', 'Merchant/Party', 'Note', 'Amount', 'Account']],
+      body: tableData,
+      startY: 35,
       theme: 'grid',
+      headStyles: { fillColor: [40, 40, 40], textColor: [255, 255, 255], fontStyle: 'bold' },
       styles: { fontSize: 8 },
-      headStyles: { fillColor: [34, 34, 34] }
+      alternateRowStyles: { fillColor: [250, 250, 250] }
     });
-
-    doc.save(`transactions_report_${startDate || 'all'}_to_${endDate || 'all'}.pdf`);
+    doc.save('Transaction_Report.pdf');
   };
 
-  const handleShareSummary = async () => {
-    if (!summaryRef.current) return;
+  const shareReportImage = async () => {
+    if (!reportRef.current) return;
     try {
-      const blob = await toBlob(summaryRef.current, { backgroundColor: '#f9fafb', pixelRatio: 2 });
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'summary.png';
-      link.click();
-    } catch (error) {
-      console.error('Error sharing summary:', error);
-    }
-  };
-
-  const handleShareTransaction = async (tx: any) => {
-    const container = document.createElement('div');
-    container.style.position = 'absolute';
-    container.style.left = '-9999px';
-    container.style.width = '400px';
-    container.style.padding = '24px';
-    container.style.backgroundColor = '#ffffff';
-    container.style.borderRadius = '16px';
-    container.style.fontFamily = 'sans-serif';
-    container.style.color = '#111827';
-    
-    const isCredit = tx.type === 'CREDIT';
-    const amountColor = isCredit ? '#059669' : '#e11d48';
-    const typeLabel = isCredit ? 'Received' : 'Paid';
-    const merchantNote = tx.party && tx.note ? `${tx.party} - ${tx.note}` : tx.party || tx.note || 'Transaction';
-    const accountName = accounts.find(a => a.id === tx.accountId)?.bankName || 'Unknown Account';
-
-    container.innerHTML = `
-      <div style="text-align: center; margin-bottom: 16px;">
-        <div style="font-size: 14px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">${typeLabel}</div>
-        <div style="font-size: 36px; font-weight: bold; color: ${amountColor}; margin: 8px 0;">
-          ${isCredit ? '+' : '-'}₹${(tx.amount || 0).toLocaleString('en-IN')}
-        </div>
-        <div style="font-size: 18px; font-weight: 500;">${merchantNote}</div>
-      </div>
-      <div style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 16px;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <span style="color: #6b7280;">Date</span>
-          <span style="font-weight: 500;">${safeFormatDate(tx.dateTime, 'MMM d, yyyy - hh:mm a')}</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <span style="color: #6b7280;">Account</span>
-          <span style="font-weight: 500;">${accountName}</span>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(container);
-
-    try {
-      const blob = await toBlob(container, { pixelRatio: 2 });
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'transaction.png';
-      link.click();
-      document.body.removeChild(container);
-    } catch (error) {
-      console.error('Error sharing transaction:', error);
-      document.body.removeChild(container);
+      const blob = await toBlob(reportRef.current, { backgroundColor: '#000000', pixelRatio: 2 });
+      if (blob) {
+        const item = new ClipboardItem({ "image/png": blob });
+        await navigator.clipboard.write([item]);
+        alert("Report copied to clipboard as image!");
+      }
+    } catch (e) {
+      console.error(e);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#111111] text-[#222222] dark:text-[#F7F7F7] flex flex-col">
-      <header className="bg-white dark:bg-[#111111] border-b border-[#EBEBEB] dark:border-[#222222] px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-0 z-10">
-        <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+    <div className="min-h-screen bg-black text-[#F7F7F7] flex flex-col font-sans selection:bg-white/20">
+      {/* Top Navigation Bar */}
+      <header className="h-16 border-b border-[#222222] bg-[#0A0A0A]/80 backdrop-blur-xl sticky top-0 z-50 px-6 flex items-center justify-between">
+        <div className="flex items-center gap-6">
           <button 
             onClick={() => navigate('/transactions')} 
-            className="p-2 -ml-2 sm:ml-0 text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-100 dark:hover:bg-[#222222] dark:bg-[#1A1A1A] rounded-full transition-colors shrink-0"
-            title="Go Back"
+            className="p-2 hover:bg-[#222222] rounded-full transition-all text-[#A0A0A0] hover:text-white"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
+          <div className="h-4 w-[1px] bg-[#222222]" />
           <div>
-            <h1 className="text-lg sm:text-xl font-bold text-[#222222] dark:text-[#F7F7F7]">Transaction Report</h1>
-            <p className="text-xs sm:text-sm text-[#717171] dark:text-[#A0A0A0] font-medium mt-0.5">
-              {filteredAndSortedTransactions.length} of {allTransactionsRaw.length} transactions
-            </p>
+            <h1 className="text-sm font-black tracking-widest uppercase">FinTrack Pro <span className="text-[#666666] font-medium ml-2">/ Report</span></h1>
           </div>
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-          <div className="flex items-center bg-neutral-100 dark:bg-[#1A1A1A] rounded-xl p-1">
-            <button onClick={handleZoomOut} className="p-1.5 text-[#717171] dark:text-[#A0A0A0] hover:bg-white dark:bg-[#111111] hover:shadow-sm rounded-lg transition-all" title="Zoom Out">
-              <ZoomOut className="w-4 h-4" />
-            </button>
-            <button onClick={handleZoomReset} className="px-2 text-xs font-bold text-[#222222] dark:text-[#F7F7F7] hover:bg-white dark:bg-[#111111] hover:shadow-sm rounded-lg transition-all h-7" title="Reset Zoom">
-              {Math.round(zoom * 100)}%
-            </button>
-            <button onClick={handleZoomIn} className="p-1.5 text-[#717171] dark:text-[#A0A0A0] hover:bg-white dark:bg-[#111111] hover:shadow-sm rounded-lg transition-all" title="Zoom In">
-              <ZoomIn className="w-4 h-4" />
-            </button>
+
+        <div className="flex items-center gap-4">
+          <div className="flex items-center bg-[#111111] border border-[#222222] rounded-full p-1 shadow-inner">
+            <button onClick={handleZoomOut} className="p-1.5 hover:bg-[#222222] rounded-full transition-all text-[#666666] hover:text-white"><ZoomOut className="w-4 h-4" /></button>
+            <button onClick={handleZoomReset} className="px-3 text-[10px] font-black">{Math.round(zoom * 100)}%</button>
+            <button onClick={handleZoomIn} className="p-1.5 hover:bg-[#222222] rounded-full transition-all text-[#666666] hover:text-white"><ZoomIn className="w-4 h-4" /></button>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={handleExportPDF} className="p-2 bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-[#222222] text-[#222222] dark:text-[#F7F7F7] rounded-xl">
-              <FileText className="w-4 h-4" />
-            </button>
-            <button onClick={handleExportCSV} className="p-2 bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl">
-              <Download className="w-4 h-4" />
-            </button>
-          </div>
+          <button onClick={exportPDF} className="flex items-center gap-2 px-4 py-2 bg-[#111111] hover:bg-[#222222] border border-[#222222] rounded-xl text-xs font-bold transition-all">
+            <Download className="w-4 h-4" /> Export
+          </button>
+          <button onClick={shareReportImage} className="p-2 bg-white text-black rounded-xl hover:scale-105 transition-all">
+            <Share2 className="w-4 h-4" />
+          </button>
         </div>
       </header>
 
-      <main className="flex-1 overflow-auto p-4 sm:p-6 bg-[#F7F7F7] dark:bg-[#0A0A0A] flex flex-col gap-6">
-        <div className="relative">
-          <div ref={summaryRef} className="flex flex-col gap-4 p-2 -m-2 rounded-xl bg-[#F7F7F7] dark:bg-[#0A0A0A]">
-            <div className="relative bg-white dark:bg-[#111111] rounded-[24px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_6px_16px_rgba(0,0,0,0.04)] py-5">
-              <button onClick={handleShareSummary} className="absolute top-3 right-3 p-1.5 text-[#717171] dark:text-[#A0A0A0] rounded-full border border-[#EBEBEB] dark:border-[#222222] bg-white dark:bg-[#111111]">
-                <Share2 className="w-4 h-4" />
-              </button>
-              
-              <div className="grid grid-cols-3 divide-x divide-[#EBEBEB]">
-                <div className="flex flex-col items-center justify-center text-center px-1">
-                  <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <ArrowDownLeft className="w-3.5 h-3.5 text-rose-500" />
-                    <span className="text-[11px] sm:text-sm font-bold text-[#717171] dark:text-[#A0A0A0]">Outflow</span>
+      <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full flex flex-col gap-8">
+        {/* KPI & Filters Row */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Summary Cards */}
+          <div className="lg:col-span-8 grid grid-cols-3 gap-4">
+            {[
+              { label: 'Total Inflow', val: summary.received, color: 'text-emerald-400', icon: ArrowDownLeft, bg: 'bg-emerald-500/5' },
+              { label: 'Total Outflow', val: summary.spent, color: 'text-rose-400', icon: ArrowUpRight, bg: 'bg-rose-500/5' },
+              { label: 'Net Balance', val: summary.net, color: summary.net >= 0 ? 'text-blue-400' : 'text-orange-400', icon: Wallet, bg: 'bg-white/5' }
+            ].map((card, i) => (
+              <div key={i} className={`p-4 rounded-[24px] border border-[#222222] ${card.bg} relative overflow-hidden group`}>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={`p-1.5 rounded-lg border border-[#222222] ${card.color}`}>
+                    <card.icon className="w-3.5 h-3.5" />
                   </div>
-                  <div className="text-base sm:text-2xl font-bold text-rose-600 truncate w-full">
-                    <CountUp value={summary.spent} prefix="-₹" />
-                  </div>
+                  <span className="text-[10px] font-black text-[#666666] uppercase tracking-widest">{card.label}</span>
                 </div>
-                <div className="flex flex-col items-center justify-center text-center px-1">
-                  <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />
-                    <span className="text-[11px] sm:text-sm font-bold text-[#717171] dark:text-[#A0A0A0]">Inflow</span>
-                  </div>
-                  <div className="text-base sm:text-2xl font-bold text-emerald-600 truncate w-full">
-                    <CountUp value={summary.received} prefix="+₹" />
-                  </div>
-                </div>
-                <div className="flex flex-col items-center justify-center text-center px-1">
-                  <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <Wallet className="w-3.5 h-3.5 text-[#222222] dark:text-[#F7F7F7]" />
-                    <span className="text-[11px] sm:text-sm font-bold text-[#717171] dark:text-[#A0A0A0]">Net</span>
-                  </div>
-                  <div className={`text-base sm:text-2xl font-bold truncate w-full ${summary.received - summary.spent >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    <CountUp value={Math.abs(summary.received - summary.spent)} prefix={summary.received - summary.spent >= 0 ? '+₹' : '-₹'} />
-                  </div>
+                <div className={`text-xl font-black ${card.color} tracking-tight`}>
+                  <CountUp value={Math.abs(card.val)} prefix={card.val < 0 ? '-₹' : '₹'} />
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-[#111111] p-3 sm:p-4 rounded-[24px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_6px_16px_rgba(0,0,0,0.04)] flex flex-col gap-3 sm:gap-4">
-          <div className="flex items-center gap-2">
-            <div className="flex-1 relative">
-              <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-[#717171] dark:text-[#A0A0A0]" />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl outline-none text-sm font-medium text-[#222222] dark:text-[#F7F7F7]"
-              />
-            </div>
-            <button 
-              onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
-              className="p-2.5 rounded-xl border border-[#EBEBEB] dark:border-[#222222] bg-white dark:bg-[#111111] text-[#717171] dark:text-[#A0A0A0]"
-            >
-              <Filter className="w-5 h-5" />
-            </button>
+            ))}
           </div>
 
+          {/* Quick Filters */}
+          <div className="lg:col-span-4 bg-[#0A0A0A] border border-[#222222] rounded-[24px] p-4 flex flex-col justify-between">
+            <div className="flex items-center gap-2 mb-4">
+              <Calendar className="w-4 h-4 text-[#666666]" />
+              <select 
+                value={datePreset} 
+                onChange={(e) => handleDatePresetChange(e.target.value)}
+                className="bg-transparent text-sm font-bold border-none outline-none focus:ring-0 text-[#F7F7F7] flex-1 cursor-pointer"
+              >
+                <option value="THIS_MONTH" className="bg-black">This Month</option>
+                <option value="LAST_30_DAYS" className="bg-black">Last 30 Days</option>
+                <option value="THIS_WEEK" className="bg-black">This Week</option>
+                <option value="TODAY" className="bg-black">Today</option>
+                <option value="ALL_TIME" className="bg-black">All Time</option>
+                <option value="CUSTOM" className="bg-black">Custom Range</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#444444]" />
+                <input 
+                  type="text" 
+                  placeholder="Filter table..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-black border border-[#222222] rounded-xl pl-9 pr-4 py-2 text-xs font-medium outline-none focus:border-white/20 transition-all"
+                />
+              </div>
+              <button 
+                onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+                className={`p-2 rounded-xl border border-[#222222] transition-all ${isFiltersExpanded ? 'bg-white text-black border-transparent' : 'bg-[#111111] text-[#666666]'}`}
+              >
+                <Filter className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Advanced Filters Drawer */}
+        <AnimatePresence>
           {isFiltersExpanded && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="flex flex-col gap-3 pt-2 border-t border-[#EBEBEB] dark:border-[#222222]">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <select
-                  value={datePreset}
-                  onChange={(e) => handleDatePresetChange(e.target.value)}
-                  className="px-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-sm outline-none bg-white dark:bg-[#111111]"
-                >
-                  <option value="ALL_TIME">All Time</option>
-                  <option value="TODAY">Today</option>
-                  <option value="YESTERDAY">Yesterday</option>
-                  <option value="THIS_WEEK">This Week</option>
-                  <option value="THIS_MONTH">This Month</option>
-                  <option value="CUSTOM">Custom Date</option>
-                </select>
-
-                {datePreset === 'CUSTOM' && (
-                  <div className="flex items-center gap-2">
-                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="px-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-sm" />
-                    <span>to</span>
-                    <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="px-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-sm" />
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="bg-[#0A0A0A] border border-[#222222] rounded-[24px] p-6 grid grid-cols-2 md:grid-cols-4 gap-6 mb-4">
+                {[
+                  { label: 'Entry Type', val: filterType, set: setFilterType, options: [{id:'ALL',name:'All Types'}, {id:'CREDIT',name:'Credit/Inflow'}, {id:'DEBIT',name:'Debit/Outflow'}] },
+                  { label: 'Category', val: filterCategory, set: setFilterCategory, options: [{id:'ALL',name:'All Categories'}, ...uniqueCategories.map(c => ({id:c, name:c}))] },
+                  { label: 'Payment', val: filterPaymentMethod, set: setFilterPaymentMethod, options: [{id:'ALL',name:'All Methods'}, {id:'UPI',name:'UPI'}, {id:'Bank',name:'Bank'}, {id:'Cash',name:'Cash'}] },
+                  { label: 'Account', val: filterAccount, set: setFilterAccount, options: [{id:'ALL',name:'All Accounts'}, ...accounts.map(a => ({id:String(a.id), name:a.bankName}))] }
+                ].map((f, i) => (
+                  <div key={i}>
+                    <label className="text-[10px] font-black text-[#444444] uppercase tracking-widest mb-2 block">{f.label}</label>
+                    <select 
+                      value={f.val} 
+                      onChange={(e) => f.set(e.target.value)}
+                      className="w-full bg-[#111111] border border-[#222222] rounded-xl px-3 py-2 text-xs font-bold outline-none cursor-pointer hover:border-[#444444] transition-all"
+                    >
+                      {f.options.map(opt => <option key={opt.id} value={opt.id} className="bg-black">{opt.name}</option>)}
+                    </select>
                   </div>
-                )}
+                ))}
               </div>
             </motion.div>
           )}
-        </div>
+        </AnimatePresence>
 
-        <div className="bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-[#222222] rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] overflow-x-auto">
-          <table className="w-full text-left text-sm whitespace-nowrap">
-            <thead className="bg-neutral-50 dark:bg-[#1A1A1A] border-b border-[#EBEBEB] dark:border-[#222222] text-[#717171] dark:text-[#A0A0A0] font-bold">
-              <tr>
-                <th className="px-4 py-3 cursor-pointer" onClick={() => handleSort('date')}>Date <SortIcon columnKey="date" /></th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Category</th>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3 text-right" onClick={() => handleSort('amount')}>Amount <SortIcon columnKey="amount" /></th>
-                <th className="px-4 py-3">Account</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#EBEBEB] dark:divide-[#222222]">
-              {paginatedTransactions.map(tx => (
-                <tr key={tx.id} className="hover:bg-neutral-50 dark:hover:bg-[#1A1A1A]">
-                  <td className="px-4 py-3 font-bold">{safeFormatDate(tx.dateTime, 'yyyy-MM-dd')}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${tx.type === 'CREDIT' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                      {tx.type}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 font-medium">{tx.category}</td>
-                  <td className="px-4 py-3 font-medium">{tx.party || '—'}</td>
-                  <td className={`px-4 py-3 text-right font-bold ${tx.type === 'CREDIT' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {tx.type === 'CREDIT' ? '+' : '-'}₹{(tx.amount || 0).toLocaleString('en-IN')}
-                  </td>
-                  <td className="px-4 py-3 font-medium">{accounts.find(a => a.id === tx.accountId)?.bankName || '—'}</td>
+        {/* The Main Table Component */}
+        <div ref={reportRef} className="bg-[#0A0A0A] border border-[#222222] rounded-[32px] overflow-hidden shadow-2xl flex flex-col" style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
+          <div className="overflow-x-auto min-h-[400px]">
+            <table className="w-full text-left text-[13px] border-collapse">
+              <thead>
+                <tr className="bg-[#111111] border-b border-[#222222]">
+                  <th className="px-6 py-4 font-black text-[#666666] uppercase tracking-widest cursor-pointer group hover:text-white" onClick={() => handleSort('date')}>
+                    <div className="flex items-center gap-2">Date <SortIcon columnKey="date" /></div>
+                  </th>
+                  <th className="px-6 py-4 font-black text-[#666666] uppercase tracking-widest">Type</th>
+                  <th className="px-6 py-4 font-black text-[#666666] uppercase tracking-widest cursor-pointer group hover:text-white" onClick={() => handleSort('category')}>
+                    <div className="flex items-center gap-2">Category <SortIcon columnKey="category" /></div>
+                  </th>
+                  <th className="px-6 py-4 font-black text-[#666666] uppercase tracking-widest">Description</th>
+                  <th className="px-6 py-4 font-black text-[#666666] uppercase tracking-widest">Note</th>
+                  <th className="px-6 py-4 font-black text-[#666666] uppercase tracking-widest text-right cursor-pointer group hover:text-white" onClick={() => handleSort('amount')}>
+                    <div className="flex items-center justify-end gap-2">Amount <SortIcon columnKey="amount" /></div>
+                  </th>
+                  <th className="px-6 py-4 font-black text-[#666666] uppercase tracking-widest">Account</th>
+                  <th className="px-6 py-4 font-black text-[#666666] uppercase tracking-widest text-center">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          
-          {totalPages > 1 && (
-            <div className="px-4 py-3 flex items-center justify-between border-t border-[#EBEBEB] dark:border-[#222222]">
-              <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="p-1 px-3 border rounded-lg disabled:opacity-50">Prev</button>
-              <span className="text-xs font-bold">Page {currentPage} of {totalPages}</span>
-              <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="p-1 px-3 border rounded-lg disabled:opacity-50">Next</button>
+              </thead>
+              <tbody className="divide-y divide-[#222222]">
+                {paginatedTransactions.map((tx, idx) => (
+                  <motion.tr 
+                    key={tx.id} 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.03 }}
+                    className="hover:bg-white/[0.02] transition-all group"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-[#222222] group-hover:bg-white transition-all shadow-[0_0_8px_rgba(255,255,255,0.1)]" />
+                        <span className="font-black text-[#F7F7F7]">{safeFormatDate(tx.dateTime, 'MMM d, yyyy')}</span>
+                      </div>
+                      <div className="text-[10px] text-[#666666] font-medium ml-5">{safeFormatDate(tx.dateTime, 'hh:mm a')}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-tight ${tx.type === 'CREDIT' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
+                        {tx.type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <Tag className="w-3.5 h-3.5 text-[#444444]" />
+                        <span className="font-bold text-[#A0A0A0]">{tx.category || 'Uncategorized'}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <User className="w-3.5 h-3.5 text-[#444444]" />
+                        <span className="font-black text-white max-w-[180px] truncate">{tx.party || '—'}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-[#666666] italic italic max-w-[200px] truncate block">{tx.note || '—'}</span>
+                    </td>
+                    <td className={`px-6 py-4 text-right font-black text-base ${tx.type === 'CREDIT' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {tx.type === 'CREDIT' ? '+' : '-'} ₹{(tx.amount || 0).toLocaleString('en-IN')}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-[#111111] border border-[#222222] flex items-center justify-center">
+                          <CreditCard className="w-3 h-3 text-[#444444]" />
+                        </div>
+                        <span className="font-bold text-[#A0A0A0]">{accounts.find(a => a.id === tx.accountId)?.bankName || '—'}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <button className="p-2 hover:bg-[#222222] rounded-xl transition-all text-[#444444] hover:text-white">
+                        <Share2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </motion.tr>
+                ))}
+                {paginatedTransactions.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="py-32 text-center">
+                      <div className="flex flex-col items-center gap-4 opacity-20">
+                        <FileText className="w-16 h-16" />
+                        <p className="text-sm font-black uppercase tracking-[0.2em]">No Data Record Found</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Table Footer / Pagination */}
+          <footer className="border-t border-[#222222] px-8 py-4 bg-[#0F0F0F] flex items-center justify-between">
+            <div className="text-[10px] font-black text-[#444444] uppercase tracking-widest">
+              Showing <span className="text-[#A0A0A0]">{paginatedTransactions.length}</span> of <span className="text-[#A0A0A0]">{filteredAndSortedTransactions.length}</span> result entries
             </div>
-          )}
+            
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="p-2 border border-[#222222] rounded-xl disabled:opacity-20 hover:bg-[#222222] transition-all"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1).map((p, i, arr) => (
+                  <div key={p} className="flex items-center">
+                    {i > 0 && arr[i-1] !== p - 1 && <span className="mx-1 text-[#444444]">...</span>}
+                    <button 
+                      onClick={() => setCurrentPage(p)}
+                      className={`w-8 h-8 rounded-xl text-[11px] font-black transition-all ${currentPage === p ? 'bg-white text-black' : 'text-[#666666] hover:text-white'}`}
+                    >
+                      {p}
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button 
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="p-2 border border-[#222222] rounded-xl disabled:opacity-20 hover:bg-[#222222] transition-all"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </footer>
         </div>
       </main>
     </div>
