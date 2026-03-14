@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ListOrdered, Wallet, PieChart, MessageSquareText, Calculator, Menu, X, MoreHorizontal, Settings, Target, Plus } from 'lucide-react';
+import { LayoutDashboard, Wallet, PieChart, MessageSquareText, Calculator, Menu, X, MoreHorizontal, Settings, Target, Plus, Landmark, BarChart3 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -14,12 +14,12 @@ export default function Layout() {
 
   const mainNavItems = [
     { name: 'Home', path: '/', icon: LayoutDashboard },
-    { name: 'Transactions', path: '/transactions', icon: ListOrdered },
-    { name: 'Summary', path: '/summary', icon: PieChart },
+    { name: 'Analysis', path: '/transactions', icon: BarChart3 },
+    { name: 'Accounts', path: '/accounts', icon: Landmark },
   ];
 
   const moreNavItems = [
-    { name: 'Accounts', path: '/accounts', icon: Wallet },
+    { name: 'Summary', path: '/summary', icon: PieChart },
     { name: 'Budgets', path: '/budgets', icon: Target },
     { name: 'Accounting', path: '/accounting', icon: Calculator },
     { name: 'Parse SMS', path: '/parse', icon: MessageSquareText },
