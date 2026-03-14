@@ -567,16 +567,17 @@ export default function Dashboard() {
                   <p className="text-[10px] font-bold text-[#A0A0A5] uppercase tracking-wider">Payment Method</p>
                   {paymentMethod && <span className="text-[10px] font-bold text-[#6C6CF0]">{paymentMethod}</span>}
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   {[
                     { id: 'UPI', label: 'UPI', icon: <Smartphone className="w-3.5 h-3.5" /> },
                     { id: 'Bank Transfer', label: 'Bank', icon: <Landmark className="w-3.5 h-3.5" /> },
+                    { id: 'Credit Card', label: 'Card', icon: <CreditCard className="w-3.5 h-3.5" /> },
                     { id: 'Cash', label: 'Cash', icon: <Coins className="w-3.5 h-3.5" /> },
                   ].map((method) => (
                     <button 
                       key={method.id} 
                       onClick={() => setPaymentMethod(method.id as any)}
-                      className={`py-2 rounded-xl text-[12px] font-bold transition-all flex flex-col items-center gap-1 border ${
+                      className={`py-2 rounded-xl text-[11px] font-bold transition-all flex flex-col items-center gap-1 border ${
                         paymentMethod === method.id 
                           ? 'bg-[#3B3B98] border-[#3B3B98] text-white shadow-lg scale-95' 
                           : 'bg-black/20 border-white/5 text-[#A0A0A5] active:scale-95'
