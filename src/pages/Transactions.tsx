@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction } from '../lib/db';
-import { format, startOfMonth, endOfMonth, isWithinInterval, isToday, isYesterday, parseISO, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isWithinInterval, isToday, isYesterday, parseISO, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, Trash2, ArrowDownLeft, ArrowUpRight, Wallet, Share2, Filter, Search, Edit3, Copy, ArrowDownUp, BarChart3, Download, ListOrdered } from 'lucide-react';
 import { useState, Fragment } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -67,6 +67,8 @@ export default function Transactions() {
   const [editParty, setEditParty] = useState('');
   const [editCategory, setEditCategory] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   const { categories: appCategories } = useCategories();
 
@@ -259,7 +261,15 @@ export default function Transactions() {
                 >
                   <Filter className="w-5 h-5" />
                 </button>
-                <button className="p-2.5 bg-[#111111] border border-[#222222] rounded-full text-[#A0A0A0] hover:text-white transition-colors shadow-sm" title="Calendar View">
+                <button 
+                  onClick={() => setIsCalendarOpen(true)}
+                  className={`p-2.5 border rounded-full transition-all shadow-sm ${
+                    isCalendarOpen 
+                      ? "bg-white border-white text-[#111111]" 
+                      : "bg-[#111111] border-[#222222] text-[#A0A0A0] hover:text-white"
+                  }`}
+                  title="Calendar View"
+                >
                   <CalendarIcon className="w-5 h-5" />
                 </button>
               </div>
@@ -360,6 +370,87 @@ export default function Transactions() {
                     {type}
                   </button>
                 )) }
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isCalendarOpen && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+            <div className="bg-[#111111] border border-[#222222] rounded-[32px] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+              <div className="p-5 border-b border-[#222222] flex justify-between items-center bg-[#16161A]">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-xl font-bold text-white tracking-tight">{format(calendarMonth, 'MMMM yyyy')}</h3>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setCalendarMonth(subMonths(calendarMonth, 1))} className="p-2 text-[#717171] hover:text-white hover:bg-[#222222] rounded-full transition-all">
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))} className="p-2 text-[#717171] hover:text-white hover:bg-[#222222] rounded-full transition-all">
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                  <button onClick={() => setIsCalendarOpen(false)} className="p-2 ml-2 text-[#717171] hover:text-white hover:bg-rose-500/10 hover:text-rose-500 rounded-full transition-all">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-5">
+                <div className="grid grid-cols-7 mb-2">
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                    <div key={day} className="text-center text-[10px] font-black text-[#444444] uppercase tracking-wider py-2">{day}</div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {eachDayOfInterval({
+                    start: startOfWeek(startOfMonth(calendarMonth), { weekStartsOn: 1 }),
+                    end: endOfWeek(endOfMonth(calendarMonth), { weekStartsOn: 1 })
+                  }).map((day, i) => {
+                    const isSelected = dateRange && isSameDay(day, dateRange.start) && isSameDay(day, dateRange.end);
+                    const hasTransactions = allTransactions.some(tx => isSameDay(tx.dateTime, day));
+                    const isCurrentMonth = isSameMonth(day, calendarMonth);
+                    
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          setDateRange({ start: startOfDay(day), end: endOfDay(day) });
+                          setDatePreset('CUSTOM');
+                          setIsCalendarOpen(false);
+                        }}
+                        className={`
+                          relative h-12 flex flex-col items-center justify-center rounded-2xl transition-all group
+                          ${!isCurrentMonth ? 'opacity-20' : 'opacity-100'}
+                          ${isSelected ? 'bg-white text-[#111111]' : 'hover:bg-[#1A1A1A] text-[#A0A0A0]'}
+                        `}
+                      >
+                        <span className={`text-sm font-bold ${isSelected ? 'text-[#111111]' : 'group-hover:text-white'}`}>
+                          {format(day, 'd')}
+                        </span>
+                        {hasTransactions && !isSelected && (
+                          <div className="absolute bottom-2 w-1 h-1 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+                        )}
+                        {isToday(day) && !isSelected && (
+                          <div className="absolute top-2 right-2 w-1 h-1 rounded-full bg-blue-500" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              <div className="p-4 bg-[#16161A] border-t border-[#222222]">
+                <button 
+                  onClick={() => {
+                    setDateRange(null);
+                    setCalendarMonth(new Date());
+                    setDatePreset('MONTH');
+                    setIsCalendarOpen(false);
+                  }}
+                  className="w-full py-3 bg-[#222222] text-[#A0A0A0] hover:text-white rounded-2xl text-xs font-bold transition-all"
+                >
+                  Reset to Current Month
+                </button>
               </div>
             </div>
           </div>
