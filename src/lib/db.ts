@@ -5,6 +5,7 @@ export interface Account {
   bankName: string;
   accountLast4: string;
   startingBalance: number;
+  startingBalanceDate?: Date;
   type?: 'BANK' | 'CASH' | 'CREDIT_CARD';
 }
 
