@@ -327,9 +327,10 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     const sorted = [...transactions].sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
     
     return sorted.map(tx => {
-      if (tx.type === 'CREDIT') runningBalance += tx.amount;
-      else if (tx.type === 'DEBIT') runningBalance -= tx.amount;
-      return { ...tx, runningBalance };
+      const amount = Number(tx.amount) || 0;
+      if (tx.type === 'CREDIT') runningBalance += amount;
+      else if (tx.type === 'DEBIT') runningBalance -= amount;
+      return { ...tx, amount, runningBalance };
     });
   }, [account, transactions]);
 
@@ -337,44 +338,49 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     ? statementData[statementData.length - 1].runningBalance 
     : (account?.startingBalance || 0);
 
+  if (!account) return null;
+
+  const totalCredit = statementData.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
+  const totalDebit = statementData.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
+
   return (
     <div className="fixed inset-0 bg-white dark:bg-[#060608] z-[100] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
       {/* Typical Bank Statement Header */}
       <div className="bg-neutral-50 dark:bg-[#0C0C0F] border-b border-neutral-200 dark:border-[#222222] px-4 py-4">
         <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-white dark:bg-[#1A1A1A] rounded-lg flex items-center justify-center p-1 border border-neutral-200 dark:border-[#333333]">
+                <div className="w-10 h-10 bg-white dark:bg-[#1A1A1A] rounded-xl flex items-center justify-center p-1.5 border border-neutral-100 dark:border-[#333333]">
                   <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
                 </div>
                 <div>
-                  <h2 className="text-xs font-black text-brand-blue dark:text-[#F7F7F7] uppercase tracking-tighter">{account.bankName}</h2>
-                  <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest leading-none">**** {account.accountLast4}</p>
+                  <h2 className="text-sm font-black text-brand-blue dark:text-[#F7F7F7] uppercase tracking-tighter">{account.bankName}</h2>
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest leading-none">**** {account.accountLast4}</p>
                 </div>
             </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-neutral-200 dark:bg-[#222222] flex items-center justify-center text-brand-blue dark:text-[#F7F7F7] hover:bg-neutral-300 transition-all">
-                <Plus className="w-4 h-4 rotate-45" />
+            <button onClick={onClose} className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-[#222222] flex items-center justify-center text-brand-blue dark:text-[#F7F7F7] hover:bg-neutral-300 transition-all">
+                <Plus className="w-6 h-6 rotate-45" />
             </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-            <div className="bg-brand-blue/5 dark:bg-brand-blue/10 p-2 rounded-xl border border-brand-blue/10">
-                <p className="text-[8px] font-black text-brand-blue/40 uppercase mb-0.5">Available Balance</p>
-                <p className={`text-lg font-black tracking-tighter ${currentBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
+        <div className="grid grid-cols-2 gap-3">
+            <div className="bg-brand-blue p-4 rounded-2xl shadow-xl shadow-brand-blue/20 flex flex-col justify-center">
+                <p className="text-[10px] font-black text-white/50 uppercase mb-1">Available Balance</p>
+                <p className="text-2xl font-black tracking-tighter text-white">
                     ₹{currentBalance.toLocaleString('en-IN')}
                 </p>
             </div>
-            <div className="grid grid-cols-1 gap-1">
-                <div className="flex justify-between items-center bg-white dark:bg-[#1A1A1A] p-1.5 rounded-lg border border-neutral-100 dark:border-[#222222]">
-                    <span className="text-[8px] font-black text-neutral-400 uppercase">Opening</span>
-                    <span className="text-[10px] font-bold text-brand-blue dark:text-white opacity-60">₹{account.startingBalance.toLocaleString('en-IN')}</span>
+            <div className="flex flex-col gap-1.5">
+                <div className="flex justify-between items-center bg-white dark:bg-[#1A1A1A] px-3 py-2 rounded-xl border border-neutral-100 dark:border-[#222222]">
+                    <span className="text-[9px] font-black text-neutral-400 uppercase">Opening Balance</span>
+                    <span className="text-xs font-bold text-brand-blue dark:text-white opacity-60">₹{account.startingBalance.toLocaleString('en-IN')}</span>
                 </div>
-                <div className="flex justify-between items-center px-1.5">
-                    <span className="text-[8px] font-black text-brand-green uppercase">In</span>
-                    <span className="text-[10px] font-bold text-brand-green">₹{statementData.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0).toLocaleString('en-IN')}</span>
+                <div className="flex justify-between items-center px-3">
+                    <span className="text-[9px] font-black text-brand-green uppercase">Total Inflow (+)</span>
+                    <span className="text-xs font-bold text-brand-green">₹{totalCredit.toLocaleString('en-IN')}</span>
                 </div>
-                <div className="flex justify-between items-center px-1.5">
-                    <span className="text-[8px] font-black text-brand-red uppercase">Out</span>
-                    <span className="text-[10px] font-bold text-brand-red">₹{statementData.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0).toLocaleString('en-IN')}</span>
+                <div className="flex justify-between items-center px-3">
+                    <span className="text-[9px] font-black text-brand-red uppercase">Total Outflow (-)</span>
+                    <span className="text-xs font-bold text-brand-red">₹{totalDebit.toLocaleString('en-IN')}</span>
                 </div>
             </div>
         </div>
