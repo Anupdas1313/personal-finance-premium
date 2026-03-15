@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
 import { ArrowUpRight, ArrowDownRight, Wallet, Plus, X, AlertCircle, CheckCircle2, Search, ChevronDown, Landmark, Smartphone, ArrowLeft, Calendar, Clock, Calculator, MoreHorizontal, User, AlignLeft, Hash, Paperclip, Save, ChevronRight, CreditCard, Coins, PlaneTakeoff } from 'lucide-react';
 
-import { format, startOfMonth, startOfYear, isToday, isYesterday } from 'date-fns';
+import { format, startOfMonth, startOfYear, isToday, isYesterday, startOfDay } from 'date-fns';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -46,7 +46,6 @@ export default function Dashboard() {
 
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
   const transactions = useLiveQuery(() => db.transactions.orderBy('dateTime').reverse().limit(5).toArray()) || [];
-  const activeTrips = useLiveQuery(() => db.trips.where('status').equals('ACTIVE').toArray()) || [];
 
 
   const [isAddingManual, setIsAddingManual] = useState(searchParams.get('add') === 'true');
@@ -174,25 +173,36 @@ export default function Dashboard() {
   const allTransactions = useLiveQuery(() => db.transactions.toArray()) || [];
   
   const balances = accounts.map(acc => {
-    // If we have a closed month, use its balance as the starting point
-    let startingBalance = acc.startingBalance;
-    let txsToConsider = allTransactions.filter(t => t.accountId === acc.id);
+    // Use startingBalanceDate as the anchor
+    const startLimit = acc.startingBalanceDate ? startOfDay(new Date(acc.startingBalanceDate)).getTime() : 0;
+    
+    let startingBalance = Number(acc.startingBalance) || 0;
+    let txsToConsider = allTransactions.filter(t => Number(t.accountId) === Number(acc.id));
 
     if (latestClosedMonth) {
       if (latestClosedMonth.accountBalances[acc.id!] !== undefined) {
-        startingBalance = latestClosedMonth.accountBalances[acc.id!];
+        startingBalance = Number(latestClosedMonth.accountBalances[acc.id!]);
         
         // Only consider transactions AFTER the closed month
         const closedMonthDate = new Date(latestClosedMonth.month + '-01');
-        const nextMonthStart = new Date(closedMonthDate.getFullYear(), closedMonthDate.getMonth() + 1, 1);
+        const nextMonthStart = new Date(closedMonthDate.getFullYear(), closedMonthDate.getMonth() + 1, 1).getTime();
         
-        txsToConsider = txsToConsider.filter(t => t.dateTime >= nextMonthStart);
+        txsToConsider = txsToConsider.filter(t => new Date(t.dateTime).getTime() >= nextMonthStart);
+      } else {
+        // No close for this account, respect starting date
+        if (startLimit) {
+          txsToConsider = txsToConsider.filter(t => startOfDay(new Date(t.dateTime)).getTime() >= startLimit);
+        }
       }
+    } else if (startLimit) {
+      // No closed months at all, just respect starting date
+      txsToConsider = txsToConsider.filter(t => startOfDay(new Date(t.dateTime)).getTime() >= startLimit);
     }
 
     const currentBalance = txsToConsider.reduce((accBal, tx) => {
-      if (tx.type === 'CREDIT') return accBal + tx.amount;
-      if (tx.type === 'DEBIT') return accBal - tx.amount;
+      const amt = Number(tx.amount) || 0;
+      if (tx.type === 'CREDIT') return accBal + amt;
+      if (tx.type === 'DEBIT') return accBal - amt;
       return accBal;
     }, startingBalance);
     
@@ -202,12 +212,12 @@ export default function Dashboard() {
   const filteredTransactions = useMemo(() => {
     const now = new Date();
     if (timeFilter === 'This Month') {
-      const monthStart = startOfMonth(now);
-      return allTransactions.filter(tx => tx.dateTime >= monthStart);
+      const monthStart = startOfMonth(now).getTime();
+      return allTransactions.filter(tx => new Date(tx.dateTime).getTime() >= monthStart);
     }
     if (timeFilter === 'This Year') {
-      const yearStart = startOfYear(now);
-      return allTransactions.filter(tx => tx.dateTime >= yearStart);
+      const yearStart = startOfYear(now).getTime();
+      return allTransactions.filter(tx => new Date(tx.dateTime).getTime() >= yearStart);
     }
     return allTransactions;
   }, [allTransactions, timeFilter]);
@@ -215,8 +225,9 @@ export default function Dashboard() {
   const { totalIncome, totalSpending } = useMemo(() => {
     return filteredTransactions.reduce(
       (acc, tx) => {
-        if (tx.type === 'CREDIT') acc.totalIncome += tx.amount;
-        if (tx.type === 'DEBIT') acc.totalSpending += tx.amount;
+        const amt = Number(tx.amount) || 0;
+        if (tx.type === 'CREDIT') acc.totalIncome += amt;
+        if (tx.type === 'DEBIT') acc.totalSpending += amt;
         return acc;
       },
       { totalIncome: 0, totalSpending: 0 }
@@ -254,27 +265,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {activeTrips.length > 0 && (
-        <div className="mb-6">
-          <Link 
-            to={`/trips/${activeTrips[0].id}`}
-            className="flex items-center justify-between p-6 bg-brand-green/10 border border-brand-green/20 rounded-[28px] group hover:bg-brand-green/20 transition-all shadow-sm"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white dark:bg-[#111111] rounded-2xl flex items-center justify-center text-brand-green shadow-sm">
-                <PlaneTakeoff className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-[10px] font-black text-brand-green uppercase tracking-widest mb-0.5">Active Expedition</p>
-                <h3 className="text-xl font-black text-brand-blue dark:text-white group-hover:text-brand-green transition-colors">{activeTrips[0].name}</h3>
-              </div>
-            </div>
-            <div className="w-10 h-10 rounded-full bg-brand-green text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-              <ChevronRight className="w-6 h-6" />
-            </div>
-          </Link>
-        </div>
-      )}
+
 
 
       {/* Cash Flow Hero Card */}

@@ -20,10 +20,10 @@ export default function Accounts() {
   const allTransactions = useLiveQuery(() => db.transactions.toArray()) || [];
 
   const accountBreakdown = accounts.reduce((acc, account) => {
-    const startLimit = account.startingBalanceDate ? startOfDay(new Date(account.startingBalanceDate)) : null;
+    const startLimit = account.startingBalanceDate ? startOfDay(new Date(account.startingBalanceDate)).getTime() : 0;
     const txs = allTransactions.filter(tx => 
-      tx.accountId === account.id && 
-      (!startLimit || startOfDay(new Date(tx.dateTime)) >= startLimit)
+      Number(tx.accountId) === Number(account.id) && 
+      (!startLimit || startOfDay(new Date(tx.dateTime)).getTime() >= startLimit)
     );
     const inflow = txs.filter(tx => tx.type === 'CREDIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
     const outflow = txs.filter(tx => tx.type === 'DEBIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
@@ -336,10 +336,10 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
   const statementData = useMemo(() => {
     if (!account) return [];
     let balance = Number(account.startingBalance) || 0;
-    const startLimit = account.startingBalanceDate ? startOfDay(new Date(account.startingBalanceDate)) : null;
+    const startLimit = account.startingBalanceDate ? startOfDay(new Date(account.startingBalanceDate)).getTime() : 0;
     
     const filteredTxs = transactions.filter(tx => 
-      !startLimit || startOfDay(new Date(tx.dateTime)) >= startLimit
+      !startLimit || startOfDay(new Date(tx.dateTime)).getTime() >= startLimit
     );
 
     const sorted = [...filteredTxs].sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
