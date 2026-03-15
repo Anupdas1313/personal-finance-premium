@@ -41,11 +41,32 @@ export interface MonthlyClose {
   closingBalance: number;
 }
 
+export interface Party {
+  id?: number;
+  name: string;
+  phoneNumber?: string;
+  type: 'CUSTOMER' | 'SUPPLIER' | 'FRIEND';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface LedgerTransaction {
+  id?: number;
+  partyId: number;
+  amount: number;
+  type: 'CASH_IN' | 'CASH_OUT';
+  dateTime: Date;
+  remarks?: string;
+  attachmentUrl?: string;
+}
+
 export class FinanceDatabase extends Dexie {
   accounts!: Table<Account, number>;
   transactions!: Table<Transaction, number>;
   monthlyClosings!: Table<MonthlyClose, number>;
   budgets!: Table<Budget, number>;
+  parties!: Table<Party, number>;
+  ledgerTransactions!: Table<LedgerTransaction, number>;
 
   constructor() {
     super('FinanceDatabase');
@@ -76,6 +97,10 @@ export class FinanceDatabase extends Dexie {
       tripMembers: null,
       tripTransactions: null,
       tripSplits: null
+    });
+    this.version(7).stores({
+      parties: '++id, name, type',
+      ledgerTransactions: '++id, partyId, type, dateTime'
     });
   }
 }

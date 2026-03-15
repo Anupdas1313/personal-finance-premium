@@ -9,6 +9,8 @@ import Accounting from './pages/Accounting';
 import TransactionTable from './pages/TransactionTable';
 import Settings from './pages/Settings';
 import Budgets from './pages/Budgets';
+import Ledger from './pages/Ledger';
+import PartyLedger from './pages/PartyLedger';
 
 import { ThemeProvider } from './components/ThemeProvider';
 
@@ -24,6 +26,8 @@ export default function App() {
           <Route path="summary" element={<Summary />} />
           <Route path="budgets" element={<Budgets />} />
           <Route path="accounting" element={<Accounting />} />
+          <Route path="ledger" element={<Ledger />} />
+          <Route path="ledger/:id" element={<PartyLedger />} />
           <Route path="parse" element={<SMSParser />} />
           <Route path="settings" element={<Settings />} />
         </Route>

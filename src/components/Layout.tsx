@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, Link, Outlet } from 'react-router-dom';
-import { LayoutDashboard, BarChart3, Landmark, PieChart, Target, Calculator, MessageSquareText, Settings, Plus, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Landmark, PieChart, Target, Calculator, MessageSquareText, Settings, Plus, MoreHorizontal, BookOpen } from 'lucide-react';
 
 import { cn } from '../lib/utils';
 
@@ -19,6 +19,7 @@ export default function Layout() {
     { name: 'Summary', path: '/summary', icon: PieChart },
     { name: 'Budgets', path: '/budgets', icon: Target },
     { name: 'Accounting', path: '/accounting', icon: Calculator },
+    { name: 'Ledger', path: '/ledger', icon: BookOpen },
     { name: 'Parse SMS', path: '/parse', icon: MessageSquareText },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
