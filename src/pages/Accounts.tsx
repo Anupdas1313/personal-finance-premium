@@ -4,7 +4,7 @@ import { db } from '../lib/db';
 import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark } from 'lucide-react';
 import { BankLogo } from '../components/BankLogo';
 import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
-import { format } from 'date-fns';
+import { format, startOfDay, parseISO } from 'date-fns';
 
 export default function Accounts() {
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
@@ -20,7 +20,11 @@ export default function Accounts() {
   const allTransactions = useLiveQuery(() => db.transactions.toArray()) || [];
 
   const accountBreakdown = accounts.reduce((acc, account) => {
-    const txs = allTransactions.filter(tx => tx.accountId === account.id);
+    const startDate = account.startingBalanceDate ? startOfDay(new Date(account.startingBalanceDate)) : null;
+    const txs = allTransactions.filter(tx => 
+      tx.accountId === account.id && 
+      (!startDate || startOfDay(new Date(tx.dateTime)) >= startDate)
+    );
     const inflow = txs.filter(tx => tx.type === 'CREDIT').reduce((sum, tx) => sum + (tx.amount || 0), 0);
     const outflow = txs.filter(tx => tx.type === 'DEBIT').reduce((sum, tx) => sum + (tx.amount || 0), 0);
     acc[account.id!] = { inflow, outflow };
@@ -331,9 +335,12 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
   const statementData = useMemo(() => {
     if (!account) return [];
     let runningBalance = account.startingBalance;
+    const startDate = account.startingBalanceDate ? startOfDay(new Date(account.startingBalanceDate)) : null;
     
-    // Sort transactions by date
-    const sorted = [...transactions].sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+    // Sort transactions by date and filter by startingBalanceDate
+    const sorted = [...transactions]
+        .filter(tx => !startDate || startOfDay(new Date(tx.dateTime)) >= startDate)
+        .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
     
     return sorted.map(tx => {
       if (tx.type === 'CREDIT') runningBalance += tx.amount;
@@ -348,17 +355,15 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
 
   const handleCloseBalance = async () => {
     if (!account) return;
-    const confirmMsg = `Are you sure you want to close this account ledger?\n\nThis will:\n1. Set your NEW starting balance to ₹${currentBalance.toLocaleString('en-IN')}\n2. Set the starting date to today\n3. Permanently DELETE all ${transactions.length} transactions associated with this account to start fresh.`;
+    const confirmMsg = `Are you sure you want to close this account ledger for a new period?\n\nThis will:\n1. Set your NEW starting balance to ₹${currentBalance.toLocaleString('en-IN')}\n2. Set the starting date to today\n\nHistory will be PRESERVED in the database but hidden from this active sheet view.`;
     
     if (confirm(confirmMsg)) {
-        await db.transaction('rw', db.accounts, db.transactions, async () => {
-            // Update Account
+        await db.transaction('rw', db.accounts, async () => {
+            // Update Account only
             await db.accounts.update(accountId, {
                 startingBalance: currentBalance,
                 startingBalanceDate: new Date()
             });
-            // Delete old transactions
-            await db.transactions.where('accountId').equals(accountId).delete();
         });
         alert('Account Ledger reset successfully.');
         onClose();
@@ -468,13 +473,13 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             <div>
                 <p className="text-[8px] font-black text-brand-blue/40 uppercase tracking-widest">Debit</p>
                 <p className="text-xs font-black text-brand-red">
-                    ₹{transactions.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0).toLocaleString('en-IN')}
+                    ₹{statementData.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0).toLocaleString('en-IN')}
                 </p>
             </div>
             <div>
                 <p className="text-[8px] font-black text-brand-blue/40 uppercase tracking-widest">Credit</p>
                 <p className="text-xs font-black text-brand-green">
-                    ₹{transactions.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0).toLocaleString('en-IN')}
+                    ₹{statementData.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0).toLocaleString('en-IN')}
                 </p>
             </div>
         </div>
