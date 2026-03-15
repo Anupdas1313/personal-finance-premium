@@ -4,6 +4,7 @@ import { db } from '../lib/db';
 import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark } from 'lucide-react';
 import { BankLogo } from '../components/BankLogo';
 import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
+import { format } from 'date-fns';
 
 export default function Accounts() {
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
@@ -341,89 +342,148 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     });
   }, [account, transactions]);
 
+  const currentBalance = statementData.length > 0 
+    ? statementData[statementData.length - 1].runningBalance 
+    : (account?.startingBalance || 0);
+
+  const handleCloseBalance = async () => {
+    if (!account) return;
+    const confirmMsg = `Are you sure you want to close this account ledger?\n\nThis will:\n1. Set your NEW starting balance to ₹${currentBalance.toLocaleString('en-IN')}\n2. Set the starting date to today\n3. Permanently DELETE all ${transactions.length} transactions associated with this account to start fresh.`;
+    
+    if (confirm(confirmMsg)) {
+        await db.transaction('rw', db.accounts, db.transactions, async () => {
+            // Update Account
+            await db.accounts.update(accountId, {
+                startingBalance: currentBalance,
+                startingBalanceDate: new Date()
+            });
+            // Delete old transactions
+            await db.transactions.where('accountId').equals(accountId).delete();
+        });
+        alert('Account Ledger reset successfully.');
+        onClose();
+    }
+  };
+
   if (!account) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-[#0C0C0F] w-full max-w-4xl max-h-[90vh] rounded-[40px] shadow-2xl border border-brand-blue/10 dark:border-[#222222] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-        <div className="p-8 border-b border-[#EBEBEB] dark:border-[#222222] flex items-center justify-between bg-neutral-50/50 dark:bg-[#111111]/50">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center p-2 shadow-sm border border-[#EBEBEB]">
-               <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
+    <div className="fixed inset-0 bg-white dark:bg-[#060608] z-[100] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
+      {/* Sheet Header */}
+      <div className="bg-neutral-50 dark:bg-[#0C0C0F] border-b border-neutral-200 dark:border-[#222222] px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-white dark:bg-[#1A1A1A] rounded-xl flex items-center justify-center p-1.5 border border-neutral-200 dark:border-[#333333]">
+              <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter leading-tight">{account.bankName}</h2>
-              <p className="text-[10px] font-black text-brand-blue/40 dark:text-[#A0A0A0] uppercase tracking-[0.2em]">{account.type === 'CASH' ? account.accountLast4 : `Statement • **** ${account.accountLast4}`}</p>
+              <h2 className="text-sm font-black text-brand-blue dark:text-[#F7F7F7] uppercase tracking-widest">{account.bankName} Statement</h2>
+              <p className="text-[10px] font-bold text-brand-blue/40 uppercase">Ref: {account.accountLast4}</p>
             </div>
-          </div>
-          <button onClick={onClose} className="w-10 h-10 rounded-full bg-brand-blue/5 dark:bg-[#222222] flex items-center justify-center text-brand-blue dark:text-[#F7F7F7] hover:bg-brand-blue/10 transition-all font-black text-xl">×</button>
         </div>
+        <div className="flex items-center gap-3">
+            <button 
+                onClick={handleCloseBalance}
+                className="flex items-center gap-2 px-4 py-2 bg-brand-blue text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-brand-blue/90 transition-all shadow-lg shadow-brand-blue/10"
+            >
+                <Plus className="w-3 h-3" />
+                Close & Restart
+            </button>
+            <button onClick={onClose} className="p-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] transition-all">
+                <Plus className="w-6 h-6 rotate-45" />
+            </button>
+        </div>
+      </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Starting Balance Row */}
-          <div className="bg-brand-blue/5 dark:bg-[#1A1A1A] p-5 rounded-3xl border border-brand-blue/10 dark:border-[#222222] flex items-center justify-between">
-            <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-white dark:bg-[#222222] flex items-center justify-center text-brand-blue/40">
-                    <Wallet size={20} />
-                </div>
-                <div>
-                    <p className="text-[10px] font-black text-brand-blue/40 uppercase tracking-widest">Starting Balance</p>
-                    <p className="text-xs font-black text-brand-blue/20 uppercase tracking-tighter">
-                        {account.startingBalanceDate ? new Date(account.startingBalanceDate).toLocaleDateString() : 'Initial'}
-                    </p>
-                </div>
+      {/* Spreadsheet Content */}
+      <div className="flex-1 overflow-auto bg-[#F8F9FA] dark:bg-[#060608]">
+        <table className="w-full border-collapse border-spacing-0 text-[11px] font-medium table-fixed min-w-[800px]">
+          <thead className="sticky top-0 z-10 bg-[#EDF2F7] dark:bg-[#1A1A1A]">
+            <tr>
+              <th className="w-24 border border-neutral-300 dark:border-[#333333] px-3 py-2 text-brand-blue/60 uppercase text-[9px] font-black tracking-widest">Date</th>
+              <th className="border border-neutral-300 dark:border-[#333333] px-3 py-2 text-brand-blue/60 uppercase text-[9px] font-black tracking-widest text-left">Description / Particulars</th>
+              <th className="w-32 border border-neutral-300 dark:border-[#333333] px-3 py-2 text-brand-blue/60 uppercase text-[9px] font-black tracking-widest text-right">Debit (O)</th>
+              <th className="w-32 border border-neutral-300 dark:border-[#333333] px-3 py-2 text-brand-blue/60 uppercase text-[9px] font-black tracking-widest text-right">Credit (I)</th>
+              <th className="w-40 border border-neutral-300 dark:border-[#333333] px-3 py-2 text-brand-blue/60 uppercase text-[9px] font-black tracking-widest text-right">Balance</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-[#0C0C0F]">
+            {/* Opening Balance Row */}
+            <tr className="bg-brand-blue/5 dark:bg-brand-blue/10 font-black">
+              <td className="border border-neutral-200 dark:border-[#222222] px-3 py-3 text-center text-brand-blue/40">
+                {account.startingBalanceDate ? format(new Date(account.startingBalanceDate), 'dd/MM/yy') : '01/01/24'}
+              </td>
+              <td className="border border-neutral-200 dark:border-[#222222] px-3 py-3 text-brand-blue flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-brand-blue"></span>
+                OPENING BALANCE / BROUGHT FORWARD
+              </td>
+              <td className="border border-neutral-200 dark:border-[#222222] px-3 py-3 text-right text-neutral-300">-</td>
+              <td className="border border-neutral-200 dark:border-[#222222] px-3 py-3 text-right text-brand-green">
+                ₹{account.startingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </td>
+              <td className="border border-neutral-200 dark:border-[#222222] px-3 py-3 text-right text-brand-blue">
+                ₹{account.startingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </td>
+            </tr>
+
+            {/* Transaction Rows */}
+            {statementData.map((tx, idx) => (
+              <tr key={tx.id || idx} className="hover:bg-neutral-50 dark:hover:bg-[#111111] transition-colors group">
+                <td className="border border-neutral-200 dark:border-[#222222] px-3 py-2.5 text-center text-neutral-500 dark:text-neutral-400">
+                  {format(tx.dateTime, 'dd/MM/yy')}
+                </td>
+                <td className="border border-neutral-200 dark:border-[#222222] px-3 py-2.5">
+                  <div className="flex flex-col">
+                    <span className="font-bold text-brand-blue dark:text-white uppercase tracking-tighter">{tx.note || tx.category}</span>
+                    <span className="text-[9px] text-brand-blue/30 uppercase font-black">{tx.party || 'Self'}</span>
+                  </div>
+                </td>
+                <td className="border border-neutral-200 dark:border-[#222222] px-3 py-2.5 text-right font-bold text-brand-red">
+                  {tx.type === 'DEBIT' ? `₹${tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '-'}
+                </td>
+                <td className="border border-neutral-200 dark:border-[#222222] px-3 py-2.5 text-right font-bold text-brand-green">
+                  {tx.type === 'CREDIT' ? `₹${tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '-'}
+                </td>
+                <td className={`border border-neutral-200 dark:border-[#222222] px-3 py-2.5 text-right font-black ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
+                  ₹{tx.runningBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </td>
+              </tr>
+            ))}
+
+            {/* Empty Spacer Rows to fill the screen */}
+            {Array.from({ length: Math.max(0, 15 - statementData.length) }).map((_, i) => (
+              <tr key={`empty-${i}`}>
+                <td className="border border-neutral-100 dark:border-[#1A1A1A] h-10"></td>
+                <td className="border border-neutral-100 dark:border-[#1A1A1A] h-10"></td>
+                <td className="border border-neutral-100 dark:border-[#1A1A1A] h-10"></td>
+                <td className="border border-neutral-100 dark:border-[#1A1A1A] h-10"></td>
+                <td className="border border-neutral-100 dark:border-[#1A1A1A] h-10"></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Sheet Footer */}
+      <div className="bg-neutral-50 dark:bg-[#0C0C0F] border-t border-neutral-200 dark:border-[#222222] px-10 py-5 flex items-center justify-between">
+        <div className="flex gap-8">
+            <div>
+                <p className="text-[9px] font-black text-brand-blue/40 uppercase tracking-widest mb-1">Total Debit</p>
+                <p className="text-sm font-black text-brand-red">
+                    ₹{transactions.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0).toLocaleString('en-IN')}
+                </p>
             </div>
-            <p className="text-xl font-black text-brand-blue dark:text-white">₹{account.startingBalance.toLocaleString('en-IN')}</p>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="text-[10px] font-black text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-widest border-b border-[#EBEBEB] dark:border-[#222222]">
-                  <th className="px-4 py-3">Date</th>
-                  <th className="px-4 py-3">Description</th>
-                  <th className="px-4 py-3 text-right">Debit</th>
-                  <th className="px-4 py-3 text-right">Credit</th>
-                  <th className="px-4 py-3 text-right">Balance</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#EBEBEB] dark:divide-[#222222]">
-                {[...statementData].reverse().map((tx, idx) => (
-                  <tr key={tx.id || idx} className="hover:bg-brand-blue/5 dark:hover:bg-[#1A1A1A] transition-colors group">
-                    <td className="px-4 py-4 whitespace-nowrap">
-                        <p className="text-[10px] font-black text-brand-blue/40 dark:text-[#A0A0A0] uppercase tracking-tighter">
-                            {new Date(tx.dateTime).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                        </p>
-                    </td>
-                    <td className="px-4 py-4">
-                        <p className="text-xs font-bold text-brand-blue dark:text-white truncate max-w-[200px]">{tx.note || tx.category}</p>
-                        <p className="text-[9px] font-black text-brand-blue/20 uppercase tracking-widest">{tx.party || '-'}</p>
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                        {tx.type === 'DEBIT' && (
-                            <span className="text-sm font-black text-brand-red">-₹{tx.amount.toLocaleString('en-IN')}</span>
-                        )}
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                        {tx.type === 'CREDIT' && (
-                            <span className="text-sm font-black text-brand-green">+₹{tx.amount.toLocaleString('en-IN')}</span>
-                        )}
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                        <p className="text-sm font-black text-brand-blue dark:text-[#F7F7F7]">₹{tx.runningBalance.toLocaleString('en-IN')}</p>
-                    </td>
-                  </tr>
-                ))}
-                {statementData.length === 0 && (
-                   <tr>
-                     <td colSpan={5} className="py-20 text-center">
-                        <p className="text-[10px] font-black text-brand-blue/20 uppercase tracking-[0.3em]">No Transactions Logged</p>
-                     </td>
-                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+            <div>
+                <p className="text-[9px] font-black text-brand-blue/40 uppercase tracking-widest mb-1">Total Credit</p>
+                <p className="text-sm font-black text-brand-green">
+                    ₹{transactions.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0).toLocaleString('en-IN')}
+                </p>
+            </div>
+        </div>
+        <div className="text-right">
+            <p className="text-[9px] font-black text-brand-blue/40 uppercase tracking-widest mb-1">Final Closing Balance</p>
+            <p className={`text-2xl font-black tracking-tighter ${currentBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
+                ₹{currentBalance.toLocaleString('en-IN')}
+            </p>
         </div>
       </div>
     </div>
