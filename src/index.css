@@ -5,6 +5,10 @@
 
 @theme {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-mercury: #00A86B;
+  --color-rahu-blue: #1A237E;
+  --color-rahu-cyan: #82EEFD;
+  --color-venus-gold: #D4AF37;
 }
 
 body {
@@ -14,10 +18,11 @@ body {
 }
 
 .light body {
-  background-color: #F7F7F7;
-  color: #111111;
+  background-color: #FFFFFF;
+  color: #1A237E;
   --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-  --secondary-text: #525252;
+  --secondary-text: #1A237E; /* Using Rahu Blue for secondary as well but maybe with opacity later */
+  --accent-gold: #D4AF37;
 }
 
 

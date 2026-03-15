@@ -235,22 +235,24 @@ export default function Dashboard() {
       {/* Greeting Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-bold text-[#525252] dark:text-[#A0A0A0] tracking-wide">{greeting},</p>
-          <h1 className="text-2xl font-black text-[#111111] dark:text-[#F7F7F7] leading-tight">Anup 👋</h1>
-
+          <p className="text-sm font-black text-[#1A237E] dark:text-[#A0A0A0] tracking-wide uppercase opacity-70">{greeting},</p>
+          <h1 className="text-3xl font-black text-[#1A237E] dark:text-[#F7F7F7] leading-tight">Anup 👋</h1>
         </div>
+
         <div className="flex items-center gap-3">
           <div
             title="Anup"
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#3B3B98] to-[#6C6CF0] flex items-center justify-center text-white font-bold text-sm select-none shadow-md cursor-pointer"
+            className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1A237E] to-[#4A4ABF] flex items-center justify-center text-white font-black text-lg select-none shadow-lg cursor-pointer border-2 border-white dark:border-[#1A1A1E]"
           >
             A
           </div>
+
         </div>
       </div>
 
       {/* Cash Flow Hero Card */}
-      <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#3B3B98] to-[#4A4ABF] dark:from-[#1C1C24] dark:via-[#1E1A22] dark:to-[#1C1F26] p-6 shadow-xl border border-white/5">
+      <div className="relative overflow-hidden rounded-[28px] bg-[#1A237E] dark:bg-gradient-to-br dark:from-[#1C1C24] dark:to-[#1C1F26] p-8 shadow-[0_20px_50px_rgba(26,35,126,0.3)] border border-white/10">
+
         {/* Subtle glowing orb effects */}
         <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
@@ -297,11 +299,12 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Accounts List */}
-        <div className="bg-white dark:bg-[#0C0C0F] rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-none border border-[#EBEBEB] dark:border-[#1A1A1E] overflow-hidden">
+        <div className="bg-white dark:bg-[#0C0C0F] rounded-[28px] shadow-[0_8px_40px_rgba(26,35,126,0.08)] dark:shadow-none border border-[#EBEBEB] dark:border-[#1A1A1E] overflow-hidden">
           <div className="p-6 border-b border-[#EBEBEB] dark:border-[#1A1A1E] flex justify-between items-center">
-            <h2 className="text-lg font-black text-[#111111] dark:text-[#F7F7F7]">Your Accounts</h2>
-            <Link to="/accounts" className="text-sm font-bold text-[#525252] dark:text-[#A0A0A0] hover:text-[#111111] dark:hover:text-[#F7F7F7] transition-colors">Manage</Link>
+            <h2 className="text-xl font-black text-[#1A237E] dark:text-[#F7F7F7]">Your Accounts</h2>
+            <Link to="/accounts" className="text-sm font-black text-[#00A86B] dark:text-[#A0A0A0] hover:underline transition-colors uppercase tracking-wider">Manage</Link>
           </div>
+
 
           <div className="divide-y divide-[#EBEBEB] dark:divide-[#1A1A1E]">
             {balances.length === 0 ? (
@@ -332,10 +335,11 @@ export default function Dashboard() {
 
         {/* Recent Transactions */}
         <div className="bg-transparent overflow-hidden">
-          <div className="pb-4 flex justify-between items-center px-1">
-            <h2 className="text-lg font-black text-[#111111] dark:text-[#F7F7F7]">Recent Transactions</h2>
-            <Link to="/transactions" className="text-sm font-bold text-[#525252] dark:text-[#A0A0A0] hover:text-[#111111] dark:hover:text-[#F7F7F7] transition-colors">View All</Link>
+          <div className="pb-5 flex justify-between items-center px-1">
+            <h2 className="text-xl font-black text-[#1A237E] dark:text-[#F7F7F7]">Recent Transactions</h2>
+            <Link to="/transactions" className="text-sm font-black text-[#00A86B] dark:text-[#A0A0A0] hover:underline transition-colors uppercase tracking-wider">View All</Link>
           </div>
+
 
           <div className="space-y-3">
             {transactions.length === 0 ? (
@@ -354,7 +358,8 @@ export default function Dashboard() {
                 const catColorClasses = CATEGORY_COLORS[tx.category] || CATEGORY_COLORS['Other'];
 
                 return (
-                  <div key={tx.id} className="p-4 bg-white dark:bg-[#0C0C0F] border border-[#EBEBEB] dark:border-[#1A1A1E] rounded-[24px] flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-[#15151A] transition-colors shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-none group cursor-pointer" onClick={() => navigate('/transactions')}>
+                  <div key={tx.id} className="p-4 bg-white dark:bg-[#0C0C0F] border border-[#EBEBEB] dark:border-[#1A1A1E] rounded-[24px] flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-[#15151A] transition-colors shadow-[0_8px_30px_rgba(26,35,126,0.06)] dark:shadow-none group cursor-pointer" onClick={() => navigate('/transactions')}>
+
                     <div className="flex items-center gap-4">
 
                       {/* Squircle Icon */}
@@ -365,9 +370,10 @@ export default function Dashboard() {
                       
                       {/* Title & Subtext */}
                       <div>
-                        <p className="font-black text-[#111111] dark:text-[#F7F7F7] text-base group-hover:text-black dark:group-hover:text-white transition-colors">
+                        <p className="font-black text-[#1A237E] dark:text-[#F7F7F7] text-base group-hover:text-[#00A86B] dark:group-hover:text-white transition-colors">
                           {tx.party || tx.note || tx.category}
                         </p>
+
                         <div className="flex items-center text-xs text-[#525252] dark:text-[#A0A0A0] font-bold mt-0.5 gap-1.5">
 
                           {tx.paymentMethod === 'UPI' ? <Smartphone className="w-3.5 h-3.5" /> : 
@@ -381,9 +387,10 @@ export default function Dashboard() {
                     
                     {/* Amount & Date (Right Aligned) */}
                     <div className="text-right">
-                      <p className={`font-black text-base tracking-tight ${tx.type === 'CREDIT' ? 'text-emerald-600 dark:text-emerald-500' : 'text-[#111111] dark:text-[#F7F7F7]'}`}>
+                      <p className={`font-black text-base tracking-tight ${tx.type === 'CREDIT' ? 'text-[#00A86B] dark:text-emerald-500' : 'text-[#1A237E] dark:text-[#F7F7F7]'}`}>
                         {tx.type === 'CREDIT' ? '+' : ''}₹{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </p>
+
 
                       <p className="text-xs text-[#717171] dark:text-[#A0A0A0] font-medium mt-0.5">
                         {dateStr}
@@ -428,7 +435,8 @@ export default function Dashboard() {
               </button>
               <button 
                 onClick={() => setType('TRANSFER')}
-                className={`flex-1 py-1.5 text-[12px] font-black rounded-xl transition-all ${type === 'TRANSFER' ? 'bg-[#3B3B98] text-white shadow-lg' : 'text-[#525252] dark:text-[#A0A0A0] hover:text-[#111111] dark:hover:text-white'}`}
+                className={`flex-1 py-1.5 text-[12px] font-black rounded-xl transition-all ${type === 'TRANSFER' ? 'bg-[#1A237E] text-white shadow-lg' : 'text-[#525252] dark:text-[#A0A0A0] hover:text-[#1A237E] dark:hover:text-white'}`}
+
 
 
               >
@@ -441,9 +449,8 @@ export default function Dashboard() {
               <div className="relative">
                 <div className="bg-white dark:bg-[#1C1C22] p-3 rounded-xl border border-[#EBEBEB] dark:border-white/5 flex items-center justify-between active:bg-neutral-50 dark:active:bg-[#2C2C34] transition-colors">
                   <div className="flex items-center gap-3">
-                    <Calendar className="w-4 h-4 text-[#3B3B98] dark:text-[#6C6CF0]" />
-                    <span className="text-[13px] font-black text-[#111111] dark:text-white">
-
+                    <Calendar className="w-4 h-4 text-[#1A237E] dark:text-[#6C6CF0]" />
+                    <span className="text-[13px] font-black text-[#1A237E] dark:text-white">
                       {isToday(new Date(transactionDate)) ? 'Today, ' : isYesterday(new Date(transactionDate)) ? 'Yesterday, ' : format(new Date(transactionDate), 'dd MMM, ')}
                       {format(new Date(transactionDate), 'hh:mm a')}
                     </span>
@@ -454,7 +461,8 @@ export default function Dashboard() {
                     onChange={(e) => setTransactionDate(e.target.value)}
                     className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                   />
-                  <ChevronDown className="w-4 h-4 text-[#717171] dark:text-[#717171]" />
+                  <ChevronDown className="w-4 h-4 text-[#1A237E] dark:text-[#717171]" />
+
 
                 </div>
               </div>
@@ -471,10 +479,10 @@ export default function Dashboard() {
                       onClick={() => setExpenseType(expenseType === tagName ? '' : tagName)}
                       className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border whitespace-nowrap ${
                         expenseType === tagName 
-                          ? 'bg-[#3B3B98] text-white border-transparent' 
-                          : 'bg-white dark:bg-[#1C1C22] border-[#EBEBEB] dark:border-white/5 text-[#717171] dark:text-[#A0A0A5]'
-
+                          ? 'bg-[#1A237E] text-white border-transparent' 
+                          : 'bg-white dark:bg-[#1C1C22] border-[#EBEBEB] dark:border-white/5 text-[#717171] dark:text-[#A0A0A5] hover:ring-1 hover:ring-[#82EEFD]'
                       }`}
+
                     >
                       #{tagName}
                     </button>
@@ -499,7 +507,8 @@ export default function Dashboard() {
                   onChange={e => setAmount(e.target.value)}
                   placeholder="0.00"
                   step="0.01"
-                  className="bg-transparent text-[20px] font-black text-[#111111] dark:text-white outline-none w-full placeholder:text-[#D1D1D1] dark:placeholder:text-[#2C2C34] min-w-0"
+                  className="bg-transparent text-[20px] font-black text-[#1A237E] dark:text-white outline-none w-full placeholder:text-[#D1D1D1] dark:placeholder:text-[#2C2C34] min-w-0"
+
 
                 />
               </div>
@@ -526,10 +535,10 @@ export default function Dashboard() {
                       }}
                       className={`shrink-0 flex flex-col items-center justify-center gap-0.5 p-1 rounded-lg border transition-all group relative ${
                         selectedAccountId === acc.id || toAccountId === acc.id
-                          ? 'bg-[#3B3B98]/10 dark:bg-[#3B3B98]/20 border-[#3B3B98] text-[#3B3B98] dark:text-white shadow-sm' 
+                          ? 'bg-[#1A237E]/10 dark:bg-[#1A237E]/20 border-[#1A237E] text-[#1A237E] dark:text-white shadow-sm' 
                           : 'bg-white dark:bg-[#1C1C22] border-[#EBEBEB] dark:border-white/5 text-[#717171] dark:text-[#A0A0A5] hover:bg-neutral-50 dark:hover:bg-[#2C2C34]'
-
                       }`}
+
                       style={{ minWidth: '52px' }}
                     >
                       {selectedAccountId === acc.id && type === 'TRANSFER' && (
@@ -566,8 +575,9 @@ export default function Dashboard() {
                     value={partyName}
                     onChange={e => setPartyName(e.target.value)}
                     placeholder={type === 'DEBIT' ? 'Paid to...' : 'Received from...'}
-                    className="bg-transparent flex-1 text-[14px] font-black text-[#111111] dark:text-white outline-none placeholder:text-[#A0A0A0] dark:placeholder:text-[#4A4A52]"
+                    className="bg-transparent flex-1 text-[14px] font-black text-[#1A237E] dark:text-white outline-none placeholder:text-[#A0A0A0] dark:placeholder:text-[#4A4A52]"
                   />
+
                 </div>
               )}
 
@@ -582,7 +592,8 @@ export default function Dashboard() {
                   value={note}
                   onChange={e => setNote(e.target.value)}
                   placeholder="Add remarks..."
-                  className="bg-transparent flex-1 text-[13px] font-bold text-[#111111] dark:text-white/90 outline-none placeholder:text-[#A0A0A0] dark:placeholder:text-[#4A4A52]"
+                  className="bg-transparent flex-1 text-[13px] font-bold text-[#1A237E] dark:text-white/90 outline-none placeholder:text-[#A0A0A0] dark:placeholder:text-[#4A4A52]"
+
                 />
               </div>
 
@@ -590,7 +601,8 @@ export default function Dashboard() {
               <div className="p-2 space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-[9px] font-bold text-[#A0A0A5] uppercase tracking-wider">Payment Method</p>
-                  {paymentMethod && <span className="text-[9px] font-bold text-[#3B3B98] dark:text-[#6C6CF0]">{paymentMethod}</span>}
+                  {paymentMethod && <span className="text-[9px] font-bold text-[#1A237E] dark:text-[#6C6CF0]">{paymentMethod}</span>}
+
 
                 </div>
                 <div className="grid grid-cols-4 gap-1.5">
@@ -605,10 +617,10 @@ export default function Dashboard() {
                       onClick={() => setPaymentMethod(method.id as any)}
                       className={`py-1.5 rounded-lg text-[10px] font-bold transition-all flex flex-col items-center gap-1 border ${
                         paymentMethod === method.id 
-                          ? 'bg-[#3B3B98] border-[#3B3B98] text-white shadow-lg scale-95' 
-                          : 'bg-[#F7F7F7] dark:bg-black/20 border-[#EBEBEB] dark:border-white/5 text-[#717171] dark:text-[#A0A0A5] active:scale-95'
-
+                          ? 'bg-[#00A86B] border-[#00A86B] text-white shadow-lg scale-95' 
+                          : 'bg-[#F7F7F7] dark:bg-black/20 border-[#EBEBEB] dark:border-white/5 text-[#717171] dark:text-[#A0A0A5] active:scale-95 hover:border-[#82EEFD]'
                       }`}
+
                     >
                       {method.icon}
                       {method.label}
@@ -623,11 +635,11 @@ export default function Dashboard() {
                         key={app} 
                         onClick={() => setUpiApp(app)}
                         className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${
-                          upiApp === app 
-                            ? 'bg-[#3B3B98]/10 dark:bg-[#6C6CF0]/20 border-[#3B3B98]/30 dark:border-[#6C6CF0]/40 text-[#3B3B98] dark:text-[#8C8CFF]' 
-                            : 'bg-[#F7F7F7] dark:bg-black/20 border-[#EBEBEB] dark:border-white/5 text-[#717171] dark:text-[#717171]'
+                        upiApp === app 
+                          ? 'bg-[#1A237E]/10 dark:bg-[#6C6CF0]/20 border-[#1A237E]/30 dark:border-[#6C6CF0]/40 text-[#1A237E] dark:text-[#8C8CFF]' 
+                          : 'bg-[#F7F7F7] dark:bg-black/20 border-[#EBEBEB] dark:border-white/5 text-[#717171] dark:text-[#717171] hover:border-[#82EEFD]'
+                      }`}
 
-                        }`}
                       >
                         {app}
                       </button>
@@ -649,10 +661,10 @@ export default function Dashboard() {
                       onClick={() => setCategory(cat)}
                       className={`px-3.5 py-2 rounded-xl text-[13px] font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
                         category === cat 
-                          ? 'bg-[#222222] text-white dark:bg-white dark:text-black' 
-                          : 'bg-white dark:bg-[#1C1C22] text-[#717171] dark:text-[#A0A0A5] border border-[#EBEBEB] dark:border-white/5'
-
+                          ? 'bg-[#1A237E] text-white dark:bg-white dark:text-black' 
+                          : 'bg-white dark:bg-[#1C1C22] text-[#1A237E] dark:text-[#A0A0A5] border border-[#EBEBEB] dark:border-white/5 hover:border-[#82EEFD]'
                       }`}
+
                     >
                       <span className="text-[15px]">{CATEGORY_ICONS[cat] || '📝'}</span>
                       {cat}
@@ -693,9 +705,9 @@ export default function Dashboard() {
                     className={`flex-[2] py-2.5 rounded-xl font-extrabold text-[13px] transition-all transform active:scale-[0.98] ${
                       (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
                       ? 'bg-[#2C2C34] text-[#5A5A62] cursor-not-allowed opacity-50'
-                      : 'bg-[#3B3B98] text-white shadow-lg shadow-indigo-500/10 dark:shadow-none hover:bg-[#4545B0]'
-
+                      : 'bg-[#00A86B] text-white shadow-lg shadow-emerald-500/10 dark:shadow-none hover:bg-[#00925d] hover:ring-2 hover:ring-[#82EEFD]'
                     }`}
+
                   >
                     {status === 'success' ? 'Saved!' : 'Save Transaction'}
                   </button>
