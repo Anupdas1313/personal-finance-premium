@@ -41,47 +41,11 @@ export interface MonthlyClose {
   closingBalance: number;
 }
 
-export interface Trip {
-  id?: number;
-  name: string;
-  description: string;
-  startDate: Date;
-  status: 'ACTIVE' | 'COMPLETED';
-}
-
-export interface TripMember {
-  id?: number;
-  tripId: number;
-  name: string;
-}
-
-export interface TripTransaction {
-  id?: number;
-  tripId: number;
-  amount: number;
-  description: string;
-  dateTime: Date;
-  paidByMemberId: number; // ID of the TripMember who paid
-  category: string;
-  type?: 'EXPENSE' | 'SETTLEMENT';
-}
-
-export interface TripSplit {
-  id?: number;
-  tripTransactionId: number;
-  memberId: number;
-  amount: number;
-}
-
 export class FinanceDatabase extends Dexie {
   accounts!: Table<Account, number>;
   transactions!: Table<Transaction, number>;
   monthlyClosings!: Table<MonthlyClose, number>;
   budgets!: Table<Budget, number>;
-  trips!: Table<Trip, number>;
-  tripMembers!: Table<TripMember, number>;
-  tripTransactions!: Table<TripTransaction, number>;
-  tripSplits!: Table<TripSplit, number>;
 
   constructor() {
     super('FinanceDatabase');
@@ -100,6 +64,18 @@ export class FinanceDatabase extends Dexie {
       tripMembers: '++id, tripId',
       tripTransactions: '++id, tripId, paidByMemberId',
       tripSplits: '++id, tripTransactionId, memberId'
+    });
+    this.version(5).stores({
+      trips: '++id, name, status',
+      tripMembers: '++id, tripId',
+      tripTransactions: '++id, tripId, paidByMemberId',
+      tripSplits: '++id, tripTransactionId, memberId'
+    });
+    this.version(6).stores({
+      trips: null,
+      tripMembers: null,
+      tripTransactions: null,
+      tripSplits: null
     });
   }
 }

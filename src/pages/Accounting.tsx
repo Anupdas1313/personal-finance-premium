@@ -57,7 +57,7 @@ export default function Accounting() {
     let total = accounts.reduce((s, a) => s + a.startingBalance, 0);
     transactions.forEach(tx => {
       if (tx.type === 'CREDIT') total += tx.amount;
-      else total -= tx.amount;
+      else if (tx.type === 'DEBIT') total -= tx.amount;
     });
     return total;
   }, [accounts, transactions]);

@@ -240,12 +240,12 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-black text-[#1A237E] dark:text-[#A0A0A0] tracking-wide uppercase opacity-70">{greeting},</p>
-          <h1 className="text-3xl font-black text-[#1A237E] dark:text-[#F7F7F7] leading-tight">Anup 👋</h1>
+          <h1 className="text-3xl font-black text-[#1A237E] dark:text-[#F7F7F7] leading-tight">Proshanjit 👋</h1>
         </div>
 
         <div className="flex items-center gap-3">
           <div
-            title="Anup"
+            title="Proshanjit"
             className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1A237E] to-[#4A4ABF] flex items-center justify-center text-white font-black text-lg select-none shadow-lg cursor-pointer border-2 border-white dark:border-[#1A1A1E]"
           >
             A

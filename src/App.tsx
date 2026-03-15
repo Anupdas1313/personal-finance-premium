@@ -9,8 +9,6 @@ import Accounting from './pages/Accounting';
 import TransactionTable from './pages/TransactionTable';
 import Settings from './pages/Settings';
 import Budgets from './pages/Budgets';
-import Trips from './pages/Trips';
-import TripDetails from './pages/TripDetails';
 
 import { ThemeProvider } from './components/ThemeProvider';
 
@@ -28,8 +26,6 @@ export default function App() {
           <Route path="accounting" element={<Accounting />} />
           <Route path="parse" element={<SMSParser />} />
           <Route path="settings" element={<Settings />} />
-          <Route path="trips" element={<Trips />} />
-          <Route path="trips/:id" element={<TripDetails />} />
         </Route>
 
         <Route path="/transactions/table" element={<TransactionTable />} />
