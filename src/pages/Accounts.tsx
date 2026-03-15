@@ -366,6 +366,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     return closings.find(c => c.id === selectedPeriodId) || null;
   }, [closings, selectedPeriodId]);
 
+
+
   const statementData = useMemo(() => {
     if (!account) return [];
     
@@ -495,6 +497,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     doc.save(`${account.bankName}_Statement_${format(new Date(), 'dd_MMM_yyyy')}.pdf`);
     setShowExportMenu(false);
   };
+
+  if (!account) return null;
 
   return (
     <div className="fixed inset-0 bg-white dark:bg-[#060608] z-[100] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
