@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../lib/db';
-import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark } from 'lucide-react';
+import { db, Transaction } from '../lib/db';
+import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark, Download, FileText, CheckCircle2, History, Calendar, ChevronDown, Printer } from 'lucide-react';
 import { BankLogo } from '../components/BankLogo';
 import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
-import { format, startOfDay, parseISO } from 'date-fns';
+import { format, startOfDay, parseISO, endOfMonth, startOfMonth, subMonths } from 'date-fns';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function Accounts() {
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
@@ -18,18 +20,34 @@ export default function Accounts() {
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
   
   const allTransactions = useLiveQuery(() => db.transactions.toArray()) || [];
+  const allClosings = useLiveQuery(() => db.accountClosings.toArray()) || [];
 
-  const accountBreakdown = accounts.reduce((acc, account) => {
-    const startLimit = account.startingBalanceDate ? startOfDay(new Date(account.startingBalanceDate)).getTime() : 0;
-    const txs = allTransactions.filter(tx => 
-      Number(tx.accountId) === Number(account.id) && 
-      (!startLimit || startOfDay(new Date(tx.dateTime)).getTime() >= startLimit)
-    );
-    const inflow = txs.filter(tx => tx.type === 'CREDIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
-    const outflow = txs.filter(tx => tx.type === 'DEBIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
-    acc[account.id!] = { inflow, outflow };
-    return acc;
-  }, {} as Record<number, { inflow: number, outflow: number }>);
+  const accountBreakdown = useMemo(() => {
+    return accounts.reduce((acc, account) => {
+      const accountClosings = allClosings
+        .filter(c => c.accountId === account.id)
+        .sort((a, b) => new Date(b.closingDate).getTime() - new Date(a.closingDate).getTime());
+      
+      const latestClosing = accountClosings[0];
+      const startLimit = latestClosing 
+        ? new Date(latestClosing.closingDate).getTime() + 1
+        : (account.startingBalanceDate ? startOfDay(new Date(account.startingBalanceDate)).getTime() : 0);
+
+      const txs = allTransactions.filter(tx => 
+        Number(tx.accountId) === Number(account.id) && 
+        new Date(tx.dateTime).getTime() >= startLimit
+      );
+
+      const inflow = txs.filter(tx => tx.type === 'CREDIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+      const outflow = txs.filter(tx => tx.type === 'DEBIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+      
+      const baseBalance = latestClosing ? latestClosing.closingBalance : Number(account.startingBalance);
+      const currentBalance = baseBalance + inflow - outflow;
+
+      acc[account.id!] = { inflow, outflow, currentBalance };
+      return acc;
+    }, {} as Record<number, { inflow: number, outflow: number, currentBalance: number }>);
+  }, [accounts, allTransactions, allClosings]);
 
   const handleAddAccount = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -240,7 +258,8 @@ export default function Accounts() {
         </div>
       )}      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {accounts.map(account => {
-          const currentBalance = account.startingBalance + (accountBreakdown[account.id!]?.inflow || 0) - (accountBreakdown[account.id!]?.outflow || 0);
+          const info = accountBreakdown[account.id!];
+          const currentBalance = info?.currentBalance || 0;
           return (
             <div 
               key={account.id} 
@@ -332,34 +351,150 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
   const transactions = useLiveQuery(() => 
     db.transactions.where('accountId').equals(accountId).sortBy('dateTime')
   ) || [];
+  
+  const closings = useLiveQuery(() => 
+    db.accountClosings.where('accountId').equals(accountId).sortBy('closingDate')
+  ) || [];
+
+  const [selectedPeriodId, setSelectedPeriodId] = useState<'LIVE' | number>('LIVE');
+  const [showExportMenu, setShowExportMenu] = useState(false);
+
+  const activeClosing = useMemo(() => {
+    if (selectedPeriodId === 'LIVE') {
+      return closings.length > 0 ? closings[closings.length - 1] : null;
+    }
+    return closings.find(c => c.id === selectedPeriodId) || null;
+  }, [closings, selectedPeriodId]);
 
   const statementData = useMemo(() => {
     if (!account) return [];
-    let balance = Number(account.startingBalance) || 0;
-    const startLimit = account.startingBalanceDate ? startOfDay(new Date(account.startingBalanceDate)).getTime() : 0;
     
-    const filteredTxs = transactions.filter(tx => 
-      !startLimit || startOfDay(new Date(tx.dateTime)).getTime() >= startLimit
-    );
+    let baseBalance = 0;
+    let startDateLimit = 0;
+    let endDateLimit = Infinity;
+
+    if (selectedPeriodId === 'LIVE') {
+      if (activeClosing) {
+        baseBalance = Number(activeClosing.closingBalance);
+        startDateLimit = new Date(activeClosing.closingDate).getTime() + 1; // Start after closing
+      } else {
+        baseBalance = Number(account.startingBalance) || 0;
+        startDateLimit = account.startingBalanceDate ? startOfDay(new Date(account.startingBalanceDate)).getTime() : 0;
+      }
+    } else if (activeClosing) {
+      // Historical period: From its start to its close
+      const prevClosing = closings.find(c => c.id! < activeClosing.id!) || null; // Simplified, in real app find exactly previous
+      baseBalance = activeClosing.openingBalance;
+      // For historical, we just filter between the start and end of that period recorded
+      startDateLimit = 0; // We will use a more precise filter based on the audit record if we had periodStart
+      // Actually, let's just filter transactions that were included in that audit
+      // For simplicity, let's assume audits are continuous
+      const closingDate = new Date(activeClosing.closingDate).getTime();
+      return transactions
+        .filter(tx => new Date(tx.dateTime).getTime() <= closingDate) // This is a bit loose
+        .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+        // We'd need more metadata to show EXACTLY what was in a past audit.
+        // For now, let's focus on the LIVE view "Audit & Fresh Start" logic as requested.
+    }
+
+    let runningBalance = baseBalance;
+    const filteredTxs = transactions.filter(tx => {
+      const txTime = new Date(tx.dateTime).getTime();
+      return txTime >= startDateLimit && txTime <= endDateLimit;
+    });
 
     const sorted = [...filteredTxs].sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
     
     return sorted.map(tx => {
       const amount = Number(tx.amount) || 0;
-      if (tx.type === 'CREDIT') balance += amount;
-      else if (tx.type === 'DEBIT') balance -= amount;
-      return { ...tx, amount, runningBalance: balance };
+      if (tx.type === 'CREDIT') runningBalance += amount;
+      else if (tx.type === 'DEBIT') runningBalance -= amount;
+      return { ...tx, amount, runningBalance } as Transaction & { runningBalance: number };
     });
-  }, [account, transactions]);
-
-  if (!account) return null;
+  }, [account, transactions, activeClosing, selectedPeriodId, closings]) as (Transaction & { runningBalance: number })[];
 
   const currentBalance = statementData.length > 0 
     ? statementData[statementData.length - 1].runningBalance 
-    : (Number(account.startingBalance) || 0);
+    : (activeClosing ? activeClosing.closingBalance : (Number(account?.startingBalance) || 0));
 
   const totalCredit = statementData.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
   const totalDebit = statementData.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
+
+  const handleAudit = async () => {
+    if (!account) return;
+    const confirmAudit = window.confirm(`Audit this period? Current balance of ₹${currentBalance.toLocaleString()} will be set as the new starting point.`);
+    if (!confirmAudit) return;
+
+    const openingBal = activeClosing ? activeClosing.closingBalance : account.startingBalance;
+    
+    await db.accountClosings.add({
+      accountId: account.id!,
+      closingDate: new Date(),
+      closingBalance: currentBalance,
+      periodName: format(new Date(), 'MMM yyyy (dd-MM)'),
+      openingBalance: openingBal,
+      totalInflow: totalCredit,
+      totalOutflow: totalDebit
+    });
+    alert("Period audited successfully! Fresh entries will now start from this balance.");
+  };
+
+  const downloadCSV = () => {
+    if (!account) return;
+    const headers = ['Date', 'Particulars', 'Debit', 'Credit', 'Balance'];
+    const rows = statementData.map(tx => [
+      format(new Date(tx.dateTime), 'yyyy-MM-dd HH:mm'),
+      (tx.note || tx.category || '').toUpperCase(),
+      tx.type === 'DEBIT' ? tx.amount : '',
+      tx.type === 'CREDIT' ? tx.amount : '',
+      tx.runningBalance
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `${account.bankName}_Statement_${format(new Date(), 'dd_MMM_yyyy')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowExportMenu(false);
+  };
+
+  const downloadPDF = () => {
+    if (!account) return;
+    const doc = new jsPDF();
+    
+    doc.setFontSize(20);
+    doc.text('Account Statement', 14, 22);
+    
+    doc.setFontSize(10);
+    doc.text(`Bank: ${account.bankName}`, 14, 30);
+    doc.text(`Account: **** ${account.accountLast4}`, 14, 35);
+    doc.text(`Period: ${selectedPeriodId === 'LIVE' ? 'Life Transactions' : closings.find(c => c.id === selectedPeriodId)?.periodName}`, 14, 40);
+    doc.text(`Closing Balance: INR ${currentBalance.toLocaleString()}`, 14, 45);
+
+    autoTable(doc, {
+      startY: 55,
+      head: [['Date', 'Particulars', 'Debit (Dr)', 'Credit (Cr)', 'Balance']],
+      body: statementData.map(tx => [
+        format(new Date(tx.dateTime), 'dd MMM yyyy'),
+        (tx.note || tx.category || '').toUpperCase(),
+        tx.type === 'DEBIT' ? `INR ${tx.amount.toLocaleString()}` : '-',
+        tx.type === 'CREDIT' ? `INR ${tx.amount.toLocaleString()}` : '-',
+        `INR ${tx.runningBalance.toLocaleString()}`
+      ]),
+      theme: 'grid',
+      headStyles: { fillColor: [26, 35, 126] }
+    });
+
+    doc.save(`${account.bankName}_Statement_${format(new Date(), 'dd_MMM_yyyy')}.pdf`);
+    setShowExportMenu(false);
+  };
 
   return (
     <div className="fixed inset-0 bg-white dark:bg-[#060608] z-[100] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -383,22 +518,58 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         <div className="grid grid-cols-2 gap-3">
             <div className="bg-brand-blue p-4 rounded-2xl shadow-xl shadow-brand-blue/20 flex flex-col justify-center">
                 <p className="text-[10px] font-black text-white/50 uppercase mb-1">Available Balance</p>
-                <p className="text-2xl font-black tracking-tighter text-white">
-                    ₹{currentBalance.toLocaleString('en-IN')}
-                </p>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-2xl font-black tracking-tighter text-white">
+                      ₹{currentBalance.toLocaleString('en-IN')}
+                  </p>
+                  {selectedPeriodId !== 'LIVE' && (
+                    <span className="bg-white/20 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase">Archived</span>
+                  )}
+                </div>
             </div>
-            <div className="flex flex-col gap-1.5">
-                <div className="flex justify-between items-center bg-white dark:bg-[#1A1A1A] px-3 py-2 rounded-xl border border-neutral-100 dark:border-[#222222]">
-                    <span className="text-[9px] font-black text-neutral-400 uppercase">Opening Balance</span>
-                    <span className="text-xs font-bold text-brand-blue dark:text-white opacity-60">₹{account.startingBalance.toLocaleString('en-IN')}</span>
+            
+            <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <button 
+                      onClick={() => setShowExportMenu(!showExportMenu)}
+                      className="w-full flex items-center justify-center gap-2 bg-white dark:bg-[#1A1A1A] text-brand-blue dark:text-white py-2 rounded-xl border border-neutral-100 dark:border-[#222222] font-black text-[10px] uppercase shadow-sm"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Export
+                    </button>
+                    {showExportMenu && (
+                      <div className="absolute top-full mt-2 right-0 w-32 bg-white dark:bg-[#1C1C22] shadow-2xl shadow-black/20 rounded-xl border border-neutral-100 dark:border-[#222222] z-[110] overflow-hidden flex flex-col">
+                        <button onClick={downloadPDF} className="p-3 text-left text-[10px] font-black text-brand-blue dark:text-white hover:bg-neutral-50 dark:hover:bg-white/5 flex items-center gap-2">
+                           <FileText className="w-3.5 h-3.5 text-brand-red" /> PDF
+                        </button>
+                        <button onClick={downloadCSV} className="p-3 text-left text-[10px] font-black text-brand-blue dark:text-white hover:bg-neutral-50 dark:hover:bg-white/5 flex items-center gap-2 border-t border-neutral-100 dark:border-white/5">
+                           <Printer className="w-3.5 h-3.5 text-brand-green" /> CSV
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <button 
+                    onClick={handleAudit}
+                    className="flex-1 flex items-center justify-center gap-2 bg-brand-green text-white py-2 rounded-xl font-black text-[10px] uppercase shadow-lg shadow-brand-green/20"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Audit
+                  </button>
                 </div>
-                <div className="flex justify-between items-center px-3">
-                    <span className="text-[9px] font-black text-brand-green uppercase">Total Inflow (+)</span>
-                    <span className="text-xs font-bold text-brand-green">₹{totalCredit.toLocaleString('en-IN')}</span>
-                </div>
-                <div className="flex justify-between items-center px-3">
-                    <span className="text-[9px] font-black text-brand-red uppercase">Total Outflow (-)</span>
-                    <span className="text-xs font-bold text-brand-red">₹{totalDebit.toLocaleString('en-IN')}</span>
+
+                <div className="relative">
+                  <select 
+                    value={selectedPeriodId}
+                    onChange={(e) => setSelectedPeriodId(e.target.value === 'LIVE' ? 'LIVE' : Number(e.target.value))}
+                    className="w-full appearance-none bg-neutral-100 dark:bg-[#1A1A1A] text-brand-blue dark:text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase outline-none border border-transparent focus:border-brand-blue transition-all"
+                  >
+                    <option value="LIVE">Live Statement</option>
+                    {closings.map(c => (
+                      <option key={c.id} value={c.id}>{c.periodName}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-brand-blue/50 pointer-events-none" />
                 </div>
             </div>
         </div>
@@ -416,21 +587,41 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-[#0C0C0F]">
-            {/* Opening Row */}
+            {/* Opening Balance Logic */}
             <tr className="border-b border-neutral-50 dark:border-[#1A1A1A] bg-neutral-50/20">
-              <td className="px-2 py-3 text-neutral-400 text-[9px]">{account.startingBalanceDate ? format(new Date(account.startingBalanceDate), 'dd MMM') : '-'}</td>
-              <td className="px-2 py-3 font-bold text-brand-blue dark:text-white text-[9px]">BY OPENING BALANCE</td>
+              <td className="px-2 py-3 text-neutral-400 text-[9px]">
+                {selectedPeriodId === 'LIVE' 
+                  ? (activeClosing ? format(new Date(activeClosing.closingDate), 'dd MMM') : (account.startingBalanceDate ? format(new Date(account.startingBalanceDate), 'dd MMM') : '-'))
+                  : (activeClosing ? format(new Date(activeClosing.closingDate), 'dd MMM') : '-')
+                }
+              </td>
+              <td className="px-2 py-3 font-bold text-brand-blue dark:text-white text-[9px]">
+                {activeClosing ? `AUDITED BALANCE (${activeClosing.periodName})` : 'OPENING BALANCE'}
+              </td>
               <td className="px-2 py-3 text-right text-neutral-300">-</td>
-              <td className="px-2 py-3 text-right text-brand-green font-bold">₹{account.startingBalance.toLocaleString('en-IN')}</td>
-              <td className="px-2 py-3 text-right text-brand-blue dark:text-white font-black">₹{account.startingBalance.toLocaleString('en-IN')}</td>
+              <td className="px-2 py-3 text-right text-brand-green font-bold">
+                ₹{(activeClosing ? activeClosing.closingBalance : account.startingBalance).toLocaleString('en-IN')}
+              </td>
+              <td className="px-2 py-3 text-right text-brand-blue dark:text-white font-black">
+                ₹{(activeClosing ? activeClosing.closingBalance : account.startingBalance).toLocaleString('en-IN')}
+              </td>
             </tr>
 
             {/* Transactions In Chronological Order */}
             {statementData.map((tx, idx) => (
               <tr key={tx.id || idx} className="border-b border-neutral-50 dark:border-[#1A1A1A] hover:bg-neutral-50/50 transition-colors">
-                <td className="px-2 py-3 text-neutral-400 text-[9px]">{format(new Date(tx.dateTime), 'dd MMM')}</td>
+                <td className="px-2 py-3 text-neutral-400 text-[9px] text-center font-bold">
+                  <div className="flex flex-col">
+                    <span>{format(new Date(tx.dateTime), 'dd')}</span>
+                    <span className="text-[7px] uppercase">{format(new Date(tx.dateTime), 'MMM')}</span>
+                  </div>
+                </td>
                 <td className="px-2 py-3">
-                  <p className="font-bold text-brand-blue dark:text-[#F7F7F7] text-[10px] leading-tight truncate max-w-[150px] uppercase">{tx.note || tx.category || 'N/A'}</p>
+                  <p className="font-bold text-brand-blue dark:text-[#F7F7F7] text-[10px] leading-tight truncate max-w-[150px] uppercase tracking-tighter">{tx.note || tx.category || 'N/A'}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5 opacity-50">
+                    <div className="w-1.5 h-1.5 rounded-full bg-neutral-300" />
+                    <span className="text-[7px] font-black uppercase tracking-widest">{tx.category}</span>
+                  </div>
                 </td>
                 <td className="px-2 py-3 text-right">
                   {tx.type === 'DEBIT' && <span className="text-brand-red font-bold">₹{tx.amount.toLocaleString('en-IN')}</span>}

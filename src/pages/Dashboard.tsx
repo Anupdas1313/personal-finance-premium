@@ -171,39 +171,45 @@ export default function Dashboard() {
   const latestClosedMonth = monthlyClosings[0];
 
   const allTransactions = useLiveQuery(() => db.transactions.toArray()) || [];
+  const allClosings = useLiveQuery(() => db.accountClosings.toArray()) || [];
   
   const balances = accounts.map(acc => {
-    // Use startingBalanceDate as the anchor
-    const startLimit = acc.startingBalanceDate ? startOfDay(new Date(acc.startingBalanceDate)).getTime() : 0;
+    // 1. Check for account-specific audits (highest priority)
+    const accountSpecificClosings = allClosings
+      .filter(c => c.accountId === acc.id)
+      .sort((a, b) => new Date(b.closingDate).getTime() - new Date(a.closingDate).getTime());
     
+    const latestAudit = accountSpecificClosings[0];
+
+    if (latestAudit) {
+      const auditDate = new Date(latestAudit.closingDate).getTime();
+      const txsSinceAudit = allTransactions.filter(t => 
+        Number(t.accountId) === Number(acc.id) && 
+        new Date(t.dateTime).getTime() > auditDate
+      );
+      const balance = txsSinceAudit.reduce((accBal, tx) => {
+        const amt = Number(tx.amount) || 0;
+        return tx.type === 'CREDIT' ? accBal + amt : accBal - amt;
+      }, latestAudit.closingBalance);
+      return { ...acc, currentBalance: balance };
+    }
+
+    // 2. Fallback to old monthlyClosings system or starting balance
+    const startLimit = acc.startingBalanceDate ? startOfDay(new Date(acc.startingBalanceDate)).getTime() : 0;
     let startingBalance = Number(acc.startingBalance) || 0;
     let txsToConsider = allTransactions.filter(t => Number(t.accountId) === Number(acc.id));
 
-    if (latestClosedMonth) {
-      if (latestClosedMonth.accountBalances[acc.id!] !== undefined) {
-        startingBalance = Number(latestClosedMonth.accountBalances[acc.id!]);
-        
-        // Only consider transactions AFTER the closed month
-        const closedMonthDate = new Date(latestClosedMonth.month + '-01');
-        const nextMonthStart = new Date(closedMonthDate.getFullYear(), closedMonthDate.getMonth() + 1, 1).getTime();
-        
-        txsToConsider = txsToConsider.filter(t => new Date(t.dateTime).getTime() >= nextMonthStart);
-      } else {
-        // No close for this account, respect starting date
-        if (startLimit) {
-          txsToConsider = txsToConsider.filter(t => startOfDay(new Date(t.dateTime)).getTime() >= startLimit);
-        }
-      }
+    if (latestClosedMonth && latestClosedMonth.accountBalances[acc.id!] !== undefined) {
+      startingBalance = Number(latestClosedMonth.accountBalances[acc.id!]);
+      const nextMonthStart = new Date(new Date(latestClosedMonth.month + '-01').getFullYear(), new Date(latestClosedMonth.month + '-01').getMonth() + 1, 1).getTime();
+      txsToConsider = txsToConsider.filter(t => new Date(t.dateTime).getTime() >= nextMonthStart);
     } else if (startLimit) {
-      // No closed months at all, just respect starting date
       txsToConsider = txsToConsider.filter(t => startOfDay(new Date(t.dateTime)).getTime() >= startLimit);
     }
 
     const currentBalance = txsToConsider.reduce((accBal, tx) => {
       const amt = Number(tx.amount) || 0;
-      if (tx.type === 'CREDIT') return accBal + amt;
-      if (tx.type === 'DEBIT') return accBal - amt;
-      return accBal;
+      return tx.type === 'CREDIT' ? accBal + amt : accBal - amt;
     }, startingBalance);
     
     return { ...acc, currentBalance };

@@ -61,6 +61,17 @@ export interface LedgerTransaction {
   attachmentUrl?: string;
 }
 
+export interface AccountClosing {
+  id?: number;
+  accountId: number;
+  closingDate: Date;
+  closingBalance: number;
+  periodName: string; 
+  openingBalance: number;
+  totalInflow: number;
+  totalOutflow: number;
+}
+
 export class FinanceDatabase extends Dexie {
   accounts!: Table<Account, number>;
   transactions!: Table<Transaction, number>;
@@ -68,6 +79,7 @@ export class FinanceDatabase extends Dexie {
   budgets!: Table<Budget, number>;
   parties!: Table<Party, number>;
   ledgerTransactions!: Table<LedgerTransaction, number>;
+  accountClosings!: Table<AccountClosing, number>;
 
   constructor() {
     super('FinanceDatabase');
@@ -102,6 +114,9 @@ export class FinanceDatabase extends Dexie {
     this.version(7).stores({
       parties: '++id, name, type',
       ledgerTransactions: '++id, partyId, type, dateTime'
+    });
+    this.version(8).stores({
+      accountClosings: '++id, accountId, closingDate'
     });
   }
 }
