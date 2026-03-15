@@ -20,9 +20,13 @@ export default function Accounts() {
   const allTransactions = useLiveQuery(() => db.transactions.toArray()) || [];
 
   const accountBreakdown = accounts.reduce((acc, account) => {
-    const txs = allTransactions.filter(tx => tx.accountId === account.id);
-    const inflow = txs.filter(tx => tx.type === 'CREDIT').reduce((sum, tx) => sum + (tx.amount || 0), 0);
-    const outflow = txs.filter(tx => tx.type === 'DEBIT').reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    const startLimit = account.startingBalanceDate ? startOfDay(new Date(account.startingBalanceDate)) : null;
+    const txs = allTransactions.filter(tx => 
+      tx.accountId === account.id && 
+      (!startLimit || startOfDay(new Date(tx.dateTime)) >= startLimit)
+    );
+    const inflow = txs.filter(tx => tx.type === 'CREDIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+    const outflow = txs.filter(tx => tx.type === 'DEBIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
     acc[account.id!] = { inflow, outflow };
     return acc;
   }, {} as Record<number, { inflow: number, outflow: number }>);
@@ -205,6 +209,16 @@ export default function Accounts() {
                   required
                 />
               </div>
+              <div>
+                <label className="block text-sm font-black text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-wider">Starting Date</label>
+                <input
+                  type="date"
+                  value={startingBalanceDate}
+                  onChange={(e) => setStartingBalanceDate(e.target.value)}
+                  className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan focus:border-brand-blue outline-none transition-shadow text-brand-blue font-bold"
+                  required
+                />
+              </div>
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-[#EBEBEB] dark:border-[#222222]">
@@ -321,24 +335,28 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
 
   const statementData = useMemo(() => {
     if (!account) return [];
-    let runningBalance = account.startingBalance;
+    let balance = Number(account.startingBalance) || 0;
+    const startLimit = account.startingBalanceDate ? startOfDay(new Date(account.startingBalanceDate)) : null;
     
-    // Always show all historical transactions
-    const sorted = [...transactions].sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+    const filteredTxs = transactions.filter(tx => 
+      !startLimit || startOfDay(new Date(tx.dateTime)) >= startLimit
+    );
+
+    const sorted = [...filteredTxs].sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
     
     return sorted.map(tx => {
       const amount = Number(tx.amount) || 0;
-      if (tx.type === 'CREDIT') runningBalance += amount;
-      else if (tx.type === 'DEBIT') runningBalance -= amount;
-      return { ...tx, amount, runningBalance };
+      if (tx.type === 'CREDIT') balance += amount;
+      else if (tx.type === 'DEBIT') balance -= amount;
+      return { ...tx, amount, runningBalance: balance };
     });
   }, [account, transactions]);
 
+  if (!account) return null;
+
   const currentBalance = statementData.length > 0 
     ? statementData[statementData.length - 1].runningBalance 
-    : (account?.startingBalance || 0);
-
-  if (!account) return null;
+    : (Number(account.startingBalance) || 0);
 
   const totalCredit = statementData.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
   const totalDebit = statementData.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
@@ -390,35 +408,39 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         <table className="w-full border-collapse border-spacing-0 text-[10px] min-w-[320px]">
           <thead className="sticky top-0 z-10 bg-neutral-50 dark:bg-[#111111]">
             <tr className="text-[8px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 dark:border-[#222222]">
-              <th className="w-16 px-2 py-2 text-left">Date</th>
-              <th className="px-2 py-2 text-left">Details</th>
-              <th className="w-20 px-2 py-2 text-right">Amount</th>
-              <th className="w-24 px-2 py-2 text-right">Balance</th>
+              <th className="w-16 px-2 py-3 text-left">Date</th>
+              <th className="px-2 py-3 text-left">Particulars</th>
+              <th className="w-20 px-2 py-3 text-right">Debit (Dr)</th>
+              <th className="w-20 px-2 py-3 text-right">Credit (Cr)</th>
+              <th className="w-24 px-2 py-3 text-right">Balance</th>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-[#0C0C0F]">
             {/* Opening Row */}
             <tr className="border-b border-neutral-50 dark:border-[#1A1A1A] bg-neutral-50/20">
-              <td className="px-2 py-2 text-neutral-400 text-[9px]">{account.startingBalanceDate ? format(new Date(account.startingBalanceDate), 'dd MMM') : '-'}</td>
-              <td className="px-2 py-2 font-bold text-brand-blue dark:text-white text-[9px]">OPENING BALANCE</td>
-              <td className="px-2 py-2 text-right text-brand-green font-bold">₹{account.startingBalance.toLocaleString('en-IN')} Cr</td>
-              <td className="px-2 py-2 text-right text-brand-blue dark:text-white font-black">₹{account.startingBalance.toLocaleString('en-IN')}</td>
+              <td className="px-2 py-3 text-neutral-400 text-[9px]">{account.startingBalanceDate ? format(new Date(account.startingBalanceDate), 'dd MMM') : '-'}</td>
+              <td className="px-2 py-3 font-bold text-brand-blue dark:text-white text-[9px]">BY OPENING BALANCE</td>
+              <td className="px-2 py-3 text-right text-neutral-300">-</td>
+              <td className="px-2 py-3 text-right text-brand-green font-bold">₹{account.startingBalance.toLocaleString('en-IN')}</td>
+              <td className="px-2 py-3 text-right text-brand-blue dark:text-white font-black">₹{account.startingBalance.toLocaleString('en-IN')}</td>
             </tr>
 
-            {/* Transactions */}
-            {[...statementData].reverse().map((tx, idx) => (
+            {/* Transactions In Chronological Order */}
+            {statementData.map((tx, idx) => (
               <tr key={tx.id || idx} className="border-b border-neutral-50 dark:border-[#1A1A1A] hover:bg-neutral-50/50 transition-colors">
-                <td className="px-2 py-2 text-neutral-400 text-[9px]">{format(tx.dateTime, 'dd MMM')}</td>
-                <td className="px-2 py-2">
-                  <p className="font-bold text-brand-blue dark:text-[#F7F7F7] text-[10px] leading-tight truncate max-w-[120px]">{tx.note || tx.category}</p>
+                <td className="px-2 py-3 text-neutral-400 text-[9px]">{format(new Date(tx.dateTime), 'dd MMM')}</td>
+                <td className="px-2 py-3">
+                  <p className="font-bold text-brand-blue dark:text-[#F7F7F7] text-[10px] leading-tight truncate max-w-[150px] uppercase">{tx.note || tx.category || 'N/A'}</p>
                 </td>
-                <td className="px-2 py-2 text-right">
-                  <span className={`${tx.type === 'DEBIT' ? 'text-brand-red' : 'text-brand-green'} font-bold`}>
-                    ₹{tx.amount.toLocaleString('en-IN')}
-                    <span className="text-[7px] ml-0.5 opacity-50">{tx.type === 'DEBIT' ? 'Dr' : 'Cr'}</span>
-                  </span>
+                <td className="px-2 py-3 text-right">
+                  {tx.type === 'DEBIT' && <span className="text-brand-red font-bold">₹{tx.amount.toLocaleString('en-IN')}</span>}
+                  {tx.type !== 'DEBIT' && <span className="text-neutral-300">-</span>}
                 </td>
-                <td className={`px-2 py-2 text-right font-black ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
+                <td className="px-2 py-3 text-right">
+                  {tx.type === 'CREDIT' && <span className="text-brand-green font-bold">₹{tx.amount.toLocaleString('en-IN')}</span>}
+                  {tx.type !== 'CREDIT' && <span className="text-neutral-300">-</span>}
+                </td>
+                <td className={`px-2 py-3 text-right font-black ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
                   ₹{tx.runningBalance.toLocaleString('en-IN')}
                 </td>
               </tr>
@@ -426,8 +448,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             
             {statementData.length === 0 && (
                 <tr>
-                    <td colSpan={4} className="py-10 text-center">
-                        <p className="text-[8px] font-black text-neutral-200 uppercase tracking-widest">No Transactions Found</p>
+                    <td colSpan={5} className="py-10 text-center">
+                        <p className="text-[9px] font-black text-neutral-200 uppercase tracking-widest">No Recent Transactions</p>
                     </td>
                 </tr>
             )}
