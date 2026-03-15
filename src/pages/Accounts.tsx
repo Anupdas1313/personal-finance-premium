@@ -394,57 +394,56 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         </div>
       </div>
 
-      {/* Spreadsheet Content */}
       <div className="flex-1 overflow-auto bg-[#F8F9FA] dark:bg-[#060608]">
-        <table className="w-full border-collapse border-spacing-0 text-[11px] font-medium table-fixed min-w-[800px]">
+        <table className="w-full border-collapse border-spacing-0 text-[10px] font-medium table-fixed min-w-[550px]">
           <thead className="sticky top-0 z-10 bg-[#EDF2F7] dark:bg-[#1A1A1A]">
             <tr>
-              <th className="w-24 border border-neutral-300 dark:border-[#333333] px-3 py-2 text-brand-blue/60 uppercase text-[9px] font-black tracking-widest">Date</th>
-              <th className="border border-neutral-300 dark:border-[#333333] px-3 py-2 text-brand-blue/60 uppercase text-[9px] font-black tracking-widest text-left">Description / Particulars</th>
-              <th className="w-32 border border-neutral-300 dark:border-[#333333] px-3 py-2 text-brand-blue/60 uppercase text-[9px] font-black tracking-widest text-right">Debit (O)</th>
-              <th className="w-32 border border-neutral-300 dark:border-[#333333] px-3 py-2 text-brand-blue/60 uppercase text-[9px] font-black tracking-widest text-right">Credit (I)</th>
-              <th className="w-40 border border-neutral-300 dark:border-[#333333] px-3 py-2 text-brand-blue/60 uppercase text-[9px] font-black tracking-widest text-right">Balance</th>
+              <th className="w-16 border border-neutral-300 dark:border-[#333333] px-1.5 py-1 text-brand-blue/60 uppercase text-[8px] font-black tracking-widest">Date</th>
+              <th className="border border-neutral-300 dark:border-[#333333] px-2 py-1 text-brand-blue/60 uppercase text-[8px] font-black tracking-widest text-left">Description</th>
+              <th className="w-24 border border-neutral-300 dark:border-[#333333] px-2 py-1 text-brand-blue/60 uppercase text-[8px] font-black tracking-widest text-right">Debit</th>
+              <th className="w-24 border border-neutral-300 dark:border-[#333333] px-2 py-1 text-brand-blue/60 uppercase text-[8px] font-black tracking-widest text-right">Credit</th>
+              <th className="w-28 border border-neutral-300 dark:border-[#333333] px-2 py-1 text-brand-blue/60 uppercase text-[8px] font-black tracking-widest text-right">Balance</th>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-[#0C0C0F]">
             {/* Opening Balance Row */}
             <tr className="bg-brand-blue/5 dark:bg-brand-blue/10 font-black">
-              <td className="border border-neutral-200 dark:border-[#222222] px-3 py-3 text-center text-brand-blue/40">
+              <td className="border border-neutral-200 dark:border-[#222222] px-1.5 py-1.5 text-center text-brand-blue/40 uppercase text-[8px]">
                 {account.startingBalanceDate ? format(new Date(account.startingBalanceDate), 'dd/MM/yy') : '01/01/24'}
               </td>
-              <td className="border border-neutral-200 dark:border-[#222222] px-3 py-3 text-brand-blue flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-brand-blue"></span>
-                OPENING BALANCE / BROUGHT FORWARD
+              <td className="border border-neutral-200 dark:border-[#222222] px-2 py-1.5 text-brand-blue flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-blue"></span>
+                OPENING BALANCE
               </td>
-              <td className="border border-neutral-200 dark:border-[#222222] px-3 py-3 text-right text-neutral-300">-</td>
-              <td className="border border-neutral-200 dark:border-[#222222] px-3 py-3 text-right text-brand-green">
-                ₹{account.startingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              <td className="border border-neutral-200 dark:border-[#222222] px-2 py-1.5 text-right text-neutral-300">-</td>
+              <td className="border border-neutral-200 dark:border-[#222222] px-2 py-1.5 text-right text-brand-green">
+                ₹{account.startingBalance.toLocaleString('en-IN')}
               </td>
-              <td className="border border-neutral-200 dark:border-[#222222] px-3 py-3 text-right text-brand-blue">
-                ₹{account.startingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              <td className="border border-neutral-200 dark:border-[#222222] px-2 py-1.5 text-right text-brand-blue">
+                ₹{account.startingBalance.toLocaleString('en-IN')}
               </td>
             </tr>
 
             {/* Transaction Rows */}
             {statementData.map((tx, idx) => (
               <tr key={tx.id || idx} className="hover:bg-neutral-50 dark:hover:bg-[#111111] transition-colors group">
-                <td className="border border-neutral-200 dark:border-[#222222] px-3 py-2.5 text-center text-neutral-500 dark:text-neutral-400">
+                <td className="border border-neutral-200 dark:border-[#222222] px-1.5 py-1.5 text-center text-neutral-500 dark:text-neutral-400">
                   {format(tx.dateTime, 'dd/MM/yy')}
                 </td>
-                <td className="border border-neutral-200 dark:border-[#222222] px-3 py-2.5">
+                <td className="border border-neutral-200 dark:border-[#222222] px-2 py-1.5">
                   <div className="flex flex-col">
-                    <span className="font-bold text-brand-blue dark:text-white uppercase tracking-tighter">{tx.note || tx.category}</span>
-                    <span className="text-[9px] text-brand-blue/30 uppercase font-black">{tx.party || 'Self'}</span>
+                    <span className="font-bold text-brand-blue dark:text-white uppercase tracking-tighter leading-tight truncate max-w-[150px]">{tx.note || tx.category}</span>
+                    <span className="text-[8px] text-brand-blue/30 uppercase font-black">{tx.party || 'Self'}</span>
                   </div>
                 </td>
-                <td className="border border-neutral-200 dark:border-[#222222] px-3 py-2.5 text-right font-bold text-brand-red">
-                  {tx.type === 'DEBIT' ? `₹${tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '-'}
+                <td className="border border-neutral-200 dark:border-[#222222] px-2 py-1.5 text-right font-bold text-brand-red">
+                  {tx.type === 'DEBIT' ? `₹${tx.amount.toLocaleString('en-IN')}` : '-'}
                 </td>
-                <td className="border border-neutral-200 dark:border-[#222222] px-3 py-2.5 text-right font-bold text-brand-green">
-                  {tx.type === 'CREDIT' ? `₹${tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '-'}
+                <td className="border border-neutral-200 dark:border-[#222222] px-2 py-1.5 text-right font-bold text-brand-green">
+                  {tx.type === 'CREDIT' ? `₹${tx.amount.toLocaleString('en-IN')}` : '-'}
                 </td>
-                <td className={`border border-neutral-200 dark:border-[#222222] px-3 py-2.5 text-right font-black ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
-                  ₹{tx.runningBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                <td className={`border border-neutral-200 dark:border-[#222222] px-2 py-1.5 text-right font-black ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
+                  ₹{tx.runningBalance.toLocaleString('en-IN')}
                 </td>
               </tr>
             ))}
@@ -464,24 +463,24 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
       </div>
 
       {/* Sheet Footer */}
-      <div className="bg-neutral-50 dark:bg-[#0C0C0F] border-t border-neutral-200 dark:border-[#222222] px-10 py-5 flex items-center justify-between">
-        <div className="flex gap-8">
+      <div className="bg-neutral-50 dark:bg-[#0C0C0F] border-t border-neutral-200 dark:border-[#222222] px-6 py-3 flex items-center justify-between">
+        <div className="flex gap-4">
             <div>
-                <p className="text-[9px] font-black text-brand-blue/40 uppercase tracking-widest mb-1">Total Debit</p>
-                <p className="text-sm font-black text-brand-red">
+                <p className="text-[8px] font-black text-brand-blue/40 uppercase tracking-widest">Debit</p>
+                <p className="text-xs font-black text-brand-red">
                     ₹{transactions.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0).toLocaleString('en-IN')}
                 </p>
             </div>
             <div>
-                <p className="text-[9px] font-black text-brand-blue/40 uppercase tracking-widest mb-1">Total Credit</p>
-                <p className="text-sm font-black text-brand-green">
+                <p className="text-[8px] font-black text-brand-blue/40 uppercase tracking-widest">Credit</p>
+                <p className="text-xs font-black text-brand-green">
                     ₹{transactions.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0).toLocaleString('en-IN')}
                 </p>
             </div>
         </div>
         <div className="text-right">
-            <p className="text-[9px] font-black text-brand-blue/40 uppercase tracking-widest mb-1">Final Closing Balance</p>
-            <p className={`text-2xl font-black tracking-tighter ${currentBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
+            <p className="text-[8px] font-black text-brand-blue/40 uppercase tracking-widest">Closing Balance</p>
+            <p className={`text-xl font-black tracking-tighter ${currentBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
                 ₹{currentBalance.toLocaleString('en-IN')}
             </p>
         </div>
