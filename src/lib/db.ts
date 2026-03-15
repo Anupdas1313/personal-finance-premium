@@ -3,7 +3,7 @@ import Dexie, { Table } from 'dexie';
 export interface Account {
   id?: number;
   bankName: string;
-  accountLast4: string; // For CASH, this could be "WALLET" or "CASH"
+  accountLast4: string;
   startingBalance: number;
   type?: 'BANK' | 'CASH' | 'CREDIT_CARD';
 }
@@ -41,11 +41,46 @@ export interface MonthlyClose {
   closingBalance: number;
 }
 
+export interface Trip {
+  id?: number;
+  name: string;
+  description: string;
+  startDate: Date;
+  status: 'ACTIVE' | 'COMPLETED';
+}
+
+export interface TripMember {
+  id?: number;
+  tripId: number;
+  name: string;
+}
+
+export interface TripTransaction {
+  id?: number;
+  tripId: number;
+  amount: number;
+  description: string;
+  dateTime: Date;
+  paidByMemberId: number; // ID of the TripMember who paid
+  category: string;
+}
+
+export interface TripSplit {
+  id?: number;
+  tripTransactionId: number;
+  memberId: number;
+  amount: number;
+}
+
 export class FinanceDatabase extends Dexie {
   accounts!: Table<Account, number>;
   transactions!: Table<Transaction, number>;
   monthlyClosings!: Table<MonthlyClose, number>;
   budgets!: Table<Budget, number>;
+  trips!: Table<Trip, number>;
+  tripMembers!: Table<TripMember, number>;
+  tripTransactions!: Table<TripTransaction, number>;
+  tripSplits!: Table<TripSplit, number>;
 
   constructor() {
     super('FinanceDatabase');
@@ -59,7 +94,15 @@ export class FinanceDatabase extends Dexie {
     this.version(3).stores({
       budgets: '++id, category, month, [category+month]'
     });
+    this.version(4).stores({
+      trips: '++id, name, status',
+      tripMembers: '++id, tripId',
+      tripTransactions: '++id, tripId, paidByMemberId',
+      tripSplits: '++id, tripTransactionId, memberId'
+    });
   }
 }
+
+
 
 export const db = new FinanceDatabase();

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLocation, Link, Outlet } from 'react-router-dom';
-import { LayoutDashboard, BarChart3, Landmark, PieChart, Target, Calculator, MessageSquareText, Settings, Plus, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Landmark, PieChart, Target, Calculator, MessageSquareText, Settings, Plus, MoreHorizontal, PlaneTakeoff } from 'lucide-react';
+
 import { cn } from '../lib/utils';
 
 
@@ -18,9 +19,11 @@ export default function Layout() {
     { name: 'Summary', path: '/summary', icon: PieChart },
     { name: 'Budgets', path: '/budgets', icon: Target },
     { name: 'Accounting', path: '/accounting', icon: Calculator },
+    { name: 'Trips', path: '/trips', icon: PlaneTakeoff },
     { name: 'Parse SMS', path: '/parse', icon: MessageSquareText },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
+
 
   const allNavItems = [...mainNavItems, ...moreNavItems];
 
@@ -42,11 +45,13 @@ export default function Layout() {
                 className={cn(
                   'flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-colors',
                   isActive
-                    ? 'bg-neutral-100 dark:bg-[#15151A] text-[#1A237E] dark:text-[#F7F7F7]'
-                    : 'text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-50 dark:hover:bg-[#15151A] hover:text-[#1A237E] dark:hover:text-[#F7F7F7]'
+                    ? 'bg-brand-blue/5 dark:bg-brand-blue/20 text-brand-blue dark:text-[#F7F7F7]'
+                    : 'text-brand-blue/60 dark:text-[#A0A0A0] hover:bg-brand-blue/5 dark:hover:bg-[#15151A] hover:text-brand-blue dark:hover:text-[#F7F7F7]'
+
                 )}
               >
-                <Icon className={cn('w-5 h-5', isActive ? 'text-[#1A237E] dark:text-[#F7F7F7]' : 'text-[#B0B0B0] dark:text-[#55555E]')} />
+                <Icon className={cn('w-5 h-5', isActive ? 'text-brand-blue dark:text-[#F7F7F7]' : 'text-brand-blue/40 dark:text-[#55555E]')} />
+
 
                 {item.name}
               </Link>
@@ -55,7 +60,8 @@ export default function Layout() {
           
           <Link
             to="/?add=true"
-            className="mt-6 flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-bold bg-[#00A86B] text-white shadow-lg shadow-emerald-500/20 hover:bg-[#00925d] hover:ring-2 hover:ring-[#82EEFD] transition-all transform active:scale-95"
+            className="mt-6 flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-bold bg-brand-green text-white shadow-lg shadow-brand-green/20 hover:bg-brand-green/90 hover:ring-2 hover:ring-brand-cyan transition-all transform active:scale-95"
+
           >
             <Plus className="w-5 h-5" />
             Add Transaction
@@ -84,10 +90,12 @@ export default function Layout() {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={cn(
                   'flex flex-col items-center justify-center flex-1 h-full space-y-1',
-                  isActive ? 'text-[#222222] dark:text-[#F7F7F7]' : 'text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7]'
+                  isActive ? 'text-brand-blue dark:text-[#F7F7F7]' : 'text-brand-blue/50 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-[#F7F7F7]'
                 )}
+
               >
-                <Icon className={cn('w-6 h-6', isActive ? 'text-[#222222] dark:text-[#F7F7F7]' : 'text-[#B0B0B0] dark:text-[#55555E]')} />
+                <Icon className={cn('w-6 h-6', isActive ? 'text-brand-blue dark:text-[#F7F7F7]' : 'text-brand-blue/30 dark:text-[#55555E]')} />
+
                 <span className="text-[10px] font-bold">{item.name}</span>
               </Link>
             );
@@ -98,7 +106,8 @@ export default function Layout() {
             <Link
               to="/?add=true"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="w-14 h-14 bg-[#00A86B] rounded-full flex items-center justify-center text-white shadow-[0_4px_20px_rgba(0,168,107,0.4)] border-4 border-white dark:border-[#0C0C0F] transition-transform active:scale-90"
+              className="w-14 h-14 bg-brand-green rounded-full flex items-center justify-center text-white shadow-[0_4px_20px_rgba(0,168,107,0.4)] border-4 border-white dark:border-[#0C0C0F] transition-transform active:scale-90 hover:ring-2 hover:ring-brand-cyan"
+
               aria-label="Add Transaction"
             >
               <Plus className="w-7 h-7" />
@@ -116,10 +125,12 @@ export default function Layout() {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={cn(
                   'flex flex-col items-center justify-center flex-1 h-full space-y-1',
-                  isActive ? 'text-[#222222] dark:text-[#F7F7F7]' : 'text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7]'
+                  isActive ? 'text-brand-blue dark:text-[#F7F7F7]' : 'text-brand-blue/50 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-[#F7F7F7]'
                 )}
+
               >
-                <Icon className={cn('w-6 h-6', isActive ? 'text-[#222222] dark:text-[#F7F7F7]' : 'text-[#B0B0B0] dark:text-[#55555E]')} />
+                <Icon className={cn('w-6 h-6', isActive ? 'text-brand-blue dark:text-[#F7F7F7]' : 'text-brand-blue/30 dark:text-[#55555E]')} />
+
                 <span className="text-[10px] font-bold">{item.name}</span>
               </Link>
             );
@@ -131,13 +142,14 @@ export default function Layout() {
             className={cn(
               'flex flex-col items-center justify-center flex-1 h-full space-y-1',
               isMobileMenuOpen || moreNavItems.some(item => location.pathname === item.path)
-                ? 'text-[#222222] dark:text-[#F7F7F7]' 
-                : 'text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7]'
+                ? 'text-brand-blue dark:text-[#F7F7F7]' 
+                : 'text-brand-blue/50 dark:text-[#A0A0A0]'
             )}
           >
-            <MoreHorizontal className={cn('w-6 h-6', isMobileMenuOpen || moreNavItems.some(item => location.pathname === item.path) ? 'text-[#222222] dark:text-[#F7F7F7]' : 'text-[#B0B0B0] dark:text-[#55555E]')} />
+            <MoreHorizontal className={cn('w-6 h-6', isMobileMenuOpen || moreNavItems.some(item => location.pathname === item.path) ? 'text-brand-blue dark:text-[#F7F7F7]' : 'text-brand-blue/30 dark:text-[#55555E]')} />
             <span className="text-[10px] font-bold">More</span>
           </button>
+
         </nav>
       </div>
 
@@ -148,8 +160,9 @@ export default function Layout() {
             className="absolute bottom-16 left-0 right-0 bg-white dark:bg-[#0C0C0F] rounded-t-[24px] p-4 shadow-xl transform transition-transform"
             onClick={e => e.stopPropagation()}
           >
-            <div className="w-12 h-1.5 bg-[#EBEBEB] rounded-full mx-auto mb-4" />
-            <h3 className="text-sm font-bold text-[#222222] dark:text-[#F7F7F7] uppercase tracking-wider mb-3 px-2">More Options</h3>
+            <div className="w-12 h-1.5 bg-neutral-200 dark:bg-white/10 rounded-full mx-auto mb-4" />
+            <h3 className="text-sm font-black text-brand-blue dark:text-[#F7F7F7] uppercase tracking-widest mb-3 px-2">Options</h3>
+
             <div className="space-y-1">
               {moreNavItems.map((item) => {
                 const isActive = location.pathname === item.path;
@@ -160,13 +173,15 @@ export default function Layout() {
                     to={item.path}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={cn(
-                      'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors',
+                      'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-colors',
                       isActive
-                        ? 'bg-neutral-100 dark:bg-[#15151A] text-[#222222] dark:text-[#F7F7F7]'
-                        : 'text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-50 dark:hover:bg-[#15151A] hover:text-[#222222] dark:hover:text-[#F7F7F7]'
+                        ? 'bg-brand-blue/5 dark:bg-brand-blue/20 text-brand-blue dark:text-[#F7F7F7]'
+                        : 'text-brand-blue/60 dark:text-[#A0A0A0] hover:bg-neutral-50 dark:hover:bg-[#15151A] hover:text-brand-blue dark:hover:text-[#F7F7F7]'
                     )}
+
                   >
-                    <Icon className={cn('w-5 h-5', isActive ? 'text-[#222222] dark:text-[#F7F7F7]' : 'text-[#B0B0B0] dark:text-[#55555E]')} />
+                    <Icon className={cn('w-5 h-5', isActive ? 'text-brand-blue dark:text-[#F7F7F7]' : 'text-brand-blue/30 dark:text-[#55555E]')} />
+
                     {item.name}
                   </Link>
                 );

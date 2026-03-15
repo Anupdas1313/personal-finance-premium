@@ -5,11 +5,13 @@
 
 @theme {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --color-mercury: #00A86B;
-  --color-rahu-blue: #1A237E;
-  --color-rahu-cyan: #82EEFD;
-  --color-venus-gold: #D4AF37;
+  --color-brand-green: #00A86B;  /* Mercury Green */
+  --color-brand-blue: #1A237E;   /* Rahu Blue */
+  --color-brand-cyan: #82EEFD;   /* Rahu Cyan */
+  --color-brand-gold: #D4AF37;   /* Venus Gold */
+  --color-brand-red: #E53935;    /* Sophisticated Brand Red for Expenses */
 }
+
 
 body {
   background-color: #060608;

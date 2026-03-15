@@ -22,16 +22,17 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  'Food': 'bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-500',
-  'Transport': 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-500',
-  'Rent': 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-500',
-  'Shopping': 'bg-pink-100 dark:bg-pink-900/40 text-pink-600 dark:text-pink-500',
-  'Bills': 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-600 dark:text-yellow-500',
-  'Entertainment': 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-500',
-  'Salary': 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-500',
-  'Transfer': 'bg-neutral-100 dark:bg-[#1A1A1A] text-neutral-600 dark:text-[#A0A0A0]',
-  'Other': 'bg-neutral-100 dark:bg-[#1A1A1A] text-neutral-600 dark:text-[#A0A0A0]'
+  'Food': 'bg-brand-blue/5 text-brand-blue dark:text-brand-cyan',
+  'Transport': 'bg-brand-blue/5 text-brand-blue dark:text-brand-cyan',
+  'Rent': 'bg-brand-blue/5 text-brand-blue dark:text-brand-cyan',
+  'Shopping': 'bg-brand-blue/5 text-brand-blue dark:text-brand-cyan',
+  'Bills': 'bg-brand-blue/5 text-brand-blue dark:text-brand-cyan',
+  'Entertainment': 'bg-brand-blue/5 text-brand-blue dark:text-brand-cyan',
+  'Salary': 'bg-brand-green/10 text-brand-green',
+  'Transfer': 'bg-brand-blue/5 text-brand-blue dark:text-brand-cyan',
+  'Other': 'bg-brand-blue/5 text-brand-blue dark:text-brand-cyan'
 };
+
 
 
 import { IndusIndLogo } from '../components/IndusIndLogo';
@@ -44,6 +45,8 @@ export default function Dashboard() {
 
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
   const transactions = useLiveQuery(() => db.transactions.orderBy('dateTime').reverse().limit(5).toArray()) || [];
+  const activeTrips = useLiveQuery(() => db.trips.where('status').equals('ACTIVE').toArray()) || [];
+
 
   const [isAddingManual, setIsAddingManual] = useState(searchParams.get('add') === 'true');
 
@@ -250,6 +253,29 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {activeTrips.length > 0 && (
+        <div className="mb-6">
+          <Link 
+            to={`/trips/${activeTrips[0].id}`}
+            className="flex items-center justify-between p-6 bg-brand-green/10 border border-brand-green/20 rounded-[28px] group hover:bg-brand-green/20 transition-all shadow-sm"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-white dark:bg-[#111111] rounded-2xl flex items-center justify-center text-brand-green shadow-sm">
+                <PlaneTakeoff className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-brand-green uppercase tracking-widest mb-0.5">Active Expedition</p>
+                <h3 className="text-xl font-black text-brand-blue dark:text-white group-hover:text-brand-green transition-colors">{activeTrips[0].name}</h3>
+              </div>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-brand-green text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+              <ChevronRight className="w-6 h-6" />
+            </div>
+          </Link>
+        </div>
+      )}
+
+
       {/* Cash Flow Hero Card */}
       <div className="relative overflow-hidden rounded-[28px] bg-[#1A237E] dark:bg-gradient-to-br dark:from-[#1C1C24] dark:to-[#1C1F26] p-8 shadow-[0_20px_50px_rgba(26,35,126,0.3)] border border-white/10">
 
@@ -276,25 +302,27 @@ export default function Dashboard() {
 
         <div className="relative z-10 flex justify-between items-end mb-8">
           <div>
-            <p className="text-xs font-bold text-rose-400/90 tracking-wider uppercase mb-1">Spending</p>
+            <p className="text-xs font-bold text-brand-red tracking-wider uppercase mb-1">Spending</p>
             <p className="text-3xl font-bold text-white tracking-tight">
               ₹{totalSpending.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-xs font-bold text-emerald-400/90 tracking-wider uppercase mb-1">Income</p>
+            <p className="text-xs font-bold text-brand-green tracking-wider uppercase mb-1">Income</p>
             <p className="text-3xl font-bold text-white tracking-tight">
               ₹{totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </p>
           </div>
+
         </div>
 
         <div className="relative z-10 bg-white/5 border border-white/10 rounded-2xl p-4 flex justify-between items-center backdrop-blur-sm">
           <p className="text-sm font-semibold text-white/50 border-b border-dashed border-white/20 pb-0.5">Net Balance</p>
-          <p className={`text-lg font-bold ${netBalance >= 0 ? 'text-white' : 'text-rose-400'}`}>
+          <p className={`text-lg font-bold ${netBalance >= 0 ? 'text-white' : 'text-brand-red'}`}>
             {netBalance < 0 ? '-' : ''}₹{Math.abs(netBalance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </p>
         </div>
+
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -370,9 +398,10 @@ export default function Dashboard() {
                       
                       {/* Title & Subtext */}
                       <div>
-                        <p className="font-black text-[#1A237E] dark:text-[#F7F7F7] text-base group-hover:text-[#00A86B] dark:group-hover:text-white transition-colors">
+                        <p className="font-black text-brand-blue dark:text-[#F7F7F7] text-base group-hover:text-brand-green dark:group-hover:text-white transition-colors">
                           {tx.party || tx.note || tx.category}
                         </p>
+
 
                         <div className="flex items-center text-xs text-[#525252] dark:text-[#A0A0A0] font-bold mt-0.5 gap-1.5">
 
@@ -387,9 +416,10 @@ export default function Dashboard() {
                     
                     {/* Amount & Date (Right Aligned) */}
                     <div className="text-right">
-                      <p className={`font-black text-base tracking-tight ${tx.type === 'CREDIT' ? 'text-[#00A86B] dark:text-emerald-500' : 'text-[#1A237E] dark:text-[#F7F7F7]'}`}>
+                      <p className={`font-black text-base tracking-tight ${tx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-blue dark:text-[#F7F7F7]'}`}>
                         {tx.type === 'CREDIT' ? '+' : ''}₹{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </p>
+
 
 
                       <p className="text-xs text-[#717171] dark:text-[#A0A0A0] font-medium mt-0.5">
@@ -423,25 +453,23 @@ export default function Dashboard() {
 
               <button 
                 onClick={() => setType('DEBIT')}
-                className={`flex-1 py-1.5 text-[12px] font-bold rounded-xl transition-all ${type === 'DEBIT' ? 'bg-[#3B3B98] text-white shadow-lg' : 'text-[#717171] hover:text-white'}`}
+                className={`flex-1 py-1.5 text-[12px] font-black rounded-xl transition-all uppercase tracking-widest ${type === 'DEBIT' ? 'bg-brand-red text-white shadow-lg' : 'text-brand-blue/30 hover:text-brand-blue'}`}
               >
-                Expense
+                Outflow
               </button>
               <button 
                 onClick={() => setType('CREDIT')}
-                className={`flex-1 py-1.5 text-[12px] font-bold rounded-xl transition-all ${type === 'CREDIT' ? 'bg-emerald-600 text-white shadow-lg' : 'text-[#717171] hover:text-white'}`}
+                className={`flex-1 py-1.5 text-[12px] font-black rounded-xl transition-all uppercase tracking-widest ${type === 'CREDIT' ? 'bg-brand-green text-white shadow-lg' : 'text-brand-blue/30 hover:text-brand-blue'}`}
               >
-                Income
+                Inflow
               </button>
               <button 
                 onClick={() => setType('TRANSFER')}
-                className={`flex-1 py-1.5 text-[12px] font-black rounded-xl transition-all ${type === 'TRANSFER' ? 'bg-[#1A237E] text-white shadow-lg' : 'text-[#525252] dark:text-[#A0A0A0] hover:text-[#1A237E] dark:hover:text-white'}`}
-
-
-
+                className={`flex-1 py-1.5 text-[12px] font-black rounded-xl transition-all uppercase tracking-widest ${type === 'TRANSFER' ? 'bg-brand-blue text-white shadow-lg' : 'text-brand-blue/30 hover:text-brand-blue'}`}
               >
                 Transfer
               </button>
+
             </div>
             {/* Date and Time Selector */}
             <div className="space-y-2">
@@ -479,9 +507,10 @@ export default function Dashboard() {
                       onClick={() => setExpenseType(expenseType === tagName ? '' : tagName)}
                       className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border whitespace-nowrap ${
                         expenseType === tagName 
-                          ? 'bg-[#1A237E] text-white border-transparent' 
-                          : 'bg-white dark:bg-[#1C1C22] border-[#EBEBEB] dark:border-white/5 text-[#717171] dark:text-[#A0A0A5] hover:ring-1 hover:ring-[#82EEFD]'
+                          ? 'bg-brand-blue text-white border-transparent shadow-md' 
+                          : 'bg-white dark:bg-[#1C1C22] border-[#EBEBEB] dark:border-white/5 text-brand-blue/60 dark:text-[#A0A0A5] hover:ring-1 hover:ring-brand-cyan'
                       }`}
+
 
                     >
                       #{tagName}
@@ -507,7 +536,8 @@ export default function Dashboard() {
                   onChange={e => setAmount(e.target.value)}
                   placeholder="0.00"
                   step="0.01"
-                  className="bg-transparent text-[20px] font-black text-[#1A237E] dark:text-white outline-none w-full placeholder:text-[#D1D1D1] dark:placeholder:text-[#2C2C34] min-w-0"
+                  className="bg-transparent text-[20px] font-black text-brand-blue dark:text-white outline-none w-full placeholder:text-[#D1D1D1] dark:placeholder:text-[#2C2C34] min-w-0"
+
 
 
                 />
@@ -535,9 +565,10 @@ export default function Dashboard() {
                       }}
                       className={`shrink-0 flex flex-col items-center justify-center gap-0.5 p-1 rounded-lg border transition-all group relative ${
                         selectedAccountId === acc.id || toAccountId === acc.id
-                          ? 'bg-[#1A237E]/10 dark:bg-[#1A237E]/20 border-[#1A237E] text-[#1A237E] dark:text-white shadow-sm' 
-                          : 'bg-white dark:bg-[#1C1C22] border-[#EBEBEB] dark:border-white/5 text-[#717171] dark:text-[#A0A0A5] hover:bg-neutral-50 dark:hover:bg-[#2C2C34]'
+                          ? 'bg-brand-blue/10 dark:bg-brand-blue/20 border-brand-blue text-brand-blue dark:text-white shadow-sm ring-1 ring-brand-cyan/30' 
+                          : 'bg-white dark:bg-[#1C1C22] border-[#EBEBEB] dark:border-white/5 text-brand-blue/60 dark:text-[#A0A0A5] hover:bg-neutral-50 dark:hover:bg-[#2C2C34]'
                       }`}
+
 
                       style={{ minWidth: '52px' }}
                     >
@@ -545,8 +576,9 @@ export default function Dashboard() {
                         <div className="absolute -top-1.5 bg-[#3B3B98] text-[6px] font-bold px-1 py-0.5 rounded shadow-lg border border-white/10">FROM</div>
                       )}
                       {toAccountId === acc.id && type === 'TRANSFER' && (
-                        <div className="absolute -top-1.5 bg-indigo-500 text-[6px] font-bold px-1 py-0.5 rounded shadow-lg border border-white/10">TO</div>
+                        <div className="absolute -top-1.5 bg-brand-blue text-[6px] font-bold px-1 py-0.5 rounded shadow-lg border border-white/10">TO</div>
                       )}
+
                       
                       <div className="w-5 h-5 rounded-lg bg-white flex items-center justify-center p-1 shadow-sm">
                         <BankLogo bankName={acc.bankName} type={(acc as any).type} className="w-full h-full" />
@@ -575,8 +607,9 @@ export default function Dashboard() {
                     value={partyName}
                     onChange={e => setPartyName(e.target.value)}
                     placeholder={type === 'DEBIT' ? 'Paid to...' : 'Received from...'}
-                    className="bg-transparent flex-1 text-[14px] font-black text-[#1A237E] dark:text-white outline-none placeholder:text-[#A0A0A0] dark:placeholder:text-[#4A4A52]"
+                    className="bg-transparent flex-1 text-[14px] font-black text-brand-blue dark:text-white outline-none placeholder:text-[#A0A0A0] dark:placeholder:text-[#4A4A52]"
                   />
+
 
                 </div>
               )}
@@ -592,7 +625,8 @@ export default function Dashboard() {
                   value={note}
                   onChange={e => setNote(e.target.value)}
                   placeholder="Add remarks..."
-                  className="bg-transparent flex-1 text-[13px] font-bold text-[#1A237E] dark:text-white/90 outline-none placeholder:text-[#A0A0A0] dark:placeholder:text-[#4A4A52]"
+                  className="bg-transparent flex-1 text-[13px] font-bold text-brand-blue dark:text-white/90 outline-none placeholder:text-[#A0A0A0] dark:placeholder:text-[#4A4A52]"
+
 
                 />
               </div>
@@ -601,7 +635,8 @@ export default function Dashboard() {
               <div className="p-2 space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-[9px] font-bold text-[#A0A0A5] uppercase tracking-wider">Payment Method</p>
-                  {paymentMethod && <span className="text-[9px] font-bold text-[#1A237E] dark:text-[#6C6CF0]">{paymentMethod}</span>}
+                  {paymentMethod && <span className="text-[9px] font-bold text-brand-blue dark:text-brand-cyan">{paymentMethod}</span>}
+
 
 
                 </div>
@@ -617,8 +652,8 @@ export default function Dashboard() {
                       onClick={() => setPaymentMethod(method.id as any)}
                       className={`py-1.5 rounded-lg text-[10px] font-bold transition-all flex flex-col items-center gap-1 border ${
                         paymentMethod === method.id 
-                          ? 'bg-[#00A86B] border-[#00A86B] text-white shadow-lg scale-95' 
-                          : 'bg-[#F7F7F7] dark:bg-black/20 border-[#EBEBEB] dark:border-white/5 text-[#717171] dark:text-[#A0A0A5] active:scale-95 hover:border-[#82EEFD]'
+                          ? 'bg-brand-green border-brand-green text-white shadow-lg scale-95' 
+                          : 'bg-[#F7F7F7] dark:bg-black/20 border-[#EBEBEB] dark:border-white/5 text-[#717171] dark:text-[#A0A0A5] active:scale-95 hover:border-brand-cyan'
                       }`}
 
                     >
@@ -636,8 +671,8 @@ export default function Dashboard() {
                         onClick={() => setUpiApp(app)}
                         className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${
                         upiApp === app 
-                          ? 'bg-[#1A237E]/10 dark:bg-[#6C6CF0]/20 border-[#1A237E]/30 dark:border-[#6C6CF0]/40 text-[#1A237E] dark:text-[#8C8CFF]' 
-                          : 'bg-[#F7F7F7] dark:bg-black/20 border-[#EBEBEB] dark:border-white/5 text-[#717171] dark:text-[#717171] hover:border-[#82EEFD]'
+                          ? 'bg-brand-blue text-white border-brand-blue shadow-md' 
+                          : 'bg-[#F7F7F7] dark:bg-black/20 border-[#EBEBEB] dark:border-white/5 text-[#717171] hover:border-brand-cyan'
                       }`}
 
                       >
@@ -646,6 +681,7 @@ export default function Dashboard() {
                     ))}
                   </div>
                 )}
+
               </div>
             </div>
 
@@ -661,9 +697,10 @@ export default function Dashboard() {
                       onClick={() => setCategory(cat)}
                       className={`px-3.5 py-2 rounded-xl text-[13px] font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
                         category === cat 
-                          ? 'bg-[#1A237E] text-white dark:bg-white dark:text-black' 
-                          : 'bg-white dark:bg-[#1C1C22] text-[#1A237E] dark:text-[#A0A0A5] border border-[#EBEBEB] dark:border-white/5 hover:border-[#82EEFD]'
+                          ? 'bg-brand-blue text-white dark:bg-white dark:text-black shadow-md scale-105' 
+                          : 'bg-white dark:bg-[#1C1C22] text-brand-blue/60 dark:text-[#A0A0A5] border border-[#EBEBEB] dark:border-white/5 hover:border-brand-cyan'
                       }`}
+
 
                     >
                       <span className="text-[15px]">{CATEGORY_ICONS[cat] || '📝'}</span>

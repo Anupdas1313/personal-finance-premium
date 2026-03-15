@@ -113,49 +113,50 @@ export default function SMSParser() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-neutral-100 dark:bg-[#1A1A1A] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#EBEBEB] dark:border-[#222222]">
-          <MessageSquareText className="w-8 h-8 text-[#111111] dark:text-[#F7F7F7]" />
+        <div className="w-20 h-20 bg-neutral-100 dark:bg-[#1A1A1A] rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-blue/5 dark:border-[#222222]">
+          <MessageSquareText className="w-10 h-10 text-brand-blue dark:text-[#F7F7F7]" />
         </div>
-        <h1 className="text-2xl font-black text-[#111111] dark:text-[#F7F7F7]">Parse Bank SMS</h1>
-        <p className="text-[#525252] dark:text-[#A0A0A0] mt-2 font-bold">Paste your bank SMS here to automatically extract transaction details.</p>
-
+        <h1 className="text-4xl font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">SMS Pipeline</h1>
+        <p className="text-brand-blue/40 dark:text-[#A0A0A0] mt-2 font-black uppercase tracking-widest text-xs">Automated transaction extraction</p>
       </div>
 
-      <div className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-[#EBEBEB] dark:border-[#222222]">
-        <label className="block text-sm font-black text-[#111111] dark:text-[#F7F7F7] mb-2 uppercase tracking-wider">SMS Message</label>
+
+      <div className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-sm border border-brand-blue/5 dark:border-[#222222]">
+        <label className="block text-[10px] font-black text-brand-blue/40 dark:text-[#F7F7F7] mb-2 uppercase tracking-widest">Input Buffer</label>
 
         <textarea
           value={smsText}
           onChange={(e) => setSmsText(e.target.value)}
-          placeholder="e.g., Rs.500 debited from A/c XX1234 on 05-Mar. Avl Bal Rs.20,000"
-          className="w-full h-32 px-4 py-3 border border-[#EBEBEB] dark:border-[#222222] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] focus:border-[#222222] dark:focus:border-[#F7F7F7] resize-none"
+          placeholder="e.g., Rs.500 debited from A/c XX1234..."
+          className="w-full h-32 px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan outline-none resize-none font-bold text-brand-blue dark:text-[#F7F7F7] bg-neutral-50 dark:bg-[#1A1A1A]"
         />
         <div className="mt-4 flex justify-end">
           <button
             onClick={handleParse}
             disabled={!smsText.trim()}
-            className="px-6 py-2 bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-bold rounded-xl hover:bg-black dark:hover:bg-neutral-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2.5 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-black rounded-xl hover:bg-brand-green/90 transition-all disabled:opacity-50 uppercase text-[10px] tracking-widest shadow-lg shadow-brand-green/10"
           >
             Extract Details
           </button>
         </div>
       </div>
 
+
       {parsedData && (
         <div className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-[#EBEBEB] dark:border-[#222222] animate-in fade-in slide-in-from-bottom-4">
           <h2 className="text-lg font-black text-[#111111] dark:text-[#F7F7F7] mb-6">Extracted Details</h2>
 
           
-          <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-6">
             {appCategories.map((cat) => (
               <button
                 key={cat}
                 type="button"
                 onClick={() => setExpenseType(expenseType === cat ? '' : cat)}
-                className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${
+                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
                   expenseType === cat 
-                    ? 'bg-neutral-100 dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7] border-2 border-[#222222]' 
-                    : 'bg-white dark:bg-[#111111] text-[#717171] dark:text-[#A0A0A0] border-2 border-[#EBEBEB] dark:border-[#222222] hover:border-[#222222]'
+                    ? 'bg-brand-blue text-white shadow-lg' 
+                    : 'bg-brand-blue/5 text-brand-blue/40 hover:text-brand-blue border border-brand-blue/10 dark:border-[#222222]'
                 }`}
               >
                 {cat}
@@ -163,33 +164,35 @@ export default function SMSParser() {
             ))}
           </div>
 
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <label className="block text-sm font-black text-[#111111] dark:text-[#F7F7F7] mb-1 uppercase tracking-wider">Amount *</label>
+              <label className="block text-[10px] font-black text-brand-blue/40 dark:text-[#F7F7F7] mb-1 uppercase tracking-widest">Amount (₹)</label>
               <input
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
                 step="0.01"
-                className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#222222] rounded-xl focus:ring-2 focus:ring-[#111111] dark:focus:ring-[#F7F7F7] outline-none font-bold bg-white dark:bg-[#1A1A1A] text-[#111111] dark:text-[#F7F7F7]"
+                className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan outline-none font-black text-brand-blue dark:text-[#F7F7F7] bg-white dark:bg-[#111111]"
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm font-black text-[#111111] dark:text-[#F7F7F7] mb-1 uppercase tracking-wider">Transaction Type *</label>
 
+            <div>
+              <label className="block text-[10px] font-black text-brand-blue/40 dark:text-[#F7F7F7] mb-1 uppercase tracking-widest">Type</label>
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as 'CREDIT' | 'DEBIT' | '')}
-                className="w-full px-4 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] focus:border-[#222222] dark:focus:border-[#F7F7F7]"
+                className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan outline-none font-black text-brand-blue dark:text-[#F7F7F7] bg-white dark:bg-[#111111]"
                 required
               >
                 <option value="" disabled>Select type</option>
-                <option value="DEBIT">Paid To (Debit)</option>
-                <option value="CREDIT">Received From (Credit)</option>
+                <option value="DEBIT">Outflow (Debit)</option>
+                <option value="CREDIT">Inflow (Credit)</option>
               </select>
             </div>
+
           </div>
 
           {type && (
@@ -244,13 +247,14 @@ export default function SMSParser() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1">Select Account *</label>
+                <label className="block text-[10px] font-black text-brand-blue/40 dark:text-[#F7F7F7] mb-1 uppercase tracking-widest">Select Account</label>
                 <select
                   value={selectedAccountId}
                   onChange={(e) => setSelectedAccountId(Number(e.target.value) || '')}
-                  className="w-full px-4 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] focus:border-[#222222] dark:focus:border-[#F7F7F7]"
+                  className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan outline-none font-black text-brand-blue dark:text-[#F7F7F7] bg-white dark:bg-[#111111]"
                   required
                 >
+
                   <option value="" disabled>Select an account</option>
                   {accounts.map(acc => (
                     <option key={acc.id} value={acc.id}>
@@ -263,15 +267,16 @@ export default function SMSParser() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1">Date & Time</label>
+                <label className="block text-[10px] font-black text-brand-blue/40 dark:text-[#F7F7F7] mb-1 uppercase tracking-widest">Timestamp</label>
                 <input
                   type="datetime-local"
                   value={transactionDate}
                   onChange={(e) => setTransactionDate(e.target.value)}
-                  className="w-full px-4 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] focus:border-[#222222] dark:focus:border-[#F7F7F7]"
+                  className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan outline-none font-black text-brand-blue dark:text-[#F7F7F7] bg-white dark:bg-[#111111]"
                   required
                 />
               </div>
+
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -321,33 +326,36 @@ export default function SMSParser() {
             )}
 
             {status === 'error' && (
-              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2 text-sm font-bold">
+              <div className="p-3 bg-brand-red/10 border border-brand-red/20 text-brand-red rounded-xl flex items-center gap-2 text-xs font-black uppercase tracking-widest">
                 <AlertCircle className="w-4 h-4" />
                 {errorMessage}
               </div>
             )}
 
+
             {status === 'success' && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl flex items-center gap-2 text-sm font-bold">
+              <div className="p-3 bg-brand-green/10 border border-brand-green/20 text-brand-green rounded-xl flex items-center gap-2 text-xs font-black uppercase tracking-widest">
                 <CheckCircle2 className="w-4 h-4" />
-                Transaction saved successfully! Redirecting...
+                Deployed successfully!
               </div>
             )}
+
 
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={() => setParsedData(null)}
-                className="px-6 py-2 text-[#222222] dark:text-[#F7F7F7] hover:bg-neutral-100 dark:hover:bg-[#222222] dark:bg-[#1A1A1A] font-bold rounded-xl transition-colors"
+                className="px-6 py-2.5 text-brand-blue/40 dark:text-[#F7F7F7] hover:bg-brand-blue/5 font-black rounded-xl transition-colors uppercase text-[10px] tracking-widest"
               >
-                Cancel
+                Abort
               </button>
               <button
                 onClick={handleSave}
                 disabled={!amount || !type || !partyName || !selectedAccountId || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
-                className="px-6 py-2 bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-bold rounded-xl hover:bg-black dark:hover:bg-neutral-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2.5 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-black rounded-xl hover:bg-brand-green/90 transition-all disabled:opacity-50 uppercase text-[10px] tracking-widest shadow-lg shadow-brand-green/10"
               >
-                Save Transaction
+                Commit Transaction
               </button>
+
             </div>
           </div>
         </div>
