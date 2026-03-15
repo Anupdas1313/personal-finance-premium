@@ -63,6 +63,7 @@ export interface TripTransaction {
   dateTime: Date;
   paidByMemberId: number; // ID of the TripMember who paid
   category: string;
+  type?: 'EXPENSE' | 'SETTLEMENT';
 }
 
 export interface TripSplit {

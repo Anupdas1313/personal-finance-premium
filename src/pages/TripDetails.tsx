@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, TripMember, TripTransaction, TripSplit } from '../lib/db';
-import { Users, Receipt, Plus, ArrowLeft, Trash2, CheckCircle2, AlertCircle, ShoppingBag, Landmark, UserPlus, Calculator } from 'lucide-react';
+import { Users, Receipt, Plus, ArrowLeft, Trash2, CheckCircle2, AlertCircle, ShoppingBag, Landmark, UserPlus, Calculator, Percent, Coins, ArrowRightLeft, UserCheck } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function TripDetails() {
@@ -30,6 +30,15 @@ export default function TripDetails() {
   const [newMemberName, setNewMemberName] = useState('');
 
   const [activeTab, setActiveTab] = useState<'LEDGER' | 'BALANCES'>('LEDGER');
+  
+  // Advanced Split States
+  const [splitMode, setSplitMode] = useState<'EQUALLY' | 'EXACT' | 'PERCENT'>('EQUALLY');
+  const [manualSplits, setManualSplits] = useState<Record<number, string>>({}); // memberId -> value (amount or percent)
+
+  const [isSettleModalOpen, setIsSettleModalOpen] = useState(false);
+  const [settleFromId, setSettleFromId] = useState<number | ''>('');
+  const [settleToId, setSettleToId] = useState<number | ''>('');
+  const [settleAmount, setSettleAmount] = useState('');
 
   const handleAddMember = async () => {
     if (!newMemberName.trim()) return;
@@ -42,33 +51,101 @@ export default function TripDetails() {
   };
 
   const handleAddTransaction = async () => {
-    if (!newTxDesc || !newTxAmount || !paidByMemberId || selectedMembers.length === 0) return;
+    if (!newTxDesc || !newTxAmount || !paidByMemberId) return;
     
-    const amount = parseFloat(newTxAmount);
-    const splitAmount = amount / selectedMembers.length;
+    const totalAmount = parseFloat(newTxAmount);
+    let finalSplits: { memberId: number; amount: number }[] = [];
+
+    if (splitMode === 'EQUALLY') {
+      if (selectedMembers.length === 0) return;
+      const splitAmount = totalAmount / selectedMembers.length;
+      finalSplits = selectedMembers.map(memberId => ({ memberId, amount: splitAmount }));
+    } else if (splitMode === 'EXACT') {
+      const splitEntries = Object.entries(manualSplits).map(([id, val]) => ({
+        memberId: Number(id),
+        amount: parseFloat(val) || 0
+      })).filter(s => s.amount > 0);
+      
+      const sum = splitEntries.reduce((acc, curr) => acc + curr.amount, 0);
+      if (Math.abs(sum - totalAmount) > 0.01) {
+        alert(`Sum of splits (₹${sum}) must equal total amount (₹${totalAmount})`);
+        return;
+      }
+      finalSplits = splitEntries;
+    } else if (splitMode === 'PERCENT') {
+      const splitEntries = Object.entries(manualSplits).map(([id, val]) => ({
+        memberId: Number(id),
+        percent: parseFloat(val) || 0
+      })).filter(s => s.percent > 0);
+
+      const totalPercent = splitEntries.reduce((acc, curr) => acc + curr.percent, 0);
+      if (Math.abs(totalPercent - 100) > 0.01) {
+        alert('Total percentage must be 100%');
+        return;
+      }
+      finalSplits = splitEntries.map(s => ({
+        memberId: s.memberId,
+        amount: (s.percent / 100) * totalAmount
+      }));
+    }
+
+    if (finalSplits.length === 0) return;
 
     const txId = await db.tripTransactions.add({
       tripId,
-      amount,
+      amount: totalAmount,
       description: newTxDesc,
       dateTime: new Date(),
       paidByMemberId: Number(paidByMemberId),
-      category: 'Trip'
+      category: 'Trip',
+      type: 'EXPENSE'
     });
 
-    for (const memberId of selectedMembers) {
+    for (const split of finalSplits) {
       await db.tripSplits.add({
         tripTransactionId: Number(txId),
-        memberId,
-        amount: splitAmount
+        memberId: split.memberId,
+        amount: split.amount
       });
     }
 
     setIsTxModalOpen(false);
+    resetTxForm();
+  };
+
+  const handleSettleUp = async () => {
+    if (!settleFromId || !settleToId || !settleAmount) return;
+    const amount = parseFloat(settleAmount);
+
+    const txId = await db.tripTransactions.add({
+      tripId,
+      amount,
+      description: `Settlement: ${members.find(m => m.id === settleFromId)?.name} → ${members.find(m => m.id === settleToId)?.name}`,
+      dateTime: new Date(),
+      paidByMemberId: Number(settleFromId),
+      category: 'Settlement',
+      type: 'SETTLEMENT'
+    });
+
+    await db.tripSplits.add({
+      tripTransactionId: Number(txId),
+      memberId: Number(settleToId),
+      amount // Positive identifying amount
+    });
+
+    setIsSettleModalOpen(false);
+    setSettleFromId('');
+    setSettleToId('');
+    setSettleAmount('');
+  };
+
+  const resetTxForm = () => {
     setNewTxDesc('');
     setNewTxAmount('');
     setPaidByMemberId('');
     setSelectedMembers([]);
+    setSplitMode('EQUALLY');
+    setManualSplits({});
   };
 
   const getBalances = () => {
@@ -76,13 +153,24 @@ export default function TripDetails() {
     members.forEach(m => summary[m.id!] = { paid: 0, share: 0 });
 
     tripTransactions.forEach(tx => {
-      if (summary[tx.paidByMemberId]) {
-        summary[tx.paidByMemberId].paid += tx.amount;
+      if (tx.type === 'SETTLEMENT') {
+        if (summary[tx.paidByMemberId]) {
+          summary[tx.paidByMemberId].paid += tx.amount;
+        }
+        const recipientSplit = splits.find(s => s.tripTransactionId === tx.id);
+        if (recipientSplit && summary[recipientSplit.memberId]) {
+          summary[recipientSplit.memberId].paid -= tx.amount;
+        }
+      } else {
+        if (summary[tx.paidByMemberId]) {
+          summary[tx.paidByMemberId].paid += tx.amount;
+        }
       }
     });
 
     splits.forEach(split => {
-      if (summary[split.memberId]) {
+      const tx = tripTransactions.find(t => t.id === split.tripTransactionId);
+      if (tx && tx.type !== 'SETTLEMENT' && summary[split.memberId]) {
         summary[split.memberId].share += split.amount;
       }
     });
@@ -175,6 +263,18 @@ export default function TripDetails() {
         </button>
       </div>
 
+      {activeTab === 'BALANCES' && settlements.length > 0 && (
+        <div className="flex justify-end mb-4">
+          <button 
+            onClick={() => setIsSettleModalOpen(true)}
+            className="px-6 py-3 bg-brand-blue text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-brand-blue/90 shadow-lg transition-all active:scale-95"
+          >
+            <ArrowRightLeft className="w-4 h-4" />
+            Settle Up
+          </button>
+        </div>
+      )}
+
       {activeTab === 'LEDGER' ? (
         <div className="space-y-4">
           {tripTransactions.length === 0 ? (
@@ -186,14 +286,15 @@ export default function TripDetails() {
             tripTransactions.sort((a,b) => b.dateTime.getTime() - a.dateTime.getTime()).map(tx => (
               <div key={tx.id} className="bg-white dark:bg-[#111111] p-5 rounded-[24px] border border-brand-blue/5 dark:border-[#222222] shadow-sm flex items-center justify-between group">
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-[12px] bg-brand-blue/5 flex items-center justify-center text-brand-blue">
-                        <Receipt className="w-5 h-5" />
+                    <div className={`w-10 h-10 rounded-[12px] flex items-center justify-center ${tx.type === 'SETTLEMENT' ? 'bg-brand-green/10 text-brand-green' : 'bg-brand-blue/5 text-brand-blue'}`}>
+                        {tx.type === 'SETTLEMENT' ? <ArrowRightLeft className="w-5 h-5" /> : <Receipt className="w-5 h-5" />}
                     </div>
                     <div>
                         <h4 className="font-black text-brand-blue dark:text-[#F7F7F7]">{tx.description}</h4>
                         <div className="flex items-center gap-2 mt-1">
-                            <span className="px-2 py-0.5 bg-brand-blue/5 dark:bg-brand-blue/20 text-brand-blue dark:text-brand-cyan text-[8px] font-black uppercase tracking-widest rounded-md">
-                                {members.find(m => m.id === tx.paidByMemberId)?.name} Paid
+                            <span className={`px-2 py-0.5 text-[8px] font-black uppercase tracking-widest rounded-md ${tx.type === 'SETTLEMENT' ? 'bg-brand-green/20 text-brand-green' : 'bg-brand-blue/5 dark:bg-brand-blue/20 text-brand-blue dark:text-brand-cyan'}`}>
+                                {members.find(m => m.id === tx.paidByMemberId)?.name} 
+                                {tx.type === 'SETTLEMENT' ? ' Paid' : ' Spent'}
                             </span>
                             <span className="text-[9px] font-black text-brand-blue/20 dark:text-[#A0A0A0] uppercase tracking-tighter">
                                 {format(tx.dateTime, 'h:mm a')}
@@ -322,8 +423,23 @@ export default function TripDetails() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-brand-blue/40 uppercase tracking-widest mb-3">Split Between</label>
-                <div className="flex flex-wrap gap-2">
+                <label className="block text-[10px] font-black text-brand-blue/40 uppercase tracking-widest mb-3">Split Logic</label>
+                <div className="flex p-1 bg-brand-blue/5 rounded-xl mb-4">
+                  {(['EQUALLY', 'EXACT', 'PERCENT'] as const).map(mode => (
+                    <button
+                      key={mode}
+                      onClick={() => setSplitMode(mode)}
+                      className={`flex-1 py-2 text-[8px] font-black rounded-lg transition-all uppercase tracking-widest ${
+                        splitMode === mode ? 'bg-white shadow-sm text-brand-blue' : 'text-brand-blue/30'
+                      }`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+
+                {splitMode === 'EQUALLY' ? (
+                  <div className="flex flex-wrap gap-2">
                     <button 
                         onClick={() => setSelectedMembers(members.map(m => m.id!))}
                         className="text-[9px] font-black uppercase tracking-widest text-brand-blue/40 hover:text-brand-blue mr-2"
@@ -345,7 +461,27 @@ export default function TripDetails() {
                             {m.name}
                         </button>
                     ))}
-                </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {members.map(m => (
+                      <div key={m.id} className="flex items-center justify-between p-3 bg-brand-blue/5 rounded-xl">
+                        <span className="text-[10px] font-black uppercase text-brand-blue">{m.name}</span>
+                        <div className="relative">
+                          {splitMode === 'PERCENT' && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-brand-blue/40">%</span>}
+                          {splitMode === 'EXACT' && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-brand-blue/40">₹</span>}
+                          <input 
+                            type="number"
+                            value={manualSplits[m.id!] || ''}
+                            onChange={(e) => setManualSplits(prev => ({ ...prev, [m.id!]: e.target.value }))}
+                            className="bg-white border border-brand-blue/10 rounded-lg py-1.5 pl-7 pr-3 text-[10px] font-black w-24 outline-none text-right"
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 pt-6">
@@ -383,6 +519,57 @@ export default function TripDetails() {
               <div className="flex gap-3">
                 <button onClick={() => setIsMemberModalOpen(false)} className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest text-brand-blue/40">Abort</button>
                 <button onClick={handleAddMember} className="flex-1 py-3 bg-brand-blue text-white rounded-xl font-black text-[10px] uppercase tracking-widest">Enlist</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Settle Up Modal */}
+      {isSettleModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111111] rounded-[32px] w-full max-w-sm border border-brand-blue/10 p-8 shadow-2xl">
+            <h2 className="text-2xl font-black text-brand-blue dark:text-[#F7F7F7] mb-6 tracking-tighter">Settle Debt</h2>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-brand-blue/40 uppercase tracking-widest mb-1">From (Debtor)</label>
+                  <select 
+                    value={settleFromId}
+                    onChange={(e) => setSettleFromId(Number(e.target.value))}
+                    className="w-full px-4 py-3 bg-neutral-50 dark:bg-[#1A1A1A] border border-brand-blue/10 rounded-xl outline-none font-black text-brand-blue text-xs"
+                  >
+                    <option value="">Debtor</option>
+                    {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-brand-blue/40 uppercase tracking-widest mb-1">To (Creditor)</label>
+                  <select 
+                    value={settleToId}
+                    onChange={(e) => setSettleToId(Number(e.target.value))}
+                    className="w-full px-4 py-3 bg-neutral-50 dark:bg-[#1A1A1A] border border-brand-blue/10 rounded-xl outline-none font-black text-brand-blue text-xs"
+                  >
+                    <option value="">Creditor</option>
+                    {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-brand-blue/40 uppercase tracking-widest mb-1">Settlement Amount</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-blue font-black">₹</span>
+                  <input 
+                    type="number" 
+                    value={settleAmount}
+                    onChange={(e) => setSettleAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full pl-8 pr-4 py-3 bg-neutral-50 dark:bg-[#1A1A1A] border border-brand-blue/10 rounded-xl outline-none font-black text-brand-blue"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button onClick={() => setIsSettleModalOpen(false)} className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest text-brand-blue/40">Abort</button>
+                <button onClick={handleSettleUp} className="flex-1 py-3 bg-brand-green text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg">Confirm Payment</button>
               </div>
             </div>
           </div>
