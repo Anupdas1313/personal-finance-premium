@@ -76,22 +76,24 @@ export default function Budgets() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-[#222222] dark:text-[#F7F7F7]">Monthly Budgets</h1>
-        <div className="flex items-center gap-4 bg-white dark:bg-[#111111] px-4 py-2 rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] dark:border-[#222222] w-full sm:w-auto justify-between sm:justify-start">
-          <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className="text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7] font-bold">&lt;</button>
-          <span className="font-bold text-[#222222] dark:text-[#F7F7F7] min-w-[120px] text-center">
+        <h1 className="text-2xl font-black text-[#111111] dark:text-[#F7F7F7]">Monthly Budgets</h1>
+        <div className="flex items-center gap-4 bg-white dark:bg-[#111111] px-4 py-2 rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-[#EBEBEB] dark:border-[#222222] w-full sm:w-auto justify-between sm:justify-start">
+          <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className="text-[#111111] dark:text-[#A0A0A0] hover:text-black dark:hover:text-[#F7F7F7] font-black">&lt;</button>
+          <span className="font-black text-[#111111] dark:text-[#F7F7F7] min-w-[120px] text-center">
             {format(currentMonth, 'MMMM yyyy')}
           </span>
-          <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className="text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7] font-bold">&gt;</button>
+          <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className="text-[#111111] dark:text-[#A0A0A0] hover:text-black dark:hover:text-[#F7F7F7] font-black">&gt;</button>
         </div>
+
       </div>
 
-      <div className="bg-white dark:bg-[#111111] p-6 rounded-[20px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] dark:border-[#222222]">
+      <div className="bg-white dark:bg-[#111111] p-6 rounded-[20px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-[#EBEBEB] dark:border-[#222222]">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-bold text-[#222222] dark:text-[#F7F7F7] flex items-center gap-2">
-            <Target className="w-5 h-5 text-[#222222] dark:text-[#F7F7F7]" />
+          <h2 className="text-lg font-black text-[#111111] dark:text-[#F7F7F7] flex items-center gap-2">
+            <Target className="w-5 h-5 text-[#111111] dark:text-[#F7F7F7]" />
             Your Budgets
           </h2>
+
           <button
             onClick={() => {
               setEditingId(null);
@@ -133,25 +135,28 @@ export default function Budgets() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => handleEdit(budget)} className="p-2 text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7] bg-white dark:bg-[#111111] rounded-lg shadow-sm border border-[#EBEBEB] dark:border-[#222222]">
+                      <button onClick={() => handleEdit(budget)} className="p-2 text-[#111111] dark:text-[#A0A0A0] hover:text-black dark:hover:text-[#F7F7F7] bg-white dark:bg-[#111111] rounded-lg shadow-md border border-[#EBEBEB] dark:border-[#222222]">
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDelete(budget.id!)} className="p-2 text-[#717171] dark:text-[#A0A0A0] hover:text-rose-600 bg-white dark:bg-[#111111] rounded-lg shadow-sm border border-[#EBEBEB] dark:border-[#222222]">
+                      <button onClick={() => handleDelete(budget.id!)} className="p-2 text-[#525252] dark:text-[#A0A0A0] hover:text-rose-600 bg-white dark:bg-[#111111] rounded-lg shadow-md border border-[#EBEBEB] dark:border-[#222222]">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
+
                   </div>
                   
                   <div className="flex justify-between items-end mb-2">
-                    <p className="text-[#717171] dark:text-[#A0A0A0] text-sm font-semibold">
-                      <span className={`font-bold text-lg ${isOverBudget ? 'text-rose-600' : 'text-[#222222] dark:text-[#F7F7F7]'}`}>
+                    <p className="text-[#525252] dark:text-[#A0A0A0] text-sm font-bold">
+                      <span className={`font-black text-lg ${isOverBudget ? 'text-rose-600' : 'text-[#111111] dark:text-[#F7F7F7]'}`}>
                         ₹{spent.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </span>
+
                       {' '}spent of ₹{budget.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </p>
-                    <p className="text-sm font-bold text-[#222222] dark:text-[#F7F7F7]">
+                    <p className="text-sm font-black text-[#111111] dark:text-[#F7F7F7]">
                       {percentage.toFixed(0)}%
                     </p>
+
                   </div>
 
                   <div className="w-full bg-[#EBEBEB] rounded-full h-2.5 overflow-hidden">
@@ -171,26 +176,28 @@ export default function Budgets() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-[#111111] rounded-[24px] shadow-xl w-full max-w-md">
             <div className="p-6 border-b border-[#EBEBEB] dark:border-[#222222] flex justify-between items-center">
-              <h2 className="text-xl font-bold text-[#222222] dark:text-[#F7F7F7]">
+              <h2 className="text-xl font-black text-[#111111] dark:text-[#F7F7F7]">
                 {editingId ? 'Edit Budget' : 'Add New Budget'}
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7] p-2 hover:bg-neutral-100 dark:hover:bg-[#222222] dark:bg-[#1A1A1A] rounded-full transition-colors"
+                className="text-[#111111] dark:text-[#A0A0A0] hover:text-black dark:hover:text-[#F7F7F7] p-2 hover:bg-neutral-100 dark:hover:bg-[#222222] dark:bg-[#1A1A1A] rounded-full transition-colors border border-neutral-200 dark:border-transparent"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
+
             
             <div className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Category *</label>
+                <label className="block text-sm font-black text-[#111111] dark:text-[#F7F7F7] mb-1.5 uppercase tracking-wider">Category *</label>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] focus:border-[#222222] dark:focus:border-[#F7F7F7] outline-none transition-shadow"
+                  className="w-full px-4 py-3 border border-[#111111] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] focus:border-[#222222] dark:focus:border-[#F7F7F7] outline-none transition-shadow font-bold bg-white dark:bg-[#111111] text-[#111111] dark:text-white"
                   required
                 >
+
                   {categories.map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
@@ -198,17 +205,18 @@ export default function Budgets() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Monthly Limit (₹) *</label>
+                <label className="block text-sm font-black text-[#111111] dark:text-[#F7F7F7] mb-1.5 uppercase tracking-wider">Monthly Limit (₹) *</label>
                 <input
                   type="number"
                   value={budgetAmount}
                   onChange={(e) => setBudgetAmount(e.target.value)}
                   placeholder="e.g. 5000"
                   step="100"
-                  className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] focus:border-[#222222] dark:focus:border-[#F7F7F7] outline-none transition-shadow"
+                  className="w-full px-4 py-3 border border-[#111111] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] focus:border-[#222222] dark:focus:border-[#F7F7F7] outline-none transition-shadow font-black bg-white dark:bg-[#111111] text-[#111111] dark:text-white"
                   required
                 />
               </div>
+
 
               <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-[#EBEBEB] dark:border-[#222222]">
                 <button
@@ -220,10 +228,11 @@ export default function Budgets() {
                 <button
                   onClick={handleSaveBudget}
                   disabled={!budgetAmount || !selectedCategory}
-                  className="px-6 py-3 bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-bold rounded-xl hover:bg-black dark:hover:bg-neutral-200 transition-colors disabled:opacity-50"
+                  className="px-6 py-3 bg-[#111111] dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-black rounded-xl hover:bg-black dark:hover:bg-neutral-200 transition-colors disabled:opacity-50 shadow-md"
                 >
                   {editingId ? 'Save Changes' : 'Create Budget'}
                 </button>
+
               </div>
             </div>
           </div>

@@ -79,7 +79,8 @@ export default function Accounts() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-[#222222] dark:text-[#F7F7F7]">Manage Accounts</h1>
+        <h1 className="text-2xl font-black text-[#111111] dark:text-[#F7F7F7]">Manage Accounts</h1>
+
         <button
           onClick={() => {
             if (isAdding) {
@@ -88,18 +89,20 @@ export default function Accounts() {
               setIsAdding(true);
             }
           }}
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl hover:bg-black dark:hover:bg-neutral-200 transition-colors font-semibold shadow-sm"
+          className="flex items-center gap-2 px-5 py-2.5 bg-[#111111] dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl hover:bg-black dark:hover:bg-neutral-200 transition-colors font-black shadow-md"
         >
+
           <Plus className="w-4 h-4" />
           {isAdding && !editingAccountId ? 'Cancel' : 'Add Account'}
         </button>
       </div>
 
       {isAdding && (
-        <div className="bg-white dark:bg-[#111111] p-6 rounded-[20px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] dark:border-[#222222]">
-          <h2 className="text-lg font-bold text-[#222222] dark:text-[#F7F7F7] mb-5">
+        <div className="bg-white dark:bg-[#111111] p-6 rounded-[20px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-[#EBEBEB] dark:border-[#222222]">
+          <h2 className="text-lg font-black text-[#111111] dark:text-[#F7F7F7] mb-5">
             {editingAccountId ? 'Edit Account' : 'New Account'}
           </h2>
+
           <form onSubmit={handleAddAccount} className="space-y-5">
             <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-1 rounded-xl mb-4">
               {(['BANK', 'CASH', 'CREDIT_CARD'] as const).map((t) => (
@@ -127,12 +130,13 @@ export default function Accounts() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="md:col-span-3">
-                <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5 flex justify-between items-center">
+                <label className="block text-sm font-black text-[#111111] dark:text-[#F7F7F7] mb-1.5 flex justify-between items-center uppercase tracking-wider">
                   <span>{accountType === 'BANK' ? 'Bank Name' : accountType === 'CASH' ? 'Wallet Name' : 'Card Name'}</span>
                   {accountType === 'BANK' && getBankByPattern(bankName) && (
-                    <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">Logo Detected</span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-black uppercase">Logo Detected</span>
                   )}
                 </label>
+
                 <input
                   type="text"
                   value={bankName}
@@ -170,9 +174,10 @@ export default function Accounts() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">
-                  {accountType === 'CASH' ? 'Reference' : 'Account Last 4 Digits'}
+                <label className="block text-sm font-black text-[#111111] dark:text-[#F7F7F7] mb-1.5 uppercase tracking-wider">
+                  {accountType === 'CASH' ? 'Reference' : 'Account Last 4'}
                 </label>
+
                 <input
                   type="text"
                   value={accountLast4}
@@ -184,7 +189,8 @@ export default function Accounts() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Starting Balance (₹)</label>
+                <label className="block text-sm font-black text-[#111111] dark:text-[#F7F7F7] mb-1.5 uppercase tracking-wider">Starting Balance (₹)</label>
+
                 <input
                   type="number"
                   value={startingBalance}
@@ -206,10 +212,11 @@ export default function Accounts() {
               </button>
               <button
                 type="submit"
-                className="px-6 py-3 bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-bold rounded-xl hover:bg-black dark:hover:bg-neutral-200 transition-colors"
+                className="px-6 py-3 bg-[#111111] dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-black rounded-xl hover:bg-black dark:hover:bg-neutral-200 transition-colors shadow-md"
               >
                 {editingAccountId ? 'Update Account' : 'Save Account'}
               </button>
+
             </div>
           </form>
         </div>
@@ -250,18 +257,20 @@ export default function Accounts() {
                   </button>
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-[#222222] dark:text-[#F7F7F7] truncate">{account.bankName}</h3>
-              <p className="text-[#717171] dark:text-[#A0A0A0] font-medium mt-1">
+              <h3 className="text-xl font-black text-[#111111] dark:text-[#F7F7F7] truncate">{account.bankName}</h3>
+              <p className="text-[#525252] dark:text-[#A0A0A0] font-bold mt-1">
                 {account.type === 'CASH' ? account.accountLast4 : `**** ${account.accountLast4}`}
               </p>
+
             </div>
             <div className="mt-4 pt-4 border-t border-[#EBEBEB] dark:border-[#222222] space-y-3">
               <div className="flex justify-between items-center">
-                <p className="text-xs font-bold text-[#717171] dark:text-[#A0A0A0] uppercase tracking-wider">Starting</p>
-                <p className="text-sm font-bold text-[#222222] dark:text-[#F7F7F7]">
+                <p className="text-xs font-black text-[#525252] dark:text-[#A0A0A0] uppercase tracking-wider">Starting</p>
+                <p className="text-sm font-black text-[#111111] dark:text-[#F7F7F7]">
                   ₹{account.startingBalance.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
                 </p>
               </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-emerald-50 dark:bg-emerald-900/10 p-2.5 rounded-xl border border-emerald-100 dark:border-emerald-900/20">
                   <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 mb-1">

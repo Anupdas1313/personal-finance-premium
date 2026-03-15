@@ -383,22 +383,23 @@ export default function TransactionTable() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#111111] text-[#222222] dark:text-[#F7F7F7] flex flex-col">
-      <header className="bg-white dark:bg-[#111111] border-b border-[#EBEBEB] dark:border-[#222222] px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-0 z-10">
+      <header className="bg-white dark:bg-[#111111] border-b border-[#EBEBEB] dark:border-[#222222] px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-0 z-10 shadow-sm">
         <div className="flex items-start sm:items-center gap-3 sm:gap-4">
           <button 
             onClick={() => navigate('/transactions')} 
-            className="p-2 -ml-2 sm:ml-0 text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-100 dark:hover:bg-[#222222] dark:bg-[#1A1A1A] rounded-full transition-colors shrink-0"
+            className="p-2 -ml-2 sm:ml-0 text-[#111111] dark:text-[#A0A0A0] hover:bg-neutral-100 dark:hover:bg-[#222222] dark:bg-[#1A1A1A] rounded-full transition-colors shrink-0 border border-[#EBEBEB] dark:border-transparent"
             title="Go Back"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-lg sm:text-xl font-bold text-[#222222] dark:text-[#F7F7F7]">Transaction Report</h1>
-            <p className="text-xs sm:text-sm text-[#717171] dark:text-[#A0A0A0] font-medium mt-0.5">
+            <h1 className="text-lg sm:text-xl font-black text-[#111111] dark:text-[#F7F7F7]">Transaction Report</h1>
+            <p className="text-xs sm:text-sm text-[#525252] dark:text-[#A0A0A0] font-bold mt-0.5">
               {filteredAndSortedTransactions.length} of {allTransactionsRaw.length} transactions
             </p>
           </div>
         </div>
+
         <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
           <div className="flex items-center bg-neutral-100 dark:bg-[#1A1A1A] rounded-xl p-1">
             <button onClick={handleZoomOut} className="p-1.5 text-[#717171] dark:text-[#A0A0A0] hover:bg-white dark:bg-[#111111] hover:shadow-sm rounded-lg transition-all" title="Zoom Out">
@@ -425,20 +426,22 @@ export default function TransactionTable() {
       <main className="flex-1 overflow-auto p-4 sm:p-6 bg-[#F7F7F7] dark:bg-[#0A0A0A] flex flex-col gap-6">
         <div className="relative">
           <div ref={summaryRef} className="flex flex-col gap-4 p-2 -m-2 rounded-xl bg-[#F7F7F7] dark:bg-[#0A0A0A]">
-            <div className="relative bg-white dark:bg-[#111111] rounded-[24px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_6px_16_rgba(0,0,0,0.04)] py-5">
-              <button onClick={handleShareSummary} className="absolute top-3 right-3 p-1.5 text-[#717171] dark:text-[#A0A0A0] rounded-full border border-[#EBEBEB] dark:border-[#222222] bg-white dark:bg-[#111111]">
+            <div className="relative bg-white dark:bg-[#111111] rounded-[24px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_30px_rgba(0,0,0,0.12)] py-5">
+              <button onClick={handleShareSummary} className="absolute top-3 right-3 p-1.5 text-[#111111] dark:text-[#A0A0A0] rounded-full border border-[#EBEBEB] dark:border-[#222222] bg-white dark:bg-[#111111]">
                 <Share2 className="w-4 h-4" />
               </button>
+
               
               <div className="grid grid-cols-3 divide-x divide-[#EBEBEB]">
                 <div className="flex flex-col items-center justify-center text-center px-1">
                   <div className="flex items-center justify-center gap-1.5 mb-2">
                     <ArrowDownLeft className="w-3.5 h-3.5 text-rose-500" />
-                    <span className="text-[11px] sm:text-sm font-bold text-[#717171] dark:text-[#A0A0A0]">Outflow</span>
+                    <span className="text-[11px] sm:text-sm font-black text-[#525252] dark:text-[#A0A0A0]">Outflow</span>
                   </div>
-                  <div className="text-base sm:text-2xl font-bold text-rose-600 truncate w-full">
+                  <div className="text-base sm:text-2xl font-black text-rose-600 truncate w-full">
                     <CountUp value={summary.spent} prefix="-₹" />
                   </div>
+
                 </div>
                 <div className="flex flex-col items-center justify-center text-center px-1">
                   <div className="flex items-center justify-center gap-1.5 mb-2">
@@ -451,9 +454,10 @@ export default function TransactionTable() {
                 </div>
                 <div className="flex flex-col items-center justify-center text-center px-1">
                   <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <Wallet className="w-3.5 h-3.5 text-[#222222] dark:text-[#F7F7F7]" />
-                    <span className="text-[11px] sm:text-sm font-bold text-[#717171] dark:text-[#A0A0A0]">Net</span>
+                    <Wallet className="w-3.5 h-3.5 text-[#111111] dark:text-[#F7F7F7]" />
+                    <span className="text-[11px] sm:text-sm font-black text-[#525252] dark:text-[#A0A0A0]">Net</span>
                   </div>
+
                   <div className={`text-base sm:text-2xl font-bold truncate w-full ${summary.received - summary.spent >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                     <CountUp value={Math.abs(summary.received - summary.spent)} prefix={summary.received - summary.spent >= 0 ? '+₹' : '-₹'} />
                   </div>
@@ -511,10 +515,11 @@ export default function TransactionTable() {
           )}
         </div>
 
-        <div className="bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-[#222222] rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] overflow-hidden">
+        <div className="bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-[#222222] rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-neutral-50 dark:bg-[#1A1A1A] border-b border-[#EBEBEB] dark:border-[#222222] text-[#717171] dark:text-[#A0A0A0] font-bold">
+              <thead className="bg-neutral-50 dark:bg-[#1A1A1A] border-b border-[#EBEBEB] dark:border-[#222222] text-[#111111] dark:text-[#A0A0A0] font-black uppercase tracking-wider">
+
                 <tr>
                   <th className="px-4 py-3 cursor-pointer" onClick={() => handleSort('date')}>Date <SortIcon columnKey="date" /></th>
                   <th className="hidden md:table-cell px-4 py-3">Type</th>
@@ -527,32 +532,34 @@ export default function TransactionTable() {
               </thead>
               <tbody className="divide-y divide-[#EBEBEB] dark:divide-[#222222]">
                 {paginatedTransactions.map(tx => (
-                  <tr key={tx.id} className="hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] transition-colors">
-                    <td className="px-4 py-4 sm:py-3">
-                      <div className="font-bold text-[#222222] dark:text-[#F7F7F7]">
+                  <tr key={tx.id} className="hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] transition-colors border-b border-[#EBEBEB] dark:border-transparent">
+                    <td className="px-4 py-4 sm:py-3 text-[#111111] dark:text-white">
+                      <div className="font-black">
                         {safeFormatDate(tx.dateTime, 'MMM d, yyyy')}
                       </div>
-                      <div className="text-[10px] text-[#717171] dark:text-[#A0A0A0] md:hidden">
+                      <div className="text-[10px] text-[#525252] dark:text-[#A0A0A0] md:hidden font-bold">
                         {safeFormatDate(tx.dateTime, 'hh:mm a')}
                       </div>
                     </td>
+
                     <td className="hidden md:table-cell px-4 py-3">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${tx.type === 'CREDIT' ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400'}`}>
                         {tx.type}
                       </span>
                     </td>
-                    <td className="hidden sm:table-cell px-4 py-3 font-medium text-[#717171] dark:text-[#A0A0A0]">{tx.category}</td>
+                    <td className="hidden sm:table-cell px-4 py-3 font-bold text-[#525252] dark:text-[#A0A0A0]">{tx.category}</td>
                     <td className="px-4 py-3">
-                      <div className="font-bold text-[#222222] dark:text-[#F7F7F7] max-w-[120px] sm:max-w-[200px] truncate">
+                      <div className="font-black text-[#111111] dark:text-[#F7F7F7] max-w-[120px] sm:max-w-[200px] truncate">
                         {tx.party || '—'}
                       </div>
-                      <div className="text-[10px] text-[#717171] dark:text-[#A0A0A0] lg:hidden max-w-[120px] truncate">
+                      <div className="text-[10px] text-[#525252] dark:text-[#A0A0A0] lg:hidden max-w-[120px] truncate font-bold">
                         {tx.note}
                       </div>
                     </td>
-                    <td className="hidden lg:table-cell px-4 py-3 font-medium text-[#717171] dark:text-[#A0A0A0] max-w-[200px] truncate">
+                    <td className="hidden lg:table-cell px-4 py-3 font-bold text-[#525252] dark:text-[#A0A0A0] max-w-[200px] truncate">
                       {tx.note || '—'}
                     </td>
+
                     <td className={`px-4 py-3 text-right font-black ${tx.type === 'CREDIT' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                       {tx.type === 'CREDIT' ? '+' : '-'}₹{(tx.amount || 0).toLocaleString('en-IN')}
                     </td>
