@@ -13,9 +13,14 @@ export default function TripDetails() {
   const trip = useLiveQuery(() => db.trips.get(tripId));
   const members = useLiveQuery(() => db.tripMembers.where('tripId').equals(tripId).toArray()) || [];
   const tripTransactions = useLiveQuery(() => db.tripTransactions.where('tripId').equals(tripId).toArray()) || [];
-  const allSplits = useLiveQuery(() => db.tripSplits.toArray()) || [];
+  
+  const tripTxIds = useMemo(() => tripTransactions.map(t => t.id as number), [tripTransactions]);
+  const splits = useLiveQuery(() => 
+    tripTxIds.length > 0 ? db.tripSplits.where('tripTransactionId').anyOf(tripTxIds).toArray() : Promise.resolve([])
+  ) || [];
 
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
+
   const [newTxDesc, setNewTxDesc] = useState('');
   const [newTxAmount, setNewTxAmount] = useState('');
   const [paidByMemberId, setPaidByMemberId] = useState<number | ''>('');
@@ -67,29 +72,36 @@ export default function TripDetails() {
   };
 
   const getBalances = () => {
-    const balances: Record<number, number> = {};
-    members.forEach(m => balances[m.id!] = 0);
+    const summary: Record<number, { paid: number; share: number }> = {};
+    members.forEach(m => summary[m.id!] = { paid: 0, share: 0 });
 
     tripTransactions.forEach(tx => {
-      balances[tx.paidByMemberId] += tx.amount;
-    });
-
-    const tripTxIds = tripTransactions.map(t => t.id);
-    allSplits.filter(s => tripTxIds.includes(s.tripTransactionId)).forEach(split => {
-      if (balances[split.memberId] !== undefined) {
-        balances[split.memberId] -= split.amount;
+      if (summary[tx.paidByMemberId]) {
+        summary[tx.paidByMemberId].paid += tx.amount;
       }
     });
 
-    return balances;
+    splits.forEach(split => {
+      if (summary[split.memberId]) {
+        summary[split.memberId].share += split.amount;
+      }
+    });
+
+    return summary;
   };
 
-  const balances = getBalances();
+  const memberSummaries = getBalances();
 
-  const getSettlements = (balMap: Record<number, number>) => {
+  const getSettlements = (summaries: Record<number, { paid: number; share: number }>) => {
+    const balMap: Record<number, number> = {};
+    Object.entries(summaries).forEach(([id, data]) => {
+      balMap[Number(id)] = data.paid - data.share;
+    });
+
     const sorted = Object.entries(balMap)
       .map(([id, amt]) => ({ id: Number(id), amt }))
       .sort((a, b) => a.amt - b.amt);
+
 
     const debtors = sorted.filter(m => m.amt < -0.01);
     const creditors = sorted.filter(m => m.amt > 0.01).sort((a, b) => b.amt - a.amt);
@@ -112,7 +124,8 @@ export default function TripDetails() {
     return results;
   };
 
-  const settlements = getSettlements(balances);
+  const settlements = getSettlements(memberSummaries);
+
 
   const handleDeleteTx = async (id: number) => {
     if (confirm('Delete this transaction?')) {
@@ -178,10 +191,16 @@ export default function TripDetails() {
                     </div>
                     <div>
                         <h4 className="font-black text-brand-blue dark:text-[#F7F7F7]">{tx.description}</h4>
-                        <p className="text-[10px] font-black text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-widest mt-0.5">
-                            Paid by {members.find(m => m.id === tx.paidByMemberId)?.name} • {format(tx.dateTime, 'h:mm a')}
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="px-2 py-0.5 bg-brand-blue/5 dark:bg-brand-blue/20 text-brand-blue dark:text-brand-cyan text-[8px] font-black uppercase tracking-widest rounded-md">
+                                {members.find(m => m.id === tx.paidByMemberId)?.name} Paid
+                            </span>
+                            <span className="text-[9px] font-black text-brand-blue/20 dark:text-[#A0A0A0] uppercase tracking-tighter">
+                                {format(tx.dateTime, 'h:mm a')}
+                            </span>
+                        </div>
                     </div>
+
                 </div>
                 <div className="text-right flex items-center gap-4">
                     <div>
@@ -198,16 +217,36 @@ export default function TripDetails() {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            {members.map(member => (
-              <div key={member.id} className="bg-white dark:bg-[#111111] p-5 rounded-[24px] border border-brand-blue/5 dark:border-[#222222] text-center shadow-sm">
-                <p className="text-[10px] font-black text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-widest mb-1">{member.name}</p>
-                <p className={`text-xl font-black ${balances[member.id!] >= 0 ? 'text-brand-green' : 'text-brand-red'}`}>
-                  {balances[member.id!] >= 0 ? '+' : ''}₹{balances[member.id!].toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                </p>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 gap-4">
+            {members.map(member => {
+              const summary = memberSummaries[member.id!];
+              const net = summary.paid - summary.share;
+              return (
+                <div key={member.id} className="bg-white dark:bg-[#111111] p-6 rounded-[28px] border border-brand-blue/5 dark:border-[#222222] shadow-sm flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-black text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-widest mb-1">{member.name}</p>
+                    <div className="flex gap-4">
+                        <div>
+                            <p className="text-[8px] font-black text-brand-blue/20 uppercase">Contributed</p>
+                            <p className="text-xs font-black text-brand-blue dark:text-[#F7F7F7]">₹{summary.paid.toLocaleString('en-IN')}</p>
+                        </div>
+                        <div>
+                            <p className="text-[8px] font-black text-brand-blue/20 uppercase">Share</p>
+                            <p className="text-xs font-black text-brand-blue dark:text-[#F7F7F7]">₹{summary.share.toLocaleString('en-IN')}</p>
+                        </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[8px] font-black text-brand-blue/20 uppercase mb-1">Net Flow</p>
+                    <p className={`text-xl font-black ${net >= 0 ? 'text-brand-green' : 'text-brand-red'}`}>
+                      {net >= 0 ? '+' : ''}₹{net.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
+
 
           <div className="bg-white dark:bg-[#111111] p-6 rounded-[32px] border border-brand-blue/5 dark:border-[#222222] shadow-sm">
             <h3 className="text-xs font-black text-brand-blue dark:text-[#F7F7F7] uppercase tracking-widest mb-6">Settlement Blueprint</h3>
