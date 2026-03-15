@@ -45,25 +45,27 @@ export default function Summary() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-black text-[#111111] dark:text-[#F7F7F7]">Monthly Summary</h1>
-        <div className="flex items-center gap-4 bg-white dark:bg-[#111111] px-4 py-2 rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-[#EBEBEB] dark:border-[#222222] w-full sm:w-auto justify-between sm:justify-start">
-          <button onClick={handlePrevMonth} className="text-[#525252] dark:text-[#A0A0A0] hover:text-[#111111] dark:hover:text-[#F7F7F7] font-black">&lt;</button>
-          <span className="font-black text-[#111111] dark:text-[#F7F7F7] min-w-[120px] text-center">
+        <h1 className="text-3xl font-black text-[#1A237E] dark:text-[#F7F7F7]">Monthly Summary</h1>
+
+        <div className="flex items-center gap-4 bg-white dark:bg-[#111111] px-6 py-2.5 rounded-[24px] shadow-[0_12px_40px_rgba(26,35,126,0.1)] border border-[#EBEBEB] dark:border-[#222222] w-full sm:w-auto justify-between sm:justify-start">
+          <button onClick={handlePrevMonth} className="text-[#1A237E] hover:text-[#00A86B] font-black transition-colors">&lt;</button>
+          <span className="font-black text-[#1A237E] dark:text-[#F7F7F7] min-w-[140px] text-center uppercase tracking-widest text-sm">
             {format(currentMonth, 'MMMM yyyy')}
           </span>
-          <button onClick={handleNextMonth} className="text-[#525252] dark:text-[#A0A0A0] hover:text-[#111111] dark:hover:text-[#F7F7F7] font-black">&gt;</button>
+          <button onClick={handleNextMonth} className="text-[#1A237E] hover:text-[#00A86B] font-black transition-colors">&gt;</button>
         </div>
+
       </div>
 
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-[#EBEBEB] dark:border-[#222222] flex flex-col justify-center items-center">
-          <p className="text-sm font-black text-[#525252] dark:text-[#A0A0A0] mb-1 uppercase tracking-wider">Total Income</p>
-          <p className="text-3xl font-black text-emerald-600">
+        <div className="bg-white dark:bg-[#111111] p-6 rounded-[28px] shadow-[0_8px_40px_rgba(26,35,126,0.06)] border border-[#EBEBEB] dark:border-[#222222] flex flex-col justify-center items-center">
+          <p className="text-xs font-black text-[#1A237E] opacity-60 dark:text-[#A0A0A0] mb-1 uppercase tracking-widest">Total Income</p>
+          <p className="text-4xl font-black text-[#00A86B]">
             +₹{totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </p>
-
         </div>
+
         <div className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-[#EBEBEB] dark:border-[#222222] flex flex-col justify-center items-center">
           <p className="text-sm font-black text-[#525252] dark:text-[#A0A0A0] mb-1 uppercase tracking-wider">Total Expenses</p>
           <p className="text-3xl font-black text-rose-600">
@@ -73,8 +75,9 @@ export default function Summary() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-[#EBEBEB] dark:border-[#222222]">
-        <h2 className="text-lg font-black text-[#111111] dark:text-[#F7F7F7] mb-6">Expenses by Category</h2>
+      <div className="bg-white dark:bg-[#111111] p-6 rounded-[32px] shadow-[0_8px_40px_rgba(26,35,126,0.06)] border border-[#EBEBEB] dark:border-[#222222]">
+        <h2 className="text-xl font-black text-[#1A237E] dark:text-[#F7F7F7] mb-8">Expenses by Category</h2>
+
 
         {pieData.length > 0 ? (
           <div className="h-[300px] sm:h-[400px] w-full">

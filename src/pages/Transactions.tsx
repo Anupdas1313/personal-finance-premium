@@ -236,16 +236,18 @@ export default function Transactions() {
         <div className="flex items-center justify-between mb-6">
           {!isSearchOpen ? (
             <>
-              <h1 className="text-3xl font-bold text-[#222222] dark:text-white tracking-tight">Analysis</h1>
+              <h1 className="text-4xl font-black text-[#1A237E] dark:text-white tracking-tighter">Analysis</h1>
+
 
               <div className="flex items-center gap-1.5">
                 <button 
                   onClick={() => setIsFiltersOpen(!isFiltersOpen)}
                   className={`p-2.5 border rounded-full transition-all shadow-sm ${
                     isFiltersOpen 
-                      ? "bg-[#222222] border-[#222222] text-white dark:bg-white dark:border-white dark:text-[#111111]" 
-                      : "bg-white border-[#EBEBEB] text-[#717171] hover:text-[#222222] dark:bg-[#111111] dark:border-[#222222] dark:text-[#A0A0A0] dark:hover:text-white"
+                      ? "bg-[#1A237E] border-[#1A237E] text-white dark:bg-white dark:border-white dark:text-[#111111]" 
+                      : "bg-white border-[#EBEBEB] text-[#1A237E] hover:text-[#00A86B] dark:bg-[#111111] dark:border-[#222222] dark:text-[#A0A0A0] dark:hover:text-white"
                   }`}
+
 
                   title="Filters"
                 >
@@ -298,21 +300,23 @@ export default function Transactions() {
         </div>
 
         {/* Month Navigation Card - Full Width */}
-        <div className="bg-white dark:bg-[#111111] p-1.5 rounded-2xl border border-[#EBEBEB] dark:border-[#222222] flex items-center justify-between shadow-sm mb-4">
+        <div className="bg-white dark:bg-[#111111] p-1.5 rounded-2xl border border-[#EBEBEB] dark:border-[#222222] flex items-center justify-between shadow-[0_4px_20px_rgba(26,35,126,0.08)] mb-4">
 
-          <button onClick={handlePrevMonth} className="p-2 text-[#A0A0A0] hover:text-white transition-colors">
-            <ChevronLeft className="w-4 h-4" />
+
+          <button onClick={handlePrevMonth} className="p-2 text-[#1A237E] hover:text-[#00A86B] transition-colors">
+            <ChevronLeft className="w-5 h-5" />
           </button>
           <div className="text-center">
-            <h2 className="text-sm font-bold text-[#222222] dark:text-[#F7F7F7] leading-tight">{getHeaderText()}</h2>
+            <h2 className="text-sm font-black text-[#1A237E] dark:text-[#F7F7F7] leading-tight uppercase tracking-widest">{getHeaderText()}</h2>
 
-            <p className="text-[9px] font-black text-[#666666] tracking-[0.05em] uppercase">
-              {filteredTransactions.length} TXS
+            <p className="text-[9px] font-black text-[#00A86B] tracking-[0.05em] uppercase">
+              {filteredTransactions.length} Transactions
             </p>
           </div>
-          <button onClick={handleNextMonth} className="p-2 text-[#A0A0A0] hover:text-white transition-colors">
-            <ChevronRight className="w-4 h-4" />
+          <button onClick={handleNextMonth} className="p-2 text-[#1A237E] hover:text-[#00A86B] transition-colors">
+            <ChevronRight className="w-5 h-5" />
           </button>
+
         </div>
 
         {/* Date Presets Selector */}
@@ -322,9 +326,10 @@ export default function Transactions() {
             <button
               key={p}
               onClick={() => handleDatePresetChange(p)}
-              className={`flex-1 py-2 text-sm font-bold rounded-xl transition-all ${
-                datePreset === p ? 'bg-white dark:bg-[#222222] text-[#222222] dark:text-white shadow-sm' : 'text-[#717171] hover:text-[#222222] dark:hover:text-[#A0A0A0]'
+              className={`flex-1 py-2 text-sm font-black rounded-xl transition-all ${
+                datePreset === p ? 'bg-[#1A237E] text-white shadow-lg scale-105' : 'text-[#1A237E]/60 hover:text-[#1A237E] dark:hover:text-[#A0A0A0]'
               }`}
+
 
             >
               {p.charAt(0) + p.slice(1).toLowerCase()}
@@ -335,7 +340,8 @@ export default function Transactions() {
         {/* Report Button - Full Width */}
         <Link 
           to={`/transactions/table?start=${filterStart.toISOString()}&end=${filterEnd.toISOString()}`}
-          className="w-full py-3 flex items-center justify-center gap-2 bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] hover:bg-black dark:hover:bg-white rounded-2xl font-bold transition-all shadow-sm text-sm active:scale-95 mb-6"
+          className="w-full py-3.5 flex items-center justify-center gap-2 bg-[#00A86B] dark:bg-[#F7F7F7] text-white dark:text-[#111111] hover:bg-[#00925d] hover:ring-2 hover:ring-[#82EEFD] rounded-2xl font-black transition-all shadow-lg text-sm active:scale-95 mb-6"
+
 
         >
           <ListOrdered className="w-4 h-4" />
@@ -489,17 +495,19 @@ export default function Transactions() {
             return (
               <div key={date} className="mb-6">
                 <div className="flex items-center justify-between mb-3 px-2">
-                  <h3 className="text-xs font-black text-[#525252] dark:text-[#A0A0A0] uppercase tracking-wider flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#111111] dark:bg-[#F7F7F7]"></div>
+                  <h3 className="text-xs font-black text-[#1A237E] opacity-70 dark:text-[#A0A0A0] uppercase tracking-wider flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#1A237E] dark:bg-[#F7F7F7]"></div>
                     {formatDateHeader(date)}
                   </h3>
+
                   <div className="flex items-center gap-3 text-[11px] font-black">
                     {daily.spent > 0 && <span className="text-rose-600">-₹{daily.spent.toLocaleString('en-IN')}</span>}
                     {daily.received > 0 && <span className="text-emerald-700">+₹{daily.received.toLocaleString('en-IN')}</span>}
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-[#111111] rounded-[20px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_30px_rgba(0,0,0,0.12)] overflow-hidden">
+                <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_40px_rgba(26,35,126,0.05)] overflow-hidden">
+
 
                   <div className="divide-y divide-[#EBEBEB] dark:divide-[#222222]">
                     {txs.map(tx => (
@@ -509,9 +517,10 @@ export default function Transactions() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-black text-[#111111] dark:text-[#F7F7F7] truncate">
+                            <h4 className="text-sm font-black text-[#1A237E] dark:text-[#F7F7F7] truncate">
                               <HighlightText text={tx.party || tx.category} highlight={searchTerm} />
                             </h4>
+
                             {tx.expenseType && (<span className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-black bg-neutral-200 dark:bg-[#222222] text-[#525252] dark:text-[#A0A0A0] whitespace-nowrap">{tx.expenseType}</span>)}
                           </div>
                           {tx.note && (<p className="text-xs text-[#525252] dark:text-[#A0A0A0] font-bold truncate mt-0.5"><HighlightText text={tx.note} highlight={searchTerm} /></p>)}
@@ -536,9 +545,10 @@ export default function Transactions() {
         )}
       </main>
 
-      <Link to="/" className="fixed bottom-20 md:bottom-6 right-6 w-14 h-14 bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-full shadow-lg flex items-center justify-center hover:bg-black dark:hover:bg-neutral-200 transition-transform active:scale-95 z-20">
-        <Plus className="w-6 h-6" />
+      <Link to="/" className="fixed bottom-20 md:bottom-6 right-6 w-16 h-16 bg-[#00A86B] dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-full shadow-2xl flex items-center justify-center hover:bg-[#00925d] hover:ring-4 hover:ring-[#82EEFD]/30 transition-all active:scale-95 z-40 transform hover:-rotate-12">
+        <Plus className="w-8 h-8" />
       </Link>
+
 
       {isDatePickerOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
