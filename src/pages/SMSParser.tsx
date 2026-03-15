@@ -113,15 +113,17 @@ export default function SMSParser() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-neutral-100 dark:bg-[#1A1A1A] rounded-full flex items-center justify-center mx-auto mb-4">
-          <MessageSquareText className="w-8 h-8 text-[#222222] dark:text-[#F7F7F7]" />
+        <div className="w-16 h-16 bg-neutral-100 dark:bg-[#1A1A1A] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#EBEBEB] dark:border-[#222222]">
+          <MessageSquareText className="w-8 h-8 text-[#111111] dark:text-[#F7F7F7]" />
         </div>
-        <h1 className="text-2xl font-bold text-[#222222] dark:text-[#F7F7F7]">Parse Bank SMS</h1>
-        <p className="text-[#717171] dark:text-[#A0A0A0] mt-2">Paste your bank SMS here to automatically extract transaction details.</p>
+        <h1 className="text-2xl font-black text-[#111111] dark:text-[#F7F7F7]">Parse Bank SMS</h1>
+        <p className="text-[#525252] dark:text-[#A0A0A0] mt-2 font-bold">Paste your bank SMS here to automatically extract transaction details.</p>
+
       </div>
 
-      <div className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] dark:border-[#222222]">
-        <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-2">SMS Message</label>
+      <div className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-[#EBEBEB] dark:border-[#222222]">
+        <label className="block text-sm font-black text-[#111111] dark:text-[#F7F7F7] mb-2 uppercase tracking-wider">SMS Message</label>
+
         <textarea
           value={smsText}
           onChange={(e) => setSmsText(e.target.value)}
@@ -140,8 +142,9 @@ export default function SMSParser() {
       </div>
 
       {parsedData && (
-        <div className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] dark:border-[#222222] animate-in fade-in slide-in-from-bottom-4">
-          <h2 className="text-lg font-bold text-[#222222] dark:text-[#F7F7F7] mb-6">Extracted Details</h2>
+        <div className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-[#EBEBEB] dark:border-[#222222] animate-in fade-in slide-in-from-bottom-4">
+          <h2 className="text-lg font-black text-[#111111] dark:text-[#F7F7F7] mb-6">Extracted Details</h2>
+
           
           <div className="flex flex-wrap gap-2 mb-6">
             {appCategories.map((cat) => (
@@ -162,19 +165,20 @@ export default function SMSParser() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1">Amount *</label>
+              <label className="block text-sm font-black text-[#111111] dark:text-[#F7F7F7] mb-1 uppercase tracking-wider">Amount *</label>
               <input
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
                 step="0.01"
-                className="w-full px-4 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] focus:border-[#222222] dark:focus:border-[#F7F7F7]"
+                className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#222222] rounded-xl focus:ring-2 focus:ring-[#111111] dark:focus:ring-[#F7F7F7] outline-none font-bold bg-white dark:bg-[#1A1A1A] text-[#111111] dark:text-[#F7F7F7]"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1">Transaction Type *</label>
+              <label className="block text-sm font-black text-[#111111] dark:text-[#F7F7F7] mb-1 uppercase tracking-wider">Transaction Type *</label>
+
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as 'CREDIT' | 'DEBIT' | '')}

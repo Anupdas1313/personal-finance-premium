@@ -22,16 +22,17 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  'Food': 'bg-orange-900/40 text-orange-500',
-  'Transport': 'bg-blue-900/40 text-blue-500',
-  'Rent': 'bg-purple-900/40 text-purple-500',
-  'Shopping': 'bg-pink-900/40 text-pink-500',
-  'Bills': 'bg-yellow-900/40 text-yellow-500',
-  'Entertainment': 'bg-red-900/40 text-red-500',
-  'Salary': 'bg-emerald-900/40 text-emerald-500',
-  'Transfer': 'bg-[#1C1C24] text-[#A0A0A0]',
-  'Other': 'bg-[#1C1C24] text-[#A0A0A0]'
+  'Food': 'bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-500',
+  'Transport': 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-500',
+  'Rent': 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-500',
+  'Shopping': 'bg-pink-100 dark:bg-pink-900/40 text-pink-600 dark:text-pink-500',
+  'Bills': 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-600 dark:text-yellow-500',
+  'Entertainment': 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-500',
+  'Salary': 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-500',
+  'Transfer': 'bg-neutral-100 dark:bg-[#1A1A1A] text-neutral-600 dark:text-[#A0A0A0]',
+  'Other': 'bg-neutral-100 dark:bg-[#1A1A1A] text-neutral-600 dark:text-[#A0A0A0]'
 };
+
 
 import { IndusIndLogo } from '../components/IndusIndLogo';
 import { UnionBankLogo } from '../components/UnionBankLogo';
@@ -234,8 +235,9 @@ export default function Dashboard() {
       {/* Greeting Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-semibold text-[#717171] dark:text-[#A0A0A0] tracking-wide">{greeting},</p>
-          <h1 className="text-2xl font-extrabold text-[#222222] dark:text-[#F7F7F7] leading-tight">Anup 👋</h1>
+          <p className="text-sm font-bold text-[#525252] dark:text-[#A0A0A0] tracking-wide">{greeting},</p>
+          <h1 className="text-2xl font-black text-[#111111] dark:text-[#F7F7F7] leading-tight">Anup 👋</h1>
+
         </div>
         <div className="flex items-center gap-3">
           <div
@@ -248,10 +250,11 @@ export default function Dashboard() {
       </div>
 
       {/* Cash Flow Hero Card */}
-      <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#1C1C24] via-[#1E1A22] to-[#1C1F26] p-6 shadow-xl border border-white/5">
+      <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#3B3B98] to-[#4A4ABF] dark:from-[#1C1C24] dark:via-[#1E1A22] dark:to-[#1C1F26] p-6 shadow-xl border border-white/5">
         {/* Subtle glowing orb effects */}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+
 
         <div className="relative z-10 flex items-center justify-between mb-8">
           <h2 className="text-xs font-bold text-white/60 tracking-widest uppercase">Cash Flow</h2>
@@ -294,11 +297,12 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Accounts List */}
-        <div className="bg-white dark:bg-[#0C0C0F] rounded-[24px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] dark:border-[#1A1A1E] overflow-hidden">
+        <div className="bg-white dark:bg-[#0C0C0F] rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-none border border-[#EBEBEB] dark:border-[#1A1A1E] overflow-hidden">
           <div className="p-6 border-b border-[#EBEBEB] dark:border-[#1A1A1E] flex justify-between items-center">
-            <h2 className="text-lg font-bold text-[#222222] dark:text-[#F7F7F7]">Your Accounts</h2>
-            <Link to="/accounts" className="text-sm font-semibold text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7] transition-colors">Manage</Link>
+            <h2 className="text-lg font-black text-[#111111] dark:text-[#F7F7F7]">Your Accounts</h2>
+            <Link to="/accounts" className="text-sm font-bold text-[#525252] dark:text-[#A0A0A0] hover:text-[#111111] dark:hover:text-[#F7F7F7] transition-colors">Manage</Link>
           </div>
+
           <div className="divide-y divide-[#EBEBEB] dark:divide-[#1A1A1E]">
             {balances.length === 0 ? (
               <div className="p-6 text-center text-[#717171] dark:text-[#A0A0A0] text-sm">No accounts added yet.</div>
@@ -307,16 +311,19 @@ export default function Dashboard() {
                 <div key={acc.id} className="p-4 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-[#15151A] transition-colors group cursor-pointer" onClick={() => navigate('/accounts')}>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden p-1.5 shadow-sm border border-[#EBEBEB] dark:border-[#1A1A1E]">
-                      <BankLogo bankName={acc.bankName} className="w-full h-full" />
+                      <BankLogo bankName={acc.bankName} type={(acc as any).type} className="w-full h-full" />
                     </div>
                     <div>
-                      <p className="font-bold text-[#222222] dark:text-[#F7F7F7]">{acc.bankName}</p>
-                      <p className="text-xs text-[#717171] dark:text-[#A0A0A0] font-medium mt-0.5">**** {acc.accountLast4}</p>
+                      <p className="font-black text-[#111111] dark:text-[#F7F7F7]">{acc.bankName}</p>
+                      <p className="text-xs text-[#525252] dark:text-[#A0A0A0] font-bold mt-0.5">
+                        {(acc as any).type === 'CASH' ? acc.accountLast4 : `**** ${acc.accountLast4}`}
+                      </p>
                     </div>
                   </div>
-                  <p className="font-bold text-[#222222] dark:text-[#F7F7F7]">
+                  <p className="font-black text-[#111111] dark:text-[#F7F7F7]">
                     ₹{acc.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </p>
+
                 </div>
               ))
             )}
@@ -326,9 +333,10 @@ export default function Dashboard() {
         {/* Recent Transactions */}
         <div className="bg-transparent overflow-hidden">
           <div className="pb-4 flex justify-between items-center px-1">
-            <h2 className="text-lg font-bold text-[#222222] dark:text-[#F7F7F7]">Recent Transactions</h2>
-            <Link to="/transactions" className="text-sm font-semibold text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7] transition-colors">View All</Link>
+            <h2 className="text-lg font-black text-[#111111] dark:text-[#F7F7F7]">Recent Transactions</h2>
+            <Link to="/transactions" className="text-sm font-bold text-[#525252] dark:text-[#A0A0A0] hover:text-[#111111] dark:hover:text-[#F7F7F7] transition-colors">View All</Link>
           </div>
+
           <div className="space-y-3">
             {transactions.length === 0 ? (
               <div className="p-6 text-center text-[#717171] dark:text-[#A0A0A0] text-sm bg-white dark:bg-[#0C0C0F] rounded-[24px] border border-[#EBEBEB] dark:border-[#1A1A1E]">No transactions yet.</div>
@@ -346,21 +354,22 @@ export default function Dashboard() {
                 const catColorClasses = CATEGORY_COLORS[tx.category] || CATEGORY_COLORS['Other'];
 
                 return (
-                  <div key={tx.id} className="p-4 bg-white dark:bg-[#0C0C0F] border border-[#EBEBEB] dark:border-[#1A1A1E] rounded-[24px] flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-[#15151A] transition-colors shadow-sm group cursor-pointer" onClick={() => navigate('/transactions')}>
+                  <div key={tx.id} className="p-4 bg-white dark:bg-[#0C0C0F] border border-[#EBEBEB] dark:border-[#1A1A1E] rounded-[24px] flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-[#15151A] transition-colors shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-none group cursor-pointer" onClick={() => navigate('/transactions')}>
                     <div className="flex items-center gap-4">
+
                       {/* Squircle Icon */}
-                      <div className={`w-12 h-12 rounded-[16px] flex items-center justify-center text-xl shrink-0 ${
-                        document.documentElement.classList.contains('dark') ? catColorClasses : 'bg-neutral-100 text-neutral-800'
-                      }`}>
+                      <div className={`w-12 h-12 rounded-[16px] flex items-center justify-center text-xl shrink-0 ${catColorClasses}`}>
                         {CATEGORY_ICONS[tx.category] || '📝'}
                       </div>
+
                       
                       {/* Title & Subtext */}
                       <div>
-                        <p className="font-bold text-[#222222] dark:text-[#F7F7F7] text-base group-hover:text-black dark:group-hover:text-white transition-colors">
+                        <p className="font-black text-[#111111] dark:text-[#F7F7F7] text-base group-hover:text-black dark:group-hover:text-white transition-colors">
                           {tx.party || tx.note || tx.category}
                         </p>
-                        <div className="flex items-center text-xs text-[#717171] dark:text-[#A0A0A0] font-medium mt-0.5 gap-1.5">
+                        <div className="flex items-center text-xs text-[#525252] dark:text-[#A0A0A0] font-bold mt-0.5 gap-1.5">
+
                           {tx.paymentMethod === 'UPI' ? <Smartphone className="w-3.5 h-3.5" /> : 
                            tx.paymentMethod === 'Bank' || tx.paymentMethod === 'Bank Transfer' ? <Landmark className="w-3.5 h-3.5" /> : 
                            tx.paymentMethod === 'Credit Card' ? <CreditCard className="w-3.5 h-3.5" /> :
@@ -372,9 +381,10 @@ export default function Dashboard() {
                     
                     {/* Amount & Date (Right Aligned) */}
                     <div className="text-right">
-                      <p className={`font-bold text-base tracking-tight ${tx.type === 'CREDIT' ? 'text-emerald-500' : 'text-[#222222] dark:text-[#F7F7F7]'}`}>
+                      <p className={`font-black text-base tracking-tight ${tx.type === 'CREDIT' ? 'text-emerald-600 dark:text-emerald-500' : 'text-[#111111] dark:text-[#F7F7F7]'}`}>
                         {tx.type === 'CREDIT' ? '+' : ''}₹{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </p>
+
                       <p className="text-xs text-[#717171] dark:text-[#A0A0A0] font-medium mt-0.5">
                         {dateStr}
                       </p>
@@ -389,19 +399,21 @@ export default function Dashboard() {
 
       {/* Manual Entry Modal - Compact Pill-Based UX Redesign */}
       {isAddingManual && createPortal(
-        <div className="fixed inset-0 bg-[#0F0F13] text-white z-[9999] flex flex-col animate-in fade-in slide-in-from-bottom-5 duration-300 font-sans">
-          <div className="flex items-center justify-between px-4 py-1 pt-safe-top bg-[#1C1C22] border-b border-white/5 z-20">
-            <button onClick={closeMenu} className="text-[#A0A0A5] hover:text-white p-1.5 -ml-1 transition-colors">
+        <div className="fixed inset-0 bg-[#F7F7F7] dark:bg-[#0F0F13] text-[#222222] dark:text-white z-[9999] flex flex-col animate-in fade-in slide-in-from-bottom-5 duration-300 font-sans">
+          <div className="flex items-center justify-between px-4 py-1 pt-safe-top bg-white dark:bg-[#1C1C22] border-b border-[#EBEBEB] dark:border-white/5 z-20">
+            <button onClick={closeMenu} className="text-[#717171] dark:text-[#A0A0A5] hover:text-[#222222] dark:hover:text-white p-1.5 -ml-1 transition-colors">
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <h2 className="text-[14px] font-bold text-white tracking-tight">Add Transaction</h2>
+            <h2 className="text-[14px] font-bold text-[#222222] dark:text-white tracking-tight">Add Transaction</h2>
+
             <div className="w-6" /> {/* Spacer to balance back arrow */}
           </div>
 
           <div className="flex-1 overflow-y-auto w-full px-4 pt-2 pb-safe space-y-3.5 scrollbar-hide no-scrollbar">
             
             {/* 1. Transaction Type Toggle (Top Priority) */}
-            <div className="flex bg-[#1C1C22] p-1 rounded-2xl border border-white/5">
+            <div className="flex bg-white dark:bg-[#1C1C22] p-1 rounded-2xl border border-[#EBEBEB] dark:border-white/5">
+
               <button 
                 onClick={() => setType('DEBIT')}
                 className={`flex-1 py-1.5 text-[12px] font-bold rounded-xl transition-all ${type === 'DEBIT' ? 'bg-[#3B3B98] text-white shadow-lg' : 'text-[#717171] hover:text-white'}`}
@@ -416,7 +428,9 @@ export default function Dashboard() {
               </button>
               <button 
                 onClick={() => setType('TRANSFER')}
-                className={`flex-1 py-1.5 text-[12px] font-bold rounded-xl transition-all ${type === 'TRANSFER' ? 'bg-indigo-600 text-white shadow-lg' : 'text-[#717171] hover:text-white'}`}
+                className={`flex-1 py-1.5 text-[12px] font-black rounded-xl transition-all ${type === 'TRANSFER' ? 'bg-[#3B3B98] text-white shadow-lg' : 'text-[#525252] dark:text-[#A0A0A0] hover:text-[#111111] dark:hover:text-white'}`}
+
+
               >
                 Transfer
               </button>
@@ -425,10 +439,11 @@ export default function Dashboard() {
             <div className="space-y-2">
               <p className="text-[10px] font-bold text-[#A0A0A5] uppercase tracking-wider px-1">Date & Time</p>
               <div className="relative">
-                <div className="bg-[#1C1C22] p-3 rounded-xl border border-white/5 flex items-center justify-between active:bg-[#2C2C34] transition-colors">
+                <div className="bg-white dark:bg-[#1C1C22] p-3 rounded-xl border border-[#EBEBEB] dark:border-white/5 flex items-center justify-between active:bg-neutral-50 dark:active:bg-[#2C2C34] transition-colors">
                   <div className="flex items-center gap-3">
-                    <Calendar className="w-4 h-4 text-[#6C6CF0]" />
-                    <span className="text-[13px] font-bold text-white">
+                    <Calendar className="w-4 h-4 text-[#3B3B98] dark:text-[#6C6CF0]" />
+                    <span className="text-[13px] font-black text-[#111111] dark:text-white">
+
                       {isToday(new Date(transactionDate)) ? 'Today, ' : isYesterday(new Date(transactionDate)) ? 'Yesterday, ' : format(new Date(transactionDate), 'dd MMM, ')}
                       {format(new Date(transactionDate), 'hh:mm a')}
                     </span>
@@ -439,7 +454,8 @@ export default function Dashboard() {
                     onChange={(e) => setTransactionDate(e.target.value)}
                     className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                   />
-                  <ChevronDown className="w-4 h-4 text-[#717171]" />
+                  <ChevronDown className="w-4 h-4 text-[#717171] dark:text-[#717171]" />
+
                 </div>
               </div>
             </div>
@@ -455,8 +471,9 @@ export default function Dashboard() {
                       onClick={() => setExpenseType(expenseType === tagName ? '' : tagName)}
                       className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border whitespace-nowrap ${
                         expenseType === tagName 
-                          ? 'bg-[#6C6CF0] text-white border-transparent' 
-                          : 'bg-[#1C1C22] border-white/5 text-[#A0A0A5]'
+                          ? 'bg-[#3B3B98] text-white border-transparent' 
+                          : 'bg-white dark:bg-[#1C1C22] border-[#EBEBEB] dark:border-white/5 text-[#717171] dark:text-[#A0A0A5]'
+
                       }`}
                     >
                       #{tagName}
@@ -467,11 +484,13 @@ export default function Dashboard() {
             )}
 
             {/* 3. Amount & Account Row */}
-            <div className={`bg-[#1C1C22] rounded-xl border border-white/5 flex ${type === 'TRANSFER' ? 'flex-col divide-y' : 'divide-x'} divide-white/5 overflow-hidden shadow-inner`}>
+            <div className={`bg-white dark:bg-[#1C1C22] rounded-xl border border-[#EBEBEB] dark:border-white/5 flex ${type === 'TRANSFER' ? 'flex-col divide-y' : 'divide-x'} divide-[#EBEBEB] dark:divide-white/5 overflow-hidden shadow-inner`}>
+
               
               {/* Amount Input (Left) */}
-              <div className={`flex items-center gap-1.5 p-2 ${type === 'TRANSFER' ? 'w-full' : 'w-[45%]'} focus-within:bg-white/[0.02] transition-colors shrink-0`}>
-                <span className="text-base font-bold text-[#A0A0A5]">₹</span>
+              <div className={`flex items-center gap-1.5 p-2 ${type === 'TRANSFER' ? 'w-full' : 'w-[45%]'} focus-within:bg-neutral-50 dark:focus-within:bg-white/[0.02] transition-colors shrink-0`}>
+                <span className="text-base font-bold text-[#717171] dark:text-[#A0A0A5]">₹</span>
+
                 <input 
                   type="number"
                   inputMode="decimal"
@@ -480,12 +499,14 @@ export default function Dashboard() {
                   onChange={e => setAmount(e.target.value)}
                   placeholder="0.00"
                   step="0.01"
-                  className="bg-transparent text-[20px] font-bold text-white outline-none w-full placeholder:text-[#2C2C34] min-w-0"
+                  className="bg-transparent text-[20px] font-black text-[#111111] dark:text-white outline-none w-full placeholder:text-[#D1D1D1] dark:placeholder:text-[#2C2C34] min-w-0"
+
                 />
               </div>
 
               {/* Account Selection (Right) */}
-              <div className={`p-1 flex-1 flex items-center overflow-x-auto no-scrollbar bg-black/10`}>
+              <div className={`p-1 flex-1 flex items-center overflow-x-auto no-scrollbar bg-neutral-100/50 dark:bg-black/10`}>
+
                 <div className="flex gap-1.5 items-center">
                   {accounts.map(acc => (
                     <button 
@@ -497,12 +518,17 @@ export default function Dashboard() {
                           else setToAccountId(acc.id!);
                         } else {
                           setSelectedAccountId(acc.id!);
+                          // Auto-select payment method based on account type
+                          if ((acc as any).type === 'CASH') setPaymentMethod('Cash');
+                          else if ((acc as any).type === 'CREDIT_CARD') setPaymentMethod('Credit Card');
+                          else if (paymentMethod === 'Cash' || paymentMethod === 'Credit Card') setPaymentMethod('Bank');
                         }
                       }}
                       className={`shrink-0 flex flex-col items-center justify-center gap-0.5 p-1 rounded-lg border transition-all group relative ${
                         selectedAccountId === acc.id || toAccountId === acc.id
-                          ? 'bg-[#3B3B98]/20 border-[#3B3B98] text-white shadow-sm' 
-                          : 'bg-[#1C1C22] border-white/5 text-[#A0A0A5] hover:bg-[#2C2C34]'
+                          ? 'bg-[#3B3B98]/10 dark:bg-[#3B3B98]/20 border-[#3B3B98] text-[#3B3B98] dark:text-white shadow-sm' 
+                          : 'bg-white dark:bg-[#1C1C22] border-[#EBEBEB] dark:border-white/5 text-[#717171] dark:text-[#A0A0A5] hover:bg-neutral-50 dark:hover:bg-[#2C2C34]'
+
                       }`}
                       style={{ minWidth: '52px' }}
                     >
@@ -514,7 +540,7 @@ export default function Dashboard() {
                       )}
                       
                       <div className="w-5 h-5 rounded-lg bg-white flex items-center justify-center p-1 shadow-sm">
-                        <BankLogo bankName={acc.bankName} className="w-full h-full" />
+                        <BankLogo bankName={acc.bankName} type={(acc as any).type} className="w-full h-full" />
                       </div>
                       <span className="text-[7.5px] font-bold whitespace-nowrap overflow-hidden text-ellipsis w-full text-center tracking-wide">
                         {acc.bankName.substring(0, 10)}
@@ -526,34 +552,37 @@ export default function Dashboard() {
             </div>
 
             {/* 4. Identity, Remarks & Payment Group */}
-            <div className="bg-[#1C1C22] rounded-xl border border-white/5 divide-y divide-white/5">
+            <div className="bg-white dark:bg-[#1C1C22] rounded-xl border border-[#EBEBEB] dark:border-white/5 divide-y divide-[#EBEBEB] dark:divide-white/5">
+
               {/* Paid via / Received from (Hide for Transfer) */}
               {type !== 'TRANSFER' && (
                 <div className="flex items-center gap-2.5 p-2">
-                  <div className="w-7 h-7 rounded-lg bg-black/40 flex items-center justify-center shrink-0 border border-white/5">
-                    <User className="w-3.5 h-3.5 text-[#A0A0A5]" />
+                  <div className="w-7 h-7 rounded-lg bg-neutral-100 dark:bg-black/40 flex items-center justify-center shrink-0 border border-[#EBEBEB] dark:border-white/5">
+                    <User className="w-3.5 h-3.5 text-[#717171] dark:text-[#A0A0A5]" />
+
                   </div>
                   <input 
                     type="text"
                     value={partyName}
                     onChange={e => setPartyName(e.target.value)}
                     placeholder={type === 'DEBIT' ? 'Paid to...' : 'Received from...'}
-                    className="bg-transparent flex-1 text-[14px] font-medium text-white outline-none placeholder:text-[#4A4A52]"
+                    className="bg-transparent flex-1 text-[14px] font-black text-[#111111] dark:text-white outline-none placeholder:text-[#A0A0A0] dark:placeholder:text-[#4A4A52]"
                   />
                 </div>
               )}
 
               {/* Remarks */}
               <div className="flex items-center gap-2.5 p-2">
-                <div className="w-7 h-7 rounded-lg bg-black/40 flex items-center justify-center shrink-0 border border-white/5">
-                  <AlignLeft className="w-3.5 h-3.5 text-[#A0A0A5]" />
+                <div className="w-7 h-7 rounded-lg bg-neutral-100 dark:bg-black/40 flex items-center justify-center shrink-0 border border-[#EBEBEB] dark:border-white/5">
+                  <AlignLeft className="w-3.5 h-3.5 text-[#717171] dark:text-[#A0A0A5]" />
+
                 </div>
                 <input 
                   type="text"
                   value={note}
                   onChange={e => setNote(e.target.value)}
                   placeholder="Add remarks..."
-                  className="bg-transparent flex-1 text-[13px] text-white/90 outline-none placeholder:text-[#4A4A52]"
+                  className="bg-transparent flex-1 text-[13px] font-bold text-[#111111] dark:text-white/90 outline-none placeholder:text-[#A0A0A0] dark:placeholder:text-[#4A4A52]"
                 />
               </div>
 
@@ -561,7 +590,8 @@ export default function Dashboard() {
               <div className="p-2 space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-[9px] font-bold text-[#A0A0A5] uppercase tracking-wider">Payment Method</p>
-                  {paymentMethod && <span className="text-[9px] font-bold text-[#6C6CF0]">{paymentMethod}</span>}
+                  {paymentMethod && <span className="text-[9px] font-bold text-[#3B3B98] dark:text-[#6C6CF0]">{paymentMethod}</span>}
+
                 </div>
                 <div className="grid grid-cols-4 gap-1.5">
                   {[
@@ -576,7 +606,8 @@ export default function Dashboard() {
                       className={`py-1.5 rounded-lg text-[10px] font-bold transition-all flex flex-col items-center gap-1 border ${
                         paymentMethod === method.id 
                           ? 'bg-[#3B3B98] border-[#3B3B98] text-white shadow-lg scale-95' 
-                          : 'bg-black/20 border-white/5 text-[#A0A0A5] active:scale-95'
+                          : 'bg-[#F7F7F7] dark:bg-black/20 border-[#EBEBEB] dark:border-white/5 text-[#717171] dark:text-[#A0A0A5] active:scale-95'
+
                       }`}
                     >
                       {method.icon}
@@ -593,8 +624,9 @@ export default function Dashboard() {
                         onClick={() => setUpiApp(app)}
                         className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${
                           upiApp === app 
-                            ? 'bg-[#6C6CF0]/20 border-[#6C6CF0]/40 text-[#8C8CFF]' 
-                            : 'bg-black/20 border-white/5 text-[#717171]'
+                            ? 'bg-[#3B3B98]/10 dark:bg-[#6C6CF0]/20 border-[#3B3B98]/30 dark:border-[#6C6CF0]/40 text-[#3B3B98] dark:text-[#8C8CFF]' 
+                            : 'bg-[#F7F7F7] dark:bg-black/20 border-[#EBEBEB] dark:border-white/5 text-[#717171] dark:text-[#717171]'
+
                         }`}
                       >
                         {app}
@@ -617,8 +649,9 @@ export default function Dashboard() {
                       onClick={() => setCategory(cat)}
                       className={`px-3.5 py-2 rounded-xl text-[13px] font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
                         category === cat 
-                          ? 'bg-white text-black' 
-                          : 'bg-[#1C1C22] text-[#A0A0A5] border border-white/5'
+                          ? 'bg-[#222222] text-white dark:bg-white dark:text-black' 
+                          : 'bg-white dark:bg-[#1C1C22] text-[#717171] dark:text-[#A0A0A5] border border-[#EBEBEB] dark:border-white/5'
+
                       }`}
                     >
                       <span className="text-[15px]">{CATEGORY_ICONS[cat] || '📝'}</span>
@@ -633,7 +666,8 @@ export default function Dashboard() {
               {/* Compact Actions inside the form */}
               <div className="pt-2 space-y-2">
                 {status === 'success' && (
-                  <div className="flex items-center justify-center gap-2 py-1 text-emerald-500 font-bold text-xs animate-in fade-in slide-in-from-bottom-1">
+                  <div className="flex items-center justify-center gap-2 py-1 text-emerald-600 dark:text-emerald-500 font-bold text-xs animate-in fade-in slide-in-from-bottom-1">
+
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     Transaction saved successfully
                   </div>
@@ -648,7 +682,8 @@ export default function Dashboard() {
                 <div className="flex gap-2">
                   <button 
                     onClick={closeMenu}
-                    className="flex-1 py-2.5 rounded-xl font-bold text-[13px] text-[#A0A0A5] bg-[#1C1C22] border border-white/5 hover:bg-[#2C2C34] transition-colors"
+                    className="flex-1 py-2.5 rounded-xl font-bold text-[13px] text-[#717171] dark:text-[#A0A0A5] bg-white dark:bg-[#1C1C22] border border-[#EBEBEB] dark:border-white/5 hover:bg-neutral-50 dark:hover:bg-[#2C2C34] transition-colors"
+
                   >
                     Cancel
                   </button>
@@ -658,7 +693,8 @@ export default function Dashboard() {
                     className={`flex-[2] py-2.5 rounded-xl font-extrabold text-[13px] transition-all transform active:scale-[0.98] ${
                       (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
                       ? 'bg-[#2C2C34] text-[#5A5A62] cursor-not-allowed opacity-50'
-                      : 'bg-[#3B3B98] text-white shadow-lg hover:bg-[#4545B0]'
+                      : 'bg-[#3B3B98] text-white shadow-lg shadow-indigo-500/10 dark:shadow-none hover:bg-[#4545B0]'
+
                     }`}
                   >
                     {status === 'success' ? 'Saved!' : 'Save Transaction'}

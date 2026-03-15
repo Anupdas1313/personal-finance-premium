@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
-import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark } from 'lucide-react';
 import { BankLogo } from '../components/BankLogo';
 import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
 
@@ -12,6 +12,7 @@ export default function Accounts() {
   const [bankName, setBankName] = useState('');
   const [accountLast4, setAccountLast4] = useState('');
   const [startingBalance, setStartingBalance] = useState('');
+  const [accountType, setAccountType] = useState<'BANK' | 'CASH' | 'CREDIT_CARD'>('BANK');
   
   const allTransactions = useLiveQuery(() => db.transactions.toArray()) || [];
 
@@ -31,13 +32,15 @@ export default function Accounts() {
       await db.accounts.update(editingAccountId, {
         bankName,
         accountLast4,
-        startingBalance: parseFloat(startingBalance)
+        startingBalance: parseFloat(startingBalance),
+        type: accountType
       });
     } else {
       await db.accounts.add({
         bankName,
         accountLast4,
-        startingBalance: parseFloat(startingBalance)
+        startingBalance: parseFloat(startingBalance),
+        type: accountType
       });
     }
 
@@ -48,6 +51,7 @@ export default function Accounts() {
     setBankName('');
     setAccountLast4('');
     setStartingBalance('');
+    setAccountType('BANK');
     setIsAdding(false);
     setEditingAccountId(null);
   };
@@ -56,6 +60,7 @@ export default function Accounts() {
     setBankName(account.bankName);
     setAccountLast4(account.accountLast4);
     setStartingBalance(account.startingBalance.toString());
+    setAccountType(account.type || 'BANK');
     setEditingAccountId(account.id);
     setIsAdding(true);
   };
@@ -96,11 +101,35 @@ export default function Accounts() {
             {editingAccountId ? 'Edit Account' : 'New Account'}
           </h2>
           <form onSubmit={handleAddAccount} className="space-y-5">
+            <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-1 rounded-xl mb-4">
+              {(['BANK', 'CASH', 'CREDIT_CARD'] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => {
+                    setAccountType(t);
+                    if (t === 'CASH' && !bankName) setBankName('Cash Wallet');
+                    if (t === 'CASH' && !accountLast4) setAccountLast4('CASH');
+                  }}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                    accountType === t
+                      ? 'bg-white dark:bg-[#222222] text-[#222222] dark:text-[#F7F7F7] shadow-sm'
+                      : 'text-[#717171] hover:text-[#222222] dark:hover:text-[#F7F7F7]'
+                  }`}
+                >
+                  {t === 'BANK' && <Landmark className="w-4 h-4" />}
+                  {t === 'CASH' && <Wallet className="w-4 h-4" />}
+                  {t === 'CREDIT_CARD' && <CreditCard className="w-4 h-4" />}
+                  {t.charAt(0) + t.slice(1).toLowerCase().replace('_', ' ')}
+                </button>
+              ))}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="md:col-span-3">
                 <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5 flex justify-between items-center">
-                  <span>Bank Name</span>
-                  {getBankByPattern(bankName) && (
+                  <span>{accountType === 'BANK' ? 'Bank Name' : accountType === 'CASH' ? 'Wallet Name' : 'Card Name'}</span>
+                  {accountType === 'BANK' && getBankByPattern(bankName) && (
                     <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">Logo Detected</span>
                   )}
                 </label>
@@ -108,45 +137,48 @@ export default function Accounts() {
                   type="text"
                   value={bankName}
                   onChange={(e) => setBankName(e.target.value)}
-                  placeholder="e.g., State Bank of India or just 'SBI'"
+                  placeholder={accountType === 'BANK' ? "e.g., State Bank of India or just 'SBI'" : accountType === 'CASH' ? "e.g., Cash Wallet" : "e.g., Amazon Pay ICICI Card"}
                   className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] focus:border-[#222222] dark:focus:border-[#F7F7F7] outline-none transition-shadow mb-3"
                   required
                 />
                 
-                {/* Auto-detect / Express select row */}
-                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-2 px-2">
-                  {INDIAN_BANKS.map(bank => {
-                    const isSelected = getBankByPattern(bankName)?.id === bank.id;
-                    const Icon = bank.logo;
-                    return (
-                      <button
-                        key={bank.id}
-                        type="button"
-                        onClick={() => setBankName(bank.name)}
-                        className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all ${
-                          isSelected
-                            ? 'bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] border-transparent shadow-sm'
-                            : 'bg-white dark:bg-[#111111] text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] border-[#EBEBEB] dark:border-[#222222]'
-                        }`}
-                      >
-                        <div className="w-5 h-5 bg-white rounded flex items-center justify-center p-0.5 shadow-sm shrink-0">
-                          <Icon className="w-full h-full object-contain" />
-                        </div>
-                        <span className="text-[11px] font-bold">{bank.id}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                {/* Auto-detect / Express select row - only for Bank/CC */}
+                {accountType !== 'CASH' && (
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-2 px-2">
+                    {INDIAN_BANKS.map(bank => {
+                      const isSelected = getBankByPattern(bankName)?.id === bank.id;
+                      const Icon = bank.logo;
+                      return (
+                        <button
+                          key={bank.id}
+                          type="button"
+                          onClick={() => setBankName(bank.name)}
+                          className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all ${
+                            isSelected
+                              ? 'bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] border-transparent shadow-sm'
+                              : 'bg-white dark:bg-[#111111] text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] border-[#EBEBEB] dark:border-[#222222]'
+                          }`}
+                        >
+                          <div className="w-5 h-5 bg-white rounded flex items-center justify-center p-0.5 shadow-sm shrink-0">
+                            <Icon className="w-full h-full object-contain" />
+                          </div>
+                          <span className="text-[11px] font-bold">{bank.id}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
               <div>
-                <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Account Last 4 Digits</label>
+                <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">
+                  {accountType === 'CASH' ? 'Reference' : 'Account Last 4 Digits'}
+                </label>
                 <input
                   type="text"
                   value={accountLast4}
                   onChange={(e) => setAccountLast4(e.target.value)}
-                  placeholder="e.g., 1234"
-                  maxLength={4}
-                  pattern="\d{3,4}"
+                  placeholder={accountType === 'CASH' ? "e.g., WALLET" : "e.g., 1234"}
+                  maxLength={accountType === 'CASH' ? 20 : 4}
                   className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] focus:border-[#222222] dark:focus:border-[#F7F7F7] outline-none transition-shadow"
                   required
                 />
@@ -189,8 +221,18 @@ export default function Accounts() {
             <div>
               <div className="flex justify-between items-start mb-5">
                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center p-2 shadow-sm border border-[#EBEBEB] shrink-0">
-                  <BankLogo bankName={account.bankName} className="w-full h-full object-contain" />
+                  <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
                 </div>
+                {account.type && (
+                  <div className={`ml-3 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                    account.type === 'CASH' ? 'bg-emerald-100 text-emerald-700' : 
+                    account.type === 'CREDIT_CARD' ? 'bg-rose-100 text-rose-700' : 
+                    'bg-blue-100 text-blue-700'
+                  }`}>
+                    {account.type.replace('_', ' ')}
+                  </div>
+                )}
+                <div className="flex-1" />
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => handleEdit(account)}
@@ -208,8 +250,10 @@ export default function Accounts() {
                   </button>
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-[#222222] dark:text-[#F7F7F7]">{account.bankName}</h3>
-              <p className="text-[#717171] dark:text-[#A0A0A0] font-medium mt-1">**** {account.accountLast4}</p>
+              <h3 className="text-xl font-bold text-[#222222] dark:text-[#F7F7F7] truncate">{account.bankName}</h3>
+              <p className="text-[#717171] dark:text-[#A0A0A0] font-medium mt-1">
+                {account.type === 'CASH' ? account.accountLast4 : `**** ${account.accountLast4}`}
+              </p>
             </div>
             <div className="mt-4 pt-4 border-t border-[#EBEBEB] dark:border-[#222222] space-y-3">
               <div className="flex justify-between items-center">

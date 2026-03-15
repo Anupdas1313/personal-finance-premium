@@ -200,26 +200,30 @@ export default function Accounting() {
     <div className="space-y-6 max-w-5xl mx-auto pb-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[#222222] dark:text-[#F7F7F7]">Financial Overview</h1>
-        <p className="text-[#717171] dark:text-[#A0A0A0] mt-1">Bird's eye view of your complete financial health</p>
+        <h1 className="text-2xl font-black text-[#111111] dark:text-[#F7F7F7]">Financial Overview</h1>
+        <p className="text-[#525252] dark:text-[#A0A0A0] mt-1 font-bold">Bird's eye view of your complete financial health</p>
       </div>
 
+
       {/* Tab Switcher */}
-      <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-1.5 rounded-2xl">
-        <button onClick={() => setActiveTab('overview')} className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'overview' ? 'bg-white dark:bg-[#333333] shadow-sm text-[#222222] dark:text-[#F7F7F7]' : 'text-[#717171] dark:text-[#A0A0A0]'}`}>
+      <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-1.5 rounded-2xl shadow-inner-sm">
+        <button onClick={() => setActiveTab('overview')} className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm transition-all ${activeTab === 'overview' ? 'bg-white dark:bg-[#333333] shadow-[0_4px_12px_rgba(0,0,0,0.1)] text-[#111111] dark:text-[#F7F7F7]' : 'text-[#525252] dark:text-[#A0A0A0]'}`}>
           <BarChart3 className="w-4 h-4" /> Overview
         </button>
-        <button onClick={() => setActiveTab('periods')} className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'periods' ? 'bg-white dark:bg-[#333333] shadow-sm text-[#222222] dark:text-[#F7F7F7]' : 'text-[#717171] dark:text-[#A0A0A0]'}`}>
+        <button onClick={() => setActiveTab('periods')} className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm transition-all ${activeTab === 'periods' ? 'bg-white dark:bg-[#333333] shadow-[0_4px_12px_rgba(0,0,0,0.1)] text-[#111111] dark:text-[#F7F7F7]' : 'text-[#525252] dark:text-[#A0A0A0]'}`}>
           <Calendar className="w-4 h-4" /> Period Close
         </button>
       </div>
+
 
       {activeTab === 'overview' ? (
         <>
           {/* ═══════════════════════════════════════════  OVERVIEW TAB  ═══════════════════════════════════════════ */}
 
           {/* Net Worth Hero Card */}
-          <div className="bg-gradient-to-br from-[#222222] to-[#444444] dark:from-[#1A1A1A] dark:to-[#111111] rounded-3xl p-6 text-white border border-[#333333] dark:border-[#222222] shadow-lg">
+          <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#3B3B98] to-[#4A4ABF] dark:from-[#1C1C24] dark:via-[#1E1A22] dark:to-[#1C1F26] p-6 shadow-xl border border-white/5">
+
+
             <div className="flex items-center gap-2 mb-1">
               <Wallet className="w-4 h-4 text-white/60" />
               <span className="text-sm font-bold text-white/60 uppercase tracking-wider">Current Net Worth</span>
@@ -245,44 +249,48 @@ export default function Accounting() {
 
           {/* This Month KPIs */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-white dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-[#222222] p-4 shadow-sm">
+            <div className="bg-white dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-[#222222] p-4 shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
               <div className="flex items-center gap-1.5 mb-2">
-                <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />
-                <span className="text-[11px] font-bold text-[#717171] dark:text-[#A0A0A0] uppercase tracking-wider">Income</span>
+                <ArrowUpRight className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="text-[11px] font-black text-[#525252] dark:text-[#A0A0A0] uppercase tracking-wider">Income</span>
               </div>
               <p className="text-xl font-black text-emerald-600">₹{thisMonthIncome.toLocaleString('en-IN')}</p>
+
               {incomeChangePercent !== 0 && (
                 <p className={`text-[10px] font-bold mt-1 ${incomeChangePercent > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                   {incomeChangePercent > 0 ? '↑' : '↓'} {Math.abs(incomeChangePercent).toFixed(0)}% vs last month
                 </p>
               )}
             </div>
-            <div className="bg-white dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-[#222222] p-4 shadow-sm">
+            <div className="bg-white dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-[#222222] p-4 shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
               <div className="flex items-center gap-1.5 mb-2">
-                <ArrowDownLeft className="w-3.5 h-3.5 text-rose-500" />
-                <span className="text-[11px] font-bold text-[#717171] dark:text-[#A0A0A0] uppercase tracking-wider">Expenses</span>
+                <ArrowDownLeft className="w-3.5 h-3.5 text-rose-600" />
+                <span className="text-[11px] font-black text-[#525252] dark:text-[#A0A0A0] uppercase tracking-wider">Expenses</span>
               </div>
               <p className="text-xl font-black text-rose-600">₹{thisMonthExpense.toLocaleString('en-IN')}</p>
+
               {expenseChangePercent !== 0 && (
                 <p className={`text-[10px] font-bold mt-1 ${expenseChangePercent < 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                   {expenseChangePercent > 0 ? '↑' : '↓'} {Math.abs(expenseChangePercent).toFixed(0)}% vs last month
                 </p>
               )}
             </div>
-            <div className="bg-white dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-[#222222] p-4 shadow-sm">
+            <div className="bg-white dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-[#222222] p-4 shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
               <div className="flex items-center gap-1.5 mb-2">
-                <Activity className="w-3.5 h-3.5 text-[#717171] dark:text-[#A0A0A0]" />
-                <span className="text-[11px] font-bold text-[#717171] dark:text-[#A0A0A0] uppercase tracking-wider">Savings</span>
+                <Activity className="w-3.5 h-3.5 text-[#525252] dark:text-[#A0A0A0]" />
+                <span className="text-[11px] font-black text-[#525252] dark:text-[#A0A0A0] uppercase tracking-wider">Savings</span>
               </div>
+
               <p className={`text-xl font-black ${thisMonthSavings >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {thisMonthSavings >= 0 ? '+' : '-'}₹{Math.abs(thisMonthSavings).toLocaleString('en-IN')}
               </p>
             </div>
-            <div className="bg-white dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-[#222222] p-4 shadow-sm">
+            <div className="bg-white dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-[#222222] p-4 shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
               <div className="flex items-center gap-1.5 mb-2">
-                <PieChartIcon className="w-3.5 h-3.5 text-[#717171] dark:text-[#A0A0A0]" />
-                <span className="text-[11px] font-bold text-[#717171] dark:text-[#A0A0A0] uppercase tracking-wider">Savings Rate</span>
+                <PieChartIcon className="w-3.5 h-3.5 text-[#525252] dark:text-[#A0A0A0]" />
+                <span className="text-[11px] font-black text-[#525252] dark:text-[#A0A0A0] uppercase tracking-wider">Savings Rate</span>
               </div>
+
               <p className={`text-xl font-black ${savingsRate >= 20 ? 'text-emerald-600' : savingsRate >= 0 ? 'text-amber-500' : 'text-rose-600'}`}>
                 {savingsRate.toFixed(0)}%
               </p>
@@ -293,12 +301,13 @@ export default function Accounting() {
           </div>
 
           {/* 6-Month Trend (Pure CSS bars) */}
-          <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-sm p-6">
-            <h2 className="text-lg font-bold text-[#222222] dark:text-[#F7F7F7] mb-1 flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-[#717171] dark:text-[#A0A0A0]" />
+          <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_30px_rgba(0,0,0,0.12)] p-6">
+            <h2 className="text-lg font-black text-[#111111] dark:text-[#F7F7F7] mb-1 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-[#525252] dark:text-[#A0A0A0]" />
               6-Month Trend
             </h2>
-            <p className="text-xs font-medium text-[#B0B0B0] dark:text-[#666666] mb-5">Income vs Expenses over the last 6 months</p>
+            <p className="text-xs font-bold text-[#B0B0B0] dark:text-[#666666] mb-5">Income vs Expenses over the last 6 months</p>
+
             
             <div className="flex items-end gap-2 sm:gap-4 h-48">
               {monthlyTrend.map(m => {
@@ -322,12 +331,13 @@ export default function Accounting() {
           </div>
 
           {/* Account-wise Balances */}
-          <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-sm p-6">
-            <h2 className="text-lg font-bold text-[#222222] dark:text-[#F7F7F7] mb-1 flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-[#717171] dark:text-[#A0A0A0]" />
+          <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_30px_rgba(0,0,0,0.12)] p-6">
+            <h2 className="text-lg font-black text-[#111111] dark:text-[#F7F7F7] mb-1 flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-[#525252] dark:text-[#A0A0A0]" />
               Account Balances
             </h2>
-            <p className="text-xs font-medium text-[#B0B0B0] dark:text-[#666666] mb-4">Current balance across all your accounts</p>
+            <p className="text-xs font-bold text-[#B0B0B0] dark:text-[#666666] mb-4">Current balance across all your accounts</p>
+
 
             {accounts.length === 0 ? (
               <p className="text-center text-[#717171] dark:text-[#A0A0A0] py-6 font-medium">No accounts yet.</p>
@@ -342,13 +352,14 @@ export default function Accounting() {
                           {getBankLogo(acc)}
                         </div>
                         <div>
-                          <p className="font-bold text-[#222222] dark:text-[#F7F7F7] text-sm">{acc.bankName}</p>
-                          {acc.accountLast4 && <p className="text-xs text-[#B0B0B0] dark:text-[#666666]">••••{acc.accountLast4}</p>}
+                          <p className="font-black text-[#111111] dark:text-[#F7F7F7] text-sm">{acc.bankName}</p>
+                          {acc.accountLast4 && <p className="text-xs text-[#525252] dark:text-[#666666] font-bold">••••{acc.accountLast4}</p>}
                         </div>
                       </div>
-                      <p className={`font-black text-lg ${bal >= 0 ? 'text-[#222222] dark:text-[#F7F7F7]' : 'text-rose-600'}`}>
+                      <p className={`font-black text-lg ${bal >= 0 ? 'text-[#111111] dark:text-[#F7F7F7]' : 'text-rose-600'}`}>
                         ₹{bal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </p>
+
                     </div>
                   );
                 })}
@@ -359,12 +370,13 @@ export default function Accounting() {
           {/* Two-column: Category Breakdown + Top Merchants */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Category Breakdown */}
-            <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-sm p-6">
-              <h2 className="text-lg font-bold text-[#222222] dark:text-[#F7F7F7] mb-1 flex items-center gap-2">
-                <Layers className="w-5 h-5 text-[#717171] dark:text-[#A0A0A0]" />
+            <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_30px_rgba(0,0,0,0.12)] p-6">
+              <h2 className="text-lg font-black text-[#111111] dark:text-[#F7F7F7] mb-1 flex items-center gap-2">
+                <Layers className="w-5 h-5 text-[#525252] dark:text-[#A0A0A0]" />
                 Spending by Category
               </h2>
-              <p className="text-xs font-medium text-[#B0B0B0] dark:text-[#666666] mb-4">{format(now, 'MMMM yyyy')}</p>
+              <p className="text-xs font-bold text-[#B0B0B0] dark:text-[#666666] mb-4">{format(now, 'MMMM yyyy')}</p>
+
               {categoryBreakdown.length === 0 ? (
                 <p className="text-center text-[#717171] dark:text-[#A0A0A0] py-6 font-medium">No expenses this month.</p>
               ) : (
@@ -384,12 +396,13 @@ export default function Accounting() {
             </div>
 
             {/* Top Merchants */}
-            <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-sm p-6">
-              <h2 className="text-lg font-bold text-[#222222] dark:text-[#F7F7F7] mb-1 flex items-center gap-2">
-                <Eye className="w-5 h-5 text-[#717171] dark:text-[#A0A0A0]" />
+            <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_30px_rgba(0,0,0,0.12)] p-6">
+              <h2 className="text-lg font-black text-[#111111] dark:text-[#F7F7F7] mb-1 flex items-center gap-2">
+                <Eye className="w-5 h-5 text-[#525252] dark:text-[#A0A0A0]" />
                 Top Merchants
               </h2>
-              <p className="text-xs font-medium text-[#B0B0B0] dark:text-[#666666] mb-4">Who you spent the most with this month</p>
+              <p className="text-xs font-bold text-[#B0B0B0] dark:text-[#666666] mb-4">Who you spent the most with this month</p>
+
               {topParties.length === 0 ? (
                 <p className="text-center text-[#717171] dark:text-[#A0A0A0] py-6 font-medium">No merchant data yet.</p>
               ) : (

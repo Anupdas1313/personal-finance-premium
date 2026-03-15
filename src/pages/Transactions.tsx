@@ -19,16 +19,17 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  'Food': 'bg-orange-100 dark:bg-orange-500/20 text-orange-600',
-  'Transport': 'bg-blue-100 dark:bg-blue-500/20 text-blue-600',
-  'Rent': 'bg-purple-100 dark:bg-purple-500/20 text-purple-600',
-  'Shopping': 'bg-pink-100 dark:bg-pink-500/20 text-pink-600',
-  'Bills': 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-600',
-  'Entertainment': 'bg-red-100 dark:bg-red-500/20 text-red-600',
-  'Salary': 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600',
-  'Transfer': 'bg-neutral-100 dark:bg-[#1A1A1A] text-[#717171] dark:text-[#A0A0A0]',
-  'Other': 'bg-neutral-100 dark:bg-[#1A1A1A] text-[#717171] dark:text-[#A0A0A0]'
+  'Food': 'bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-500',
+  'Transport': 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-500',
+  'Rent': 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-500',
+  'Shopping': 'bg-pink-100 dark:bg-pink-900/40 text-pink-600 dark:text-pink-500',
+  'Bills': 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-600 dark:text-yellow-500',
+  'Entertainment': 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-500',
+  'Salary': 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-500',
+  'Transfer': 'bg-neutral-100 dark:bg-[#1A1A1A] text-neutral-600 dark:text-[#A0A0A0]',
+  'Other': 'bg-neutral-100 dark:bg-[#1A1A1A] text-neutral-600 dark:text-[#A0A0A0]'
 };
+
 
 type SortMode = 'date' | 'amount_high' | 'amount_low' | 'category';
 
@@ -230,19 +231,22 @@ export default function Transactions() {
 
   return (
     <div className="relative min-h-[calc(100vh-8rem)] pb-20 max-w-2xl mx-auto px-4">
-      <header className="sticky top-0 bg-[#060608] z-30 pt-4 pb-2">
+      <header className="sticky top-0 bg-[#F7F7F7] dark:bg-[#060608] z-30 pt-4 pb-2">
+
         <div className="flex items-center justify-between mb-6">
           {!isSearchOpen ? (
             <>
-              <h1 className="text-3xl font-bold text-white tracking-tight">Analysis</h1>
+              <h1 className="text-3xl font-bold text-[#222222] dark:text-white tracking-tight">Analysis</h1>
+
               <div className="flex items-center gap-1.5">
                 <button 
                   onClick={() => setIsFiltersOpen(!isFiltersOpen)}
                   className={`p-2.5 border rounded-full transition-all shadow-sm ${
                     isFiltersOpen 
-                      ? "bg-white border-white text-[#111111]" 
-                      : "bg-[#111111] border-[#222222] text-[#A0A0A0] hover:text-white"
+                      ? "bg-[#222222] border-[#222222] text-white dark:bg-white dark:border-white dark:text-[#111111]" 
+                      : "bg-white border-[#EBEBEB] text-[#717171] hover:text-[#222222] dark:bg-[#111111] dark:border-[#222222] dark:text-[#A0A0A0] dark:hover:text-white"
                   }`}
+
                   title="Filters"
                 >
                   <Filter className="w-5 h-5" />
@@ -251,8 +255,9 @@ export default function Transactions() {
                   onClick={() => setIsCalendarOpen(true)}
                   className={`p-2.5 border rounded-full transition-all shadow-sm ${
                     isCalendarOpen 
-                      ? "bg-white border-white text-[#111111]" 
-                      : "bg-[#111111] border-[#222222] text-[#A0A0A0] hover:text-white"
+                      ? "bg-[#222222] border-[#222222] text-white dark:bg-white dark:border-white dark:text-[#111111]" 
+                      : "bg-white border-[#EBEBEB] text-[#717171] hover:text-[#222222] dark:bg-[#111111] dark:border-[#222222] dark:text-[#A0A0A0] dark:hover:text-white"
+
                   }`}
                   title="Calendar View"
                 >
@@ -270,7 +275,8 @@ export default function Transactions() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search and analyze..."
-                  className="w-full pl-10 pr-10 py-2.5 bg-[#111111] border border-[#222222] text-white rounded-2xl focus:outline-none focus:ring-1 focus:ring-[#333333] font-medium"
+                  className="w-full pl-10 pr-10 py-2.5 bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-[#222222] text-[#222222] dark:text-white rounded-2xl focus:outline-none focus:ring-1 focus:ring-[#EBEBEB] dark:focus:ring-[#333333] font-medium"
+
                 />
                 {searchTerm && (
                   <button 
@@ -292,12 +298,14 @@ export default function Transactions() {
         </div>
 
         {/* Month Navigation Card - Full Width */}
-        <div className="bg-[#111111] p-1.5 rounded-2xl border border-[#222222] flex items-center justify-between shadow-sm mb-4">
+        <div className="bg-white dark:bg-[#111111] p-1.5 rounded-2xl border border-[#EBEBEB] dark:border-[#222222] flex items-center justify-between shadow-sm mb-4">
+
           <button onClick={handlePrevMonth} className="p-2 text-[#A0A0A0] hover:text-white transition-colors">
             <ChevronLeft className="w-4 h-4" />
           </button>
           <div className="text-center">
-            <h2 className="text-sm font-bold text-[#F7F7F7] leading-tight">{getHeaderText()}</h2>
+            <h2 className="text-sm font-bold text-[#222222] dark:text-[#F7F7F7] leading-tight">{getHeaderText()}</h2>
+
             <p className="text-[9px] font-black text-[#666666] tracking-[0.05em] uppercase">
               {filteredTransactions.length} TXS
             </p>
@@ -308,14 +316,16 @@ export default function Transactions() {
         </div>
 
         {/* Date Presets Selector */}
-        <div className="bg-[#0C0C0F] p-1 rounded-2xl flex items-center mb-4">
+        <div className="bg-neutral-100 dark:bg-[#0C0C0F] p-1 rounded-2xl flex items-center mb-4">
+
           {(['WEEK', 'MONTH', 'YEAR', 'CUSTOM'] as const).map((p) => (
             <button
               key={p}
               onClick={() => handleDatePresetChange(p)}
               className={`flex-1 py-2 text-sm font-bold rounded-xl transition-all ${
-                datePreset === p ? 'bg-[#222222] text-white shadow-sm' : 'text-[#717171] hover:text-[#A0A0A0]'
+                datePreset === p ? 'bg-white dark:bg-[#222222] text-[#222222] dark:text-white shadow-sm' : 'text-[#717171] hover:text-[#222222] dark:hover:text-[#A0A0A0]'
               }`}
+
             >
               {p.charAt(0) + p.slice(1).toLowerCase()}
             </button>
@@ -325,20 +335,23 @@ export default function Transactions() {
         {/* Report Button - Full Width */}
         <Link 
           to={`/transactions/table?start=${filterStart.toISOString()}&end=${filterEnd.toISOString()}`}
-          className="w-full py-3 flex items-center justify-center gap-2 bg-[#F7F7F7] text-[#111111] hover:bg-white rounded-2xl font-bold transition-all shadow-sm text-sm active:scale-95 mb-6"
+          className="w-full py-3 flex items-center justify-center gap-2 bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] hover:bg-black dark:hover:bg-white rounded-2xl font-bold transition-all shadow-sm text-sm active:scale-95 mb-6"
+
         >
           <ListOrdered className="w-4 h-4" />
           View Detailed Table Report
         </Link>
 
         {isFiltersOpen && (
-          <div className="mt-4 bg-[#111111] rounded-[24px] border border-[#222222] shadow-xl p-5 space-y-5 animate-in slide-in-from-top-2 duration-300">
+          <div className="mt-4 bg-white dark:bg-[#111111] rounded-[24px] border border-[#EBEBEB] dark:border-[#222222] shadow-xl p-5 space-y-5 animate-in slide-in-from-top-2 duration-300">
+
             <div>
               <label className="block text-[10px] font-black text-[#666666] uppercase tracking-[0.1em] mb-3">Transaction Type</label>
               <div className="flex flex-wrap gap-2">
                 {[{ id: 'ALL', label: 'All' }, { id: 'CREDIT', label: 'Income' }, { id: 'DEBIT', label: 'Expense' }].map(type => (
                   <button key={type.id} onClick={() => setEntryTypeFilter(type.id as any)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${entryTypeFilter === type.id ? 'bg-white text-[#111111]' : 'bg-[#1A1A1A] text-[#717171] hover:text-[#A0A0A0]'}`}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${entryTypeFilter === type.id ? 'bg-[#222222] text-white dark:bg-white dark:text-[#111111]' : 'bg-neutral-100 dark:bg-[#1A1A1A] text-[#717171] dark:text-[#717171] hover:text-[#222222] dark:hover:text-[#A0A0A0]'}`}
+
                   >
                     {type.label}
                   </button>
@@ -350,7 +363,8 @@ export default function Transactions() {
               <div className="flex flex-wrap gap-2">
                 {SORT_OPTIONS.map(opt => (
                   <button key={opt.id} onClick={() => setSortMode(opt.id)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${sortMode === opt.id ? 'bg-white text-[#111111]' : 'bg-[#1A1A1A] text-[#717171] hover:text-[#A0A0A0]'}`}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${sortMode === opt.id ? 'bg-[#222222] text-white dark:bg-white dark:text-[#111111]' : 'bg-neutral-100 dark:bg-[#1A1A1A] text-[#717171] dark:text-[#717171] hover:text-[#222222] dark:hover:text-[#A0A0A0]'}`}
+
                   >
                     {opt.label}
                   </button>
@@ -362,7 +376,8 @@ export default function Transactions() {
               <div className="flex flex-wrap gap-2">
                 {['ALL', ...appCategories].map(type => (
                   <button key={type} onClick={() => setSortTypeFilter(type)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${sortTypeFilter === type ? 'bg-white text-[#111111]' : 'bg-[#1A1A1A] text-[#717171] hover:text-[#A0A0A0]'}`}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${sortTypeFilter === type ? 'bg-[#222222] text-white dark:bg-white dark:text-[#111111]' : 'bg-neutral-100 dark:bg-[#1A1A1A] text-[#717171] dark:text-[#717171] hover:text-[#222222] dark:hover:text-[#A0A0A0]'}`}
+
                   >
                     {type}
                   </button>
@@ -474,16 +489,18 @@ export default function Transactions() {
             return (
               <div key={date} className="mb-6">
                 <div className="flex items-center justify-between mb-3 px-2">
-                  <h3 className="text-xs font-bold text-[#717171] dark:text-[#A0A0A0] uppercase tracking-wider flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#222222] dark:bg-[#F7F7F7]"></div>
+                  <h3 className="text-xs font-black text-[#525252] dark:text-[#A0A0A0] uppercase tracking-wider flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#111111] dark:bg-[#F7F7F7]"></div>
                     {formatDateHeader(date)}
                   </h3>
-                  <div className="flex items-center gap-3 text-[11px] font-bold">
-                    {daily.spent > 0 && <span className="text-rose-500">-₹{daily.spent.toLocaleString('en-IN')}</span>}
-                    {daily.received > 0 && <span className="text-emerald-500">+₹{daily.received.toLocaleString('en-IN')}</span>}
+                  <div className="flex items-center gap-3 text-[11px] font-black">
+                    {daily.spent > 0 && <span className="text-rose-600">-₹{daily.spent.toLocaleString('en-IN')}</span>}
+                    {daily.received > 0 && <span className="text-emerald-700">+₹{daily.received.toLocaleString('en-IN')}</span>}
                   </div>
                 </div>
-                <div className="bg-white dark:bg-[#111111] rounded-[20px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_6px_16px_rgba(0,0,0,0.04)] overflow-hidden">
+
+                <div className="bg-white dark:bg-[#111111] rounded-[20px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_30px_rgba(0,0,0,0.12)] overflow-hidden">
+
                   <div className="divide-y divide-[#EBEBEB] dark:divide-[#222222]">
                     {txs.map(tx => (
                       <div key={tx.id} onClick={() => { setSelectedTx(tx); setIsEditing(false); }} className="flex items-center gap-3 p-3 hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] transition-colors cursor-pointer group">
@@ -492,21 +509,23 @@ export default function Transactions() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-bold text-[#222222] dark:text-[#F7F7F7] truncate">
+                            <h4 className="text-sm font-black text-[#111111] dark:text-[#F7F7F7] truncate">
                               <HighlightText text={tx.party || tx.category} highlight={searchTerm} />
                             </h4>
-                            {tx.expenseType && (<span className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-neutral-100 dark:bg-[#222222] text-[#717171] dark:text-[#A0A0A0] whitespace-nowrap">{tx.expenseType}</span>)}
+                            {tx.expenseType && (<span className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-black bg-neutral-200 dark:bg-[#222222] text-[#525252] dark:text-[#A0A0A0] whitespace-nowrap">{tx.expenseType}</span>)}
                           </div>
-                          {tx.note && (<p className="text-xs text-[#717171] dark:text-[#A0A0A0] truncate mt-0.5"><HighlightText text={tx.note} highlight={searchTerm} /></p>)}
+                          {tx.note && (<p className="text-xs text-[#525252] dark:text-[#A0A0A0] font-bold truncate mt-0.5"><HighlightText text={tx.note} highlight={searchTerm} /></p>)}
+
                           <p className="text-[10px] font-medium text-[#B0B0B0] dark:text-[#666666] truncate mt-0.5 flex items-center gap-1">
                             {tx.paymentMethod === 'UPI' ? `UPI${tx.upiApp ? ` • ${tx.upiApp}` : ''}` : tx.paymentMethod === 'Bank' ? 'Bank' : 'Cash'}
                             <span className="w-1 h-1 rounded-full bg-[#EBEBEB] dark:bg-[#333333] mx-1"></span>
                             {format(tx.dateTime, 'h:mm a')}
                           </p>
                         </div>
-                        <div className={`text-base font-black shrink-0 ${tx.type === 'CREDIT' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        <div className={`text-base font-black shrink-0 ${tx.type === 'CREDIT' ? 'text-emerald-700' : 'text-[#111111] dark:text-[#F7F7F7]'}`}>
                           {tx.type === 'CREDIT' ? '+' : '-'} ₹{tx.amount.toLocaleString('en-IN')}
                         </div>
+
                       </div>
                     ))}
                   </div>
@@ -573,12 +592,24 @@ export default function Transactions() {
                   </div>
                   <div className="bg-neutral-50 dark:bg-[#1A1A1A] rounded-[20px] p-5 border border-[#EBEBEB] dark:border-[#222222]">
                     <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-sm">
-                      <div><p className="text-[#717171] dark:text-[#A0A0A0] text-xs font-bold uppercase tracking-wider mb-1.5">Date & Time</p><p className="font-bold text-[#222222] dark:text-[#F7F7F7]">{format(selectedTx.dateTime, 'MMM d, yyyy')}</p><p className="text-[#717171] dark:text-[#A0A0A0] font-medium text-xs mt-0.5">{format(selectedTx.dateTime, 'h:mm a')}</p></div>
-                      <div><p className="text-[#717171] dark:text-[#A0A0A0] text-xs font-bold uppercase tracking-wider mb-1.5">Category</p><span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-neutral-200 dark:bg-[#222222] text-[#222222] dark:text-[#F7F7F7]">{selectedTx.category}</span></div>
+                      <div><p className="text-[#525252] dark:text-[#A0A0A0] text-xs font-black uppercase tracking-wider mb-1.5">Date & Time</p><p className="font-black text-[#111111] dark:text-[#F7F7F7]">{format(selectedTx.dateTime, 'MMM d, yyyy')}</p><p className="text-[#525252] dark:text-[#A0A0A0] font-bold text-xs mt-0.5">{format(selectedTx.dateTime, 'h:mm a')}</p></div>
+                      <div><p className="text-[#525252] dark:text-[#A0A0A0] text-xs font-black uppercase tracking-wider mb-1.5">Category</p><span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-neutral-200 dark:bg-[#222222] text-[#111111] dark:text-[#F7F7F7]">{selectedTx.category}</span></div>
+
                       {selectedTx.expenseType && (<div><p className="text-[#717171] dark:text-[#A0A0A0] text-xs font-bold uppercase tracking-wider mb-1.5">Type</p><span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-neutral-200 dark:bg-[#222222] text-[#222222] dark:text-[#F7F7F7]">{selectedTx.expenseType}</span></div>)}
                       <div><p className="text-[#717171] dark:text-[#A0A0A0] text-xs font-bold uppercase tracking-wider mb-1.5">Payment Method</p><p className="font-bold text-[#222222] dark:text-[#F7F7F7]">{selectedTx.paymentMethod === 'UPI' ? `UPI${selectedTx.upiApp ? ` (${selectedTx.upiApp})` : ''}` : selectedTx.paymentMethod === 'Bank' ? 'Bank Transfer' : 'Cash'}</p></div>
-                      <div><p className="text-[#717171] dark:text-[#A0A0A0] text-xs font-bold uppercase tracking-wider mb-1.5">Account</p><p className="font-bold text-[#222222] dark:text-[#F7F7F7]">{accounts.find(a => a.id === selectedTx.accountId)?.bankName || 'Unknown'} {accounts.find(a => a.id === selectedTx.accountId)?.accountLast4 ? ` ••••${accounts.find(a => a.id === selectedTx.accountId)?.accountLast4}` : ''}</p></div>
-                      <div className="col-span-2 pt-4 border-t border-[#EBEBEB] dark:border-[#222222]"><p className="text-[#717171] dark:text-[#A0A0A0] text-xs font-bold uppercase tracking-wider mb-1.5">Note / Reason</p><p className="font-bold text-[#222222] dark:text-[#F7F7F7] whitespace-pre-wrap">{selectedTx.note || '—'}</p></div>
+                      <div>
+                        <p className="text-[#717171] dark:text-[#A0A0A0] text-xs font-bold uppercase tracking-wider mb-1.5">Account</p>
+                        <p className="font-bold text-[#222222] dark:text-[#F7F7F7]">
+                          {accounts.find(a => a.id === selectedTx.accountId)?.bankName || 'Unknown'} 
+                          {accounts.find(a => a.id === selectedTx.accountId)?.accountLast4 ? (
+                            (accounts.find(a => a.id === selectedTx.accountId) as any)?.type === 'CASH' 
+                              ? ` (${accounts.find(a => a.id === selectedTx.accountId)?.accountLast4})`
+                              : ` ••••${accounts.find(a => a.id === selectedTx.accountId)?.accountLast4}`
+                          ) : ''}
+                        </p>
+                      </div>
+                      <div className="col-span-2 pt-4 border-t border-[#EBEBEB] dark:border-[#222222]"><p className="text-[#525252] dark:text-[#A0A0A0] text-xs font-black uppercase tracking-wider mb-1.5">Note / Reason</p><p className="font-black text-[#111111] dark:text-[#F7F7F7] whitespace-pre-wrap">{selectedTx.note || '—'}</p></div>
+
                     </div>
                   </div>
                 </>

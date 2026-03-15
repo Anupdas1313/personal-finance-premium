@@ -3,8 +3,9 @@ import Dexie, { Table } from 'dexie';
 export interface Account {
   id?: number;
   bankName: string;
-  accountLast4: string;
+  accountLast4: string; // For CASH, this could be "WALLET" or "CASH"
   startingBalance: number;
+  type?: 'BANK' | 'CASH' | 'CREDIT_CARD';
 }
 
 export interface Transaction {

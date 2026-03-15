@@ -1,12 +1,8 @@
 import { useState } from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Wallet, PieChart, MessageSquareText, Calculator, Menu, X, MoreHorizontal, Settings, Target, Plus, Landmark, BarChart3 } from 'lucide-react';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { useLocation, Link, Outlet } from 'react-router-dom';
+import { LayoutDashboard, BarChart3, Landmark, PieChart, Target, Calculator, MessageSquareText, Settings, Plus, MoreHorizontal } from 'lucide-react';
+import { cn } from '../lib/utils';
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export default function Layout() {
   const location = useLocation();

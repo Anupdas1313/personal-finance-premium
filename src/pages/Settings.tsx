@@ -1,4 +1,6 @@
 import { useState, useRef } from 'react';
+import { cn } from '../lib/utils';
+
 import { db } from '../lib/db';
 import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as SettingsIcon, X, Moon, Sun, Monitor, Palette, Tag, ShieldAlert } from 'lucide-react';
 import { useCategories } from '../hooks/useCategories';
@@ -138,13 +140,14 @@ export default function Settings() {
   return (
     <div className="space-y-8 max-w-3xl mx-auto pb-8">
       <div className="flex items-center gap-4 mb-2">
-        <div className="p-3 bg-neutral-100 dark:bg-[#222222] text-[#222222] dark:text-[#F7F7F7] rounded-2xl">
+        <div className="p-3 bg-neutral-100 dark:bg-[#222222] text-[#111111] dark:text-[#F7F7F7] rounded-2xl border border-[#EBEBEB] dark:border-transparent">
           <SettingsIcon className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#222222] dark:text-[#F7F7F7]">Settings</h1>
-          <p className="text-[#717171] dark:text-[#A0A0A0] font-medium mt-1">Manage app preferences and data</p>
+          <h1 className="text-3xl font-black tracking-tight text-[#111111] dark:text-[#F7F7F7]">Settings</h1>
+          <p className="text-[#525252] dark:text-[#A0A0A0] font-bold mt-1">Manage app preferences and data</p>
         </div>
+
       </div>
 
       {message && (
@@ -158,29 +161,92 @@ export default function Settings() {
         </div>
       )}
 
+      {/* SECTION: THEME */}
+      <section>
+        <h2 className="text-xs font-black text-[#525252] dark:text-[#A0A0A0] uppercase tracking-wider mb-3 px-2">Appearance</h2>
+        <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-none overflow-hidden">
+
+          <div className="p-5">
+            <div className="flex items-center gap-4 text-[#111111] dark:text-[#F7F7F7] mb-6">
+              <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-[#EBEBEB] dark:border-transparent">
+                <Palette className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-black text-[#111111] dark:text-[#F7F7F7]">App Theme</p>
+                <p className="text-sm font-bold text-[#525252] dark:text-[#A0A0A0] mt-0.5">Choose how the app looks on your device</p>
+              </div>
+            </div>
+
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pl-0 sm:pl-[3.25rem]">
+              <button
+                onClick={() => setTheme('light')}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all",
+                  theme === 'light' 
+                    ? "border-[#222222] dark:border-[#F7F7F7] bg-neutral-50 dark:bg-[#1A1A1A]" 
+                    : "border-transparent bg-neutral-100 dark:bg-[#222222] hover:bg-neutral-200 dark:hover:bg-[#2A2A2A]"
+                )}
+              >
+                <Sun className={cn("w-5 h-5", theme === 'light' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")} />
+                <span className={cn("font-bold text-sm", theme === 'light' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")}>Light Mode</span>
+              </button>
+
+              <button
+                onClick={() => setTheme('dark')}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all",
+                  theme === 'dark' 
+                    ? "border-[#222222] dark:border-[#F7F7F7] bg-neutral-50 dark:bg-[#1A1A1A]" 
+                    : "border-transparent bg-neutral-100 dark:bg-[#222222] hover:bg-neutral-200 dark:hover:bg-[#2A2A2A]"
+                )}
+              >
+                <Moon className={cn("w-5 h-5", theme === 'dark' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")} />
+                <span className={cn("font-bold text-sm", theme === 'dark' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")}>Dark Mode</span>
+              </button>
+
+              <button
+                onClick={() => setTheme('system')}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all",
+                  theme === 'system' 
+                    ? "border-[#222222] dark:border-[#F7F7F7] bg-neutral-50 dark:bg-[#1A1A1A]" 
+                    : "border-transparent bg-neutral-100 dark:bg-[#222222] hover:bg-neutral-200 dark:hover:bg-[#2A2A2A]"
+                )}
+              >
+                <Monitor className={cn("w-5 h-5", theme === 'system' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")} />
+                <span className={cn("font-bold text-sm", theme === 'system' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")}>System</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
 
 
       {/* SECTION: CATEGORIES */}
       <section>
-        <h2 className="text-xs font-bold text-[#717171] dark:text-[#A0A0A0] uppercase tracking-wider mb-3 px-2">Categories</h2>
-        <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222]">
+        <h2 className="text-xs font-black text-[#525252] dark:text-[#A0A0A0] uppercase tracking-wider mb-3 px-2">Categories</h2>
+        <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-none overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222]">
+
           
           <div className="p-5 flex flex-col gap-5">
-            <div className="flex items-center gap-4 text-[#222222] dark:text-[#F7F7F7]">
-              <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0">
+            <div className="flex items-center gap-4 text-[#111111] dark:text-[#F7F7F7]">
+              <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-[#EBEBEB] dark:border-transparent">
                 <Tag className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-bold text-[#222222] dark:text-[#F7F7F7]">Manage Categories</p>
-                <p className="text-sm font-medium text-[#717171] dark:text-[#A0A0A0] mt-0.5">Customize tags for tracking your spending</p>
+                <p className="font-black text-[#111111] dark:text-[#F7F7F7]">Manage Categories</p>
+                <p className="text-sm font-bold text-[#525252] dark:text-[#A0A0A0] mt-0.5">Customize tags for tracking your spending</p>
               </div>
             </div>
+
 
             <div className="pl-0 sm:pl-[3.25rem] space-y-4">
               <div className="flex flex-wrap gap-2">
                 {categories.map((category) => (
-                  <div key={category} className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 dark:bg-[#222222] text-[#222222] dark:text-[#F7F7F7] rounded-full text-sm font-bold border border-transparent dark:border-[#333333]">
+                  <div key={category} className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 dark:bg-[#222222] text-[#111111] dark:text-[#F7F7F7] rounded-full text-sm font-black border border-[#EBEBEB] dark:border-[#333333]">
                     {category}
+
                     <button onClick={() => removeCategory(category)} className="text-[#B0B0B0] dark:text-[#666666] hover:text-rose-600 transition-colors">
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -200,10 +266,11 @@ export default function Settings() {
                   <button
                     type="submit"
                     disabled={!newCategory.trim()}
-                    className="px-5 py-2.5 bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl font-bold hover:bg-black dark:hover:bg-neutral-200 transition-colors disabled:opacity-50 text-sm"
+                    className="px-5 py-2.5 bg-[#111111] dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl font-black hover:bg-black dark:hover:bg-neutral-200 transition-colors disabled:opacity-50 text-sm"
                   >
                     Add
                   </button>
+
                 </form>
 
                 <button
@@ -226,46 +293,51 @@ export default function Settings() {
 
       {/* SECTION: DATA MANAGEMENT */}
       <section>
-        <h2 className="text-xs font-bold text-[#717171] dark:text-[#A0A0A0] uppercase tracking-wider mb-3 px-2">Data & Storage</h2>
-        <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222]">
+        <h2 className="text-xs font-black text-[#525252] dark:text-[#A0A0A0] uppercase tracking-wider mb-3 px-2">Data & Storage</h2>
+        <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-none overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222]">
+
           
           <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4 text-[#222222] dark:text-[#F7F7F7]">
-              <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0">
+            <div className="flex items-center gap-4 text-[#111111] dark:text-[#F7F7F7]">
+              <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-[#EBEBEB] dark:border-transparent">
                 <Download className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-bold text-[#222222] dark:text-[#F7F7F7]">Export Backup</p>
-                <p className="text-sm font-medium text-[#717171] dark:text-[#A0A0A0] mt-0.5">Save a local file with all transactions</p>
+                <p className="font-black text-[#111111] dark:text-[#F7F7F7]">Export Backup</p>
+                <p className="text-sm font-bold text-[#525252] dark:text-[#A0A0A0] mt-0.5">Save a local file with all transactions</p>
               </div>
             </div>
+
             <button
               onClick={handleExportData}
               disabled={isExporting}
-              className="px-5 py-2.5 bg-white dark:bg-[#111111] border-2 border-[#EBEBEB] dark:border-[#333333] text-[#222222] dark:text-[#F7F7F7] rounded-xl font-bold hover:border-[#B0B0B0] dark:hover:border-[#666666] transition-colors disabled:opacity-50 text-sm w-full sm:w-auto text-center shadow-sm"
+              className="px-5 py-2.5 bg-white dark:bg-[#111111] border-2 border-[#EBEBEB] dark:border-[#333333] text-[#111111] dark:text-[#F7F7F7] rounded-xl font-black hover:border-neutral-400 dark:hover:border-[#666666] transition-colors disabled:opacity-50 text-sm w-full sm:w-auto text-center shadow-sm"
             >
               {isExporting ? 'Exporting...' : 'Export JSON'}
             </button>
+
           </div>
 
           <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4 text-[#222222] dark:text-[#F7F7F7]">
-              <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0">
+            <div className="flex items-center gap-4 text-[#111111] dark:text-[#F7F7F7]">
+              <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-[#EBEBEB] dark:border-transparent">
                 <Upload className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-bold text-[#222222] dark:text-[#F7F7F7]">Import Backup</p>
-                <p className="text-sm font-medium text-[#717171] dark:text-[#A0A0A0] mt-0.5">Restore data from a JSON file</p>
+                <p className="font-black text-[#111111] dark:text-[#F7F7F7]">Import Backup</p>
+                <p className="text-sm font-bold text-[#525252] dark:text-[#A0A0A0] mt-0.5">Restore data from a JSON file</p>
               </div>
             </div>
+
             <div className="w-full sm:w-auto">
               <input type="file" accept=".json" ref={fileInputRef} onChange={handleImportData} className="hidden" id="import-file" />
               <label
                 htmlFor="import-file"
-                className={`block w-full sm:w-auto px-5 py-2.5 bg-white dark:bg-[#111111] border-2 border-[#EBEBEB] dark:border-[#333333] text-[#222222] dark:text-[#F7F7F7] rounded-xl font-bold hover:border-[#B0B0B0] dark:hover:border-[#666666] transition-colors cursor-pointer text-center text-sm shadow-sm ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}
+                className={`block w-full sm:w-auto px-5 py-2.5 bg-white dark:bg-[#111111] border-2 border-[#EBEBEB] dark:border-[#333333] text-[#111111] dark:text-[#F7F7F7] rounded-xl font-black hover:border-neutral-400 dark:hover:border-[#666666] transition-colors cursor-pointer text-center text-sm shadow-sm ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}
               >
                 {isImporting ? 'Importing...' : 'Import JSON'}
               </label>
+
             </div>
           </div>
 
