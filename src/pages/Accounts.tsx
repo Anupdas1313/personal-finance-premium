@@ -79,7 +79,8 @@ export default function Accounts() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-black text-[#111111] dark:text-[#F7F7F7]">Manage Accounts</h1>
+        <h1 className="text-3xl font-black text-[#1A237E] dark:text-[#F7F7F7]">Manage Accounts</h1>
+
 
         <button
           onClick={() => {
@@ -89,19 +90,20 @@ export default function Accounts() {
               setIsAdding(true);
             }
           }}
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#111111] dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl hover:bg-black dark:hover:bg-neutral-200 transition-colors font-black shadow-md"
+          className="flex items-center gap-2 px-6 py-3 bg-[#00A86B] dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl hover:bg-[#00925d] hover:ring-2 hover:ring-[#82EEFD] transition-all font-black shadow-lg"
         >
-
-          <Plus className="w-4 h-4" />
+          <Plus className="w-5 h-5" />
           {isAdding && !editingAccountId ? 'Cancel' : 'Add Account'}
+
         </button>
       </div>
 
       {isAdding && (
-        <div className="bg-white dark:bg-[#111111] p-6 rounded-[20px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-[#EBEBEB] dark:border-[#222222]">
-          <h2 className="text-lg font-black text-[#111111] dark:text-[#F7F7F7] mb-5">
+        <div className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_8px_40px_rgba(26,35,126,0.1)] border border-[#EBEBEB] dark:border-[#222222]">
+          <h2 className="text-xl font-black text-[#1A237E] dark:text-[#F7F7F7] mb-5">
             {editingAccountId ? 'Edit Account' : 'New Account'}
           </h2>
+
 
           <form onSubmit={handleAddAccount} className="space-y-5">
             <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-1 rounded-xl mb-4">
@@ -130,7 +132,8 @@ export default function Accounts() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="md:col-span-3">
-                <label className="block text-sm font-black text-[#111111] dark:text-[#F7F7F7] mb-1.5 flex justify-between items-center uppercase tracking-wider">
+                <label className="block text-sm font-black text-[#1A237E] dark:text-[#F7F7F7] mb-1.5 flex justify-between items-center uppercase tracking-wider">
+
                   <span>{accountType === 'BANK' ? 'Bank Name' : accountType === 'CASH' ? 'Wallet Name' : 'Card Name'}</span>
                   {accountType === 'BANK' && getBankByPattern(bankName) && (
                     <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-black uppercase">Logo Detected</span>
@@ -142,7 +145,8 @@ export default function Accounts() {
                   value={bankName}
                   onChange={(e) => setBankName(e.target.value)}
                   placeholder={accountType === 'BANK' ? "e.g., State Bank of India or just 'SBI'" : accountType === 'CASH' ? "e.g., Cash Wallet" : "e.g., Amazon Pay ICICI Card"}
-                  className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] focus:border-[#222222] dark:focus:border-[#F7F7F7] outline-none transition-shadow mb-3"
+                  className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#82EEFD] focus:border-[#1A237E] outline-none transition-shadow mb-3 text-[#1A237E]"
+
                   required
                 />
                 
@@ -157,11 +161,12 @@ export default function Accounts() {
                           key={bank.id}
                           type="button"
                           onClick={() => setBankName(bank.name)}
-                          className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all ${
+                          className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl border transition-all ${
                             isSelected
-                              ? 'bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] border-transparent shadow-sm'
-                              : 'bg-white dark:bg-[#111111] text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] border-[#EBEBEB] dark:border-[#222222]'
+                              ? 'bg-[#1A237E] text-white border-transparent shadow-lg scale-105'
+                              : 'bg-white dark:bg-[#111111] text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] border-[#EBEBEB] dark:border-[#222222] hover:border-[#82EEFD]'
                           }`}
+
                         >
                           <div className="w-5 h-5 bg-white rounded flex items-center justify-center p-0.5 shadow-sm shrink-0">
                             <Icon className="w-full h-full object-contain" />
@@ -174,7 +179,8 @@ export default function Accounts() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-black text-[#111111] dark:text-[#F7F7F7] mb-1.5 uppercase tracking-wider">
+                <label className="block text-sm font-black text-[#1A237E] dark:text-[#F7F7F7] mb-1.5 uppercase tracking-wider">
+
                   {accountType === 'CASH' ? 'Reference' : 'Account Last 4'}
                 </label>
 
@@ -189,7 +195,8 @@ export default function Accounts() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-black text-[#111111] dark:text-[#F7F7F7] mb-1.5 uppercase tracking-wider">Starting Balance (₹)</label>
+                <label className="block text-sm font-black text-[#1A237E] dark:text-[#F7F7F7] mb-1.5 uppercase tracking-wider">Starting Balance (₹)</label>
+
 
                 <input
                   type="number"
@@ -212,10 +219,11 @@ export default function Accounts() {
               </button>
               <button
                 type="submit"
-                className="px-6 py-3 bg-[#111111] dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-black rounded-xl hover:bg-black dark:hover:bg-neutral-200 transition-colors shadow-md"
+                className="px-6 py-3 bg-[#00A86B] dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-black rounded-xl hover:bg-[#00925d] hover:ring-2 hover:ring-[#82EEFD] transition-all shadow-lg"
               >
                 {editingAccountId ? 'Update Account' : 'Save Account'}
               </button>
+
 
             </div>
           </form>
@@ -224,7 +232,8 @@ export default function Accounts() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {accounts.map(account => (
-          <div key={account.id} className="bg-white dark:bg-[#111111] p-6 rounded-[20px] shadow-[0_6px_16px_rgba(0,0,0,0.04)] border border-[#EBEBEB] dark:border-[#222222] flex flex-col justify-between hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-shadow">
+          <div key={account.id} className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_6px_16px_rgba(26,35,126,0.04)] border border-[#EBEBEB] dark:border-[#222222] flex flex-col justify-between hover:shadow-[0_12px_30px_rgba(26,35,126,0.1)] transition-all transform hover:-translate-y-1">
+
             <div>
               <div className="flex justify-between items-start mb-5">
                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center p-2 shadow-sm border border-[#EBEBEB] shrink-0">
@@ -257,10 +266,11 @@ export default function Accounts() {
                   </button>
                 </div>
               </div>
-              <h3 className="text-xl font-black text-[#111111] dark:text-[#F7F7F7] truncate">{account.bankName}</h3>
-              <p className="text-[#525252] dark:text-[#A0A0A0] font-bold mt-1">
+              <h3 className="text-2xl font-black text-[#1A237E] dark:text-[#F7F7F7] truncate">{account.bankName}</h3>
+              <p className="text-[#1A237E] opacity-60 dark:text-[#A0A0A0] font-black mt-1">
                 {account.type === 'CASH' ? account.accountLast4 : `**** ${account.accountLast4}`}
               </p>
+
 
             </div>
             <div className="mt-4 pt-4 border-t border-[#EBEBEB] dark:border-[#222222] space-y-3">

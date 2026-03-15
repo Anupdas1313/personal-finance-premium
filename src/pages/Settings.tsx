@@ -140,13 +140,14 @@ export default function Settings() {
   return (
     <div className="space-y-8 max-w-3xl mx-auto pb-8">
       <div className="flex items-center gap-4 mb-2">
-        <div className="p-3 bg-neutral-100 dark:bg-[#222222] text-[#111111] dark:text-[#F7F7F7] rounded-2xl border border-[#EBEBEB] dark:border-transparent">
+        <div className="p-3 bg-neutral-100 dark:bg-[#222222] text-[#1A237E] dark:text-[#F7F7F7] rounded-2xl border border-[#EBEBEB] dark:border-transparent ring-2 ring-[#82EEFD]/20">
           <SettingsIcon className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-[#111111] dark:text-[#F7F7F7]">Settings</h1>
-          <p className="text-[#525252] dark:text-[#A0A0A0] font-bold mt-1">Manage app preferences and data</p>
+          <h1 className="text-4xl font-black tracking-tighter text-[#1A237E] dark:text-[#F7F7F7]">Settings</h1>
+          <p className="text-[#1A237E] opacity-60 dark:text-[#A0A0A0] font-black mt-1 uppercase tracking-wider text-xs">Manage app preferences and data</p>
         </div>
+
 
       </div>
 
@@ -163,19 +164,21 @@ export default function Settings() {
 
       {/* SECTION: THEME */}
       <section>
-        <h2 className="text-xs font-black text-[#525252] dark:text-[#A0A0A0] uppercase tracking-wider mb-3 px-2">Appearance</h2>
-        <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-none overflow-hidden">
+        <h2 className="text-xs font-black text-[#1A237E] dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2 opacity-70">Appearance</h2>
+        <div className="bg-white dark:bg-[#111111] rounded-[32px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_20px_50px_rgba(26,35,126,0.05)] dark:shadow-none overflow-hidden">
+
 
           <div className="p-5">
-            <div className="flex items-center gap-4 text-[#111111] dark:text-[#F7F7F7] mb-6">
+            <div className="flex items-center gap-4 text-[#1A237E] dark:text-[#F7F7F7] mb-6">
               <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-[#EBEBEB] dark:border-transparent">
-                <Palette className="w-5 h-5" />
+                <Palette className="w-5 h-5 text-[#1A237E] dark:text-inherit" />
               </div>
               <div>
-                <p className="font-black text-[#111111] dark:text-[#F7F7F7]">App Theme</p>
-                <p className="text-sm font-bold text-[#525252] dark:text-[#A0A0A0] mt-0.5">Choose how the app looks on your device</p>
+                <p className="font-black text-[#1A237E] dark:text-[#F7F7F7]">App Theme</p>
+                <p className="text-sm font-bold text-[#1A237E]/60 dark:text-[#A0A0A0] mt-0.5">Choose how the app looks on your device</p>
               </div>
             </div>
+
 
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pl-0 sm:pl-[3.25rem]">
@@ -184,9 +187,10 @@ export default function Settings() {
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all",
                   theme === 'light' 
-                    ? "border-[#222222] dark:border-[#F7F7F7] bg-neutral-50 dark:bg-[#1A1A1A]" 
-                    : "border-transparent bg-neutral-100 dark:bg-[#222222] hover:bg-neutral-200 dark:hover:bg-[#2A2A2A]"
+                    ? "border-[#1A237E] bg-[#1A237E]/5 dark:bg-[#1A1A1A]" 
+                    : "border-transparent bg-neutral-100 dark:bg-[#222222] hover:bg-neutral-200 dark:hover:bg-[#2A2A2A] hover:border-[#82EEFD]"
                 )}
+
               >
                 <Sun className={cn("w-5 h-5", theme === 'light' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")} />
                 <span className={cn("font-bold text-sm", theme === 'light' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")}>Light Mode</span>
@@ -197,9 +201,10 @@ export default function Settings() {
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all",
                   theme === 'dark' 
-                    ? "border-[#222222] dark:border-[#F7F7F7] bg-neutral-50 dark:bg-[#1A1A1A]" 
-                    : "border-transparent bg-neutral-100 dark:bg-[#222222] hover:bg-neutral-200 dark:hover:bg-[#2A2A2A]"
+                    ? "border-[#1A237E] dark:border-[#F7F7F7] bg-neutral-50 dark:bg-[#1A1A1A]" 
+                    : "border-transparent bg-neutral-100 dark:bg-[#222222] hover:bg-neutral-200 dark:hover:bg-[#2A2A2A] hover:border-[#82EEFD]"
                 )}
+
               >
                 <Moon className={cn("w-5 h-5", theme === 'dark' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")} />
                 <span className={cn("font-bold text-sm", theme === 'dark' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")}>Dark Mode</span>
@@ -210,9 +215,10 @@ export default function Settings() {
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all",
                   theme === 'system' 
-                    ? "border-[#222222] dark:border-[#F7F7F7] bg-neutral-50 dark:bg-[#1A1A1A]" 
-                    : "border-transparent bg-neutral-100 dark:bg-[#222222] hover:bg-neutral-200 dark:hover:bg-[#2A2A2A]"
+                    ? "border-[#1A237E] dark:border-[#F7F7F7] bg-neutral-50 dark:bg-[#1A1A1A]" 
+                    : "border-transparent bg-neutral-100 dark:bg-[#222222] hover:bg-neutral-200 dark:hover:bg-[#2A2A2A] hover:border-[#82EEFD]"
                 )}
+
               >
                 <Monitor className={cn("w-5 h-5", theme === 'system' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")} />
                 <span className={cn("font-bold text-sm", theme === 'system' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")}>System</span>
@@ -225,20 +231,22 @@ export default function Settings() {
 
       {/* SECTION: CATEGORIES */}
       <section>
-        <h2 className="text-xs font-black text-[#525252] dark:text-[#A0A0A0] uppercase tracking-wider mb-3 px-2">Categories</h2>
-        <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-none overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222]">
+        <h2 className="text-xs font-black text-[#1A237E] dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2 opacity-70">Categories</h2>
+        <div className="bg-white dark:bg-[#111111] rounded-[32px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_20px_50px_rgba(26,35,126,0.05)] dark:shadow-none overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222]">
+
 
           
           <div className="p-5 flex flex-col gap-5">
-            <div className="flex items-center gap-4 text-[#111111] dark:text-[#F7F7F7]">
+            <div className="flex items-center gap-4 text-[#1A237E] dark:text-[#F7F7F7]">
               <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-[#EBEBEB] dark:border-transparent">
-                <Tag className="w-5 h-5" />
+                <Tag className="w-5 h-5 text-[#1A237E] dark:text-inherit" />
               </div>
               <div>
-                <p className="font-black text-[#111111] dark:text-[#F7F7F7]">Manage Categories</p>
-                <p className="text-sm font-bold text-[#525252] dark:text-[#A0A0A0] mt-0.5">Customize tags for tracking your spending</p>
+                <p className="font-black text-[#1A237E] dark:text-[#F7F7F7]">Manage Categories</p>
+                <p className="text-sm font-bold text-[#1A237E]/60 dark:text-[#A0A0A0] mt-0.5">Customize tags for tracking your spending</p>
               </div>
             </div>
+
 
 
             <div className="pl-0 sm:pl-[3.25rem] space-y-4">
@@ -266,10 +274,11 @@ export default function Settings() {
                   <button
                     type="submit"
                     disabled={!newCategory.trim()}
-                    className="px-5 py-2.5 bg-[#111111] dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl font-black hover:bg-black dark:hover:bg-neutral-200 transition-colors disabled:opacity-50 text-sm"
+                    className="px-6 py-2.5 bg-[#00A86B] dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl font-black hover:bg-[#00925d] hover:ring-2 hover:ring-[#82EEFD] transition-all disabled:opacity-50 text-sm shadow-md"
                   >
                     Add
                   </button>
+
 
                 </form>
 
@@ -298,15 +307,16 @@ export default function Settings() {
 
           
           <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4 text-[#111111] dark:text-[#F7F7F7]">
+            <div className="flex items-center gap-4 text-[#1A237E] dark:text-[#F7F7F7]">
               <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-[#EBEBEB] dark:border-transparent">
-                <Download className="w-5 h-5" />
+                <Download className="w-5 h-5 text-[#1A237E] dark:text-inherit" />
               </div>
               <div>
-                <p className="font-black text-[#111111] dark:text-[#F7F7F7]">Export Backup</p>
-                <p className="text-sm font-bold text-[#525252] dark:text-[#A0A0A0] mt-0.5">Save a local file with all transactions</p>
+                <p className="font-black text-[#1A237E] dark:text-[#F7F7F7]">Export Backup</p>
+                <p className="text-sm font-bold text-[#1A237E]/60 dark:text-[#A0A0A0] mt-0.5">Save a local file with all transactions</p>
               </div>
             </div>
+
 
             <button
               onClick={handleExportData}
@@ -319,15 +329,16 @@ export default function Settings() {
           </div>
 
           <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4 text-[#111111] dark:text-[#F7F7F7]">
+            <div className="flex items-center gap-4 text-[#1A237E] dark:text-[#F7F7F7]">
               <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-[#EBEBEB] dark:border-transparent">
-                <Upload className="w-5 h-5" />
+                <Upload className="w-5 h-5 text-[#1A237E] dark:text-inherit" />
               </div>
               <div>
-                <p className="font-black text-[#111111] dark:text-[#F7F7F7]">Import Backup</p>
-                <p className="text-sm font-bold text-[#525252] dark:text-[#A0A0A0] mt-0.5">Restore data from a JSON file</p>
+                <p className="font-black text-[#1A237E] dark:text-[#F7F7F7]">Import Backup</p>
+                <p className="text-sm font-bold text-[#1A237E]/60 dark:text-[#A0A0A0] mt-0.5">Restore data from a JSON file</p>
               </div>
             </div>
+
 
             <div className="w-full sm:w-auto">
               <input type="file" accept=".json" ref={fileInputRef} onChange={handleImportData} className="hidden" id="import-file" />
