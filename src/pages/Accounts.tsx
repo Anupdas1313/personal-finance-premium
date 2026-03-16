@@ -537,10 +537,10 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
   return (
     <div className="fixed inset-0 bg-white dark:bg-[#060608] z-[100] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
       {/* Header */}
-      <div className="bg-neutral-50 dark:bg-[#0C0C0F] border-b border-neutral-200 dark:border-[#222222] px-4 py-4">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-neutral-50 dark:bg-[#0C0C0F] border-b border-neutral-200 dark:border-[#222222] px-4 py-2">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-white dark:bg-[#1A1A1A] rounded-xl flex items-center justify-center p-1.5 border border-neutral-100 dark:border-[#333333]">
+            <div className="w-8 h-8 bg-white dark:bg-[#1A1A1A] rounded-xl flex items-center justify-center p-1 border border-neutral-100 dark:border-[#333333]">
               <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
             </div>
             <div>
@@ -557,8 +557,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="bg-white dark:bg-[#111111] p-4 rounded-2xl shadow-[0_10px_30px_rgba(26,35,126,0.05)] border border-neutral-100 dark:border-white/5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="bg-white dark:bg-[#111111] p-3 rounded-2xl shadow-[0_10px_30px_rgba(26,35,126,0.05)] border border-neutral-100 dark:border-white/5">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-[8px] font-black text-brand-blue/30 dark:text-white/30 uppercase tracking-widest mb-1">Opening</p>
@@ -585,20 +585,20 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             </div>
           </div>
 
-            <div className="flex flex-col justify-center gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <button 
                 onClick={handleStartNewBalance}
-                className="w-full flex items-center justify-center gap-2 bg-brand-green text-white py-3 rounded-xl font-black text-[10px] uppercase shadow-lg shadow-brand-green/20"
+                className="w-full flex items-center justify-center gap-2 bg-brand-green text-white py-2.5 rounded-xl font-black text-[9px] uppercase shadow-lg shadow-brand-green/10"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-3 h-3" />
                 New Balance
               </button>
               <div className="relative">
                 <button 
                   onClick={() => setShowExportMenu(!showExportMenu)}
-                  className="w-full flex items-center justify-center gap-2 bg-white dark:bg-[#1A1A1A] text-brand-blue dark:text-white py-3 rounded-xl border border-neutral-100 dark:border-[#222222] font-black text-[10px] uppercase shadow-sm"
+                  className="w-full h-full flex items-center justify-center gap-2 bg-white dark:bg-[#1A1A1A] text-brand-blue dark:text-white py-2.5 rounded-xl border border-neutral-100 dark:border-[#222222] font-black text-[9px] uppercase shadow-sm"
                 >
-                  <Download className="w-3.5 h-3.5" />
+                  <Download className="w-3 h-3" />
                   Export Ledger
                 </button>
               {showExportMenu && (
@@ -622,7 +622,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         </div>
 
         {/* Filters */}
-        <div className="mt-4 flex flex-col sm:flex-row gap-2">
+        <div className="mt-2 flex flex-col sm:flex-row gap-2">
           <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-0.5 rounded-xl flex-1 overflow-x-auto">
             {(['ALL', 'YEAR', 'MONTH', 'WEEK', 'DAY', 'CUSTOM'] as const).map((g) => (
               <button
@@ -693,15 +693,15 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
       </div>
 
       {/* Ledger Table */}
-      <div className="flex-1 overflow-auto bg-white dark:bg-[#060608]">
+      <div className="flex-1 overflow-auto bg-white dark:bg-[#060608] pb-32">
         <table className="w-full border-collapse border-spacing-0 text-[10px] min-w-[320px]">
           <thead className="sticky top-0 z-10 bg-neutral-50 dark:bg-[#111111]">
-            <tr className="text-[8px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 dark:border-[#222222]">
-              <th className="w-16 px-2 py-3 text-left">Date</th>
-              <th className="px-2 py-3 text-left">Particulars</th>
-              <th className="w-20 px-2 py-3 text-right">Debit (Dr)</th>
-              <th className="w-20 px-2 py-3 text-right">Credit (Cr)</th>
-              <th className="w-24 px-2 py-3 text-right">Balance</th>
+            <tr className="text-[7px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 dark:border-[#222222]">
+              <th className="w-12 px-2 py-2 text-left">Date</th>
+              <th className="px-2 py-2 text-left">Particulars</th>
+              <th className="w-20 px-2 py-2 text-right">Debit (Dr)</th>
+              <th className="w-20 px-2 py-2 text-right">Credit (Cr)</th>
+              <th className="w-24 px-2 py-2 text-right">Balance</th>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-[#0C0C0F]">
@@ -719,68 +719,64 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               return (
                 <React.Fragment key={tx.id || idx}>
                   {partitionInBetween && (
-                    <tr className="bg-neutral-50 dark:bg-[#1A1A1A] border-y-2 border-brand-blue/10">
-                      <td colSpan={5} className="px-3 py-4">
-                        <div className="flex flex-col gap-2">
+                    <tr className="bg-neutral-50 dark:bg-[#1A1A1A] border-y border-brand-blue/10">
+                      <td colSpan={5} className="px-2 py-2">
+                        <div className="flex flex-col gap-1">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <div className="px-2 py-0.5 bg-brand-blue text-white text-[8px] font-black rounded-full uppercase">Partition</div>
-                              <span className="text-[10px] font-black text-brand-blue dark:text-white uppercase">{format(new Date(partitionInBetween.closingDate), 'dd MMM yyyy')}</span>
+                              <div className="px-1.5 py-0.5 bg-brand-blue text-white text-[7px] font-black rounded-full uppercase">Partition</div>
+                              <span className="text-[9px] font-black text-brand-blue dark:text-white uppercase">{format(new Date(partitionInBetween.closingDate), 'dd MMM yyyy')}</span>
                             </div>
-                            <div className="text-[10px] font-black text-brand-blue/40 uppercase">Closing Balance: ₹{partitionInBetween.closingBalance.toLocaleString()}</div>
+                            <div className="text-[9px] font-black text-brand-blue/40 uppercase tracking-tighter">Closing: ₹{partitionInBetween.closingBalance.toLocaleString()}</div>
                           </div>
-                          <div className="flex gap-4 pt-2 border-t border-neutral-100 dark:border-white/5">
+                          <div className="flex gap-4 pt-1 border-t border-dotted border-neutral-300 dark:border-white/5">
                             <div className="flex-1">
-                              <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mb-0.5">Period Inflow</p>
-                              <p className="text-[10px] font-black text-brand-green">+ ₹{partitionInBetween.totalInflow.toLocaleString()}</p>
+                              <p className="text-[6px] font-black text-neutral-400 uppercase tracking-widest leading-none">Inflow</p>
+                              <p className="text-[9px] font-black text-brand-green tracking-tighter">+ ₹{partitionInBetween.totalInflow.toLocaleString()}</p>
                             </div>
                             <div className="flex-1">
-                              <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mb-0.5">Period Outflow</p>
-                              <p className="text-[10px] font-black text-brand-red">- ₹{partitionInBetween.totalOutflow.toLocaleString()}</p>
+                              <p className="text-[6px] font-black text-neutral-400 uppercase tracking-widest leading-none">Outflow</p>
+                              <p className="text-[9px] font-black text-brand-red tracking-tighter">- ₹{partitionInBetween.totalOutflow.toLocaleString()}</p>
                             </div>
                             <div className="flex-1 text-right">
-                              <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mb-0.5">Prev. Balance</p>
-                              <p className="text-[10px] font-black text-brand-blue dark:text-white">₹{partitionInBetween.openingBalance.toLocaleString()}</p>
+                              <p className="text-[6px] font-black text-neutral-400 uppercase tracking-widest leading-none">Prev. Bal</p>
+                              <p className="text-[9px] font-black text-brand-blue dark:text-white tracking-tighter">₹{partitionInBetween.openingBalance.toLocaleString()}</p>
                             </div>
                           </div>
-                          <div className="mt-2 py-1.5 px-3 bg-brand-blue/5 dark:bg-brand-blue/20 rounded-lg flex items-center justify-between">
-                            <span className="text-[8px] font-black text-brand-blue dark:text-brand-cyan uppercase">New Starting Balance initialized</span>
-                            <span className="text-[10px] font-black text-brand-blue dark:text-white">₹{partitionInBetween.closingBalance.toLocaleString()}</span>
+                          <div className="mt-1 py-1 px-2 border border-brand-blue/20 bg-brand-blue/5 dark:bg-brand-blue/20 rounded-lg flex items-center justify-between">
+                            <span className="text-[7.5px] font-black text-brand-blue dark:text-brand-cyan uppercase">Initialized New Start Balance</span>
+                            <span className="text-[9px] font-black text-brand-blue dark:text-white font-mono tracking-tighter">₹{partitionInBetween.closingBalance.toLocaleString()}</span>
                           </div>
                         </div>
                       </td>
                     </tr>
                   )}
                   <tr className="border-b border-neutral-50 dark:border-[#1A1A1A] hover:bg-neutral-50/50 transition-colors">
-                    <td className="px-2 py-3 text-neutral-400 text-[9px] text-center font-bold">
+                    <td className="px-2 py-1.5 text-neutral-400 text-[8px] text-center font-bold">
                       <div className="flex flex-col">
                         <span>{format(new Date(tx.dateTime), 'dd')}</span>
-                        <span className="text-[7px] uppercase">{format(new Date(tx.dateTime), 'MMM')}</span>
+                        <span className="text-[6.5px] uppercase">{format(new Date(tx.dateTime), 'MMM')}</span>
                       </div>
                     </td>
-                    <td className="px-2 py-3 max-w-[180px]">
-                      <p className="font-black text-brand-blue dark:text-[#F7F7F7] text-[10px] leading-tight truncate uppercase tracking-tighter">
+                    <td className="px-2 py-1.5 max-w-[180px]">
+                      <p className="font-black text-brand-blue dark:text-[#F7F7F7] text-[9.5px] leading-tight truncate uppercase tracking-tighter">
                         {tx.party || tx.category || 'N/A'}
                       </p>
                       {tx.note && (
-                        <p className="text-[8px] text-neutral-400 font-bold mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis uppercase tracking-tighter">
+                        <p className="text-[7.5px] text-neutral-400 font-bold mt-0 opacity-80 whitespace-nowrap overflow-hidden text-ellipsis uppercase tracking-tighter">
                           {tx.note}
                         </p>
                       )}
-                      <div className="flex items-center gap-1.5 mt-1 opacity-40">
-                        <div className="w-1 h-1 rounded-full bg-neutral-300" />
-                        <span className="text-[7px] font-black uppercase tracking-widest">{tx.category}</span>
-                      </div>
                     </td>
-                    <td className="px-2 py-3 text-right">
-                      {tx.type === 'DEBIT' && <span className="text-brand-red font-bold">₹{tx.amount.toLocaleString('en-IN')}</span>}
-                      {tx.type !== 'DEBIT' && <span className="text-neutral-300">-</span>}
+                    <td className="px-2 py-1.5 text-right font-bold text-[9px]">
+                      {tx.type === 'DEBIT' && <span className="text-brand-red">₹{tx.amount.toLocaleString('en-IN')}</span>}
+                      {tx.type !== 'DEBIT' && <span className="text-neutral-200"></span>}
                     </td>
-                    <td className="px-2 py-3 text-right">
-                      {tx.type === 'CREDIT' && <span className="text-brand-green font-bold">₹{tx.amount.toLocaleString('en-IN')}</span>}
-                      {tx.type !== 'CREDIT' && <span className="text-neutral-300">-</span>}
+                    <td className="px-2 py-1.5 text-right font-bold text-[9px]">
+                      {tx.type === 'CREDIT' && <span className="text-brand-green">₹{tx.amount.toLocaleString('en-IN')}</span>}
+                      {tx.type !== 'CREDIT' && <span className="text-neutral-200"></span>}
                     </td>
-                    <td className={`px-2 py-3 text-right font-black ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
+                    <td className={`px-2 py-1.5 text-right font-black text-[9.5px] ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
                       ₹{tx.runningBalance.toLocaleString('en-IN')}
                     </td>
                   </tr>
