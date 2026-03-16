@@ -25,31 +25,33 @@ export default function Accounts() {
   const allClosings = useLiveQuery(() => db.accountClosings.toArray()) || [];
 
   const accountBreakdown = useMemo(() => {
+    const now = new Date();
+    const monthStart = startOfMonth(now).getTime();
+    const monthEnd = endOfMonth(now).getTime();
+
     return accounts.reduce((acc, account) => {
-      const accountClosings = allClosings
-        .filter(c => c.accountId === account.id)
-        .sort((a, b) => new Date(b.closingDate).getTime() - new Date(a.closingDate).getTime());
+      const allAccountTxs = allTransactions.filter(tx => Number(tx.accountId) === Number(account.id));
       
-      const latestClosing = accountClosings[0];
-      const startLimit = latestClosing 
-        ? new Date(latestClosing.closingDate).getTime() + 1
-        : (account.startingBalanceDate ? startOfDay(new Date(account.startingBalanceDate)).getTime() : 0);
+      // 1. Calculate Actual Total Balance (Entire History)
+      let totalBalance = Number(account.startingBalance) || 0;
+      allAccountTxs.forEach(tx => {
+        if (tx.type === 'CREDIT') totalBalance += (Number(tx.amount) || 0);
+        else if (tx.type === 'DEBIT') totalBalance -= (Number(tx.amount) || 0);
+      });
 
-      const txs = allTransactions.filter(tx => 
-        Number(tx.accountId) === Number(account.id) && 
-        new Date(tx.dateTime).getTime() >= startLimit
-      );
+      // 2. Calculate Inflow/Outflow for Current Month
+      const currentMonthTxs = allAccountTxs.filter(tx => {
+        const time = new Date(tx.dateTime).getTime();
+        return time >= monthStart && time <= monthEnd;
+      });
 
-      const inflow = txs.filter(tx => tx.type === 'CREDIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
-      const outflow = txs.filter(tx => tx.type === 'DEBIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+      const inflow = currentMonthTxs.filter(tx => tx.type === 'CREDIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+      const outflow = currentMonthTxs.filter(tx => tx.type === 'DEBIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
       
-      const baseBalance = latestClosing ? latestClosing.closingBalance : Number(account.startingBalance);
-      const currentBalance = baseBalance + inflow - outflow;
-
-      acc[account.id!] = { inflow, outflow, currentBalance };
+      acc[account.id!] = { inflow, outflow, currentBalance: totalBalance };
       return acc;
     }, {} as Record<number, { inflow: number, outflow: number, currentBalance: number }>);
-  }, [accounts, allTransactions, allClosings]);
+  }, [accounts, allTransactions]); // Only depend on accounts and allTransactions
 
   const handleAddAccount = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -316,7 +318,7 @@ export default function Accounts() {
                   <div className="bg-brand-green/5 dark:bg-brand-green/10 p-2.5 rounded-xl border border-brand-green/10">
                     <div className="flex items-center gap-1.5 text-brand-green mb-1">
                       <ArrowDownLeft className="w-3 h-3" />
-                      <span className="text-[10px] font-black uppercase tracking-tight">Inflow</span>
+                      <span className="text-[10px] font-black uppercase tracking-tight">Month Inflow</span>
                     </div>
                     <p className="text-sm font-black text-brand-green">
                       ₹{(accountBreakdown[account.id!]?.inflow || 0).toLocaleString('en-IN')}
@@ -325,7 +327,7 @@ export default function Accounts() {
                   <div className="bg-brand-red/5 dark:bg-brand-red/10 p-2.5 rounded-xl border border-brand-red/10">
                     <div className="flex items-center gap-1.5 text-brand-red mb-1">
                       <ArrowUpRight className="w-3 h-3" />
-                      <span className="text-[10px] font-black uppercase tracking-tight">Outflow</span>
+                      <span className="text-[10px] font-black uppercase tracking-tight">Month Outflow</span>
                     </div>
                     <p className="text-sm font-black text-brand-red">
                       ₹{(accountBreakdown[account.id!]?.outflow || 0).toLocaleString('en-IN')}
@@ -425,23 +427,25 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
   }, [account, transactions, granularity, referenceDate, customRange]) as (Transaction & { runningBalance: number })[];
     
 
-  const currentBalance = statementData.length > 0 
-    ? statementData[statementData.length - 1].runningBalance 
-    : (Number(account?.startingBalance) || 0);
-
   const totalCredit = statementData.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
   const totalDebit = statementData.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
-  
+
   const actualTotalBalance = useMemo(() => {
     let bal = Number(account?.startingBalance) || 0;
+    // We must use the full account history for the header balance
     transactions.forEach(tx => {
        if (tx.type === 'CREDIT') bal += (Number(tx.amount) || 0);
-       else bal -= (Number(tx.amount) || 0);
+       else if (tx.type === 'DEBIT') bal -= (Number(tx.amount) || 0);
     });
     return bal;
   }, [account?.startingBalance, transactions]);
 
-  const openingBalanceForView = currentBalance - totalCredit + totalDebit;
+  // Current balance shown in statement summary should be the running balance of the NEWEST transaction in view
+  const currentViewStateBalance = statementData.length > 0 
+    ? statementData[statementData.length - 1].runningBalance 
+    : actualTotalBalance;
+
+  const openingBalanceForView = currentViewStateBalance - totalCredit + totalDebit;
 
 
   const downloadCSV = () => {
@@ -480,7 +484,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     doc.setFontSize(10);
     doc.text(`Bank: ${account.bankName}`, 14, 30);
     doc.text(`Account: **** ${account.accountLast4}`, 14, 35);
-    doc.text(`Closing Balance: INR ${currentBalance.toLocaleString()}`, 14, 45);
+    doc.text(`Closing Balance: INR ${currentViewStateBalance.toLocaleString()}`, 14, 45);
 
     autoTable(doc, {
       startY: 55,
@@ -518,14 +522,14 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     await db.accountClosings.add({
       accountId: account.id!,
       closingDate: new Date(),
-      closingBalance: currentBalance,
+      closingBalance: actualTotalBalance,
       periodName: format(new Date(), 'dd MMM yyyy'),
       openingBalance: opening,
       totalInflow: inflow,
       totalOutflow: outflow
     });
     
-    alert(`Period closed! Balance of ₹${currentBalance.toLocaleString()} is now your new starting point.`);
+    alert(`Period closed! Balance of ₹${actualTotalBalance.toLocaleString()} is now your new starting point.`);
   };
 
   if (!account) return null;
@@ -565,7 +569,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               <div className="text-right">
                 <p className="text-[8px] font-black text-brand-blue/30 dark:text-white/30 uppercase tracking-widest mb-1">Closing</p>
                 <p className="text-sm font-black text-brand-blue dark:text-white">
-                  ₹{currentBalance.toLocaleString('en-IN')}
+                  ₹{currentViewStateBalance.toLocaleString('en-IN')}
                 </p>
               </div>
             </div>
