@@ -355,11 +355,6 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     db.transactions.where('accountId').equals(accountId).sortBy('dateTime')
   ) || [];
   
-  const closings = useLiveQuery(() => 
-    db.accountClosings.where('accountId').equals(accountId).sortBy('closingDate')
-  ) || [];
-
-  const [selectedPeriodId, setSelectedPeriodId] = useState<'LIVE' | number>('LIVE');
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [granularity, setGranularity] = useState<'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'ALL' | 'CUSTOM'>('ALL');
   const [referenceDate, setReferenceDate] = useState(new Date());
@@ -367,116 +362,72 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     start: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
     end: format(endOfMonth(new Date()), 'yyyy-MM-dd')
   });
-  const [viewFullHistory, setViewFullHistory] = useState(false);
 
-  const activeClosing = useMemo(() => {
-    if (selectedPeriodId === 'LIVE') {
-      return closings.length > 0 ? closings[closings.length - 1] : null;
-    }
-    return closings.find(c => c.id === selectedPeriodId) || null;
-  }, [closings, selectedPeriodId]);
 
 
 
   const statementData = useMemo(() => {
     if (!account) return [];
     
-    let baseBalance = 0;
-    let startDateLimit = 0;
+    let baseBalance = Number(account.startingBalance) || 0;
+    let startDateLimit = account.startingBalanceDate ? startOfDay(new Date(account.startingBalanceDate)).getTime() : 0;
     let endDateLimit = Infinity;
 
-    if (selectedPeriodId === 'LIVE') {
-      if (activeClosing && !viewFullHistory) {
-        baseBalance = Number(activeClosing.closingBalance);
-        startDateLimit = new Date(activeClosing.closingDate).getTime() + 1;
-      } else {
-        baseBalance = Number(account.startingBalance) || 0;
-        startDateLimit = account.startingBalanceDate ? startOfDay(new Date(account.startingBalanceDate)).getTime() : 0;
+    // Apply granularity filters
+    if (granularity !== 'ALL') {
+      const d = referenceDate;
+      if (granularity === 'DAY') {
+        startDateLimit = Math.max(startDateLimit, startOfDay(d).getTime());
+        endDateLimit = endOfDay(d).getTime();
+      } else if (granularity === 'WEEK') {
+        startDateLimit = Math.max(startDateLimit, startOfWeek(d, { weekStartsOn: 1 }).getTime());
+        endDateLimit = endOfWeek(d, { weekStartsOn: 1 }).getTime();
+      } else if (granularity === 'MONTH') {
+        startDateLimit = Math.max(startDateLimit, startOfMonth(d).getTime());
+        endDateLimit = endOfMonth(d).getTime();
+      } else if (granularity === 'YEAR') {
+        startDateLimit = Math.max(startDateLimit, startOfYear(d).getTime());
+        endDateLimit = endOfYear(d).getTime();
+      } else if (granularity === 'CUSTOM') {
+        startDateLimit = Math.max(startDateLimit, startOfDay(new Date(customRange.start)).getTime());
+        endDateLimit = endOfDay(new Date(customRange.end)).getTime();
       }
-
-      // Apply granularity filters
-      if (granularity !== 'ALL') {
-        const d = referenceDate;
-        if (granularity === 'DAY') {
-          startDateLimit = Math.max(startDateLimit, startOfDay(d).getTime());
-          endDateLimit = endOfDay(d).getTime();
-        } else if (granularity === 'WEEK') {
-          startDateLimit = Math.max(startDateLimit, startOfWeek(d, { weekStartsOn: 1 }).getTime());
-          endDateLimit = endOfWeek(d, { weekStartsOn: 1 }).getTime();
-        } else if (granularity === 'MONTH') {
-          startDateLimit = Math.max(startDateLimit, startOfMonth(d).getTime());
-          endDateLimit = endOfMonth(d).getTime();
-        } else if (granularity === 'YEAR') {
-          startDateLimit = Math.max(startDateLimit, startOfYear(d).getTime());
-          endDateLimit = endOfYear(d).getTime();
-        } else if (granularity === 'CUSTOM') {
-          startDateLimit = Math.max(startDateLimit, startOfDay(new Date(customRange.start)).getTime());
-          endDateLimit = endOfDay(new Date(customRange.end)).getTime();
-        }
-      }
-    } else if (activeClosing) {
-      baseBalance = activeClosing.openingBalance;
-      const closingDate = new Date(activeClosing.closingDate).getTime();
-      let rb = activeClosing.openingBalance;
-      return transactions
-        .filter(tx => {
-           const txTime = new Date(tx.dateTime).getTime();
-           const prevClosings = closings.filter(c => c.id !== undefined && activeClosing.id !== undefined && c.id < activeClosing.id);
-           const prevClosing = prevClosings.sort((a,b) => (b.id||0) - (a.id||0))[0];
-           const start = prevClosing ? new Date(prevClosing.closingDate).getTime() : 0;
-           const end = new Date(activeClosing.closingDate).getTime();
-           return txTime > start && txTime <= end;
-        })
-        .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())
-        .map((tx) => {
-           const amount = Number(tx.amount) || 0;
-           if (tx.type === 'CREDIT') rb += amount;
-           else if (tx.type === 'DEBIT') rb -= amount;
-           return { ...tx, amount, runningBalance: rb };
-        }) as (Transaction & { runningBalance: number })[];
     }
 
+    // Calculate initial running balance for transactions before the start date limit
+    // to ensure the running balance in the visible list is correct relative to starting balance.
     let runningBalance = baseBalance;
-    const filteredTxs = transactions.filter(tx => {
+    const allSortedTxs = [...transactions].sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+    
+    // Split transactions into "before current view" and "in current view"
+    const txsBefore = allSortedTxs.filter(tx => new Date(tx.dateTime).getTime() < startDateLimit);
+    const txsInView = allSortedTxs.filter(tx => {
       const txTime = new Date(tx.dateTime).getTime();
       return txTime >= startDateLimit && txTime <= endDateLimit;
     });
 
-    const sorted = [...filteredTxs].sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
-    
-    return sorted.map(tx => {
+    txsBefore.forEach(tx => {
+      const amount = Number(tx.amount) || 0;
+      if (tx.type === 'CREDIT') runningBalance += amount;
+      else if (tx.type === 'DEBIT') runningBalance -= amount;
+    });
+
+    return txsInView.map(tx => {
       const amount = Number(tx.amount) || 0;
       if (tx.type === 'CREDIT') runningBalance += amount;
       else if (tx.type === 'DEBIT') runningBalance -= amount;
       return { ...tx, amount, runningBalance } as Transaction & { runningBalance: number };
     });
-  }, [account, transactions, activeClosing, selectedPeriodId, closings, granularity, referenceDate]) as (Transaction & { runningBalance: number })[];
+  }, [account, transactions, granularity, referenceDate, customRange]) as (Transaction & { runningBalance: number })[];
+    
 
   const currentBalance = statementData.length > 0 
     ? statementData[statementData.length - 1].runningBalance 
-    : (activeClosing ? activeClosing.closingBalance : (Number(account?.startingBalance) || 0));
+    : (Number(account?.startingBalance) || 0);
 
   const totalCredit = statementData.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
   const totalDebit = statementData.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
 
-  const handleAudit = async () => {
-    if (!account) return;
-    const confirmAudit = window.confirm(`Audit this period? Current balance of ₹${currentBalance.toLocaleString()} will be set as the new starting point.`);
-    if (!confirmAudit) return;
-
-    const openingBal = activeClosing ? activeClosing.closingBalance : account.startingBalance;
-    
-    await db.accountClosings.add({
-      accountId: account.id!,
-      closingDate: new Date(),
-      closingBalance: currentBalance,
-      periodName: format(new Date(), 'MMM yyyy (dd-MM)'),
-      openingBalance: openingBal,
-      totalInflow: totalCredit,
-      totalOutflow: totalDebit
-    });
-    alert("Period audited successfully! Fresh entries will now start from this balance.");
-  };
 
   const downloadCSV = () => {
     if (!account) return;
@@ -514,7 +465,6 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     doc.setFontSize(10);
     doc.text(`Bank: ${account.bankName}`, 14, 30);
     doc.text(`Account: **** ${account.accountLast4}`, 14, 35);
-    doc.text(`Period: ${selectedPeriodId === 'LIVE' ? 'Life Transactions' : closings.find(c => c.id === selectedPeriodId)?.periodName}`, 14, 40);
     doc.text(`Closing Balance: INR ${currentBalance.toLocaleString()}`, 14, 45);
 
     autoTable(doc, {
@@ -539,190 +489,152 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
 
   return (
     <div className="fixed inset-0 bg-white dark:bg-[#060608] z-[100] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
-      {/* Typical Bank Statement Header */}
+      {/* Header */}
       <div className="bg-neutral-50 dark:bg-[#0C0C0F] border-b border-neutral-200 dark:border-[#222222] px-4 py-4">
         <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-white dark:bg-[#1A1A1A] rounded-xl flex items-center justify-center p-1.5 border border-neutral-100 dark:border-[#333333]">
-                  <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-black text-brand-blue dark:text-[#F7F7F7] uppercase tracking-tighter">{account.bankName}</h2>
-                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest leading-none">**** {account.accountLast4}</p>
-                </div>
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-white dark:bg-[#1A1A1A] rounded-xl flex items-center justify-center p-1.5 border border-neutral-100 dark:border-[#333333]">
+              <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
             </div>
-            <button onClick={onClose} className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-[#222222] flex items-center justify-center text-brand-blue dark:text-[#F7F7F7] hover:bg-neutral-300 transition-all">
-                <Plus className="w-6 h-6 rotate-45" />
-            </button>
+            <div>
+              <h2 className="text-sm font-black text-brand-blue dark:text-[#F7F7F7] uppercase tracking-tighter">{account.bankName}</h2>
+              <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest leading-none">**** {account.accountLast4}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-[#222222] flex items-center justify-center text-brand-blue dark:text-[#F7F7F7] hover:bg-neutral-300 transition-all">
+            <Plus className="w-6 h-6 rotate-45" />
+          </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="bg-white dark:bg-[#111111] p-4 rounded-2xl shadow-[0_10px_30px_rgba(26,35,126,0.05)] border border-neutral-100 dark:border-white/5">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-[8px] font-black text-brand-blue/30 dark:text-white/30 uppercase tracking-widest mb-1">Opening</p>
-                    <p className="text-sm font-black text-brand-blue/60 dark:text-white/60">
-                      ₹{(activeClosing ? activeClosing.closingBalance : account.startingBalance).toLocaleString('en-IN')}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[8px] font-black text-brand-blue/30 dark:text-white/30 uppercase tracking-widest mb-1">Current Balance</p>
-                    <p className="text-sm font-black text-brand-blue dark:text-white">
-                      ₹{currentBalance.toLocaleString('en-IN')}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="mt-3 pt-3 border-t border-neutral-100 dark:border-white/5 flex gap-4">
-                  <div className="flex-1">
-                    <p className="text-[7px] font-black text-brand-green uppercase tracking-widest mb-0.5">Inflow (+)</p>
-                    <p className="text-[10px] font-black text-brand-green">₹{totalCredit.toLocaleString('en-IN')}</p>
-                  </div>
-                  <div className="flex-1 text-right">
-                    <p className="text-[7px] font-black text-brand-red uppercase tracking-widest mb-0.5">Outflow (-)</p>
-                    <p className="text-[10px] font-black text-brand-red">₹{totalDebit.toLocaleString('en-IN')}</p>
-                  </div>
-                </div>
-            </div>
-            
-            <div className="flex flex-col gap-2">
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <button 
-                      onClick={() => setShowExportMenu(!showExportMenu)}
-                      className="w-full flex items-center justify-center gap-2 bg-white dark:bg-[#1A1A1A] text-brand-blue dark:text-white py-2 rounded-xl border border-neutral-100 dark:border-[#222222] font-black text-[10px] uppercase shadow-sm"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      Export
-                    </button>
-                    {showExportMenu && (
-                      <div className="absolute top-full mt-2 right-0 w-32 bg-white dark:bg-[#1C1C22] shadow-2xl shadow-black/20 rounded-xl border border-neutral-100 dark:border-[#222222] z-[110] overflow-hidden flex flex-col">
-                        <button onClick={downloadPDF} className="p-3 text-left text-[10px] font-black text-brand-blue dark:text-white hover:bg-neutral-50 dark:hover:bg-white/5 flex items-center gap-2">
-                           <FileText className="w-3.5 h-3.5 text-brand-red" /> PDF
-                        </button>
-                        <button onClick={downloadCSV} className="p-3 text-left text-[10px] font-black text-brand-blue dark:text-white hover:bg-neutral-50 dark:hover:bg-white/5 flex items-center gap-2 border-t border-neutral-100 dark:border-white/5">
-                           <Printer className="w-3.5 h-3.5 text-brand-green" /> CSV
-                        </button>
-                        <button 
-                          onClick={() => navigate(`/reports?accountId=${account.id}`)} 
-                          className="p-3 text-left text-[10px] font-black text-brand-blue dark:text-white hover:bg-neutral-50 dark:hover:bg-white/5 flex items-center gap-2 border-t border-neutral-100 dark:border-white/5 bg-brand-blue/5"
-                        >
-                           <MoreHorizontal className="w-3.5 h-3.5 text-brand-cyan" /> ADVANCED
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <button 
-                    onClick={handleAudit}
-                    className="flex-1 flex items-center justify-center gap-2 bg-brand-green text-white py-2 rounded-xl font-black text-[10px] uppercase shadow-lg shadow-brand-green/20"
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    Close Period
-                  </button>
-                </div>
-
-                <div className="relative">
-                  <select 
-                    value={selectedPeriodId}
-                    onChange={(e) => setSelectedPeriodId(e.target.value === 'LIVE' ? 'LIVE' : Number(e.target.value))}
-                    className="w-full appearance-none bg-neutral-100 dark:bg-[#1A1A1A] text-brand-blue dark:text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase outline-none border border-transparent focus:border-brand-blue transition-all"
-                  >
-                    <option value="LIVE">Activity Since Audit</option>
-                    {closings.map(c => (
-                      <option key={c.id} value={c.id}>{c.periodName}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-brand-blue/50 pointer-events-none" />
-                </div>
-                
-                {selectedPeriodId === 'LIVE' && (
-                  <button 
-                    onClick={() => setViewFullHistory(!viewFullHistory)}
-                    className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${
-                      viewFullHistory 
-                        ? 'bg-brand-blue text-white shadow-lg' 
-                        : 'bg-neutral-100 dark:bg-[#1A1A1A] text-brand-blue/40'
-                    }`}
-                  >
-                    All History
-                  </button>
-                )}
+          <div className="bg-white dark:bg-[#111111] p-4 rounded-2xl shadow-[0_10px_30px_rgba(26,35,126,0.05)] border border-neutral-100 dark:border-white/5">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-[8px] font-black text-brand-blue/30 dark:text-white/30 uppercase tracking-widest mb-1">Starting</p>
+                <p className="text-sm font-black text-brand-blue/60 dark:text-white/60">
+                  ₹{(Number(account.startingBalance) || 0).toLocaleString('en-IN')}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[8px] font-black text-brand-blue/30 dark:text-white/30 uppercase tracking-widest mb-1">Current Balance</p>
+                <p className="text-sm font-black text-brand-blue dark:text-white">
+                  ₹{currentBalance.toLocaleString('en-IN')}
+                </p>
               </div>
             </div>
-
-        {/* Granularity & Navigation */}
-        {selectedPeriodId === 'LIVE' && (
-          <div className="mt-3 flex flex-col sm:flex-row gap-2">
-            <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-0.5 rounded-xl flex-1 overflow-x-auto">
-              {(['ALL', 'YEAR', 'MONTH', 'WEEK', 'DAY', 'CUSTOM'] as const).map((g) => (
-                <button
-                  key={g}
-                  onClick={() => setGranularity(g)}
-                  className={`flex-1 px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-tight transition-all shrink-0 ${
-                    granularity === g 
-                      ? 'bg-white dark:bg-[#333333] text-brand-blue dark:text-white shadow-sm' 
-                      : 'text-neutral-400'
-                  }`}
-                >
-                  {g}
-                </button>
-              ))}
+            <div className="mt-3 pt-3 border-t border-neutral-100 dark:border-white/5 flex gap-4">
+              <div className="flex-1">
+                <p className="text-[7px] font-black text-brand-green uppercase tracking-widest mb-0.5">Inflow (+)</p>
+                <p className="text-[10px] font-black text-brand-green">₹{totalCredit.toLocaleString('en-IN')}</p>
+              </div>
+              <div className="flex-1 text-right">
+                <p className="text-[7px] font-black text-brand-red uppercase tracking-widest mb-0.5">Outflow (-)</p>
+                <p className="text-[10px] font-black text-brand-red">₹{totalDebit.toLocaleString('en-IN')}</p>
+              </div>
             </div>
-            
-            {granularity === 'CUSTOM' && (
-              <div className="flex items-center gap-1 bg-neutral-100 dark:bg-[#1A1A1A] px-2 py-1 rounded-xl">
-                <input 
-                  type="date"
-                  value={customRange.start}
-                  onChange={(e) => setCustomRange(prev => ({ ...prev, start: e.target.value }))}
-                  className="bg-transparent text-[9px] font-black text-brand-blue dark:text-white outline-none"
-                />
-                <span className="text-[9px] font-black text-neutral-400">TO</span>
-                <input 
-                  type="date"
-                  value={customRange.end}
-                  onChange={(e) => setCustomRange(prev => ({ ...prev, end: e.target.value }))}
-                  className="bg-transparent text-[9px] font-black text-brand-blue dark:text-white outline-none"
-                />
-              </div>
-            )}
-
-            {granularity !== 'ALL' && granularity !== 'CUSTOM' && (
-              <div className="flex items-center gap-1 bg-neutral-100 dark:bg-[#1A1A1A] px-2 py-1 rounded-xl">
-                <button 
-                  onClick={() => {
-                    if (granularity === 'DAY') setReferenceDate(subDays(referenceDate, 1));
-                    if (granularity === 'WEEK') setReferenceDate(subWeeks(referenceDate, 1));
-                    if (granularity === 'MONTH') setReferenceDate(subMonths(referenceDate, 1));
-                    if (granularity === 'YEAR') setReferenceDate(subYears(referenceDate, 1));
-                  }}
-                  className="p-1 text-brand-blue dark:text-neutral-400"
-                >
-                  <ChevronDown className="w-4 h-4 rotate-90" />
-                </button>
-                <span className="text-[9px] font-black text-brand-blue dark:text-white min-w-[70px] text-center uppercase tracking-tighter">
-                  {granularity === 'DAY' && format(referenceDate, 'dd MMM yyyy')}
-                  {granularity === 'WEEK' && `Week ${format(referenceDate, 'ww, yyyy')}`}
-                  {granularity === 'MONTH' && format(referenceDate, 'MMM yyyy')}
-                  {granularity === 'YEAR' && format(referenceDate, 'yyyy')}
-                </span>
-                <button 
-                  onClick={() => {
-                    if (granularity === 'DAY') setReferenceDate(addDays(referenceDate, 1));
-                    if (granularity === 'WEEK') setReferenceDate(addWeeks(referenceDate, 1));
-                    if (granularity === 'MONTH') setReferenceDate(addMonths(referenceDate, 1));
-                    if (granularity === 'YEAR') setReferenceDate(addYears(referenceDate, 1));
-                  }}
-                  className="p-1 text-brand-blue dark:text-neutral-400"
-                >
-                  <ChevronDown className="w-4 h-4 -rotate-90" />
-                </button>
-              </div>
-            )}
           </div>
-        )}
+
+          <div className="flex flex-col justify-center">
+            <div className="relative">
+              <button 
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                className="w-full flex items-center justify-center gap-2 bg-white dark:bg-[#1A1A1A] text-brand-blue dark:text-white py-3 rounded-xl border border-neutral-100 dark:border-[#222222] font-black text-[10px] uppercase shadow-sm"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Export Ledger
+              </button>
+              {showExportMenu && (
+                <div className="absolute top-full mt-2 right-0 w-48 bg-white dark:bg-[#1C1C22] shadow-2xl shadow-black/20 rounded-xl border border-neutral-100 dark:border-[#222222] z-[110] overflow-hidden flex flex-col">
+                  <button onClick={downloadPDF} className="p-3 text-left text-[10px] font-black text-brand-blue dark:text-white hover:bg-neutral-50 dark:hover:bg-white/5 flex items-center gap-2">
+                    <FileText className="w-3.5 h-3.5 text-brand-red" /> PDF STATEMENT
+                  </button>
+                  <button onClick={downloadCSV} className="p-3 text-left text-[10px] font-black text-brand-blue dark:text-white hover:bg-neutral-50 dark:hover:bg-white/5 flex items-center gap-2 border-t border-neutral-100 dark:border-white/5">
+                    <Printer className="w-3.5 h-3.5 text-brand-green" /> CSV LEDGER
+                  </button>
+                  <button 
+                    onClick={() => navigate(`/reports?accountId=${account.id}`)} 
+                    className="p-3 text-left text-[10px] font-black text-brand-blue dark:text-white hover:bg-neutral-50 dark:hover:bg-white/5 flex items-center gap-2 border-t border-neutral-100 dark:border-white/5 bg-brand-blue/5"
+                  >
+                    <MoreHorizontal className="w-3.5 h-3.5 text-brand-cyan" /> ADVANCED REPORTS
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="mt-4 flex flex-col sm:flex-row gap-2">
+          <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-0.5 rounded-xl flex-1 overflow-x-auto">
+            {(['ALL', 'YEAR', 'MONTH', 'WEEK', 'DAY', 'CUSTOM'] as const).map((g) => (
+              <button
+                key={g}
+                onClick={() => setGranularity(g)}
+                className={`flex-1 px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-tight transition-all shrink-0 ${
+                  granularity === g 
+                    ? 'bg-white dark:bg-[#333333] text-brand-blue dark:text-white shadow-sm' 
+                    : 'text-neutral-400'
+                }`}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+
+          {granularity === 'CUSTOM' && (
+            <div className="flex items-center gap-1 bg-neutral-100 dark:bg-[#1A1A1A] px-2 py-1 rounded-xl">
+              <input 
+                type="date"
+                value={customRange.start}
+                onChange={(e) => setCustomRange(prev => ({ ...prev, start: e.target.value }))}
+                className="bg-transparent text-[9px] font-black text-brand-blue dark:text-white outline-none"
+              />
+              <span className="text-[9px] font-black text-neutral-400">TO</span>
+              <input 
+                type="date"
+                value={customRange.end}
+                onChange={(e) => setCustomRange(prev => ({ ...prev, end: e.target.value }))}
+                className="bg-transparent text-[9px] font-black text-brand-blue dark:text-white outline-none"
+              />
+            </div>
+          )}
+
+          {granularity !== 'ALL' && granularity !== 'CUSTOM' && (
+            <div className="flex items-center gap-1 bg-neutral-100 dark:bg-[#1A1A1A] px-2 py-1 rounded-xl">
+              <button 
+                onClick={() => {
+                  if (granularity === 'DAY') setReferenceDate(subDays(referenceDate, 1));
+                  if (granularity === 'WEEK') setReferenceDate(subWeeks(referenceDate, 1));
+                  if (granularity === 'MONTH') setReferenceDate(subMonths(referenceDate, 1));
+                  if (granularity === 'YEAR') setReferenceDate(subYears(referenceDate, 1));
+                }}
+                className="p-1 text-brand-blue dark:text-neutral-400"
+              >
+                <ChevronDown className="w-4 h-4 rotate-90" />
+              </button>
+              <span className="text-[9px] font-black text-brand-blue dark:text-white min-w-[70px] text-center uppercase tracking-tighter">
+                {granularity === 'DAY' && format(referenceDate, 'dd MMM yyyy')}
+                {granularity === 'WEEK' && `Week ${format(referenceDate, 'ww, yyyy')}`}
+                {granularity === 'MONTH' && format(referenceDate, 'MMM yyyy')}
+                {granularity === 'YEAR' && format(referenceDate, 'yyyy')}
+              </span>
+              <button 
+                onClick={() => {
+                  if (granularity === 'DAY') setReferenceDate(addDays(referenceDate, 1));
+                  if (granularity === 'WEEK') setReferenceDate(addWeeks(referenceDate, 1));
+                  if (granularity === 'MONTH') setReferenceDate(addMonths(referenceDate, 1));
+                  if (granularity === 'YEAR') setReferenceDate(addYears(referenceDate, 1));
+                }}
+                className="p-1 text-brand-blue dark:text-neutral-400"
+              >
+                <ChevronDown className="w-4 h-4 -rotate-90" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* Ledger Table */}
       <div className="flex-1 overflow-auto bg-white dark:bg-[#060608]">
         <table className="w-full border-collapse border-spacing-0 text-[10px] min-w-[320px]">
           <thead className="sticky top-0 z-10 bg-neutral-50 dark:bg-[#111111]">
@@ -735,9 +647,6 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-[#0C0C0F]">
-            {/* Transactions In Chronological Order */}
-
-            {/* Transactions In Chronological Order */}
             {statementData.map((tx, idx) => (
               <tr key={tx.id || idx} className="border-b border-neutral-50 dark:border-[#1A1A1A] hover:bg-neutral-50/50 transition-colors">
                 <td className="px-2 py-3 text-neutral-400 text-[9px] text-center font-bold">
@@ -775,11 +684,11 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             ))}
             
             {statementData.length === 0 && (
-                <tr>
-                    <td colSpan={5} className="py-10 text-center">
-                        <p className="text-[9px] font-black text-neutral-200 uppercase tracking-widest">No Recent Transactions</p>
-                    </td>
-                </tr>
+              <tr>
+                <td colSpan={5} className="py-10 text-center">
+                  <p className="text-[9px] font-black text-neutral-200 uppercase tracking-widest">No Transactions in this period</p>
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
