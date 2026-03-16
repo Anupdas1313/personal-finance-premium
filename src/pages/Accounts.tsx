@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction } from '../lib/db';
-import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark, Download, FileText, CheckCircle2, History, Calendar, ChevronDown, Printer, MoreHorizontal, Bookmark } from 'lucide-react';
+import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark, Download, FileText, CheckCircle2, History, Calendar, ChevronDown, Printer, MoreHorizontal } from 'lucide-react';
 import { BankLogo } from '../components/BankLogo';
 import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
 import { format, startOfDay, parseISO, endOfMonth, startOfMonth, subMonths, endOfDay, startOfWeek, endOfWeek, startOfYear, endOfYear, addMonths, subWeeks, addWeeks, subDays, addDays, subYears, addYears } from 'date-fns';
@@ -459,10 +459,10 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
   const totalCredit = statementData.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
   const totalDebit = statementData.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
 
-  const handleBookmark = async () => {
+  const handleAudit = async () => {
     if (!account) return;
-    const confirmBookmark = window.confirm(`Bookmark current balance? Current total of ₹${currentBalance.toLocaleString()} will be saved as a checkpoint in your history.`);
-    if (!confirmBookmark) return;
+    const confirmAudit = window.confirm(`Audit this period? Current balance of ₹${currentBalance.toLocaleString()} will be set as the new starting point.`);
+    if (!confirmAudit) return;
 
     const openingBal = activeClosing ? activeClosing.closingBalance : account.startingBalance;
     
@@ -470,12 +470,12 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
       accountId: account.id!,
       closingDate: new Date(),
       closingBalance: currentBalance,
-      periodName: format(new Date(), 'dd MMM yyyy'),
+      periodName: format(new Date(), 'MMM yyyy (dd-MM)'),
       openingBalance: openingBal,
       totalInflow: totalCredit,
       totalOutflow: totalDebit
     });
-    alert("Balance bookmarked! Fresh entries will now calculate from this checkpoint.");
+    alert("Period audited successfully! Fresh entries will now start from this balance.");
   };
 
   const downloadCSV = () => {
@@ -562,8 +562,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                   <p className="text-[10px] font-black text-brand-blue/30 dark:text-white/30 uppercase">Balance</p>
                   {activeClosing && (
                     <div className="text-right">
-                      <p className="text-[8px] font-black text-brand-blue/20 dark:text-white/20 uppercase">Last Bookmark</p>
-                      <p className="text-[10px] font-black text-brand-blue/60 dark:text-white/60">₹{activeClosing.closingBalance.toLocaleString('en-IN')}</p>
+                      <p className="text-[8px] font-black text-brand-blue/20 dark:text-white/20 uppercase">Last Audited</p>
+                      <p className="text-[10px] font-black text-brand-green">₹{activeClosing.closingBalance.toLocaleString('en-IN')}</p>
                     </div>
                   )}
                 </div>
@@ -605,11 +605,11 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                     )}
                   </div>
                   <button 
-                    onClick={handleBookmark}
-                    className="flex-1 flex items-center justify-center gap-2 bg-brand-blue text-white py-2 rounded-xl font-black text-[10px] uppercase shadow-lg shadow-brand-blue/20"
+                    onClick={handleAudit}
+                    className="flex-1 flex items-center justify-center gap-2 bg-brand-green text-white py-2 rounded-xl font-black text-[10px] uppercase shadow-lg shadow-brand-green/20"
                   >
-                    <Bookmark className="w-3.5 h-3.5" />
-                    Bookmark
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Audit
                   </button>
                 </div>
 
@@ -619,7 +619,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                     onChange={(e) => setSelectedPeriodId(e.target.value === 'LIVE' ? 'LIVE' : Number(e.target.value))}
                     className="w-full appearance-none bg-neutral-100 dark:bg-[#1A1A1A] text-brand-blue dark:text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase outline-none border border-transparent focus:border-brand-blue transition-all"
                   >
-                    <option value="LIVE">Live Since Bookmark</option>
+                    <option value="LIVE">Activity Since Audit</option>
                     {closings.map(c => (
                       <option key={c.id} value={c.id}>{c.periodName}</option>
                     ))}
@@ -728,18 +728,17 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
           </thead>
           <tbody className="bg-white dark:bg-[#0C0C0F]">
             {/* Opening Balance Logic */}
-            <tr className={`border-b border-neutral-50 dark:border-[#1A1A1A] ${activeClosing ? 'bg-brand-blue/5 dark:bg-brand-blue/10 border-l-[3px] border-l-brand-blue/40' : 'bg-neutral-50/20'}`}>
+            <tr className={`border-b border-neutral-50 dark:border-[#1A1A1A] ${activeClosing ? 'bg-amber-50/50 dark:bg-amber-900/20 border-l-[3px] border-l-amber-500' : 'bg-neutral-50/20'}`}>
               <td className="px-2 py-3 text-neutral-400 text-[9px]">
                 {selectedPeriodId === 'LIVE' 
                   ? (activeClosing ? format(new Date(activeClosing.closingDate), 'dd MMM') : (account.startingBalanceDate ? format(new Date(account.startingBalanceDate), 'dd MMM') : '-'))
                   : (activeClosing ? format(new Date(activeClosing.closingDate), 'dd MMM') : '-')
                 }
               </td>
-              <td className="px-2 py-3 font-bold text-brand-blue dark:text-white text-[9px] flex items-center gap-1.5">
-                <Bookmark className="w-2.5 h-2.5 opacity-40" />
+              <td className="px-2 py-3 font-bold text-brand-blue dark:text-white text-[9px]">
                 {activeClosing 
-                  ? `BOOKMARK POINT: ${format(new Date(activeClosing.closingDate), 'dd MMM yyyy').toUpperCase()}` 
-                  : 'NOTEBOOK STARTING BALANCE'}
+                  ? `NEW AUDITED BALANCE AS OF ${format(new Date(activeClosing.closingDate), 'dd MMM yyyy').toUpperCase()}` 
+                  : 'OPENING BALANCE'}
               </td>
               <td className="px-2 py-3 text-right text-neutral-300">-</td>
               <td className="px-2 py-3 text-right text-brand-green font-bold">
@@ -751,63 +750,41 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             </tr>
 
             {/* Transactions In Chronological Order */}
-            {statementData.map((tx, idx) => {
-              const prevTx = idx > 0 ? statementData[idx-1] : null;
-              const bookmarkInBetween = viewFullHistory && closings.find(c => {
-                const cTime = new Date(c.closingDate).getTime();
-                const txTime = new Date(tx.dateTime).getTime();
-                const prevTxTime = prevTx ? new Date(prevTx.dateTime).getTime() : 0;
-                return cTime < txTime && cTime > prevTxTime;
-              });
-
-              return (
-                <React.Fragment key={tx.id || idx}>
-                  {bookmarkInBetween && (
-                    <tr className="bg-brand-blue/5 dark:bg-brand-blue/10 border-y border-brand-blue/10">
-                      <td colSpan={5} className="px-4 py-1.5">
-                        <div className="flex items-center gap-2">
-                          <Bookmark className="w-3 h-3 text-brand-blue opacity-30" />
-                          <span className="text-[8px] font-black text-brand-blue/40 uppercase tracking-[0.2em]">Bookmark Point: {format(new Date(bookmarkInBetween.closingDate), 'dd MMM yyyy')} | Balance: ₹{bookmarkInBetween.closingBalance.toLocaleString()}</span>
-                        </div>
-                      </td>
-                    </tr>
+            {statementData.map((tx, idx) => (
+              <tr key={tx.id || idx} className="border-b border-neutral-50 dark:border-[#1A1A1A] hover:bg-neutral-50/50 transition-colors">
+                <td className="px-2 py-3 text-neutral-400 text-[9px] text-center font-bold">
+                  <div className="flex flex-col">
+                    <span>{format(new Date(tx.dateTime), 'dd')}</span>
+                    <span className="text-[7px] uppercase">{format(new Date(tx.dateTime), 'MMM')}</span>
+                  </div>
+                </td>
+                <td className="px-2 py-3 max-w-[180px]">
+                  <p className="font-black text-brand-blue dark:text-[#F7F7F7] text-[10px] leading-tight truncate uppercase tracking-tighter">
+                    {tx.party || tx.category || 'N/A'}
+                  </p>
+                  {tx.note && (
+                    <p className="text-[8px] text-neutral-400 font-bold mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis uppercase tracking-tighter">
+                      {tx.note}
+                    </p>
                   )}
-                  <tr className="border-b border-neutral-50 dark:border-[#1A1A1A] hover:bg-neutral-50/50 transition-colors">
-                    <td className="px-2 py-3 text-neutral-400 text-[9px] text-center font-bold">
-                      <div className="flex flex-col">
-                        <span>{format(new Date(tx.dateTime), 'dd')}</span>
-                        <span className="text-[7px] uppercase">{format(new Date(tx.dateTime), 'MMM')}</span>
-                      </div>
-                    </td>
-                    <td className="px-2 py-3 max-w-[180px]">
-                      <p className="font-black text-brand-blue dark:text-[#F7F7F7] text-[10px] leading-tight truncate uppercase tracking-tighter">
-                        {tx.party || tx.category || 'N/A'}
-                      </p>
-                      {tx.note && (
-                        <p className="text-[8px] text-neutral-400 font-bold mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis uppercase tracking-tighter">
-                          {tx.note}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-1.5 mt-1 opacity-40">
-                        <div className="w-1 h-1 rounded-full bg-neutral-300" />
-                        <span className="text-[7px] font-black uppercase tracking-widest">{tx.category}</span>
-                      </div>
-                    </td>
-                    <td className="px-2 py-3 text-right">
-                      {tx.type === 'DEBIT' && <span className="text-brand-red font-bold">₹{tx.amount.toLocaleString('en-IN')}</span>}
-                      {tx.type !== 'DEBIT' && <span className="text-neutral-300">-</span>}
-                    </td>
-                    <td className="px-2 py-3 text-right">
-                      {tx.type === 'CREDIT' && <span className="text-brand-green font-bold">₹{tx.amount.toLocaleString('en-IN')}</span>}
-                      {tx.type !== 'CREDIT' && <span className="text-neutral-300">-</span>}
-                    </td>
-                    <td className={`px-2 py-3 text-right font-black ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
-                      ₹{tx.runningBalance.toLocaleString('en-IN')}
-                    </td>
-                  </tr>
-                </React.Fragment>
-              );
-            })}
+                  <div className="flex items-center gap-1.5 mt-1 opacity-40">
+                    <div className="w-1 h-1 rounded-full bg-neutral-300" />
+                    <span className="text-[7px] font-black uppercase tracking-widest">{tx.category}</span>
+                  </div>
+                </td>
+                <td className="px-2 py-3 text-right">
+                  {tx.type === 'DEBIT' && <span className="text-brand-red font-bold">₹{tx.amount.toLocaleString('en-IN')}</span>}
+                  {tx.type !== 'DEBIT' && <span className="text-neutral-300">-</span>}
+                </td>
+                <td className="px-2 py-3 text-right">
+                  {tx.type === 'CREDIT' && <span className="text-brand-green font-bold">₹{tx.amount.toLocaleString('en-IN')}</span>}
+                  {tx.type !== 'CREDIT' && <span className="text-neutral-300">-</span>}
+                </td>
+                <td className={`px-2 py-3 text-right font-black ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
+                  ₹{tx.runningBalance.toLocaleString('en-IN')}
+                </td>
+              </tr>
+            ))}
             
             {statementData.length === 0 && (
                 <tr>
