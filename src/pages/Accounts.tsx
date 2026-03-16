@@ -416,19 +416,17 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
       else if (tx.type === 'DEBIT') runningBalance -= amount;
     });
 
-    const result = txsInView.map(tx => {
+    return txsInView.map(tx => {
       const amount = Number(tx.amount) || 0;
       if (tx.type === 'CREDIT') runningBalance += amount;
       else if (tx.type === 'DEBIT') runningBalance -= amount;
       return { ...tx, amount, runningBalance } as Transaction & { runningBalance: number };
     });
-
-    return result.reverse(); // Newest first
   }, [account, transactions, granularity, referenceDate, customRange]) as (Transaction & { runningBalance: number })[];
     
 
   const currentBalance = statementData.length > 0 
-    ? statementData[0].runningBalance 
+    ? statementData[statementData.length - 1].runningBalance 
     : (Number(account?.startingBalance) || 0);
 
   const totalCredit = statementData.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
@@ -705,13 +703,13 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
           <tbody className="bg-white dark:bg-[#0C0C0F]">
             {statementData.map((tx, idx) => {
               const prevTx = idx > 0 ? statementData[idx-1] : null;
-              // In Descending order, prevTx is NEWER than tx.
-              // We check if a partition happened AFTER tx but BEFORE prevTx
+              // In Ascending order, tx is NEWER than prevTx.
+              // We check if a partition happened AFTER prevTx but BEFORE tx
               const partitionInBetween = closings.find(c => {
                 const cTime = new Date(c.closingDate).getTime();
                 const txTime = new Date(tx.dateTime).getTime();
-                const prevTxTime = prevTx ? new Date(prevTx.dateTime).getTime() : Infinity;
-                return cTime > txTime && cTime < prevTxTime;
+                const prevTxTime = prevTx ? new Date(prevTx.dateTime).getTime() : 0;
+                return cTime < txTime && cTime > prevTxTime;
               });
 
               return (
