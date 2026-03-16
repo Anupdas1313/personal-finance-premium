@@ -159,7 +159,7 @@ export default function Dashboard() {
         setUpiApp('');
         setExpenseType('');
         setToAccountId('');
-      }, 1500);
+      }, 800);
     } catch (error) {
       setStatus('error');
       setErrorMessage('Failed to save transaction.');
@@ -168,80 +168,82 @@ export default function Dashboard() {
   };
 
   const monthlyClosings = useLiveQuery(() => db.monthlyClosings.orderBy('month').reverse().toArray()) || [];
-  const latestClosedMonth = monthlyClosings[0];
-
-  const allTransactions = useLiveQuery(() => db.transactions.toArray()) || [];
   const allClosings = useLiveQuery(() => db.accountClosings.toArray()) || [];
-  
-  const balances = accounts.map(acc => {
-    // 1. Check for account-specific audits (highest priority)
-    const accountSpecificClosings = allClosings
-      .filter(c => c.accountId === acc.id)
-      .sort((a, b) => new Date(b.closingDate).getTime() - new Date(a.closingDate).getTime());
-    
-    const latestAudit = accountSpecificClosings[0];
 
-    if (latestAudit) {
-      const auditDate = new Date(latestAudit.closingDate).getTime();
-      const txsSinceAudit = allTransactions.filter(t => 
-        Number(t.accountId) === Number(acc.id) && 
-        new Date(t.dateTime).getTime() > auditDate
-      );
-      const balance = txsSinceAudit.reduce((accBal, tx) => {
-        const amt = Number(tx.amount) || 0;
-        return tx.type === 'CREDIT' ? accBal + amt : accBal - amt;
-      }, latestAudit.closingBalance);
-      return { ...acc, currentBalance: balance };
-    }
+  // Optimized balance and metrics calculation
+  const { balances, totalIncome, totalSpending } = useLiveQuery(async () => {
+    const accs = await db.accounts.toArray();
+    const closings = await db.accountClosings.toArray();
+    const monthlyClosings = await db.monthlyClosings.orderBy('month').reverse().toArray();
+    const latestMonthly = monthlyClosings[0];
 
-    // 2. Fallback to old monthlyClosings system or starting balance
-    const startLimit = acc.startingBalanceDate ? startOfDay(new Date(acc.startingBalanceDate)).getTime() : 0;
-    let startingBalance = Number(acc.startingBalance) || 0;
-    let txsToConsider = allTransactions.filter(t => Number(t.accountId) === Number(acc.id));
+    let income = 0;
+    let spending = 0;
 
-    if (latestClosedMonth && latestClosedMonth.accountBalances[acc.id!] !== undefined) {
-      startingBalance = Number(latestClosedMonth.accountBalances[acc.id!]);
-      const nextMonthStart = new Date(new Date(latestClosedMonth.month + '-01').getFullYear(), new Date(latestClosedMonth.month + '-01').getMonth() + 1, 1).getTime();
-      txsToConsider = txsToConsider.filter(t => new Date(t.dateTime).getTime() >= nextMonthStart);
-    } else if (startLimit) {
-      txsToConsider = txsToConsider.filter(t => startOfDay(new Date(t.dateTime)).getTime() >= startLimit);
-    }
-
-    const currentBalance = txsToConsider.reduce((accBal, tx) => {
-      const amt = Number(tx.amount) || 0;
-      return tx.type === 'CREDIT' ? accBal + amt : accBal - amt;
-    }, startingBalance);
-    
-    return { ...acc, currentBalance };
-  });
-
-  const filteredTransactions = useMemo(() => {
     const now = new Date();
+    const monthStart = startOfMonth(now);
+    const yearStart = startOfYear(now);
+
+    const calculatedBalances = await Promise.all(accs.map(async (acc) => {
+      const accountClosings = closings
+        .filter(c => c.accountId === acc.id)
+        .sort((a, b) => new Date(b.closingDate).getTime() - new Date(a.closingDate).getTime());
+      
+      const latestAudit = accountClosings[0];
+      let balance = 0;
+      let txs = [];
+
+      if (latestAudit) {
+        const auditDate = new Date(latestAudit.closingDate);
+        txs = await db.transactions
+          .where('accountId').equals(acc.id!)
+          .filter(t => t.dateTime > auditDate)
+          .toArray();
+        balance = latestAudit.closingBalance;
+      } else if (latestMonthly && latestMonthly.accountBalances[acc.id!] !== undefined) {
+        const nextMonthStart = new Date(new Date(latestMonthly.month + '-01').getFullYear(), new Date(latestMonthly.month + '-01').getMonth() + 1, 1);
+        txs = await db.transactions
+          .where('accountId').equals(acc.id!)
+          .filter(t => t.dateTime >= nextMonthStart)
+          .toArray();
+        balance = latestMonthly.accountBalances[acc.id!];
+      } else {
+        const startLimit = acc.startingBalanceDate ? startOfDay(new Date(acc.startingBalanceDate)) : new Date(0);
+        txs = await db.transactions
+          .where('accountId').equals(acc.id!)
+          .filter(t => t.dateTime >= startLimit)
+          .toArray();
+        balance = Number(acc.startingBalance) || 0;
+      }
+
+      return txs.reduce((accBal, tx) => {
+        return tx.type === 'CREDIT' ? accBal + tx.amount : accBal - tx.amount;
+      }, balance);
+    }));
+
+    // Calculate metrics for current period
+    let metricsTxs = [];
     if (timeFilter === 'This Month') {
-      const monthStart = startOfMonth(now).getTime();
-      return allTransactions.filter(tx => new Date(tx.dateTime).getTime() >= monthStart);
+      metricsTxs = await db.transactions.where('dateTime').above(monthStart).toArray();
+    } else if (timeFilter === 'This Year') {
+      metricsTxs = await db.transactions.where('dateTime').above(yearStart).toArray();
+    } else {
+      metricsTxs = await db.transactions.toArray();
     }
-    if (timeFilter === 'This Year') {
-      const yearStart = startOfYear(now).getTime();
-      return allTransactions.filter(tx => new Date(tx.dateTime).getTime() >= yearStart);
-    }
-    return allTransactions;
-  }, [allTransactions, timeFilter]);
 
-  const { totalIncome, totalSpending } = useMemo(() => {
-    return filteredTransactions.reduce(
-      (acc, tx) => {
-        const amt = Number(tx.amount) || 0;
-        if (tx.type === 'CREDIT') acc.totalIncome += amt;
-        if (tx.type === 'DEBIT') acc.totalSpending += amt;
-        return acc;
-      },
-      { totalIncome: 0, totalSpending: 0 }
-    );
-  }, [filteredTransactions]);
+    metricsTxs.forEach(tx => {
+      if (tx.type === 'CREDIT') income += tx.amount;
+      if (tx.type === 'DEBIT') spending += tx.amount;
+    });
 
+    return { 
+      balances: accs.map((acc, i) => ({ ...acc, currentBalance: calculatedBalances[i] })), 
+      totalIncome: income, 
+      totalSpending: spending 
+    };
+  }, [timeFilter]) || { balances: [], totalIncome: 0, totalSpending: 0 };
+  
   const netBalance = totalIncome - totalSpending;
-
   const totalBalance = balances.reduce((sum, acc) => sum + acc.currentBalance, 0);
 
   const greeting = useMemo(() => {

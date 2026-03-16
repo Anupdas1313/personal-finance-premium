@@ -103,7 +103,14 @@ export default function TransactionTable() {
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.3));
   const handleZoomReset = () => setZoom(1);
 
-  const allTransactionsRaw = useLiveQuery(() => db.transactions.toArray()) || [];
+  const allTransactionsRaw = useLiveQuery(() => {
+    if (startDate && endDate) {
+      const start = startOfDay(new Date(startDate));
+      const end = endOfDay(new Date(endDate));
+      return db.transactions.where('dateTime').between(start, end, true, true).toArray();
+    }
+    return db.transactions.toArray();
+  }, [startDate, endDate]) || [];
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
 
   const uniqueCategories = useMemo(() => {

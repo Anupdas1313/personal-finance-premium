@@ -28,149 +28,167 @@ function HBar({ value, max, color }: { value: number; max: number; color: string
 
 export default function Accounting() {
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
-  const transactions = useLiveQuery(() => db.transactions.orderBy('dateTime').toArray()) || [];
   const monthlyClosings = useLiveQuery(() => db.monthlyClosings.orderBy('month').reverse().toArray()) || [];
-  const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
-
+  
   const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'periods'>('overview');
-
-  // ─── Derived Data ───
   const now = new Date();
-  const thisMonthStr = format(now, 'yyyy-MM');
-  const thisMonthStart = startOfMonth(now);
-  const thisMonthEnd = endOfMonth(now);
 
-  const thisMonthTxs = transactions.filter(tx => isWithinInterval(tx.dateTime, { start: thisMonthStart, end: thisMonthEnd }));
-  const thisMonthIncome = thisMonthTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0);
-  const thisMonthExpense = thisMonthTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0);
+  // ─── Optimized Aggregated Data ───
+  const aggregatedData = useLiveQuery(async () => {
+    const txs = await db.transactions.orderBy('dateTime').toArray();
+    const accs = await db.accounts.toArray();
+    const closings = await db.monthlyClosings.orderBy('month').reverse().toArray();
+    
+    const now = new Date();
+    const thisMonthStart = startOfMonth(now);
+    const thisMonthEnd = endOfMonth(now);
+    const lastMonthStart = startOfMonth(subMonths(now, 1));
+    const lastMonthEnd = endOfMonth(subMonths(now, 1));
+
+    // Basic stats
+    let thisMonthIncome = 0;
+    let thisMonthExpense = 0;
+    let totalAllIncome = 0;
+    let totalAllExpense = 0;
+    let lastMonthIncome = 0;
+    let lastMonthExpense = 0;
+    
+    const categoryTotals: Record<string, number> = {};
+    const partyTotals: Record<string, { total: number; count: number }> = {};
+    const monthsData: Record<string, { income: number; expense: number; txs: any[] }> = {};
+
+    txs.forEach(tx => {
+      const amt = tx.amount;
+      const isCredit = tx.type === 'CREDIT';
+      const isDebit = tx.type === 'DEBIT';
+      const txTime = tx.dateTime.getTime();
+      const monthStr = format(tx.dateTime, 'yyyy-MM');
+
+      if (!monthsData[monthStr]) monthsData[monthStr] = { income: 0, expense: 0, txs: [] };
+      monthsData[monthStr].txs.push(tx);
+
+      if (isCredit) {
+        totalAllIncome += amt;
+        monthsData[monthStr].income += amt;
+        if (txTime >= thisMonthStart.getTime() && txTime <= thisMonthEnd.getTime()) thisMonthIncome += amt;
+        if (txTime >= lastMonthStart.getTime() && txTime <= lastMonthEnd.getTime()) lastMonthIncome += amt;
+      } else if (isDebit) {
+        totalAllExpense += amt;
+        monthsData[monthStr].expense += amt;
+        if (txTime >= thisMonthStart.getTime() && txTime <= thisMonthEnd.getTime()) {
+          thisMonthExpense += amt;
+          categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + amt;
+          if (tx.party) {
+            if (!partyTotals[tx.party]) partyTotals[tx.party] = { total: 0, count: 0 };
+            partyTotals[tx.party].total += amt;
+            partyTotals[tx.party].count++;
+          }
+        }
+        if (txTime >= lastMonthStart.getTime() && txTime <= lastMonthEnd.getTime()) lastMonthExpense += amt;
+      }
+    });
+
+    // Trend calculation
+    const monthlyTrend = [];
+    for (let i = 5; i >= 0; i--) {
+      const m = subMonths(now, i);
+      const ms = format(m, 'yyyy-MM');
+      monthlyTrend.push({
+        month: ms,
+        label: format(m, 'MMM'),
+        income: monthsData[ms]?.income || 0,
+        expense: monthsData[ms]?.expense || 0,
+      });
+    }
+
+    // Period Close Logic
+    const earliestTx = txs[0];
+    const startM = earliestTx ? startOfMonth(earliestTx.dateTime) : startOfMonth(now);
+    const endM = startOfMonth(now);
+    const allMonthStrs: string[] = [];
+    let curr = startM;
+    while (curr <= endM) {
+      allMonthStrs.push(format(curr, 'yyyy-MM'));
+      curr = new Date(curr.getFullYear(), curr.getMonth() + 1, 1);
+    }
+
+    let currentAccountBalances: Record<number, number> = {};
+    accs.forEach(acc => { currentAccountBalances[acc.id!] = acc.startingBalance; });
+    let currentTotalBalance = accs.reduce((sum, acc) => sum + acc.startingBalance, 0);
+    
+    const monthlyResults: Record<string, any> = {};
+    allMonthStrs.forEach(monthStr => {
+      const closedRecord = closings.find(c => c.month === monthStr);
+      const mData = monthsData[monthStr] || { income: 0, expense: 0, txs: [] };
+      const openingBalance = currentTotalBalance;
+      
+      mData.txs.forEach(tx => {
+        if (currentAccountBalances[tx.accountId] === undefined) currentAccountBalances[tx.accountId] = 0;
+        if (tx.type === 'CREDIT') currentAccountBalances[tx.accountId] += tx.amount;
+        if (tx.type === 'DEBIT') currentAccountBalances[tx.accountId] -= tx.amount;
+      });
+
+      const dynamicClosingBalance = openingBalance + mData.income - mData.expense;
+      monthlyResults[monthStr] = {
+        month: monthStr, openingBalance, totalIncome: mData.income, totalExpense: mData.expense,
+        closingBalance: closedRecord ? closedRecord.closingBalance : dynamicClosingBalance,
+        dynamicClosingBalance, isClosed: !!closedRecord, closedAt: closedRecord?.closedAt,
+        accountBalances: closedRecord ? closedRecord.accountBalances : { ...currentAccountBalances },
+        txCount: mData.txs.length,
+      };
+      currentTotalBalance = monthlyResults[monthStr].closingBalance;
+      if (closedRecord) currentAccountBalances = { ...closedRecord.accountBalances };
+    });
+
+    // Account-wise current balances
+    const accountBalances: Record<number, number> = {};
+    accs.forEach(a => { accountBalances[a.id!] = a.startingBalance; });
+    txs.forEach(tx => {
+      if (accountBalances[tx.accountId] === undefined) accountBalances[tx.accountId] = 0;
+      if (tx.type === 'CREDIT') accountBalances[tx.accountId] += tx.amount;
+      else if (tx.type === 'DEBIT') accountBalances[tx.accountId] -= tx.amount;
+    });
+
+    return {
+      thisMonthIncome, thisMonthExpense, totalAllIncome, totalAllExpense, totalTxCount: txs.length,
+      lastMonthIncome, lastMonthExpense, categoryTotals, partyTotals, monthlyTrend,
+      allMonthStrs, monthlyResults, accountBalances
+    };
+  }, []);
+
+  const {
+    thisMonthIncome = 0, thisMonthExpense = 0, totalAllIncome = 0, totalAllExpense = 0, totalTxCount = 0,
+    lastMonthIncome = 0, lastMonthExpense = 0, categoryTotals = {}, partyTotals = {}, monthlyTrend = [],
+    allMonthStrs = [], monthlyResults = {}, accountBalances = {}
+  } = aggregatedData || {};
+
+  const currentNetWorth = totalAllIncome - totalAllExpense + accounts.reduce((s, a) => s + a.startingBalance, 0);
   const thisMonthSavings = thisMonthIncome - thisMonthExpense;
   const savingsRate = thisMonthIncome > 0 ? (thisMonthSavings / thisMonthIncome) * 100 : 0;
-
-  // All-time stats
-  const totalAllIncome = transactions.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0);
-  const totalAllExpense = transactions.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0);
-  const totalTxCount = transactions.length;
-
-  // Current total balance across all accounts (starting + all txns)
-  const currentNetWorth = useMemo(() => {
-    let total = accounts.reduce((s, a) => s + a.startingBalance, 0);
-    transactions.forEach(tx => {
-      if (tx.type === 'CREDIT') total += tx.amount;
-      else if (tx.type === 'DEBIT') total -= tx.amount;
-    });
-    return total;
-  }, [accounts, transactions]);
-
-  // Last month comparison
-  const lastMonthStart = startOfMonth(subMonths(now, 1));
-  const lastMonthEnd = endOfMonth(subMonths(now, 1));
-  const lastMonthTxs = transactions.filter(tx => isWithinInterval(tx.dateTime, { start: lastMonthStart, end: lastMonthEnd }));
-  const lastMonthExpense = lastMonthTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0);
-  const lastMonthIncome = lastMonthTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0);
-  const expenseChangePercent = lastMonthExpense > 0 ? ((thisMonthExpense - lastMonthExpense) / lastMonthExpense) * 100 : 0;
+  
   const incomeChangePercent = lastMonthIncome > 0 ? ((thisMonthIncome - lastMonthIncome) / lastMonthIncome) * 100 : 0;
+  const expenseChangePercent = lastMonthExpense > 0 ? ((thisMonthExpense - lastMonthExpense) / lastMonthExpense) * 100 : 0;
 
-  // Category breakdown for this month
   const categoryBreakdown = useMemo(() => {
-    const byCategory: Record<string, number> = {};
-    thisMonthTxs.filter(t => t.type === 'DEBIT').forEach(t => {
-      byCategory[t.category] = (byCategory[t.category] || 0) + t.amount;
-    });
-    return Object.entries(byCategory)
-      .map(([name, value]) => ({ name, value }))
+    return Object.entries(categoryTotals)
+      .map(([name, value]) => ({ name, value: value as number }))
       .sort((a, b) => b.value - a.value);
-  }, [thisMonthTxs]);
+  }, [categoryTotals]);
 
   const maxCategoryValue = categoryBreakdown.length > 0 ? categoryBreakdown[0].value : 1;
 
-  // Top merchants/parties
   const topParties = useMemo(() => {
-    const byParty: Record<string, { total: number; count: number }> = {};
-    thisMonthTxs.filter(t => t.type === 'DEBIT' && t.party).forEach(t => {
-      if (!byParty[t.party!]) byParty[t.party!] = { total: 0, count: 0 };
-      byParty[t.party!].total += t.amount;
-      byParty[t.party!].count++;
-    });
-    return Object.entries(byParty)
-      .map(([name, { total, count }]) => ({ name, total, count }))
+    return Object.entries(partyTotals)
+      .map(([name, data]: [string, any]) => ({ name, total: data.total, count: data.count }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
-  }, [thisMonthTxs]);
-
-  // Monthly trend (last 6 months)
-  const monthlyTrend = useMemo(() => {
-    const months: { month: string; label: string; income: number; expense: number }[] = [];
-    for (let i = 5; i >= 0; i--) {
-      const m = subMonths(now, i);
-      const ms = startOfMonth(m);
-      const me = endOfMonth(m);
-      const mtxs = transactions.filter(tx => isWithinInterval(tx.dateTime, { start: ms, end: me }));
-      months.push({
-        month: format(m, 'yyyy-MM'),
-        label: format(m, 'MMM'),
-        income: mtxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0),
-        expense: mtxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0),
-      });
-    }
-    return months;
-  }, [transactions]);
+  }, [partyTotals]);
 
   const maxTrendValue = Math.max(...monthlyTrend.map(m => Math.max(m.income, m.expense)), 1);
 
-  // Account-wise current balance
-  const accountBalances = useMemo(() => {
-    const balances: Record<number, number> = {};
-    accounts.forEach(a => { balances[a.id!] = a.startingBalance; });
-    transactions.forEach(tx => {
-      if (balances[tx.accountId] === undefined) balances[tx.accountId] = 0;
-      if (tx.type === 'CREDIT') balances[tx.accountId] += tx.amount;
-      else balances[tx.accountId] -= tx.amount;
-    });
-    return balances;
-  }, [accounts, transactions]);
-
-  // ─── Period Close Logic ───
-  const earliestTx = transactions[0];
-  const startMonth = earliestTx ? startOfMonth(earliestTx.dateTime) : startOfMonth(now);
-  const endMonth = startOfMonth(now);
-  const allMonths: string[] = [];
-  let current = startMonth;
-  while (current <= endMonth) {
-    allMonths.push(format(current, 'yyyy-MM'));
-    current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
-  }
-
-  let currentAccountBalances: Record<number, number> = {};
-  accounts.forEach(acc => { currentAccountBalances[acc.id!] = acc.startingBalance; });
-  let currentTotalBalance = accounts.reduce((sum, acc) => sum + acc.startingBalance, 0);
-  const chronologicalMonths = [...allMonths];
-
-  const monthlyData: Record<string, any> = {};
-  chronologicalMonths.forEach(monthStr => {
-    const closedRecord = monthlyClosings.find(c => c.month === monthStr);
-    const monthTxs = transactions.filter(tx => format(tx.dateTime, 'yyyy-MM') === monthStr);
-    const income = monthTxs.filter(t => t.type === 'CREDIT').reduce((sum, t) => sum + t.amount, 0);
-    const expense = monthTxs.filter(t => t.type === 'DEBIT').reduce((sum, t) => sum + t.amount, 0);
-    const openingBalance = currentTotalBalance;
-    monthTxs.forEach(tx => {
-      if (currentAccountBalances[tx.accountId] === undefined) currentAccountBalances[tx.accountId] = 0;
-      if (tx.type === 'CREDIT') currentAccountBalances[tx.accountId] += tx.amount;
-      if (tx.type === 'DEBIT') currentAccountBalances[tx.accountId] -= tx.amount;
-    });
-    const dynamicClosingBalance = openingBalance + income - expense;
-    monthlyData[monthStr] = {
-      month: monthStr, openingBalance, totalIncome: income, totalExpense: expense,
-      closingBalance: closedRecord ? closedRecord.closingBalance : dynamicClosingBalance,
-      dynamicClosingBalance, isClosed: !!closedRecord, closedAt: closedRecord?.closedAt,
-      accountBalances: closedRecord ? closedRecord.accountBalances : { ...currentAccountBalances },
-      txCount: monthTxs.length,
-    };
-    currentTotalBalance = monthlyData[monthStr].closingBalance;
-    if (closedRecord) currentAccountBalances = { ...closedRecord.accountBalances };
-  });
-
-  const displayMonths = [...allMonths].reverse();
+  const displayMonths = [...allMonthStrs].reverse();
+  const monthlyData = monthlyResults;
 
   const handleCloseMonth = async (monthStr: string) => {
     if (!window.confirm(`Close the accounting period for ${format(new Date(monthStr + '-01'), 'MMMM yyyy')}? This will lock the balances.`)) return;

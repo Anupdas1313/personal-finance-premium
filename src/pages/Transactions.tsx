@@ -73,14 +73,15 @@ export default function Transactions() {
 
   const { categories: appCategories } = useCategories();
 
-  const allTransactions = useLiveQuery(() => db.transactions.orderBy('dateTime').reverse().toArray()) || [];
-  const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
-  
   const filterStart = dateRange ? dateRange.start : startOfMonth(currentMonth);
   const filterEnd = dateRange ? dateRange.end : endOfMonth(currentMonth);
 
+  const allTransactions = useLiveQuery(() => 
+    db.transactions.where('dateTime').between(filterStart, filterEnd, true, true).reverse().toArray()
+  , [filterStart, filterEnd]) || [];
+  const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
+  
   let filteredTransactions = allTransactions.filter(tx => {
-    const inDateRange = isWithinInterval(tx.dateTime, { start: filterStart, end: filterEnd });
     const matchesEntryType = entryTypeFilter === 'ALL' || tx.type === entryTypeFilter;
     const matchesSortType = sortTypeFilter === 'ALL' || tx.expenseType === sortTypeFilter;
     
@@ -96,7 +97,7 @@ export default function Transactions() {
         amountStr.includes(lowerSearch);
     }
 
-    return inDateRange && matchesEntryType && matchesSortType && matchesSearch;
+    return matchesEntryType && matchesSortType && matchesSearch;
   });
 
   // Sort
