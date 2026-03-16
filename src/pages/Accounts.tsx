@@ -356,7 +356,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
   ) || [];
   
   const [showExportMenu, setShowExportMenu] = useState(false);
-  const [granularity, setGranularity] = useState<'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'ALL' | 'CUSTOM'>('ALL');
+  const [granularity, setGranularity] = useState<'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'ALL' | 'CUSTOM'>('MONTH');
   const [referenceDate, setReferenceDate] = useState(new Date());
   const [customRange, setCustomRange] = useState({
     start: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
