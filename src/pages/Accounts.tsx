@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction } from '../lib/db';
@@ -368,8 +368,6 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     end: format(endOfMonth(new Date()), 'yyyy-MM-dd')
   });
   const [viewFullHistory, setViewFullHistory] = useState(false);
-  const [isSealing, setIsSealing] = useState(false);
-  const [chapterNote, setChapterNote] = useState('');
 
   const activeClosing = useMemo(() => {
     if (selectedPeriodId === 'LIVE') {
@@ -461,9 +459,11 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
   const totalCredit = statementData.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
   const totalDebit = statementData.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
 
-  const handleSealChapter = async () => {
+  const handleAudit = async () => {
     if (!account) return;
-    
+    const confirmAudit = window.confirm(`Audit this period? Current balance of ₹${currentBalance.toLocaleString()} will be set as the new starting point.`);
+    if (!confirmAudit) return;
+
     const openingBal = activeClosing ? activeClosing.closingBalance : account.startingBalance;
     
     await db.accountClosings.add({
@@ -473,13 +473,9 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
       periodName: format(new Date(), 'MMM yyyy (dd-MM)'),
       openingBalance: openingBal,
       totalInflow: totalCredit,
-      totalOutflow: totalDebit,
-      chapterNote: chapterNote.trim() || undefined
+      totalOutflow: totalDebit
     });
-
-    setIsSealing(false);
-    setChapterNote('');
-    alert("Chapter sealed successfully! Your personal notebook has been updated.");
+    alert("Period audited successfully! Fresh entries will now start from this balance.");
   };
 
   const downloadCSV = () => {
@@ -608,44 +604,41 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                       </div>
                     )}
                   </div>
-                  </div>
-
-                <div className="flex gap-2">
-                  <div className="relative">
-                    <select 
-                      value={selectedPeriodId}
-                      onChange={(e) => setSelectedPeriodId(e.target.value === 'LIVE' ? 'LIVE' : Number(e.target.value))}
-                      className="appearance-none bg-neutral-100 dark:bg-[#1A1A1A] text-brand-blue dark:text-white px-3 py-2 pr-8 rounded-xl text-[10px] font-black uppercase outline-none border border-transparent focus:border-brand-blue transition-all"
-                    >
-                        <option value="LIVE">Latest Chapter (Active)</option>
-                      {closings.map(c => (
-                        <option key={c.id} value={c.id}>{c.periodName}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-brand-blue/50 pointer-events-none" />
-                  </div>
-                  
-                  {selectedPeriodId === 'LIVE' && (
-                    <button 
-                      onClick={() => setViewFullHistory(!viewFullHistory)}
-                      className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${
-                        viewFullHistory 
-                          ? 'bg-brand-blue text-white shadow-lg' 
-                          : 'bg-neutral-100 dark:bg-[#1A1A1A] text-brand-blue/40'
-                      }`}
-                    >
-                      All History
-                    </button>
-                  )}
-
                   <button 
-                    onClick={() => setIsSealing(true)}
-                    className="flex-1 flex items-center justify-center gap-2 bg-emerald-500 text-white py-2 px-4 rounded-xl font-black text-[10px] uppercase shadow-lg shadow-emerald-500/20"
+                    onClick={handleAudit}
+                    className="flex-1 flex items-center justify-center gap-2 bg-brand-green text-white py-2 rounded-xl font-black text-[10px] uppercase shadow-lg shadow-brand-green/20"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    Seal Chapter
+                    Audit
                   </button>
                 </div>
+
+                <div className="relative">
+                  <select 
+                    value={selectedPeriodId}
+                    onChange={(e) => setSelectedPeriodId(e.target.value === 'LIVE' ? 'LIVE' : Number(e.target.value))}
+                    className="w-full appearance-none bg-neutral-100 dark:bg-[#1A1A1A] text-brand-blue dark:text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase outline-none border border-transparent focus:border-brand-blue transition-all"
+                  >
+                    <option value="LIVE">Activity Since Audit</option>
+                    {closings.map(c => (
+                      <option key={c.id} value={c.id}>{c.periodName}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-brand-blue/50 pointer-events-none" />
+                </div>
+                
+                {selectedPeriodId === 'LIVE' && (
+                  <button 
+                    onClick={() => setViewFullHistory(!viewFullHistory)}
+                    className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${
+                      viewFullHistory 
+                        ? 'bg-brand-blue text-white shadow-lg' 
+                        : 'bg-neutral-100 dark:bg-[#1A1A1A] text-brand-blue/40'
+                    }`}
+                  >
+                    All History
+                  </button>
+                )}
               </div>
             </div>
 
@@ -744,8 +737,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               </td>
               <td className="px-2 py-3 font-bold text-brand-blue dark:text-white text-[9px]">
                 {activeClosing 
-                  ? `CHAPTER START: ${format(new Date(activeClosing.closingDate), 'dd MMM yyyy').toUpperCase()}` 
-                  : 'NOTEBOOK STARTING BALANCE'}
+                  ? `NEW AUDITED BALANCE AS OF ${format(new Date(activeClosing.closingDate), 'dd MMM yyyy').toUpperCase()}` 
+                  : 'OPENING BALANCE'}
               </td>
               <td className="px-2 py-3 text-right text-neutral-300">-</td>
               <td className="px-2 py-3 text-right text-brand-green font-bold">
@@ -757,68 +750,41 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             </tr>
 
             {/* Transactions In Chronological Order */}
-            {statementData.map((tx, idx) => {
-              const prevTx = idx > 0 ? statementData[idx-1] : null;
-              const closingInBetween = viewFullHistory && closings.find(c => {
-                const cTime = new Date(c.closingDate).getTime();
-                const txTime = new Date(tx.dateTime).getTime();
-                const prevTxTime = prevTx ? new Date(prevTx.dateTime).getTime() : 0;
-                return cTime < txTime && cTime > prevTxTime;
-              });
-
-              return (
-                <React.Fragment key={tx.id || idx}>
-                  {closingInBetween && (
-                    <tr className="bg-emerald-500/5 dark:bg-emerald-500/10 border-y-2 border-emerald-500/20">
-                      <td colSpan={5} className="px-4 py-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                            <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Chapter Sealed: {closingInBetween.periodName}</span>
-                          </div>
-                          <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 truncate max-w-[200px] italic opacity-60">
-                            {closingInBetween.chapterNote ? `"${closingInBetween.chapterNote}"` : ""}
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
+            {statementData.map((tx, idx) => (
+              <tr key={tx.id || idx} className="border-b border-neutral-50 dark:border-[#1A1A1A] hover:bg-neutral-50/50 transition-colors">
+                <td className="px-2 py-3 text-neutral-400 text-[9px] text-center font-bold">
+                  <div className="flex flex-col">
+                    <span>{format(new Date(tx.dateTime), 'dd')}</span>
+                    <span className="text-[7px] uppercase">{format(new Date(tx.dateTime), 'MMM')}</span>
+                  </div>
+                </td>
+                <td className="px-2 py-3 max-w-[180px]">
+                  <p className="font-black text-brand-blue dark:text-[#F7F7F7] text-[10px] leading-tight truncate uppercase tracking-tighter">
+                    {tx.party || tx.category || 'N/A'}
+                  </p>
+                  {tx.note && (
+                    <p className="text-[8px] text-neutral-400 font-bold mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis uppercase tracking-tighter">
+                      {tx.note}
+                    </p>
                   )}
-                  <tr className="border-b border-neutral-50 dark:border-[#1A1A1A] hover:bg-neutral-50/50 transition-colors">
-                    <td className="px-2 py-3 text-neutral-400 text-[9px] text-center font-bold">
-                      <div className="flex flex-col">
-                        <span>{format(new Date(tx.dateTime), 'dd')}</span>
-                        <span className="text-[7px] uppercase">{format(new Date(tx.dateTime), 'MMM')}</span>
-                      </div>
-                    </td>
-                    <td className="px-2 py-3 max-w-[180px]">
-                      <p className="font-black text-brand-blue dark:text-[#F7F7F7] text-[10px] leading-tight truncate uppercase tracking-tighter">
-                        {tx.party || tx.category || 'N/A'}
-                      </p>
-                      {tx.note && (
-                        <p className="text-[8px] text-neutral-400 font-bold mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis uppercase tracking-tighter">
-                          {tx.note}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-1.5 mt-1 opacity-40">
-                        <div className="w-1 h-1 rounded-full bg-neutral-300" />
-                        <span className="text-[7px] font-black uppercase tracking-widest">{tx.category}</span>
-                      </div>
-                    </td>
-                    <td className="px-2 py-3 text-right">
-                      {tx.type === 'DEBIT' && <span className="text-brand-red font-bold">₹{tx.amount.toLocaleString('en-IN')}</span>}
-                      {tx.type !== 'DEBIT' && <span className="text-neutral-300">-</span>}
-                    </td>
-                    <td className="px-2 py-3 text-right">
-                      {tx.type === 'CREDIT' && <span className="text-brand-green font-bold">₹{tx.amount.toLocaleString('en-IN')}</span>}
-                      {tx.type !== 'CREDIT' && <span className="text-neutral-300">-</span>}
-                    </td>
-                    <td className={`px-2 py-3 text-right font-black ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
-                      ₹{tx.runningBalance.toLocaleString('en-IN')}
-                    </td>
-                  </tr>
-                </React.Fragment>
-              );
-            })}
+                  <div className="flex items-center gap-1.5 mt-1 opacity-40">
+                    <div className="w-1 h-1 rounded-full bg-neutral-300" />
+                    <span className="text-[7px] font-black uppercase tracking-widest">{tx.category}</span>
+                  </div>
+                </td>
+                <td className="px-2 py-3 text-right">
+                  {tx.type === 'DEBIT' && <span className="text-brand-red font-bold">₹{tx.amount.toLocaleString('en-IN')}</span>}
+                  {tx.type !== 'DEBIT' && <span className="text-neutral-300">-</span>}
+                </td>
+                <td className="px-2 py-3 text-right">
+                  {tx.type === 'CREDIT' && <span className="text-brand-green font-bold">₹{tx.amount.toLocaleString('en-IN')}</span>}
+                  {tx.type !== 'CREDIT' && <span className="text-neutral-300">-</span>}
+                </td>
+                <td className={`px-2 py-3 text-right font-black ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
+                  ₹{tx.runningBalance.toLocaleString('en-IN')}
+                </td>
+              </tr>
+            ))}
             
             {statementData.length === 0 && (
                 <tr>
@@ -830,63 +796,6 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
           </tbody>
         </table>
       </div>
-
-      {/* Chapter Sealing Overlay */}
-      {isSealing && (
-        <div className="fixed inset-0 bg-brand-blue/90 backdrop-blur-md z-[120] flex items-center justify-center p-6">
-          <div className="bg-white dark:bg-[#111111] w-full max-w-sm rounded-[32px] p-8 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="w-8 h-8 text-emerald-500" />
-              </div>
-              <h3 className="text-xl font-black text-brand-blue dark:text-white uppercase tracking-tighter">Seal This Chapter</h3>
-              <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mt-1">Finalize your personal notebook</p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="bg-neutral-50 dark:bg-[#1A1A1A] p-4 rounded-2xl border border-neutral-100 dark:border-white/5">
-                <p className="text-[8px] font-black text-neutral-400 uppercase tracking-widest mb-1">Closing Balance</p>
-                <p className="text-2xl font-black text-brand-blue dark:text-white tracking-tighter">₹{currentBalance.toLocaleString('en-IN')}</p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Notebook Note (Optional)</label>
-                <textarea 
-                  value={chapterNote}
-                  onChange={(e) => setChapterNote(e.target.value)}
-                  placeholder="e.g. Cleared all pending rents, high travel month..."
-                  className="w-full bg-neutral-50 dark:bg-[#1A1A1A] text-brand-blue dark:text-white p-4 rounded-2xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-emerald-500 min-h-[100px] resize-none"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button 
-                  onClick={() => setIsSealing(false)}
-                  className="flex-1 py-4 text-[10px] font-black uppercase text-neutral-400 hover:text-brand-blue transition-colors"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleSealChapter}
-                  className="flex-[2] bg-emerald-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-xl shadow-emerald-500/20 active:scale-95 transition-all"
-                >
-                  Confirm & Seal
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Archived Chapter Header (If selected) */}
-      {selectedPeriodId !== 'LIVE' && activeClosing && activeClosing.chapterNote && (
-        <div className="bg-brand-blue/5 dark:bg-brand-blue/10 px-6 py-4 border-b border-brand-blue/10">
-          <p className="text-[8px] font-black text-brand-blue/40 uppercase tracking-[0.2em] mb-1">Notebook Entry</p>
-          <p className="text-xs font-bold text-brand-blue dark:text-[#A0A0A0] italic">
-            "{activeClosing.chapterNote}"
-          </p>
-        </div>
-      )}
     </div>
   );
 }
