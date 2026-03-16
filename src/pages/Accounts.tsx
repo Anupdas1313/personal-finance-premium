@@ -4,7 +4,7 @@ import { db, Transaction } from '../lib/db';
 import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark, Download, FileText, CheckCircle2, History, Calendar, ChevronDown, Printer } from 'lucide-react';
 import { BankLogo } from '../components/BankLogo';
 import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
-import { format, startOfDay, parseISO, endOfMonth, startOfMonth, subMonths } from 'date-fns';
+import { format, startOfDay, parseISO, endOfMonth, startOfMonth, subMonths, endOfDay, startOfWeek, endOfWeek, startOfYear, endOfYear, addMonths, subWeeks, addWeeks, subDays, addDays, subYears, addYears } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -358,6 +358,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
 
   const [selectedPeriodId, setSelectedPeriodId] = useState<'LIVE' | number>('LIVE');
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [granularity, setGranularity] = useState<'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'ALL'>('ALL');
+  const [referenceDate, setReferenceDate] = useState(new Date());
 
   const activeClosing = useMemo(() => {
     if (selectedPeriodId === 'LIVE') {
@@ -378,25 +380,49 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     if (selectedPeriodId === 'LIVE') {
       if (activeClosing) {
         baseBalance = Number(activeClosing.closingBalance);
-        startDateLimit = new Date(activeClosing.closingDate).getTime() + 1; // Start after closing
+        startDateLimit = new Date(activeClosing.closingDate).getTime() + 1;
       } else {
         baseBalance = Number(account.startingBalance) || 0;
         startDateLimit = account.startingBalanceDate ? startOfDay(new Date(account.startingBalanceDate)).getTime() : 0;
       }
+
+      // Apply granularity filters
+      if (granularity !== 'ALL') {
+        const d = referenceDate;
+        if (granularity === 'DAY') {
+          startDateLimit = Math.max(startDateLimit, startOfDay(d).getTime());
+          endDateLimit = endOfDay(d).getTime();
+        } else if (granularity === 'WEEK') {
+          startDateLimit = Math.max(startDateLimit, startOfWeek(d, { weekStartsOn: 1 }).getTime());
+          endDateLimit = endOfWeek(d, { weekStartsOn: 1 }).getTime();
+        } else if (granularity === 'MONTH') {
+          startDateLimit = Math.max(startDateLimit, startOfMonth(d).getTime());
+          endDateLimit = endOfMonth(d).getTime();
+        } else if (granularity === 'YEAR') {
+          startDateLimit = Math.max(startDateLimit, startOfYear(d).getTime());
+          endDateLimit = endOfYear(d).getTime();
+        }
+      }
     } else if (activeClosing) {
-      // Historical period: From its start to its close
-      const prevClosing = closings.find(c => c.id! < activeClosing.id!) || null; // Simplified, in real app find exactly previous
       baseBalance = activeClosing.openingBalance;
-      // For historical, we just filter between the start and end of that period recorded
-      startDateLimit = 0; // We will use a more precise filter based on the audit record if we had periodStart
-      // Actually, let's just filter transactions that were included in that audit
-      // For simplicity, let's assume audits are continuous
       const closingDate = new Date(activeClosing.closingDate).getTime();
+      let rb = activeClosing.openingBalance;
       return transactions
-        .filter(tx => new Date(tx.dateTime).getTime() <= closingDate) // This is a bit loose
-        .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
-        // We'd need more metadata to show EXACTLY what was in a past audit.
-        // For now, let's focus on the LIVE view "Audit & Fresh Start" logic as requested.
+        .filter(tx => {
+           const txTime = new Date(tx.dateTime).getTime();
+           const prevClosings = closings.filter(c => c.id !== undefined && activeClosing.id !== undefined && c.id < activeClosing.id);
+           const prevClosing = prevClosings.sort((a,b) => (b.id||0) - (a.id||0))[0];
+           const start = prevClosing ? new Date(prevClosing.closingDate).getTime() : 0;
+           const end = new Date(activeClosing.closingDate).getTime();
+           return txTime > start && txTime <= end;
+        })
+        .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())
+        .map((tx) => {
+           const amount = Number(tx.amount) || 0;
+           if (tx.type === 'CREDIT') rb += amount;
+           else if (tx.type === 'DEBIT') rb -= amount;
+           return { ...tx, amount, runningBalance: rb };
+        }) as (Transaction & { runningBalance: number })[];
     }
 
     let runningBalance = baseBalance;
@@ -413,7 +439,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
       else if (tx.type === 'DEBIT') runningBalance -= amount;
       return { ...tx, amount, runningBalance } as Transaction & { runningBalance: number };
     });
-  }, [account, transactions, activeClosing, selectedPeriodId, closings]) as (Transaction & { runningBalance: number })[];
+  }, [account, transactions, activeClosing, selectedPeriodId, closings, granularity, referenceDate]) as (Transaction & { runningBalance: number })[];
 
   const currentBalance = statementData.length > 0 
     ? statementData[statementData.length - 1].runningBalance 
@@ -519,9 +545,17 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="bg-brand-blue p-4 rounded-2xl shadow-xl shadow-brand-blue/20 flex flex-col justify-center">
-                <p className="text-[10px] font-black text-white/50 uppercase mb-1">Available Balance</p>
+                <div className="flex justify-between items-start mb-1">
+                  <p className="text-[10px] font-black text-white/50 uppercase">Balance</p>
+                  {activeClosing && (
+                    <div className="text-right">
+                      <p className="text-[8px] font-black text-white/40 uppercase">Last Audited</p>
+                      <p className="text-[10px] font-black text-brand-green">₹{activeClosing.closingBalance.toLocaleString('en-IN')}</p>
+                    </div>
+                  )}
+                </div>
                 <div className="flex items-baseline gap-2">
                   <p className="text-2xl font-black tracking-tighter text-white">
                       ₹{currentBalance.toLocaleString('en-IN')}
@@ -577,6 +611,60 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                 </div>
             </div>
         </div>
+
+        {/* Granularity & Navigation */}
+        {selectedPeriodId === 'LIVE' && (
+          <div className="mt-3 flex flex-col sm:flex-row gap-2">
+            <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-0.5 rounded-xl flex-1 overflow-x-auto">
+              {(['ALL', 'YEAR', 'MONTH', 'WEEK', 'DAY'] as const).map((g) => (
+                <button
+                  key={g}
+                  onClick={() => setGranularity(g)}
+                  className={`flex-1 px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-tight transition-all ${
+                    granularity === g 
+                      ? 'bg-white dark:bg-[#333333] text-brand-blue dark:text-white shadow-sm' 
+                      : 'text-neutral-400'
+                  }`}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+            
+            {granularity !== 'ALL' && (
+              <div className="flex items-center gap-1 bg-neutral-100 dark:bg-[#1A1A1A] px-2 py-1 rounded-xl">
+                <button 
+                  onClick={() => {
+                    if (granularity === 'DAY') setReferenceDate(subDays(referenceDate, 1));
+                    if (granularity === 'WEEK') setReferenceDate(subWeeks(referenceDate, 1));
+                    if (granularity === 'MONTH') setReferenceDate(subMonths(referenceDate, 1));
+                    if (granularity === 'YEAR') setReferenceDate(subYears(referenceDate, 1));
+                  }}
+                  className="p-1 text-brand-blue dark:text-neutral-400"
+                >
+                  <ChevronDown className="w-4 h-4 rotate-90" />
+                </button>
+                <span className="text-[9px] font-black text-brand-blue dark:text-white min-w-[70px] text-center uppercase tracking-tighter">
+                  {granularity === 'DAY' && format(referenceDate, 'dd MMM yyyy')}
+                  {granularity === 'WEEK' && `Week ${format(referenceDate, 'ww, yyyy')}`}
+                  {granularity === 'MONTH' && format(referenceDate, 'MMM yyyy')}
+                  {granularity === 'YEAR' && format(referenceDate, 'yyyy')}
+                </span>
+                <button 
+                  onClick={() => {
+                    if (granularity === 'DAY') setReferenceDate(addDays(referenceDate, 1));
+                    if (granularity === 'WEEK') setReferenceDate(addWeeks(referenceDate, 1));
+                    if (granularity === 'MONTH') setReferenceDate(addMonths(referenceDate, 1));
+                    if (granularity === 'YEAR') setReferenceDate(addYears(referenceDate, 1));
+                  }}
+                  className="p-1 text-brand-blue dark:text-neutral-400"
+                >
+                  <ChevronDown className="w-4 h-4 -rotate-90" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-auto bg-white dark:bg-[#060608]">
