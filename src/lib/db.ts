@@ -70,6 +70,7 @@ export interface AccountClosing {
   openingBalance: number;
   totalInflow: number;
   totalOutflow: number;
+  chapterNote?: string;
 }
 
 export class FinanceDatabase extends Dexie {
