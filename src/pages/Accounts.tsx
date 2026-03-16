@@ -361,8 +361,12 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
 
   const [selectedPeriodId, setSelectedPeriodId] = useState<'LIVE' | number>('LIVE');
   const [showExportMenu, setShowExportMenu] = useState(false);
-  const [granularity, setGranularity] = useState<'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'ALL'>('ALL');
+  const [granularity, setGranularity] = useState<'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'ALL' | 'CUSTOM'>('ALL');
   const [referenceDate, setReferenceDate] = useState(new Date());
+  const [customRange, setCustomRange] = useState({
+    start: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
+    end: format(endOfMonth(new Date()), 'yyyy-MM-dd')
+  });
 
   const activeClosing = useMemo(() => {
     if (selectedPeriodId === 'LIVE') {
@@ -404,6 +408,9 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         } else if (granularity === 'YEAR') {
           startDateLimit = Math.max(startDateLimit, startOfYear(d).getTime());
           endDateLimit = endOfYear(d).getTime();
+        } else if (granularity === 'CUSTOM') {
+          startDateLimit = Math.max(startDateLimit, startOfDay(new Date(customRange.start)).getTime());
+          endDateLimit = endOfDay(new Date(customRange.end)).getTime();
         }
       }
     } else if (activeClosing) {
@@ -549,22 +556,22 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="bg-brand-blue p-4 rounded-2xl shadow-xl shadow-brand-blue/20 flex flex-col justify-center">
+            <div className="bg-white dark:bg-[#111111] p-4 rounded-2xl shadow-[0_10px_30px_rgba(26,35,126,0.05)] border border-neutral-100 dark:border-white/5 flex flex-col justify-center">
                 <div className="flex justify-between items-start mb-1">
-                  <p className="text-[10px] font-black text-white/50 uppercase">Balance</p>
+                  <p className="text-[10px] font-black text-brand-blue/30 dark:text-white/30 uppercase">Balance</p>
                   {activeClosing && (
                     <div className="text-right">
-                      <p className="text-[8px] font-black text-white/40 uppercase">Last Audited</p>
+                      <p className="text-[8px] font-black text-brand-blue/20 dark:text-white/20 uppercase">Last Audited</p>
                       <p className="text-[10px] font-black text-brand-green">₹{activeClosing.closingBalance.toLocaleString('en-IN')}</p>
                     </div>
                   )}
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <p className="text-2xl font-black tracking-tighter text-white">
+                  <p className="text-2xl font-black tracking-tighter text-brand-blue dark:text-white">
                       ₹{currentBalance.toLocaleString('en-IN')}
                   </p>
                   {selectedPeriodId !== 'LIVE' && (
-                    <span className="bg-white/20 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase">Archived</span>
+                    <span className="bg-brand-blue/5 dark:bg-white/20 text-brand-blue/40 dark:text-white text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase">Archived</span>
                   )}
                 </div>
             </div>
@@ -625,11 +632,11 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         {selectedPeriodId === 'LIVE' && (
           <div className="mt-3 flex flex-col sm:flex-row gap-2">
             <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-0.5 rounded-xl flex-1 overflow-x-auto">
-              {(['ALL', 'YEAR', 'MONTH', 'WEEK', 'DAY'] as const).map((g) => (
+              {(['ALL', 'YEAR', 'MONTH', 'WEEK', 'DAY', 'CUSTOM'] as const).map((g) => (
                 <button
                   key={g}
                   onClick={() => setGranularity(g)}
-                  className={`flex-1 px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-tight transition-all ${
+                  className={`flex-1 px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-tight transition-all shrink-0 ${
                     granularity === g 
                       ? 'bg-white dark:bg-[#333333] text-brand-blue dark:text-white shadow-sm' 
                       : 'text-neutral-400'
@@ -640,7 +647,25 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               ))}
             </div>
             
-            {granularity !== 'ALL' && (
+            {granularity === 'CUSTOM' && (
+              <div className="flex items-center gap-1 bg-neutral-100 dark:bg-[#1A1A1A] px-2 py-1 rounded-xl">
+                <input 
+                  type="date"
+                  value={customRange.start}
+                  onChange={(e) => setCustomRange(prev => ({ ...prev, start: e.target.value }))}
+                  className="bg-transparent text-[9px] font-black text-brand-blue dark:text-white outline-none"
+                />
+                <span className="text-[9px] font-black text-neutral-400">TO</span>
+                <input 
+                  type="date"
+                  value={customRange.end}
+                  onChange={(e) => setCustomRange(prev => ({ ...prev, end: e.target.value }))}
+                  className="bg-transparent text-[9px] font-black text-brand-blue dark:text-white outline-none"
+                />
+              </div>
+            )}
+
+            {granularity !== 'ALL' && granularity !== 'CUSTOM' && (
               <div className="flex items-center gap-1 bg-neutral-100 dark:bg-[#1A1A1A] px-2 py-1 rounded-xl">
                 <button 
                   onClick={() => {
