@@ -557,23 +557,31 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="bg-white dark:bg-[#111111] p-4 rounded-2xl shadow-[0_10px_30px_rgba(26,35,126,0.05)] border border-neutral-100 dark:border-white/5 flex flex-col justify-center">
-                <div className="flex justify-between items-start mb-1">
-                  <p className="text-[10px] font-black text-brand-blue/30 dark:text-white/30 uppercase">Balance</p>
-                  {activeClosing && (
-                    <div className="text-right">
-                      <p className="text-[8px] font-black text-brand-blue/20 dark:text-white/20 uppercase">Last Audited</p>
-                      <p className="text-[10px] font-black text-brand-green">₹{activeClosing.closingBalance.toLocaleString('en-IN')}</p>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-2xl font-black tracking-tighter text-brand-blue dark:text-white">
+            <div className="bg-white dark:bg-[#111111] p-4 rounded-2xl shadow-[0_10px_30px_rgba(26,35,126,0.05)] border border-neutral-100 dark:border-white/5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[8px] font-black text-brand-blue/30 dark:text-white/30 uppercase tracking-widest mb-1">Opening</p>
+                    <p className="text-sm font-black text-brand-blue/60 dark:text-white/60">
+                      ₹{(activeClosing ? activeClosing.closingBalance : account.startingBalance).toLocaleString('en-IN')}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[8px] font-black text-brand-blue/30 dark:text-white/30 uppercase tracking-widest mb-1">Current Balance</p>
+                    <p className="text-sm font-black text-brand-blue dark:text-white">
                       ₹{currentBalance.toLocaleString('en-IN')}
-                  </p>
-                  {selectedPeriodId !== 'LIVE' && (
-                    <span className="bg-brand-blue/5 dark:bg-white/20 text-brand-blue/40 dark:text-white text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase">Archived</span>
-                  )}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="mt-3 pt-3 border-t border-neutral-100 dark:border-white/5 flex gap-4">
+                  <div className="flex-1">
+                    <p className="text-[7px] font-black text-brand-green uppercase tracking-widest mb-0.5">Inflow (+)</p>
+                    <p className="text-[10px] font-black text-brand-green">₹{totalCredit.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="flex-1 text-right">
+                    <p className="text-[7px] font-black text-brand-red uppercase tracking-widest mb-0.5">Outflow (-)</p>
+                    <p className="text-[10px] font-black text-brand-red">₹{totalDebit.toLocaleString('en-IN')}</p>
+                  </div>
                 </div>
             </div>
             
@@ -609,7 +617,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                     className="flex-1 flex items-center justify-center gap-2 bg-brand-green text-white py-2 rounded-xl font-black text-[10px] uppercase shadow-lg shadow-brand-green/20"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    Audit
+                    Close Period
                   </button>
                 </div>
 
@@ -727,27 +735,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-[#0C0C0F]">
-            {/* Opening Balance Logic */}
-            <tr className={`border-b border-neutral-50 dark:border-[#1A1A1A] ${activeClosing ? 'bg-amber-50/50 dark:bg-amber-900/20 border-l-[3px] border-l-amber-500' : 'bg-neutral-50/20'}`}>
-              <td className="px-2 py-3 text-neutral-400 text-[9px]">
-                {selectedPeriodId === 'LIVE' 
-                  ? (activeClosing ? format(new Date(activeClosing.closingDate), 'dd MMM') : (account.startingBalanceDate ? format(new Date(account.startingBalanceDate), 'dd MMM') : '-'))
-                  : (activeClosing ? format(new Date(activeClosing.closingDate), 'dd MMM') : '-')
-                }
-              </td>
-              <td className="px-2 py-3 font-bold text-brand-blue dark:text-white text-[9px]">
-                {activeClosing 
-                  ? `NEW AUDITED BALANCE AS OF ${format(new Date(activeClosing.closingDate), 'dd MMM yyyy').toUpperCase()}` 
-                  : 'OPENING BALANCE'}
-              </td>
-              <td className="px-2 py-3 text-right text-neutral-300">-</td>
-              <td className="px-2 py-3 text-right text-brand-green font-bold">
-                ₹{(activeClosing ? activeClosing.closingBalance : account.startingBalance).toLocaleString('en-IN')}
-              </td>
-              <td className="px-2 py-3 text-right text-brand-blue dark:text-white font-black">
-                ₹{(activeClosing ? activeClosing.closingBalance : account.startingBalance).toLocaleString('en-IN')}
-              </td>
-            </tr>
+            {/* Transactions In Chronological Order */}
 
             {/* Transactions In Chronological Order */}
             {statementData.map((tx, idx) => (
