@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction } from '../lib/db';
@@ -355,6 +355,10 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     db.transactions.where('accountId').equals(accountId).sortBy('dateTime')
   ) || [];
   
+  const closings = useLiveQuery(() => 
+    db.accountClosings.where('accountId').equals(accountId).sortBy('closingDate')
+  ) || [];
+
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [granularity, setGranularity] = useState<'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'ALL' | 'CUSTOM'>('MONTH');
   const [referenceDate, setReferenceDate] = useState(new Date());
@@ -485,6 +489,34 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     setShowExportMenu(false);
   };
 
+  const handleStartNewBalance = async () => {
+    if (!account) return;
+    const confirmReset = window.confirm(`Start a new balance period? This will create a partition in your history and show the final totals for the current period.`);
+    if (!confirmReset) return;
+
+    // Calculate current period totals for the partition
+    const lastClosing = closings.length > 0 ? closings[closings.length - 1] : null;
+    const startLimit = lastClosing ? new Date(lastClosing.closingDate).getTime() : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
+    
+    // We get ALL transactions to calculate current live period totals correctly
+    const liveTxs = transactions.filter(tx => new Date(tx.dateTime).getTime() > startLimit);
+    const inflow = liveTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
+    const outflow = liveTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
+    const opening = lastClosing ? lastClosing.closingBalance : account.startingBalance;
+
+    await db.accountClosings.add({
+      accountId: account.id!,
+      closingDate: new Date(),
+      closingBalance: currentBalance,
+      periodName: format(new Date(), 'dd MMM yyyy'),
+      openingBalance: opening,
+      totalInflow: inflow,
+      totalOutflow: outflow
+    });
+    
+    alert(`Period closed! Balance of ₹${currentBalance.toLocaleString()} is now your new starting point.`);
+  };
+
   if (!account) return null;
 
   return (
@@ -534,15 +566,22 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             </div>
           </div>
 
-          <div className="flex flex-col justify-center">
-            <div className="relative">
+            <div className="flex flex-col justify-center gap-2">
               <button 
-                onClick={() => setShowExportMenu(!showExportMenu)}
-                className="w-full flex items-center justify-center gap-2 bg-white dark:bg-[#1A1A1A] text-brand-blue dark:text-white py-3 rounded-xl border border-neutral-100 dark:border-[#222222] font-black text-[10px] uppercase shadow-sm"
+                onClick={handleStartNewBalance}
+                className="w-full flex items-center justify-center gap-2 bg-brand-green text-white py-3 rounded-xl font-black text-[10px] uppercase shadow-lg shadow-brand-green/20"
               >
-                <Download className="w-3.5 h-3.5" />
-                Export Ledger
+                <Plus className="w-3.5 h-3.5" />
+                New Balance
               </button>
+              <div className="relative">
+                <button 
+                  onClick={() => setShowExportMenu(!showExportMenu)}
+                  className="w-full flex items-center justify-center gap-2 bg-white dark:bg-[#1A1A1A] text-brand-blue dark:text-white py-3 rounded-xl border border-neutral-100 dark:border-[#222222] font-black text-[10px] uppercase shadow-sm"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Export Ledger
+                </button>
               {showExportMenu && (
                 <div className="absolute top-full mt-2 right-0 w-48 bg-white dark:bg-[#1C1C22] shadow-2xl shadow-black/20 rounded-xl border border-neutral-100 dark:border-[#222222] z-[110] overflow-hidden flex flex-col">
                   <button onClick={downloadPDF} className="p-3 text-left text-[10px] font-black text-brand-blue dark:text-white hover:bg-neutral-50 dark:hover:bg-white/5 flex items-center gap-2">
@@ -647,41 +686,87 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-[#0C0C0F]">
-            {statementData.map((tx, idx) => (
-              <tr key={tx.id || idx} className="border-b border-neutral-50 dark:border-[#1A1A1A] hover:bg-neutral-50/50 transition-colors">
-                <td className="px-2 py-3 text-neutral-400 text-[9px] text-center font-bold">
-                  <div className="flex flex-col">
-                    <span>{format(new Date(tx.dateTime), 'dd')}</span>
-                    <span className="text-[7px] uppercase">{format(new Date(tx.dateTime), 'MMM')}</span>
-                  </div>
-                </td>
-                <td className="px-2 py-3 max-w-[180px]">
-                  <p className="font-black text-brand-blue dark:text-[#F7F7F7] text-[10px] leading-tight truncate uppercase tracking-tighter">
-                    {tx.party || tx.category || 'N/A'}
-                  </p>
-                  {tx.note && (
-                    <p className="text-[8px] text-neutral-400 font-bold mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis uppercase tracking-tighter">
-                      {tx.note}
-                    </p>
+            {statementData.map((tx, idx) => {
+              const prevTx = idx > 0 ? statementData[idx-1] : null;
+              // Check if any "closing/partition" happened between prevTx and current tx
+              const partitionInBetween = closings.find(c => {
+                const cTime = new Date(c.closingDate).getTime();
+                const txTime = new Date(tx.dateTime).getTime();
+                const prevTxTime = prevTx ? new Date(prevTx.dateTime).getTime() : 0;
+                return cTime < txTime && cTime > prevTxTime;
+              });
+
+              return (
+                <React.Fragment key={tx.id || idx}>
+                  {partitionInBetween && (
+                    <tr className="bg-neutral-50 dark:bg-[#1A1A1A] border-y-2 border-brand-blue/10">
+                      <td colSpan={5} className="px-3 py-4">
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="px-2 py-0.5 bg-brand-blue text-white text-[8px] font-black rounded-full uppercase">Partition</div>
+                              <span className="text-[10px] font-black text-brand-blue dark:text-white uppercase">{format(new Date(partitionInBetween.closingDate), 'dd MMM yyyy')}</span>
+                            </div>
+                            <div className="text-[10px] font-black text-brand-blue/40 uppercase">Closing Balance: ₹{partitionInBetween.closingBalance.toLocaleString()}</div>
+                          </div>
+                          <div className="flex gap-4 pt-2 border-t border-neutral-100 dark:border-white/5">
+                            <div className="flex-1">
+                              <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mb-0.5">Period Inflow</p>
+                              <p className="text-[10px] font-black text-brand-green">+ ₹{partitionInBetween.totalInflow.toLocaleString()}</p>
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mb-0.5">Period Outflow</p>
+                              <p className="text-[10px] font-black text-brand-red">- ₹{partitionInBetween.totalOutflow.toLocaleString()}</p>
+                            </div>
+                            <div className="flex-1 text-right">
+                              <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mb-0.5">Prev. Balance</p>
+                              <p className="text-[10px] font-black text-brand-blue dark:text-white">₹{partitionInBetween.openingBalance.toLocaleString()}</p>
+                            </div>
+                          </div>
+                          <div className="mt-2 py-1.5 px-3 bg-brand-blue/5 dark:bg-brand-blue/20 rounded-lg flex items-center justify-between">
+                            <span className="text-[8px] font-black text-brand-blue dark:text-brand-cyan uppercase">New Starting Balance initialized</span>
+                            <span className="text-[10px] font-black text-brand-blue dark:text-white">₹{partitionInBetween.closingBalance.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
                   )}
-                  <div className="flex items-center gap-1.5 mt-1 opacity-40">
-                    <div className="w-1 h-1 rounded-full bg-neutral-300" />
-                    <span className="text-[7px] font-black uppercase tracking-widest">{tx.category}</span>
-                  </div>
-                </td>
-                <td className="px-2 py-3 text-right">
-                  {tx.type === 'DEBIT' && <span className="text-brand-red font-bold">₹{tx.amount.toLocaleString('en-IN')}</span>}
-                  {tx.type !== 'DEBIT' && <span className="text-neutral-300">-</span>}
-                </td>
-                <td className="px-2 py-3 text-right">
-                  {tx.type === 'CREDIT' && <span className="text-brand-green font-bold">₹{tx.amount.toLocaleString('en-IN')}</span>}
-                  {tx.type !== 'CREDIT' && <span className="text-neutral-300">-</span>}
-                </td>
-                <td className={`px-2 py-3 text-right font-black ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
-                  ₹{tx.runningBalance.toLocaleString('en-IN')}
-                </td>
-              </tr>
-            ))}
+                  <tr className="border-b border-neutral-50 dark:border-[#1A1A1A] hover:bg-neutral-50/50 transition-colors">
+                    <td className="px-2 py-3 text-neutral-400 text-[9px] text-center font-bold">
+                      <div className="flex flex-col">
+                        <span>{format(new Date(tx.dateTime), 'dd')}</span>
+                        <span className="text-[7px] uppercase">{format(new Date(tx.dateTime), 'MMM')}</span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-3 max-w-[180px]">
+                      <p className="font-black text-brand-blue dark:text-[#F7F7F7] text-[10px] leading-tight truncate uppercase tracking-tighter">
+                        {tx.party || tx.category || 'N/A'}
+                      </p>
+                      {tx.note && (
+                        <p className="text-[8px] text-neutral-400 font-bold mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis uppercase tracking-tighter">
+                          {tx.note}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-1.5 mt-1 opacity-40">
+                        <div className="w-1 h-1 rounded-full bg-neutral-300" />
+                        <span className="text-[7px] font-black uppercase tracking-widest">{tx.category}</span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-3 text-right">
+                      {tx.type === 'DEBIT' && <span className="text-brand-red font-bold">₹{tx.amount.toLocaleString('en-IN')}</span>}
+                      {tx.type !== 'DEBIT' && <span className="text-neutral-300">-</span>}
+                    </td>
+                    <td className="px-2 py-3 text-right">
+                      {tx.type === 'CREDIT' && <span className="text-brand-green font-bold">₹{tx.amount.toLocaleString('en-IN')}</span>}
+                      {tx.type !== 'CREDIT' && <span className="text-neutral-300">-</span>}
+                    </td>
+                    <td className={`px-2 py-3 text-right font-black ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
+                      ₹{tx.runningBalance.toLocaleString('en-IN')}
+                    </td>
+                  </tr>
+                </React.Fragment>
+              );
+            })}
             
             {statementData.length === 0 && (
               <tr>
