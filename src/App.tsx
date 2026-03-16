@@ -11,6 +11,7 @@ import Settings from './pages/Settings';
 import Budgets from './pages/Budgets';
 import Ledger from './pages/Ledger';
 import PartyLedger from './pages/PartyLedger';
+import Reports from './pages/Reports';
 
 import { ThemeProvider } from './components/ThemeProvider';
 
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="summary" element={<Summary />} />
           <Route path="budgets" element={<Budgets />} />
           <Route path="accounting" element={<Accounting />} />
+          <Route path="reports" element={<Reports />} />
           <Route path="ledger" element={<Ledger />} />
           <Route path="ledger/:id" element={<PartyLedger />} />
           <Route path="parse" element={<SMSParser />} />

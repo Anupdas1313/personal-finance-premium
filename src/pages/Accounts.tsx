@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction } from '../lib/db';
-import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark, Download, FileText, CheckCircle2, History, Calendar, ChevronDown, Printer } from 'lucide-react';
+import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark, Download, FileText, CheckCircle2, History, Calendar, ChevronDown, Printer, MoreHorizontal } from 'lucide-react';
 import { BankLogo } from '../components/BankLogo';
 import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
 import { format, startOfDay, parseISO, endOfMonth, startOfMonth, subMonths, endOfDay, startOfWeek, endOfWeek, startOfYear, endOfYear, addMonths, subWeeks, addWeeks, subDays, addDays, subYears, addYears } from 'date-fns';
@@ -9,6 +10,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 export default function Accounts() {
+  const navigate = useNavigate();
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
   const [isAdding, setIsAdding] = useState(false);
   const [editingAccountId, setEditingAccountId] = useState<number | null>(null);
@@ -347,6 +349,7 @@ export default function Accounts() {
 }
 
 function AccountStatementDetail({ accountId, onClose }: { accountId: number, onClose: () => void }) {
+  const navigate = useNavigate();
   const account = useLiveQuery(() => db.accounts.get(accountId));
   const transactions = useLiveQuery(() => 
     db.transactions.where('accountId').equals(accountId).sortBy('dateTime')
@@ -583,6 +586,12 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                         </button>
                         <button onClick={downloadCSV} className="p-3 text-left text-[10px] font-black text-brand-blue dark:text-white hover:bg-neutral-50 dark:hover:bg-white/5 flex items-center gap-2 border-t border-neutral-100 dark:border-white/5">
                            <Printer className="w-3.5 h-3.5 text-brand-green" /> CSV
+                        </button>
+                        <button 
+                          onClick={() => navigate(`/reports?accountId=${account.id}`)} 
+                          className="p-3 text-left text-[10px] font-black text-brand-blue dark:text-white hover:bg-neutral-50 dark:hover:bg-white/5 flex items-center gap-2 border-t border-neutral-100 dark:border-white/5 bg-brand-blue/5"
+                        >
+                           <MoreHorizontal className="w-3.5 h-3.5 text-brand-cyan" /> ADVANCED
                         </button>
                       </div>
                     )}
