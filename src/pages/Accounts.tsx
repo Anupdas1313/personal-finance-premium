@@ -374,26 +374,26 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     if (!account) return [];
     
     let baseBalance = Number(account.startingBalance) || 0;
-    let startDateLimit = account.startingBalanceDate ? startOfDay(new Date(account.startingBalanceDate)).getTime() : 0;
+    let startDateLimit = 0;
     let endDateLimit = Infinity;
 
     // Apply granularity filters
     if (granularity !== 'ALL') {
       const d = referenceDate;
       if (granularity === 'DAY') {
-        startDateLimit = Math.max(startDateLimit, startOfDay(d).getTime());
+        startDateLimit = startOfDay(d).getTime();
         endDateLimit = endOfDay(d).getTime();
       } else if (granularity === 'WEEK') {
-        startDateLimit = Math.max(startDateLimit, startOfWeek(d, { weekStartsOn: 1 }).getTime());
+        startDateLimit = startOfWeek(d, { weekStartsOn: 1 }).getTime();
         endDateLimit = endOfWeek(d, { weekStartsOn: 1 }).getTime();
       } else if (granularity === 'MONTH') {
-        startDateLimit = Math.max(startDateLimit, startOfMonth(d).getTime());
+        startDateLimit = startOfMonth(d).getTime();
         endDateLimit = endOfMonth(d).getTime();
       } else if (granularity === 'YEAR') {
-        startDateLimit = Math.max(startDateLimit, startOfYear(d).getTime());
+        startDateLimit = startOfYear(d).getTime();
         endDateLimit = endOfYear(d).getTime();
       } else if (granularity === 'CUSTOM') {
-        startDateLimit = Math.max(startDateLimit, startOfDay(new Date(customRange.start)).getTime());
+        startDateLimit = startOfDay(new Date(customRange.start)).getTime();
         endDateLimit = endOfDay(new Date(customRange.end)).getTime();
       }
     }
@@ -431,6 +431,17 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
 
   const totalCredit = statementData.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
   const totalDebit = statementData.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
+  
+  const actualTotalBalance = useMemo(() => {
+    let bal = Number(account?.startingBalance) || 0;
+    transactions.forEach(tx => {
+       if (tx.type === 'CREDIT') bal += (Number(tx.amount) || 0);
+       else bal -= (Number(tx.amount) || 0);
+    });
+    return bal;
+  }, [account?.startingBalance, transactions]);
+
+  const openingBalanceForView = currentBalance - totalCredit + totalDebit;
 
 
   const downloadCSV = () => {
@@ -530,7 +541,11 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             </div>
             <div>
               <h2 className="text-sm font-black text-brand-blue dark:text-[#F7F7F7] uppercase tracking-tighter">{account.bankName}</h2>
-              <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest leading-none">**** {account.accountLast4}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest leading-none">**** {account.accountLast4}</p>
+                <div className="w-1 h-1 rounded-full bg-neutral-300" />
+                <p className="text-[10px] font-black text-brand-blue/60 dark:text-white/60 uppercase">Total: ₹{actualTotalBalance.toLocaleString()}</p>
+              </div>
             </div>
           </div>
           <button onClick={onClose} className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-[#222222] flex items-center justify-center text-brand-blue dark:text-[#F7F7F7] hover:bg-neutral-300 transition-all">
@@ -542,13 +557,13 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
           <div className="bg-white dark:bg-[#111111] p-4 rounded-2xl shadow-[0_10px_30px_rgba(26,35,126,0.05)] border border-neutral-100 dark:border-white/5">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-[8px] font-black text-brand-blue/30 dark:text-white/30 uppercase tracking-widest mb-1">Starting</p>
+                <p className="text-[8px] font-black text-brand-blue/30 dark:text-white/30 uppercase tracking-widest mb-1">Opening</p>
                 <p className="text-sm font-black text-brand-blue/60 dark:text-white/60">
-                  ₹{(Number(account.startingBalance) || 0).toLocaleString('en-IN')}
+                  ₹{openingBalanceForView.toLocaleString('en-IN')}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-[8px] font-black text-brand-blue/30 dark:text-white/30 uppercase tracking-widest mb-1">Current Balance</p>
+                <p className="text-[8px] font-black text-brand-blue/30 dark:text-white/30 uppercase tracking-widest mb-1">Closing</p>
                 <p className="text-sm font-black text-brand-blue dark:text-white">
                   ₹{currentBalance.toLocaleString('en-IN')}
                 </p>
