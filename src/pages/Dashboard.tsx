@@ -107,7 +107,7 @@ export default function Dashboard() {
         // Add DEBIT transaction for source account
         await db.transactions.add({
           accountId: Number(selectedAccountId),
-          amount: parseFloat(amount),
+          amount: parseFloat(amount.toString().replace(/,/g, '')) || 0,
           type: 'DEBIT',
           dateTime: new Date(transactionDate),
           note: note || `Transfer to ${accounts.find(a => a.id === toAccountId)?.bankName}`,
@@ -121,7 +121,7 @@ export default function Dashboard() {
         // Add CREDIT transaction for destination account
         await db.transactions.add({
           accountId: Number(toAccountId),
-          amount: parseFloat(amount),
+          amount: parseFloat(amount.toString().replace(/,/g, '')) || 0,
           type: 'CREDIT',
           dateTime: new Date(transactionDate),
           note: note || `Transfer from ${accounts.find(a => a.id === selectedAccountId)?.bankName}`,
@@ -134,7 +134,7 @@ export default function Dashboard() {
       } else {
         await db.transactions.add({
           accountId: Number(selectedAccountId),
-          amount: parseFloat(amount),
+          amount: parseFloat(amount.toString().replace(/,/g, '')) || 0,
           type: type as 'CREDIT' | 'DEBIT',
           dateTime: new Date(transactionDate),
           note: note || '',
@@ -172,7 +172,7 @@ export default function Dashboard() {
   const allClosings = useLiveQuery(() => db.accountClosings.toArray()) || [];
 
   // Optimized balance and metrics calculation
-  const { balances, totalIncome, totalSpending } = useLiveQuery(async () => {
+  const { balances, totalIncome, totalSpending, totalWealth } = useLiveQuery(async () => {
     const accs = await db.accounts.toArray();
     const closings = await db.accountClosings.toArray();
     const monthlyClosings = await db.monthlyClosings.orderBy('month').reverse().toArray();
@@ -182,69 +182,53 @@ export default function Dashboard() {
     let spending = 0;
 
     const now = new Date();
-    const monthStart = startOfMonth(now);
-    const yearStart = startOfYear(now);
+    const monthStart = startOfMonth(now).getTime();
+    const yearStart = startOfYear(now).getTime();
 
-    const calculatedBalances = await Promise.all(accs.map(async (acc) => {
-      const accountClosings = closings
-        .filter(c => c.accountId === acc.id)
-        .sort((a, b) => new Date(b.closingDate).getTime() - new Date(a.closingDate).getTime());
+    // 1. Calculate REAL-TIME balances for all accounts from the entire history
+    const allTxs = await db.transactions.toArray();
+    
+    const calculatedBalances = accs.map(acc => {
+      let bal = Number(acc.startingBalance) || 0;
+      const accountTxs = allTxs.filter(t => Number(t.accountId) === Number(acc.id));
+      accountTxs.forEach(tx => {
+        if (tx.type === 'CREDIT') bal += (Number(tx.amount) || 0);
+        else if (tx.type === 'DEBIT') bal -= (Number(tx.amount) || 0);
+      });
+      return bal;
+    });
+
+    // 2. Calculate metrics (Income/Spending) based on time filter
+    allTxs.forEach(tx => {
+      const txTime = new Date(tx.dateTime).getTime();
+      let isInRange = false;
       
-      const latestAudit = accountClosings[0];
-      let balance = 0;
-      let txs = [];
-
-      if (latestAudit) {
-        const auditDate = new Date(latestAudit.closingDate);
-        txs = await db.transactions
-          .where('accountId').equals(acc.id!)
-          .filter(t => t.dateTime > auditDate)
-          .toArray();
-        balance = latestAudit.closingBalance;
-      } else if (latestMonthly && latestMonthly.accountBalances[acc.id!] !== undefined) {
-        const nextMonthStart = new Date(new Date(latestMonthly.month + '-01').getFullYear(), new Date(latestMonthly.month + '-01').getMonth() + 1, 1);
-        txs = await db.transactions
-          .where('accountId').equals(acc.id!)
-          .filter(t => t.dateTime >= nextMonthStart)
-          .toArray();
-        balance = latestMonthly.accountBalances[acc.id!];
+      if (timeFilter === 'This Month') {
+        isInRange = txTime >= monthStart;
+      } else if (timeFilter === 'This Year') {
+        isInRange = txTime >= yearStart;
       } else {
-        const startLimit = acc.startingBalanceDate ? startOfDay(new Date(acc.startingBalanceDate)) : new Date(0);
-        txs = await db.transactions
-          .where('accountId').equals(acc.id!)
-          .filter(t => t.dateTime >= startLimit)
-          .toArray();
-        balance = Number(acc.startingBalance) || 0;
+        isInRange = true; // All Time
       }
 
-      return txs.reduce((accBal, tx) => {
-        return tx.type === 'CREDIT' ? accBal + tx.amount : accBal - tx.amount;
-      }, balance);
-    }));
-
-    // Calculate metrics for current period
-    let metricsTxs = [];
-    if (timeFilter === 'This Month') {
-      metricsTxs = await db.transactions.where('dateTime').above(monthStart).toArray();
-    } else if (timeFilter === 'This Year') {
-      metricsTxs = await db.transactions.where('dateTime').above(yearStart).toArray();
-    } else {
-      metricsTxs = await db.transactions.toArray();
-    }
-
-    metricsTxs.forEach(tx => {
-      if (tx.type === 'CREDIT') income += tx.amount;
-      if (tx.type === 'DEBIT') spending += tx.amount;
+      // Exclude transfers from income/spending metrics to avoid double-counting
+      if (isInRange && tx.category !== 'Transfer') {
+        if (tx.type === 'CREDIT') income += (Number(tx.amount) || 0);
+        else if (tx.type === 'DEBIT') spending += (Number(tx.amount) || 0);
+      }
     });
+
+    const totalWealth = calculatedBalances.reduce((sum, b) => sum + b, 0);
 
     return { 
       balances: accs.map((acc, i) => ({ ...acc, currentBalance: calculatedBalances[i] })), 
       totalIncome: income, 
-      totalSpending: spending 
+      totalSpending: spending,
+      totalWealth
     };
-  }, [timeFilter]) || { balances: [], totalIncome: 0, totalSpending: 0 };
+  }, [timeFilter]) || { balances: [], totalIncome: 0, totalSpending: 0, totalWealth: 0 };
   
-  const netBalance = totalIncome - totalSpending;
+  const monthDelta = totalIncome - totalSpending;
   const totalBalance = balances.reduce((sum, acc) => sum + acc.currentBalance, 0);
 
   const greeting = useMemo(() => {
@@ -323,9 +307,16 @@ export default function Dashboard() {
         </div>
 
         <div className="relative z-10 bg-white/60 dark:bg-white/5 border border-brand-blue/5 dark:border-white/10 rounded-2xl p-4 flex justify-between items-center backdrop-blur-sm">
-          <p className="text-[9px] font-black text-brand-blue/40 dark:text-white/30 uppercase tracking-widest">Net Position</p>
-          <p className={`text-lg font-black tracking-tighter ${netBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-rose-500'}`}>
-            {isAmountsHidden ? '••••••' : `${netBalance < 0 ? '-' : ''}₹${Math.abs(netBalance).toLocaleString('en-IN')}`}
+          <div className="flex flex-col">
+            <p className="text-[9px] font-black text-brand-blue/40 dark:text-white/30 uppercase tracking-widest leading-none mb-1">Total Wealth</p>
+            {timeFilter !== 'All Time' && (
+              <p className={`text-[8px] font-bold ${monthDelta >= 0 ? 'text-emerald-500' : 'text-rose-500'} uppercase`}>
+                {monthDelta >= 0 ? '+' : ''}₹{monthDelta.toLocaleString('en-IN')} this {timeFilter === 'This Month' ? 'month' : 'year'}
+              </p>
+            )}
+          </div>
+          <p className={`text-lg font-black tracking-tighter text-brand-blue dark:text-white`}>
+            {isAmountsHidden ? '••••••' : `₹${totalWealth.toLocaleString('en-IN')}`}
           </p>
         </div>
       </div>

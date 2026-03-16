@@ -81,7 +81,7 @@ export default function SMSParser() {
     try {
       await db.transactions.add({
         accountId: Number(selectedAccountId),
-        amount: parseFloat(amount),
+        amount: parseFloat(amount.toString().replace(/,/g, '')) || 0,
         type: type as 'CREDIT' | 'DEBIT',
         dateTime: new Date(transactionDate),
         note: note || '',

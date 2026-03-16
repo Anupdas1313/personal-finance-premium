@@ -179,7 +179,7 @@ export default function Transactions() {
   const saveEdit = async () => {
     if (!selectedTx?.id || !editAmount) return;
     await db.transactions.update(selectedTx.id, {
-      amount: parseFloat(editAmount),
+      amount: parseFloat(editAmount.toString().replace(/,/g, '')) || 0,
       note: editNote,
       party: editParty,
       category: editCategory,
@@ -598,7 +598,7 @@ export default function Transactions() {
             <div className="p-6">
               {isEditing ? (
                 <div className="space-y-4">
-                  <div><label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Amount *</label><input type="number" value={editAmount} onChange={e => setEditAmount(e.target.value)} step="0.01" className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]" /></div>
+                  <div><label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Amount *</label><input type="number" value={editAmount} onChange={e => setEditAmount(e.target.value.toString().replace(/,/g, ''))} step="0.01" className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]" /></div>
                   <div><label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Party</label><input type="text" value={editParty} onChange={e => setEditParty(e.target.value)} className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]" /></div>
                   <div><label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Note</label><input type="text" value={editNote} onChange={e => setEditNote(e.target.value)} className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]" /></div>
                   <div><label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Category</label><select value={editCategory} onChange={e => setEditCategory(e.target.value)} className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]">{['Food', 'Transport', 'Rent', 'Shopping', 'Bills', 'Entertainment', 'Salary', 'Transfer', 'Other'].map(c => (<option key={c} value={c}>{c}</option>))}</select></div>

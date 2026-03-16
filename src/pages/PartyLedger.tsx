@@ -34,11 +34,11 @@ export default function PartyLedger() {
   const netBalance = runningBalances.length > 0 ? runningBalances[runningBalances.length - 1] : 0;
 
   const handleAddTransaction = async () => {
-    if (!amount || isNaN(parseFloat(amount))) return;
+    if (!amount || isNaN(parseFloat(amount.toString().replace(/,/g, '')))) return;
     
     await db.ledgerTransactions.add({
       partyId,
-      amount: parseFloat(amount),
+      amount: parseFloat(amount.toString().replace(/,/g, '')) || 0,
       type: txType,
       dateTime: new Date(date),
       remarks,

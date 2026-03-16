@@ -61,7 +61,7 @@ export default function Accounts() {
       await db.accounts.update(editingAccountId, {
         bankName,
         accountLast4,
-        startingBalance: parseFloat(startingBalance),
+        startingBalance: parseFloat(startingBalance.toString().replace(/,/g, '')) || 0,
         startingBalanceDate: new Date(startingBalanceDate),
         type: accountType
       });
@@ -69,7 +69,7 @@ export default function Accounts() {
       await db.accounts.add({
         bankName,
         accountLast4,
-        startingBalance: parseFloat(startingBalance),
+        startingBalance: parseFloat(startingBalance.toString().replace(/,/g, '')) || 0,
         startingBalanceDate: new Date(startingBalanceDate),
         type: accountType
       });

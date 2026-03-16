@@ -31,7 +31,7 @@ export default function Budgets() {
     if (editingId) {
       await db.budgets.update(editingId, {
         category: selectedCategory,
-        amount: parseFloat(budgetAmount),
+        amount: parseFloat(budgetAmount.toString().replace(/,/g, '')) || 0,
       });
     } else {
       // Check if trying to add duplicate category for the same month
@@ -43,7 +43,7 @@ export default function Budgets() {
       
       await db.budgets.add({
         category: selectedCategory,
-        amount: parseFloat(budgetAmount),
+        amount: parseFloat(budgetAmount.toString().replace(/,/g, '')) || 0,
         month: monthStr
       });
     }
