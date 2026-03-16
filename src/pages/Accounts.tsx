@@ -350,6 +350,48 @@ export default function Accounts() {
   );
 }
 
+function PartitionRow({ partition }: { partition: any }) {
+  return (
+    <tr className="bg-neutral-50 dark:bg-[#1A1A1A] border-y border-brand-blue/10">
+      <td colSpan={5} className="px-2 py-2">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="px-1.5 py-0.5 bg-brand-blue text-white text-[7px] font-black rounded-full uppercase">Partition</div>
+              <span className="text-[9px] font-black text-brand-blue dark:text-white uppercase truncate">
+                {format(new Date(partition.closingDate), 'dd MMM yyyy')}
+              </span>
+            </div>
+            <div className="text-[9px] font-black text-brand-blue/40 uppercase tracking-tighter">
+              Closing: ₹{partition.closingBalance.toLocaleString()}
+            </div>
+          </div>
+          <div className="flex gap-4 pt-1 border-t border-dotted border-neutral-300 dark:border-white/5">
+            <div className="flex-1">
+              <p className="text-[6px] font-black text-neutral-400 uppercase tracking-widest leading-none">Inflow</p>
+              <p className="text-[9px] font-black text-brand-green tracking-tighter">+ ₹{partition.totalInflow.toLocaleString()}</p>
+            </div>
+            <div className="flex-1">
+              <p className="text-[6px] font-black text-neutral-400 uppercase tracking-widest leading-none">Outflow</p>
+              <p className="text-[9px] font-black text-brand-red tracking-tighter">- ₹{partition.totalOutflow.toLocaleString()}</p>
+            </div>
+            <div className="flex-1 text-right">
+              <p className="text-[6px] font-black text-neutral-400 uppercase tracking-widest leading-none">Prev. Bal</p>
+              <p className="text-[9px] font-black text-brand-blue dark:text-white tracking-tighter">₹{partition.openingBalance.toLocaleString()}</p>
+            </div>
+          </div>
+          <div className="mt-1 py-1 px-2 border border-brand-blue/20 bg-brand-blue/5 dark:bg-brand-blue/20 rounded-lg flex items-center justify-between">
+            <span className="text-[7.5px] font-black text-brand-blue dark:text-brand-cyan uppercase">Initialized New Start Balance</span>
+            <span className="text-[9px] font-black text-brand-blue dark:text-white font-mono tracking-tighter">
+              ₹{partition.closingBalance.toLocaleString()}
+            </span>
+          </div>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 function AccountStatementDetail({ accountId, onClose }: { accountId: number, onClose: () => void }) {
   const navigate = useNavigate();
   const account = useLiveQuery(() => db.accounts.get(accountId));
@@ -372,33 +414,35 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
 
 
 
+  const { startDateLimit, endDateLimit } = useMemo(() => {
+    let start = 0;
+    let end = Infinity;
+    if (granularity !== 'ALL') {
+      const d = referenceDate;
+      if (granularity === 'DAY') {
+        start = startOfDay(d).getTime();
+        end = endOfDay(d).getTime();
+      } else if (granularity === 'WEEK') {
+        start = startOfWeek(d, { weekStartsOn: 1 }).getTime();
+        end = endOfWeek(d, { weekStartsOn: 1 }).getTime();
+      } else if (granularity === 'MONTH') {
+        start = startOfMonth(d).getTime();
+        end = endOfMonth(d).getTime();
+      } else if (granularity === 'YEAR') {
+        start = startOfYear(d).getTime();
+        end = endOfYear(d).getTime();
+      } else if (granularity === 'CUSTOM') {
+        start = startOfDay(new Date(customRange.start)).getTime();
+        end = endOfDay(new Date(customRange.end)).getTime();
+      }
+    }
+    return { startDateLimit: start, endDateLimit: end };
+  }, [granularity, referenceDate, customRange]);
+
   const statementData = useMemo(() => {
     if (!account) return [];
     
     let baseBalance = Number(account.startingBalance) || 0;
-    let startDateLimit = 0;
-    let endDateLimit = Infinity;
-
-    // Apply granularity filters
-    if (granularity !== 'ALL') {
-      const d = referenceDate;
-      if (granularity === 'DAY') {
-        startDateLimit = startOfDay(d).getTime();
-        endDateLimit = endOfDay(d).getTime();
-      } else if (granularity === 'WEEK') {
-        startDateLimit = startOfWeek(d, { weekStartsOn: 1 }).getTime();
-        endDateLimit = endOfWeek(d, { weekStartsOn: 1 }).getTime();
-      } else if (granularity === 'MONTH') {
-        startDateLimit = startOfMonth(d).getTime();
-        endDateLimit = endOfMonth(d).getTime();
-      } else if (granularity === 'YEAR') {
-        startDateLimit = startOfYear(d).getTime();
-        endDateLimit = endOfYear(d).getTime();
-      } else if (granularity === 'CUSTOM') {
-        startDateLimit = startOfDay(new Date(customRange.start)).getTime();
-        endDateLimit = endOfDay(new Date(customRange.end)).getTime();
-      }
-    }
 
     // Calculate initial running balance for transactions before the start date limit
     // to ensure the running balance in the visible list is correct relative to starting balance.
@@ -707,8 +751,6 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
           <tbody className="bg-white dark:bg-[#0C0C0F]">
             {statementData.map((tx, idx) => {
               const prevTx = idx > 0 ? statementData[idx-1] : null;
-              // In Ascending order, tx is NEWER than prevTx.
-              // We check if a partition happened AFTER prevTx but BEFORE tx
               const partitionInBetween = closings.find(c => {
                 const cTime = new Date(c.closingDate).getTime();
                 const txTime = new Date(tx.dateTime).getTime();
@@ -718,39 +760,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
 
               return (
                 <React.Fragment key={tx.id || idx}>
-                  {partitionInBetween && (
-                    <tr className="bg-neutral-50 dark:bg-[#1A1A1A] border-y border-brand-blue/10">
-                      <td colSpan={5} className="px-2 py-2">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="px-1.5 py-0.5 bg-brand-blue text-white text-[7px] font-black rounded-full uppercase">Partition</div>
-                              <span className="text-[9px] font-black text-brand-blue dark:text-white uppercase">{format(new Date(partitionInBetween.closingDate), 'dd MMM yyyy')}</span>
-                            </div>
-                            <div className="text-[9px] font-black text-brand-blue/40 uppercase tracking-tighter">Closing: ₹{partitionInBetween.closingBalance.toLocaleString()}</div>
-                          </div>
-                          <div className="flex gap-4 pt-1 border-t border-dotted border-neutral-300 dark:border-white/5">
-                            <div className="flex-1">
-                              <p className="text-[6px] font-black text-neutral-400 uppercase tracking-widest leading-none">Inflow</p>
-                              <p className="text-[9px] font-black text-brand-green tracking-tighter">+ ₹{partitionInBetween.totalInflow.toLocaleString()}</p>
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-[6px] font-black text-neutral-400 uppercase tracking-widest leading-none">Outflow</p>
-                              <p className="text-[9px] font-black text-brand-red tracking-tighter">- ₹{partitionInBetween.totalOutflow.toLocaleString()}</p>
-                            </div>
-                            <div className="flex-1 text-right">
-                              <p className="text-[6px] font-black text-neutral-400 uppercase tracking-widest leading-none">Prev. Bal</p>
-                              <p className="text-[9px] font-black text-brand-blue dark:text-white tracking-tighter">₹{partitionInBetween.openingBalance.toLocaleString()}</p>
-                            </div>
-                          </div>
-                          <div className="mt-1 py-1 px-2 border border-brand-blue/20 bg-brand-blue/5 dark:bg-brand-blue/20 rounded-lg flex items-center justify-between">
-                            <span className="text-[7.5px] font-black text-brand-blue dark:text-brand-cyan uppercase">Initialized New Start Balance</span>
-                            <span className="text-[9px] font-black text-brand-blue dark:text-white font-mono tracking-tighter">₹{partitionInBetween.closingBalance.toLocaleString()}</span>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
+                  {partitionInBetween && <PartitionRow partition={partitionInBetween} />}
                   <tr className="border-b border-neutral-50 dark:border-[#1A1A1A] hover:bg-neutral-50/50 transition-colors">
                     <td className="px-2 py-1.5 text-neutral-400 text-[8px] text-center font-bold">
                       <div className="flex flex-col">
@@ -783,8 +793,24 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                 </React.Fragment>
               );
             })}
+
+            {/* Partitions that happened AFTER the last transaction within view limits */}
+            {closings
+              .filter(c => {
+                const cTime = new Date(c.closingDate).getTime();
+                const lastTxTime = statementData.length > 0 ? new Date(statementData[statementData.length - 1].dateTime).getTime() : 0;
+                // Partition must be after last transaction AND within current selected period
+                return cTime > lastTxTime && cTime <= endDateLimit && cTime >= startDateLimit;
+              })
+              .map(c => (
+                <PartitionRow key={c.id} partition={c} />
+              ))
+            }
             
-            {statementData.length === 0 && (
+            {statementData.length === 0 && closings.filter(c => {
+               const cTime = new Date(c.closingDate).getTime();
+               return cTime >= startDateLimit && cTime <= endDateLimit;
+            }).length === 0 && (
               <tr>
                 <td colSpan={5} className="py-10 text-center">
                   <p className="text-[9px] font-black text-neutral-200 uppercase tracking-widest">No Transactions in this period</p>
