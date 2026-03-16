@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
-import { ArrowUpRight, ArrowDownRight, Wallet, Plus, X, AlertCircle, CheckCircle2, Search, ChevronDown, Landmark, Smartphone, ArrowLeft, Calendar, Clock, Calculator, MoreHorizontal, User, AlignLeft, Hash, Paperclip, Save, ChevronRight, CreditCard, Coins, PlaneTakeoff } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Wallet, Plus, X, AlertCircle, CheckCircle2, Search, ChevronDown, Landmark, Smartphone, ArrowLeft, Calendar, Clock, Calculator, MoreHorizontal, User, AlignLeft, Hash, Paperclip, Save, ChevronRight, CreditCard, Coins, PlaneTakeoff, Eye, EyeOff } from 'lucide-react';
 
 import { format, startOfMonth, startOfYear, isToday, isYesterday, startOfDay } from 'date-fns';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
@@ -80,6 +80,7 @@ export default function Dashboard() {
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [timeFilter, setTimeFilter] = useState<'All Time' | 'This Month' | 'This Year'>('All Time');
+  const [isAmountsHidden, setIsAmountsHidden] = useState(true);
   
   const { categories: appCategories } = useCategories();
 
@@ -277,52 +278,53 @@ export default function Dashboard() {
 
 
       {/* Cash Flow Hero Card */}
-      <div className="relative overflow-hidden rounded-[28px] bg-[#1A237E] dark:bg-gradient-to-br dark:from-[#1C1C24] dark:to-[#1C1F26] p-8 shadow-[0_20px_50px_rgba(26,35,126,0.3)] border border-white/10">
-
-        {/* Subtle glowing orb effects */}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
-
+      <div 
+        className="relative overflow-hidden rounded-[28px] bg-white dark:bg-[#111111] p-8 shadow-[0_20px_50px_rgba(26,35,126,0.05)] border border-neutral-100 dark:border-white/5 cursor-pointer group"
+        onClick={() => setIsAmountsHidden(!isAmountsHidden)}
+      >
+        <div className="absolute top-0 right-0 w-48 h-48 bg-brand-blue/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
 
         <div className="relative z-10 flex items-center justify-between mb-8">
-          <h2 className="text-xs font-bold text-white/60 tracking-widest uppercase">Cash Flow</h2>
-          <div className="relative">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xs font-black text-brand-blue/40 dark:text-[#A0A0A0] tracking-widest uppercase">Cash Flow</h2>
+            {isAmountsHidden ? <EyeOff className="w-3.5 h-3.5 text-brand-blue/20" /> : <Eye className="w-3.5 h-3.5 text-brand-blue/20" />}
+          </div>
+          <div className="relative" onClick={(e) => e.stopPropagation()}>
             <select
               value={timeFilter}
               onChange={(e) => setTimeFilter(e.target.value as any)}
-              className="appearance-none bg-white/10 hover:bg-white/15 text-white/90 text-sm font-semibold px-4 py-1.5 rounded-full pr-8 cursor-pointer outline-none transition-colors border border-white/10 backdrop-blur-md"
+              className="appearance-none bg-neutral-50 dark:bg-[#1A1A1A] hover:bg-neutral-100 text-brand-blue/60 dark:text-white/90 text-[10px] font-black uppercase tracking-wider px-4 py-1.5 rounded-full pr-8 cursor-pointer outline-none transition-colors border border-neutral-200 dark:border-white/10"
             >
-              <option className="text-black bg-white" value="This Month">This Month</option>
-              <option className="text-black bg-white" value="This Year">This Year</option>
-              <option className="text-black bg-white" value="All Time">All Time</option>
+              <option value="This Month">This Month</option>
+              <option value="This Year">This Year</option>
+              <option value="All Time">All Time</option>
             </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70 pointer-events-none" />
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-blue/30 pointer-events-none" />
           </div>
         </div>
 
-        <div className="relative z-10 flex justify-between items-end mb-8">
-          <div>
-            <p className="text-xs font-bold text-brand-red tracking-wider uppercase mb-1">Spending</p>
-            <p className="text-3xl font-bold text-white tracking-tight">
-              ₹{totalSpending.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+        <div className="relative z-10 flex justify-between items-end mb-10 gap-4">
+          <div className="flex-1">
+            <p className="text-[10px] font-black text-rose-500 tracking-widest uppercase mb-2">Spending</p>
+            <p className="text-3xl font-black text-brand-blue dark:text-white tracking-tighter">
+              {isAmountsHidden ? '••••••' : `₹${totalSpending.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-xs font-bold text-brand-green tracking-wider uppercase mb-1">Income</p>
-            <p className="text-3xl font-bold text-white tracking-tight">
-              ₹{totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+          <div className="flex-1 text-right border-l border-neutral-100 dark:border-white/5 pl-4">
+            <p className="text-[10px] font-black text-emerald-500 tracking-widest uppercase mb-2">Income</p>
+            <p className="text-3xl font-black text-brand-blue dark:text-white tracking-tighter">
+              {isAmountsHidden ? '••••••' : `₹${totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
             </p>
           </div>
-
         </div>
 
-        <div className="relative z-10 bg-white/5 border border-white/10 rounded-2xl p-4 flex justify-between items-center backdrop-blur-sm">
-          <p className="text-sm font-semibold text-white/50 border-b border-dashed border-white/20 pb-0.5">Net Balance</p>
-          <p className={`text-lg font-bold ${netBalance >= 0 ? 'text-white' : 'text-brand-red'}`}>
-            {netBalance < 0 ? '-' : ''}₹{Math.abs(netBalance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+        <div className="relative z-10 bg-neutral-50 dark:bg-white/5 border border-neutral-100 dark:border-white/10 rounded-2xl p-4 flex justify-between items-center">
+          <p className="text-[10px] font-black text-brand-blue/40 dark:text-white/30 uppercase tracking-widest">Net Balance</p>
+          <p className={`text-xl font-black tracking-tighter ${netBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-rose-500'}`}>
+            {isAmountsHidden ? '••••••' : `${netBalance < 0 ? '-' : ''}₹${Math.abs(netBalance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
           </p>
         </div>
-
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
