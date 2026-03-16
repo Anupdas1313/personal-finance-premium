@@ -680,7 +680,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
           </thead>
           <tbody className="bg-white dark:bg-[#0C0C0F]">
             {/* Opening Balance Logic */}
-            <tr className="border-b border-neutral-50 dark:border-[#1A1A1A] bg-neutral-50/20">
+            <tr className={`border-b border-neutral-50 dark:border-[#1A1A1A] ${activeClosing ? 'bg-amber-50/50 dark:bg-amber-900/20 border-l-[3px] border-l-amber-500' : 'bg-neutral-50/20'}`}>
               <td className="px-2 py-3 text-neutral-400 text-[9px]">
                 {selectedPeriodId === 'LIVE' 
                   ? (activeClosing ? format(new Date(activeClosing.closingDate), 'dd MMM') : (account.startingBalanceDate ? format(new Date(account.startingBalanceDate), 'dd MMM') : '-'))
@@ -688,7 +688,9 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                 }
               </td>
               <td className="px-2 py-3 font-bold text-brand-blue dark:text-white text-[9px]">
-                {activeClosing ? `AUDITED BALANCE (${activeClosing.periodName})` : 'OPENING BALANCE'}
+                {activeClosing 
+                  ? `NEW AUDITED BALANCE AS OF ${format(new Date(activeClosing.closingDate), 'dd MMM yyyy').toUpperCase()}` 
+                  : 'OPENING BALANCE'}
               </td>
               <td className="px-2 py-3 text-right text-neutral-300">-</td>
               <td className="px-2 py-3 text-right text-brand-green font-bold">
@@ -708,10 +710,17 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                     <span className="text-[7px] uppercase">{format(new Date(tx.dateTime), 'MMM')}</span>
                   </div>
                 </td>
-                <td className="px-2 py-3">
-                  <p className="font-bold text-brand-blue dark:text-[#F7F7F7] text-[10px] leading-tight truncate max-w-[150px] uppercase tracking-tighter">{tx.note || tx.category || 'N/A'}</p>
-                  <div className="flex items-center gap-1.5 mt-0.5 opacity-50">
-                    <div className="w-1.5 h-1.5 rounded-full bg-neutral-300" />
+                <td className="px-2 py-3 max-w-[180px]">
+                  <p className="font-black text-brand-blue dark:text-[#F7F7F7] text-[10px] leading-tight truncate uppercase tracking-tighter">
+                    {tx.party || tx.category || 'N/A'}
+                  </p>
+                  {tx.note && (
+                    <p className="text-[8px] text-neutral-400 font-bold mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis uppercase tracking-tighter">
+                      {tx.note}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-1.5 mt-1 opacity-40">
+                    <div className="w-1 h-1 rounded-full bg-neutral-300" />
                     <span className="text-[7px] font-black uppercase tracking-widest">{tx.category}</span>
                   </div>
                 </td>
