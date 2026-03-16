@@ -304,15 +304,18 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="relative z-10 flex justify-between items-end mb-8 gap-4">
-          <div className="flex-1 overflow-hidden">
-            <p className="text-[9px] font-black text-rose-500 tracking-widest uppercase mb-1.5">Spending</p>
+        <div className="relative z-10 flex justify-between items-stretch mb-8 gap-10">
+          <div className="flex-1 overflow-hidden py-2">
+            <p className="text-[9px] font-black text-rose-500 tracking-widest uppercase mb-2">Spending</p>
             <p className="text-2xl font-black text-brand-blue dark:text-white tracking-tighter truncate">
               {isAmountsHidden ? '••••••' : `₹${totalSpending.toLocaleString('en-IN')}`}
             </p>
           </div>
-          <div className="flex-1 text-right border-l border-brand-blue/5 dark:border-white/5 pl-4 overflow-hidden">
-            <p className="text-[9px] font-black text-emerald-500 tracking-widest uppercase mb-1.5">Income</p>
+          
+          <div className="w-[1px] bg-brand-blue/10 dark:bg-white/10 self-stretch my-2"></div>
+
+          <div className="flex-1 text-right overflow-hidden py-2">
+            <p className="text-[9px] font-black text-emerald-500 tracking-widest uppercase mb-2">Income</p>
             <p className="text-2xl font-black text-brand-blue dark:text-white tracking-tighter truncate">
               {isAmountsHidden ? '••••••' : `₹${totalIncome.toLocaleString('en-IN')}`}
             </p>

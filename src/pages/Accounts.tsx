@@ -367,6 +367,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     start: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
     end: format(endOfMonth(new Date()), 'yyyy-MM-dd')
   });
+  const [viewFullHistory, setViewFullHistory] = useState(false);
 
   const activeClosing = useMemo(() => {
     if (selectedPeriodId === 'LIVE') {
@@ -385,7 +386,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     let endDateLimit = Infinity;
 
     if (selectedPeriodId === 'LIVE') {
-      if (activeClosing) {
+      if (activeClosing && !viewFullHistory) {
         baseBalance = Number(activeClosing.closingBalance);
         startDateLimit = new Date(activeClosing.closingDate).getTime() + 1;
       } else {
@@ -618,15 +619,28 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                     onChange={(e) => setSelectedPeriodId(e.target.value === 'LIVE' ? 'LIVE' : Number(e.target.value))}
                     className="w-full appearance-none bg-neutral-100 dark:bg-[#1A1A1A] text-brand-blue dark:text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase outline-none border border-transparent focus:border-brand-blue transition-all"
                   >
-                    <option value="LIVE">Live Statement</option>
+                    <option value="LIVE">Activity Since Audit</option>
                     {closings.map(c => (
                       <option key={c.id} value={c.id}>{c.periodName}</option>
                     ))}
                   </select>
                   <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-brand-blue/50 pointer-events-none" />
                 </div>
+                
+                {selectedPeriodId === 'LIVE' && (
+                  <button 
+                    onClick={() => setViewFullHistory(!viewFullHistory)}
+                    className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${
+                      viewFullHistory 
+                        ? 'bg-brand-blue text-white shadow-lg' 
+                        : 'bg-neutral-100 dark:bg-[#1A1A1A] text-brand-blue/40'
+                    }`}
+                  >
+                    All History
+                  </button>
+                )}
+              </div>
             </div>
-        </div>
 
         {/* Granularity & Navigation */}
         {selectedPeriodId === 'LIVE' && (
