@@ -647,7 +647,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                 className="w-full flex items-center justify-center gap-2 bg-brand-green text-white py-2.5 rounded-xl font-black text-[9px] uppercase shadow-lg shadow-brand-green/10"
               >
                 <Plus className="w-3 h-3" />
-                New Balance
+                New Start Balance
               </button>
               <div className="relative">
                 <button 
