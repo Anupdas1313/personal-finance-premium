@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction } from '../lib/db';
-import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark, Download, FileText, CheckCircle2, History, Calendar, ChevronDown, Printer, MoreHorizontal } from 'lucide-react';
+import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark, Download, FileText, CheckCircle2, History, Calendar, ChevronDown, Printer, MoreHorizontal, Scissors } from 'lucide-react';
 import { BankLogo } from '../components/BankLogo';
 import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
 import { format, startOfDay, parseISO, endOfMonth, startOfMonth, subMonths, endOfDay, startOfWeek, endOfWeek, startOfYear, endOfYear, addMonths, subWeeks, addWeeks, subDays, addDays, subYears, addYears } from 'date-fns';
@@ -817,9 +817,9 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                         <button 
                           onClick={() => handleCreatePartitionAt(tx)}
                           title="Start New Balance from here"
-                          className="p-1.5 bg-brand-blue/5 dark:bg-brand-blue/20 text-brand-blue dark:text-brand-cyan rounded-lg opacity-0 group-hover:opacity-100 transition-opacity active:scale-90 shrink-0"
+                          className="p-1.5 bg-brand-blue/10 dark:bg-brand-blue/30 text-brand-blue dark:text-brand-cyan rounded-lg transition-all active:scale-90 shrink-0"
                         >
-                          <History className="w-3 h-3" />
+                          <Scissors className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>
