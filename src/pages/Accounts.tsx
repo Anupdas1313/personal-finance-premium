@@ -540,7 +540,11 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     const startLimit = lastClosing ? new Date(lastClosing.closingDate).getTime() : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
     
     // We get ALL transactions to calculate current live period totals correctly
-    const liveTxs = transactions.filter(tx => new Date(tx.dateTime).getTime() > startLimit);
+    const liveTxs = transactions.filter(tx => {
+      const txTime = new Date(tx.dateTime).getTime();
+      // Use a 1ms grace period to ensure we catch everything since the last closure
+      return txTime > startLimit;
+    });
     const inflow = liveTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
     const outflow = liveTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
     const opening = lastClosing ? lastClosing.closingBalance : account.startingBalance;
@@ -563,12 +567,16 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     const confirmReset = window.confirm(`Start a new balance period from this transaction? Current balance here is ₹${targetTx.runningBalance.toLocaleString()}.`);
     if (!confirmReset) return;
 
+    // We set the partition time precisely at the transaction time + 1ms to include it
     const partitionTime = new Date(targetTx.dateTime).getTime() + 1;
     const prevClosing = [...closings]
         .filter(c => new Date(c.closingDate).getTime() < partitionTime)
         .sort((a,b) => new Date(b.closingDate).getTime() - new Date(a.closingDate).getTime())[0];
 
-    const startLimit = prevClosing ? new Date(prevClosing.closingDate).getTime() : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
+    // If it's the first partition ever, we look back to the start of time
+    const startLimit = prevClosing 
+      ? new Date(prevClosing.closingDate).getTime() 
+      : (account.startingBalanceDate ? new Date(account.startingBalanceDate).setHours(0,0,0,0) - 1 : 0);
     
     const periodTxs = transactions.filter(tx => {
         const time = new Date(tx.dateTime).getTime();
@@ -762,6 +770,27 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-[#0C0C0F]">
+            {/* ABSOLUTE START: Initial Opening Balance Row */}
+            {/* Only show if we are looking at the 'ALL' view OR if the start of current period is before/at the first transaction */}
+            {(granularity === 'ALL' || startDateLimit <= (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : Date.now())) && (
+              <tr className="bg-neutral-50/20 dark:bg-white/[0.01] border-b border-dotted border-neutral-100 dark:border-white/5">
+                <td className="px-2 py-1.5 text-center">
+                  <span className="text-[7px] font-black text-neutral-400 uppercase tracking-tighter">INIT</span>
+                </td>
+                <td className="px-2 py-1.5">
+                  <div className="flex flex-col">
+                    <p className="text-[9px] font-black text-brand-blue/30 dark:text-white/30 uppercase tracking-widest leading-none">Starting Balance</p>
+                    <p className="text-[7px] text-neutral-400 font-bold mt-0.5 uppercase">Account Opened</p>
+                  </div>
+                </td>
+                <td className="px-2 py-1.5 text-right"></td>
+                <td className="px-2 py-1.5 text-right"></td>
+                <td className="px-2 py-1.5 text-right font-bold text-brand-blue/40 dark:text-white/40 text-[9px]">
+                  ₹{account.startingBalance.toLocaleString()}
+                </td>
+              </tr>
+            )}
+
             {statementData.map((tx, idx) => {
               const prevTx = idx > 0 ? statementData[idx-1] : null;
               const partitionInBetween = closings.find(c => {
