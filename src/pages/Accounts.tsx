@@ -352,29 +352,21 @@ export default function Accounts() {
 
 function PartitionRow({ partition }: { partition: any }) {
   return (
-    <tr className="bg-neutral-50/50 dark:bg-white/[0.02] border-y border-neutral-100 dark:border-white/5">
+    <tr className="bg-brand-blue/[0.03] dark:bg-brand-blue/[0.1] border-y border-brand-blue/10 dark:border-brand-blue/20">
       <td colSpan={5} className="px-2 py-1.5">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="w-1.5 h-1.5 rounded-full bg-brand-blue/40" />
-            <span className="text-[9px] font-black text-brand-blue dark:text-white uppercase tracking-tight">
-              Partition: {format(new Date(partition.closingDate), 'dd MMM')}
-            </span>
+        <div className="flex items-center justify-end gap-3 overflow-hidden">
+          <div className="flex items-center gap-1.5 opacity-80">
+            <span className="text-[7px] font-black text-neutral-400 uppercase tracking-tighter">Inflow:</span>
+            <span className="text-[8px] font-black text-brand-green">₹{partition.totalInflow.toLocaleString()}</span>
           </div>
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex items-center gap-1 opacity-60">
-              <span className="text-[7px] font-black text-neutral-400 uppercase">In:</span>
-              <span className="text-[8px] font-black text-brand-green">₹{partition.totalInflow.toLocaleString()}</span>
-            </div>
-            <div className="flex items-center gap-1 opacity-60">
-              <span className="text-[7px] font-black text-neutral-400 uppercase">Out:</span>
-              <span className="text-[8px] font-black text-brand-red">₹{partition.totalOutflow.toLocaleString()}</span>
-            </div>
-            <div className="h-3 w-[1px] bg-neutral-200 dark:bg-white/10" />
-            <div className="flex items-center gap-1">
-              <span className="text-[7px] font-black text-brand-blue dark:text-brand-cyan uppercase">New Start:</span>
-              <span className="text-[9px] font-black text-brand-blue dark:text-white">₹{partition.closingBalance.toLocaleString()}</span>
-            </div>
+          <div className="flex items-center gap-1.5 opacity-80">
+            <span className="text-[7px] font-black text-neutral-400 uppercase tracking-tighter">Outflow:</span>
+            <span className="text-[8px] font-black text-brand-red">₹{partition.totalOutflow.toLocaleString()}</span>
+          </div>
+          <div className="h-3 w-[1px] bg-brand-blue/20 dark:bg-white/10 mx-1" />
+          <div className="flex items-center gap-1.5">
+            <span className="text-[7px] font-black text-brand-blue dark:text-brand-cyan uppercase tracking-tighter">New Start:</span>
+            <span className="text-[9px] font-black text-brand-blue dark:text-white">₹{partition.closingBalance.toLocaleString()}</span>
           </div>
         </div>
       </td>
