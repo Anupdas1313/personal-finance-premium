@@ -770,6 +770,20 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-[#0C0C0F]">
+            {/* Opening Balance Row */}
+            <tr className="bg-neutral-50/30 dark:bg-white/[0.01] border-b border-neutral-100 dark:border-white/5">
+              <td className="px-2 py-2 text-center">
+                <span className="text-[7px] font-black text-neutral-400 uppercase tracking-tighter">START</span>
+              </td>
+              <td className="px-2 py-2">
+                <p className="text-[9px] font-black text-brand-blue/40 dark:text-white/40 uppercase tracking-widest leading-none">Opening Balance</p>
+              </td>
+              <td className="px-2 py-2 text-right"></td>
+              <td className="px-2 py-2 text-right"></td>
+              <td className="px-2 py-2 text-right font-bold text-brand-blue/60 dark:text-white/60 text-[9px]">
+                ₹{openingBalanceForView.toLocaleString()}
+              </td>
+            </tr>
             {statementData.map((tx, idx) => {
               const prevTx = idx > 0 ? statementData[idx-1] : null;
               const partitionInBetween = closings.find(c => {
