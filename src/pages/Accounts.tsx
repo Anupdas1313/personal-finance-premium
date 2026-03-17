@@ -352,13 +352,16 @@ export default function Accounts() {
 
 function PartitionRow({ partition }: { partition: any }) {
   return (
-    <tr className="bg-brand-blue/[0.05] dark:bg-brand-blue/[0.15] border-y border-brand-blue/10 dark:border-brand-blue/30">
-      <td colSpan={5} className="px-2 py-2">
-        <div className="flex items-center justify-end">
-          <div className="flex items-center gap-2.5">
-            <span className="text-[8px] font-black text-brand-blue/60 dark:text-white/50 uppercase tracking-[0.15em]">New Start Balance</span>
-            <span className="text-[11px] font-black text-brand-blue dark:text-white tracking-tight">₹{partition.closingBalance.toLocaleString()}</span>
+    <tr className="group/partition">
+      <td colSpan={5} className="px-3 py-4">
+        <div className="relative flex items-center gap-4">
+          <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-brand-blue/20 dark:via-brand-cyan/20 to-transparent" />
+          <div className="flex items-center gap-3 bg-white dark:bg-[#0C0C0F] px-4 py-1.5 rounded-full border border-brand-blue/10 dark:border-brand-cyan/20 shadow-sm shadow-brand-blue/5">
+            <div className="w-1.5 h-1.5 rounded-full bg-brand-blue dark:bg-brand-cyan animate-pulse shadow-[0_0_8px_rgba(0,163,255,0.5)]" />
+            <span className="text-[9px] font-black text-brand-blue/60 dark:text-brand-cyan/60 uppercase tracking-[0.2em]">New Cycle Start</span>
+            <span className="text-[12px] font-black text-brand-blue dark:text-white tracking-tight">₹{partition.closingBalance.toLocaleString()}</span>
           </div>
+          <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-brand-blue/20 dark:via-brand-cyan/20 to-transparent" />
         </div>
       </td>
     </tr>
@@ -595,31 +598,31 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
   if (!account) return null;
 
   return (
-    <div className="fixed inset-0 bg-white dark:bg-[#060608] z-[100] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
-      {/* Header */}
-      <div className="bg-neutral-50 dark:bg-[#0C0C0F] border-b border-neutral-200 dark:border-[#222222] px-4 py-2">
+    <div className="fixed inset-0 bg-white dark:bg-[#060608] z-[100] flex flex-col animate-in fade-in slide-in-from-bottom-6 duration-500 ease-out">
+      {/* Header - Glassmorphic */}
+      <div className="sticky top-0 z-[110] bg-white/80 dark:bg-[#0C0C0F]/80 backdrop-blur-md border-b border-neutral-100 dark:border-white/5 px-4 py-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <div className="w-6 h-6 bg-white dark:bg-[#1A1A1A] rounded-lg flex items-center justify-center p-0.5 border border-neutral-100 dark:border-[#333333]">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-white dark:bg-[#1A1A1A] rounded-xl flex items-center justify-center p-1 shadow-inner border border-neutral-100 dark:border-white/10">
               <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
             </div>
             <div>
-              <h2 className="text-[11px] font-black text-brand-blue dark:text-[#F7F7F7] uppercase tracking-tighter leading-none mb-0.5">{account.bankName}</h2>
-              <div className="flex items-center gap-1">
-                <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest leading-none">{account.accountLast4}</p>
-                <div className="w-0.5 h-0.5 rounded-full bg-neutral-300" />
-                <p className="text-[8px] font-black text-brand-blue/60 dark:text-white/60 uppercase">₹{actualTotalBalance.toLocaleString()}</p>
+              <h2 className="text-[13px] font-black text-brand-blue dark:text-white uppercase tracking-tight leading-none mb-1">{account.bankName}</h2>
+              <div className="flex items-center gap-1.5">
+                <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-[0.1em]">{account.accountLast4}</p>
+                <div className="w-1 h-1 rounded-full bg-brand-blue/20" />
+                <p className="text-[9px] font-black text-brand-blue/80 dark:text-brand-cyan/80 uppercase">Portfolio: ₹{actualTotalBalance.toLocaleString()}</p>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <button 
               onClick={() => setShowFilterMenu(!showFilterMenu)} 
-              className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${showFilterMenu ? 'bg-brand-blue text-white' : 'bg-neutral-200 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] hover:bg-neutral-300'}`}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${showFilterMenu ? 'bg-brand-blue text-white shadow-[0_0_15px_rgba(0,163,255,0.4)]' : 'bg-neutral-100 dark:bg-white/5 text-brand-blue dark:text-white hover:bg-neutral-200'}`}
             >
-              <Filter className="w-3.5 h-3.5" />
+              <Filter className="w-4 h-4" />
             </button>
-            <button onClick={onClose} className="w-7 h-7 rounded-full bg-neutral-200 dark:bg-[#222222] flex items-center justify-center text-brand-blue dark:text-[#F7F7F7] hover:bg-neutral-300 transition-all">
+            <button onClick={onClose} className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-white/5 flex items-center justify-center text-brand-blue dark:text-white hover:bg-neutral-200 hover:rotate-90 transition-all duration-300">
               <Plus className="w-5 h-5 rotate-45" />
             </button>
           </div>
@@ -646,40 +649,52 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
           </div>
         )}
 
-        <div className="mt-2 flex flex-col gap-1.5">
-          <div className="bg-white dark:bg-[#111111] px-2 py-1.5 rounded-xl shadow-sm border border-neutral-100 dark:border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <div className="mt-4 flex flex-col gap-2">
+          <div className="bg-neutral-50/50 dark:bg-white/[0.02] px-3 py-2.5 rounded-2xl border border-neutral-100 dark:border-white/5 flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-4">
               <div className="flex flex-col">
-                <p className="text-[6px] font-black text-neutral-400 uppercase">Opening</p>
-                <p className="text-[10px] font-black text-brand-blue/60 dark:text-white/60">₹{openingBalanceForView.toLocaleString()}</p>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-neutral-300 dark:bg-neutral-600" />
+                  <p className="text-[7.5px] font-black text-neutral-400 uppercase tracking-widest leading-none">Opening</p>
+                </div>
+                <p className="text-[13px] font-black text-brand-blue/60 dark:text-white/40 tracking-tight">₹{openingBalanceForView.toLocaleString()}</p>
               </div>
-              <div className="w-px h-5 bg-neutral-100 dark:bg-white/10" />
+              <div className="w-px h-8 bg-neutral-200 dark:bg-white/5" />
               <div className="flex flex-col">
-                <p className="text-[6px] font-black text-neutral-400 uppercase">Closing</p>
-                <p className="text-[10px] font-black text-brand-blue dark:text-white">₹{currentViewStateBalance.toLocaleString()}</p>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-blue shadow-[0_0_8px_rgba(0,163,255,0.4)]" />
+                  <p className="text-[7.5px] font-black text-brand-blue dark:text-brand-cyan uppercase tracking-widest leading-none">Net Balance</p>
+                </div>
+                <p className="text-[15px] font-black text-brand-blue dark:text-white tracking-tighter">₹{currentViewStateBalance.toLocaleString()}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 italic">
-              <span className="text-[8px] font-bold text-brand-green">IN: ₹{totalCredit.toLocaleString()}</span>
-              <span className="text-[8px] font-bold text-brand-red">OUT: ₹{totalDebit.toLocaleString()}</span>
+            <div className="flex flex-col items-end gap-1.5">
+              <div className="flex items-center gap-2 px-2 py-1 bg-brand-green/10 rounded-lg">
+                <span className="text-[8px] font-black text-brand-green uppercase tracking-tighter">Inflow:</span>
+                <span className="text-[9.5px] font-black text-brand-green">₹{totalCredit.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center gap-2 px-2 py-1 bg-brand-red/10 rounded-lg">
+                <span className="text-[8px] font-black text-brand-red uppercase tracking-tighter">Outflow:</span>
+                <span className="text-[9.5px] font-black text-brand-red">₹{totalDebit.toLocaleString()}</span>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-2 gap-2">
             <button 
               onClick={handleStartNewBalance}
-              className="flex items-center justify-center gap-1.5 bg-brand-green text-white py-1.5 rounded-lg font-black text-[8px] uppercase"
+              className="group flex items-center justify-center gap-2 bg-brand-green hover:bg-brand-green/90 text-white py-2.5 rounded-xl font-black text-[9px] uppercase transition-all duration-300 shadow-lg shadow-brand-green/20"
             >
-              <Plus className="w-2.5 h-2.5" />
-              New Start Balance
+              <Plus className="w-3.5 h-3.5 group-hover:rotate-90 transition-transform duration-300" />
+              New Cycle
             </button>
             <div className="relative">
               <button 
                 onClick={() => setShowExportMenu(!showExportMenu)}
-                className="w-full flex items-center justify-center gap-1.5 bg-white dark:bg-[#1A1A1A] text-brand-blue dark:text-white py-1.5 rounded-lg border border-neutral-100 dark:border-[#222222] font-black text-[8px] uppercase"
+                className="w-full flex items-center justify-center gap-2 bg-white dark:bg-white/5 text-brand-blue dark:text-white py-2.5 rounded-xl border border-neutral-200 dark:border-white/10 font-black text-[9px] uppercase hover:bg-neutral-50 dark:hover:bg-white/10 transition-all shadow-sm"
               >
-                <Download className="w-2.5 h-2.5" />
-                Export Ledger
+                <Download className="w-3.5 h-3.5" />
+                Ledger Data
               </button>
               {showExportMenu && (
                 <div className="absolute top-full mt-2 right-0 w-48 bg-white dark:bg-[#1C1C22] shadow-2xl shadow-black/20 rounded-xl border border-neutral-100 dark:border-[#222222] z-[110] overflow-hidden flex flex-col">
@@ -757,35 +772,40 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
       </div>
 
       {/* Ledger Table */}
-      <div className="flex-1 overflow-auto bg-white dark:bg-[#060608] pb-32">
-        <table className="w-full border-collapse border-spacing-0 text-[10px] min-w-[320px]">
-          <thead className="sticky top-0 z-10 bg-neutral-100 dark:bg-[#111111] shadow-sm">
-            <tr className="text-[8.5px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-widest border-b border-neutral-200 dark:border-[#222222]">
-              <th className="w-14 px-2 py-2.5 text-left">Date</th>
-              <th className="px-2 py-2.5 text-left">Particulars</th>
-              <th className="w-20 px-2 py-2.5 text-right">Debit (Dr)</th>
-              <th className="w-20 px-2 py-2.5 text-right">Credit (Cr)</th>
-              <th className="w-24 px-2 py-2.5 text-right">Balance</th>
+      <div className="flex-1 overflow-auto bg-[#FDFDFD] dark:bg-[#060608] pb-32">
+        <table className="w-full border-separate border-spacing-0">
+          <thead className="sticky top-0 z-[100]">
+            <tr className="bg-white/95 dark:bg-[#111111]/95 backdrop-blur-sm shadow-sm">
+              <th className="w-16 px-3 py-3 text-left text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em] border-b border-neutral-100 dark:border-white/5">Date</th>
+              <th className="px-3 py-3 text-left text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em] border-b border-neutral-100 dark:border-white/5">Details</th>
+              <th className="w-24 px-3 py-3 text-right text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em] border-b border-neutral-100 dark:border-white/5">OutFlow</th>
+              <th className="w-24 px-3 py-3 text-right text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em] border-b border-neutral-100 dark:border-white/5">InFlow</th>
+              <th className="w-28 px-4 py-3 text-right text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em] border-b border-neutral-100 dark:border-white/5">Balance</th>
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-[#0C0C0F]">
+          <tbody className="divide-y divide-neutral-50 dark:divide-white/[0.02]">
             {/* ABSOLUTE START: Initial Opening Balance Row */}
             {/* Only show if we are looking at the 'ALL' view OR if the start of current period is before/at the first transaction */}
             {(granularity === 'ALL' || startDateLimit <= (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : Date.now())) && (
-              <tr className="bg-neutral-50/40 dark:bg-white/[0.02] border-b border-dotted border-neutral-200 dark:border-white/10">
-                <td className="px-2 py-2 text-center border-r border-neutral-100 dark:border-white/5">
-                  <span className="text-[8px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-tighter">INIT</span>
+              <tr className="bg-neutral-50/40 dark:bg-white/[0.01]">
+                <td className="px-3 py-3 text-center">
+                  <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">INIT</span>
                 </td>
-                <td className="px-2 py-2">
-                  <div className="flex flex-col">
-                    <p className="text-[10px] font-black text-brand-blue/50 dark:text-white/40 uppercase tracking-wider leading-none">Opening Balance</p>
-                    <p className="text-[8px] text-neutral-500 font-bold mt-1 uppercase tracking-tight">Account System Start</p>
+                <td className="px-3 py-3">
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-[11px] font-black text-brand-blue/60 dark:text-white/40 uppercase tracking-widest leading-tight">Opening Balance</p>
+                    <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-tighter">System Genesis</p>
                   </div>
                 </td>
-                <td className="px-2 py-2 text-right"></td>
-                <td className="px-2 py-2 text-right"></td>
-                <td className="px-2 py-2 text-right font-black text-brand-blue dark:text-white text-[10.5px]">
-                  ₹{account.startingBalance.toLocaleString()}
+                <td className="px-3 py-3 text-right"></td>
+                <td className="px-3 py-3 text-right"></td>
+                <td className="px-4 py-3 text-right">
+                  <div className="flex flex-col items-end">
+                    <span className="text-[12px] font-black tabular-nums text-brand-blue dark:text-white/60 tracking-tighter">
+                      ₹{account.startingBalance.toLocaleString()}
+                    </span>
+                    <div className="w-8 h-[2px] rounded-full mt-1 bg-brand-blue/10 dark:bg-white/10" />
+                  </div>
                 </td>
               </tr>
             )}
@@ -802,40 +822,52 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               return (
                 <React.Fragment key={tx.id || idx}>
                   {partitionInBetween && <PartitionRow partition={partitionInBetween} />}
-                  <tr className="border-b border-neutral-100 dark:border-[#1A1A1A] hover:bg-neutral-50 transition-colors group">
-                    <td className="px-2 py-2 text-neutral-600 dark:text-neutral-400 text-[10px] text-center font-black border-r border-neutral-50 dark:border-white/5">
-                      <div className="flex flex-col items-center justify-center relative">
-                        <button 
-                          onClick={() => handleCreatePartitionAt(tx)}
-                          title="Start New Balance from here"
-                          className="absolute inset-0 z-20 flex items-center justify-center bg-white dark:bg-[#0C0C0F] opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
-                        >
-                          <Scissors className="w-4 h-4 text-brand-blue dark:text-brand-cyan" />
-                        </button>
-                        <span className="leading-tight">{format(new Date(tx.dateTime), 'dd')}</span>
-                        <span className="text-[7.5px] uppercase tracking-tighter leading-none font-bold">{format(new Date(tx.dateTime), 'MMM')}</span>
+                  <tr className="group transition-all duration-300 hover:bg-neutral-50 dark:hover:bg-white/[0.02]">
+                    <td className="px-3 py-3 relative">
+                      <div className="flex flex-col items-center justify-center relative z-10">
+                        <span className="text-[12px] font-black text-brand-blue dark:text-white leading-none mb-0.5">{format(new Date(tx.dateTime), 'dd')}</span>
+                        <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-tighter">{format(new Date(tx.dateTime), 'MMM')}</span>
+                      </div>
+                      <button 
+                        onClick={() => handleCreatePartitionAt(tx)}
+                        className="absolute inset-0 z-20 opacity-0 group-hover:opacity-100 flex items-center justify-center bg-white/90 dark:bg-[#0C0C0F]/90 backdrop-blur-sm transition-all duration-300"
+                      >
+                        <Scissors className="w-5 h-5 text-brand-blue dark:text-brand-cyan hover:scale-125 transition-transform" />
+                      </button>
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="flex flex-col gap-0.5">
+                        <p className="text-[11px] font-black text-neutral-800 dark:text-white uppercase tracking-tight leading-tight group-hover:text-brand-blue dark:group-hover:text-brand-cyan transition-colors">
+                          {tx.party || tx.category || 'NO REF'}
+                        </p>
+                        {tx.note && (
+                          <p className="text-[8.5px] font-bold text-neutral-400 uppercase tracking-wide leading-tight line-clamp-1">
+                            {tx.note}
+                          </p>
+                        )}
                       </div>
                     </td>
-                    <td className="px-3 py-2 max-w-[200px]">
-                      <p className="font-black text-brand-blue dark:text-[#F7F7F7] text-[11px] leading-tight truncate uppercase tracking-tight">
-                        {tx.party || tx.category || 'N/A'}
-                      </p>
-                      {tx.note && (
-                        <p className="text-[8.5px] text-neutral-500 dark:text-neutral-400 font-bold mt-0.5 leading-tight uppercase tracking-tight">
-                          {tx.note}
-                        </p>
+                    <td className="px-3 py-3 text-right">
+                      {tx.type === 'DEBIT' && (
+                        <span className="text-[11px] font-black text-brand-red tabular-nums drop-shadow-[0_0_8px_rgba(239,68,68,0.2)]">
+                          ₹{tx.amount.toLocaleString('en-IN')}
+                        </span>
                       )}
                     </td>
-                    <td className="px-2 py-2 text-right font-bold text-[10.5px]">
-                      {tx.type === 'DEBIT' && <span className="text-brand-red font-black">₹{tx.amount.toLocaleString('en-IN')}</span>}
-                      {tx.type !== 'DEBIT' && <span className="text-neutral-200 dark:text-white/5"></span>}
+                    <td className="px-3 py-3 text-right">
+                      {tx.type === 'CREDIT' && (
+                        <span className="text-[11px] font-black text-brand-green tabular-nums drop-shadow-[0_0_8px_rgba(34,197,94,0.2)]">
+                          ₹{tx.amount.toLocaleString('en-IN')}
+                        </span>
+                      )}
                     </td>
-                    <td className="px-2 py-2 text-right font-bold text-[10.5px]">
-                      {tx.type === 'CREDIT' && <span className="text-brand-green font-black">₹{tx.amount.toLocaleString('en-IN')}</span>}
-                      {tx.type !== 'CREDIT' && <span className="text-neutral-200 dark:text-white/5"></span>}
-                    </td>
-                    <td className={`px-2 py-2 text-right font-black text-[11px] ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
-                      ₹{tx.runningBalance.toLocaleString('en-IN')}
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex flex-col items-end">
+                        <span className={`text-[12px] font-black tabular-nums tracking-tighter ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
+                          ₹{tx.runningBalance.toLocaleString('en-IN')}
+                        </span>
+                        <div className={`w-8 h-[2px] rounded-full mt-1 ${tx.runningBalance >= 0 ? 'bg-brand-blue/20 dark:bg-brand-cyan/20' : 'bg-brand-red/20'}`} />
+                      </div>
                     </td>
                   </tr>
                 </React.Fragment>
