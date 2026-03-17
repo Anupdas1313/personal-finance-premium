@@ -352,21 +352,12 @@ export default function Accounts() {
 
 function PartitionRow({ partition }: { partition: any }) {
   return (
-    <tr className="bg-brand-blue/[0.03] dark:bg-brand-blue/[0.1] border-y border-brand-blue/10 dark:border-brand-blue/20">
+    <tr className="bg-brand-blue/[0.03] dark:bg-brand-blue/[0.1] border-y border-brand-blue/5 dark:border-brand-blue/20">
       <td colSpan={5} className="px-2 py-1.5">
-        <div className="flex items-center justify-end gap-3 overflow-hidden">
-          <div className="flex items-center gap-1.5 opacity-80">
-            <span className="text-[7px] font-black text-neutral-400 uppercase tracking-tighter">Inflow:</span>
-            <span className="text-[8px] font-black text-brand-green">₹{partition.totalInflow.toLocaleString()}</span>
-          </div>
-          <div className="flex items-center gap-1.5 opacity-80">
-            <span className="text-[7px] font-black text-neutral-400 uppercase tracking-tighter">Outflow:</span>
-            <span className="text-[8px] font-black text-brand-red">₹{partition.totalOutflow.toLocaleString()}</span>
-          </div>
-          <div className="h-3 w-[1px] bg-brand-blue/20 dark:bg-white/10 mx-1" />
-          <div className="flex items-center gap-1.5">
-            <span className="text-[7px] font-black text-brand-blue dark:text-brand-cyan uppercase tracking-tighter">New Start:</span>
-            <span className="text-[9px] font-black text-brand-blue dark:text-white">₹{partition.closingBalance.toLocaleString()}</span>
+        <div className="flex items-center justify-end">
+          <div className="flex items-center gap-2">
+            <span className="text-[7px] font-black text-brand-blue/40 dark:text-white/40 uppercase tracking-[0.1em]">New Start Balance</span>
+            <span className="text-[9.5px] font-black text-brand-blue dark:text-white">₹{partition.closingBalance.toLocaleString()}</span>
           </div>
         </div>
       </td>
