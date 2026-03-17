@@ -104,12 +104,15 @@ export default function Dashboard() {
           return;
         }
 
+        const isTodaySelected = format(new Date(transactionDate), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+        const finalDateTime = isTodaySelected ? new Date() : new Date(transactionDate);
+
         // Add DEBIT transaction for source account
         await db.transactions.add({
           accountId: Number(selectedAccountId),
           amount: parseFloat(amount.toString().replace(/,/g, '')) || 0,
           type: 'DEBIT',
-          dateTime: new Date(transactionDate),
+          dateTime: finalDateTime,
           note: note || `Transfer to ${accounts.find(a => a.id === toAccountId)?.bankName}`,
           category: 'Transfer',
           paymentMethod,
@@ -123,7 +126,7 @@ export default function Dashboard() {
           accountId: Number(toAccountId),
           amount: parseFloat(amount.toString().replace(/,/g, '')) || 0,
           type: 'CREDIT',
-          dateTime: new Date(transactionDate),
+          dateTime: finalDateTime,
           note: note || `Transfer from ${accounts.find(a => a.id === selectedAccountId)?.bankName}`,
           category: 'Transfer',
           paymentMethod,
@@ -132,11 +135,14 @@ export default function Dashboard() {
           expenseType,
         });
       } else {
+        const isTodaySelected = format(new Date(transactionDate), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+        const finalDateTime = isTodaySelected ? new Date() : new Date(transactionDate);
+
         await db.transactions.add({
           accountId: Number(selectedAccountId),
           amount: parseFloat(amount.toString().replace(/,/g, '')) || 0,
           type: type as 'CREDIT' | 'DEBIT',
-          dateTime: new Date(transactionDate),
+          dateTime: finalDateTime,
           note: note || '',
           category,
           paymentMethod,

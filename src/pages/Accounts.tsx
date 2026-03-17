@@ -796,7 +796,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                 const cTime = new Date(c.closingDate).getTime();
                 const txTime = new Date(tx.dateTime).getTime();
                 const prevTxTime = prevTx ? new Date(prevTx.dateTime).getTime() : 0;
-                return cTime < txTime && cTime > prevTxTime;
+                return cTime <= txTime && cTime > prevTxTime;
               });
 
               return (
