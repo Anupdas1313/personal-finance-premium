@@ -576,6 +576,40 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     alert(`Period closed! Balance of ₹${actualTotalBalance.toLocaleString()} is now your new starting point.`);
   };
 
+  const handleCreatePartitionAt = async (targetTx: Transaction & { runningBalance: number }) => {
+    if (!account) return;
+    const confirmReset = window.confirm(`Start a new balance period from this transaction? Current balance here is ₹${targetTx.runningBalance.toLocaleString()}.`);
+    if (!confirmReset) return;
+
+    const partitionTime = new Date(targetTx.dateTime).getTime() + 1;
+    const prevClosing = [...closings]
+        .filter(c => new Date(c.closingDate).getTime() < partitionTime)
+        .sort((a,b) => new Date(b.closingDate).getTime() - new Date(a.closingDate).getTime())[0];
+
+    const startLimit = prevClosing ? new Date(prevClosing.closingDate).getTime() : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
+    
+    const periodTxs = transactions.filter(tx => {
+        const time = new Date(tx.dateTime).getTime();
+        return time > startLimit && time < partitionTime;
+    });
+
+    const inflow = periodTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
+    const outflow = periodTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
+    const opening = prevClosing ? prevClosing.closingBalance : account.startingBalance;
+
+    await db.accountClosings.add({
+      accountId: account.id!,
+      closingDate: new Date(partitionTime),
+      closingBalance: targetTx.runningBalance,
+      periodName: format(new Date(partitionTime), 'dd MMM yyyy HH:mm'),
+      openingBalance: opening,
+      totalInflow: inflow,
+      totalOutflow: outflow
+    });
+    
+    alert(`Success! History partitioned at ₹${targetTx.runningBalance.toLocaleString()}.`);
+  };
+
   if (!account) return null;
 
   return (
@@ -768,15 +802,26 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                         <span className="text-[6.5px] uppercase">{format(new Date(tx.dateTime), 'MMM')}</span>
                       </div>
                     </td>
-                    <td className="px-2 py-1.5 max-w-[180px]">
-                      <p className="font-black text-brand-blue dark:text-[#F7F7F7] text-[9.5px] leading-tight truncate uppercase tracking-tighter">
-                        {tx.party || tx.category || 'N/A'}
-                      </p>
-                      {tx.note && (
-                        <p className="text-[7.5px] text-neutral-400 font-bold mt-0 opacity-80 whitespace-nowrap overflow-hidden text-ellipsis uppercase tracking-tighter">
-                          {tx.note}
-                        </p>
-                      )}
+                    <td className="px-2 py-1.5 max-w-[180px] group relative">
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="truncate">
+                          <p className="font-black text-brand-blue dark:text-[#F7F7F7] text-[9.5px] leading-tight truncate uppercase tracking-tighter">
+                            {tx.party || tx.category || 'N/A'}
+                          </p>
+                          {tx.note && (
+                            <p className="text-[7.5px] text-neutral-400 font-bold mt-0 opacity-80 whitespace-nowrap overflow-hidden text-ellipsis uppercase tracking-tighter">
+                              {tx.note}
+                            </p>
+                          )}
+                        </div>
+                        <button 
+                          onClick={() => handleCreatePartitionAt(tx)}
+                          title="Start New Balance from here"
+                          className="p-1.5 bg-brand-blue/5 dark:bg-brand-blue/20 text-brand-blue dark:text-brand-cyan rounded-lg opacity-0 group-hover:opacity-100 transition-opacity active:scale-90 shrink-0"
+                        >
+                          <History className="w-3 h-3" />
+                        </button>
+                      </div>
                     </td>
                     <td className="px-2 py-1.5 text-right font-bold text-[9px]">
                       {tx.type === 'DEBIT' && <span className="text-brand-red">₹{tx.amount.toLocaleString('en-IN')}</span>}
