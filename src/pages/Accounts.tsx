@@ -352,39 +352,29 @@ export default function Accounts() {
 
 function PartitionRow({ partition }: { partition: any }) {
   return (
-    <tr className="bg-neutral-50 dark:bg-[#1A1A1A] border-y border-brand-blue/10">
-      <td colSpan={5} className="px-2 py-2">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="px-1.5 py-0.5 bg-brand-blue text-white text-[7px] font-black rounded-full uppercase">Partition</div>
-              <span className="text-[9px] font-black text-brand-blue dark:text-white uppercase truncate">
-                {format(new Date(partition.closingDate), 'dd MMM yyyy')}
-              </span>
-            </div>
-            <div className="text-[9px] font-black text-brand-blue/40 uppercase tracking-tighter">
-              Closing: ₹{partition.closingBalance.toLocaleString()}
-            </div>
-          </div>
-          <div className="flex gap-4 pt-1 border-t border-dotted border-neutral-300 dark:border-white/5">
-            <div className="flex-1">
-              <p className="text-[6px] font-black text-neutral-400 uppercase tracking-widest leading-none">Inflow</p>
-              <p className="text-[9px] font-black text-brand-green tracking-tighter">+ ₹{partition.totalInflow.toLocaleString()}</p>
-            </div>
-            <div className="flex-1">
-              <p className="text-[6px] font-black text-neutral-400 uppercase tracking-widest leading-none">Outflow</p>
-              <p className="text-[9px] font-black text-brand-red tracking-tighter">- ₹{partition.totalOutflow.toLocaleString()}</p>
-            </div>
-            <div className="flex-1 text-right">
-              <p className="text-[6px] font-black text-neutral-400 uppercase tracking-widest leading-none">Prev. Bal</p>
-              <p className="text-[9px] font-black text-brand-blue dark:text-white tracking-tighter">₹{partition.openingBalance.toLocaleString()}</p>
-            </div>
-          </div>
-          <div className="mt-1 py-1 px-2 border border-brand-blue/20 bg-brand-blue/5 dark:bg-brand-blue/20 rounded-lg flex items-center justify-between">
-            <span className="text-[7.5px] font-black text-brand-blue dark:text-brand-cyan uppercase">Initialized New Start Balance</span>
-            <span className="text-[9px] font-black text-brand-blue dark:text-white font-mono tracking-tighter">
-              ₹{partition.closingBalance.toLocaleString()}
+    <tr className="bg-neutral-50/50 dark:bg-white/[0.02] border-y border-neutral-100 dark:border-white/5">
+      <td colSpan={5} className="px-2 py-1.5">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="w-1.5 h-1.5 rounded-full bg-brand-blue/40" />
+            <span className="text-[9px] font-black text-brand-blue dark:text-white uppercase tracking-tight">
+              Partition: {format(new Date(partition.closingDate), 'dd MMM')}
             </span>
+          </div>
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="flex items-center gap-1 opacity-60">
+              <span className="text-[7px] font-black text-neutral-400 uppercase">In:</span>
+              <span className="text-[8px] font-black text-brand-green">₹{partition.totalInflow.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center gap-1 opacity-60">
+              <span className="text-[7px] font-black text-neutral-400 uppercase">Out:</span>
+              <span className="text-[8px] font-black text-brand-red">₹{partition.totalOutflow.toLocaleString()}</span>
+            </div>
+            <div className="h-3 w-[1px] bg-neutral-200 dark:bg-white/10" />
+            <div className="flex items-center gap-1">
+              <span className="text-[7px] font-black text-brand-blue dark:text-brand-cyan uppercase">New Start:</span>
+              <span className="text-[9px] font-black text-brand-blue dark:text-white">₹{partition.closingBalance.toLocaleString()}</span>
+            </div>
           </div>
         </div>
       </td>
@@ -636,29 +626,26 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <div className="bg-white dark:bg-[#111111] p-3 rounded-2xl shadow-[0_10px_30px_rgba(26,35,126,0.05)] border border-neutral-100 dark:border-white/5">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-[8px] font-black text-brand-blue/30 dark:text-white/30 uppercase tracking-widest mb-1">Opening</p>
-                <p className="text-sm font-black text-brand-blue/60 dark:text-white/60">
-                  ₹{openingBalanceForView.toLocaleString('en-IN')}
-                </p>
+          <div className="bg-white dark:bg-[#111111] p-2.5 rounded-2xl shadow-sm border border-neutral-100 dark:border-white/5">
+            <div className="flex items-center justify-between mb-2 pb-2 border-b border-neutral-50 dark:border-white/5">
+              <div className="flex flex-col">
+                <p className="text-[7px] font-black text-neutral-400 uppercase mb-0.5">Opening</p>
+                <p className="text-xs font-black text-brand-blue/60 dark:text-white/60">₹{openingBalanceForView.toLocaleString()}</p>
               </div>
-              <div className="text-right">
-                <p className="text-[8px] font-black text-brand-blue/30 dark:text-white/30 uppercase tracking-widest mb-1">Closing</p>
-                <p className="text-sm font-black text-brand-blue dark:text-white">
-                  ₹{currentViewStateBalance.toLocaleString('en-IN')}
-                </p>
+              <div className="w-px h-6 bg-neutral-100 dark:bg-white/10" />
+              <div className="flex flex-col text-right">
+                <p className="text-[7px] font-black text-neutral-400 uppercase mb-0.5">Closing</p>
+                <p className="text-xs font-black text-brand-blue dark:text-white">₹{currentViewStateBalance.toLocaleString()}</p>
               </div>
             </div>
-            <div className="mt-3 pt-3 border-t border-neutral-100 dark:border-white/5 flex gap-4">
-              <div className="flex-1">
-                <p className="text-[7px] font-black text-brand-green uppercase tracking-widest mb-0.5">Inflow (+)</p>
-                <p className="text-[10px] font-black text-brand-green">₹{totalCredit.toLocaleString('en-IN')}</p>
+            <div className="flex justify-between items-center px-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[7px] font-black text-brand-green uppercase">In:</span>
+                <span className="text-[10px] font-black text-brand-green">₹{totalCredit.toLocaleString()}</span>
               </div>
-              <div className="flex-1 text-right">
-                <p className="text-[7px] font-black text-brand-red uppercase tracking-widest mb-0.5">Outflow (-)</p>
-                <p className="text-[10px] font-black text-brand-red">₹{totalDebit.toLocaleString('en-IN')}</p>
+              <div className="flex items-center gap-2">
+                <span className="text-[7px] font-black text-brand-red uppercase">Out:</span>
+                <span className="text-[10px] font-black text-brand-red">₹{totalDebit.toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -795,33 +782,29 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               return (
                 <React.Fragment key={tx.id || idx}>
                   {partitionInBetween && <PartitionRow partition={partitionInBetween} />}
-                  <tr className="border-b border-neutral-50 dark:border-[#1A1A1A] hover:bg-neutral-50/50 transition-colors">
+                  <tr className="border-b border-neutral-50 dark:border-[#1A1A1A] hover:bg-neutral-50/50 transition-colors group">
                     <td className="px-2 py-1.5 text-neutral-400 text-[8px] text-center font-bold">
-                      <div className="flex flex-col">
+                      <div className="flex flex-col items-center justify-center relative">
+                        <button 
+                          onClick={() => handleCreatePartitionAt(tx)}
+                          title="Start New Balance from here"
+                          className="absolute inset-0 z-20 flex items-center justify-center bg-white dark:bg-[#0C0C0F] opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
+                        >
+                          <Scissors className="w-3.5 h-3.5 text-brand-blue dark:text-brand-cyan" />
+                        </button>
                         <span>{format(new Date(tx.dateTime), 'dd')}</span>
                         <span className="text-[6.5px] uppercase">{format(new Date(tx.dateTime), 'MMM')}</span>
                       </div>
                     </td>
-                    <td className="px-2 py-1.5 max-w-[180px] group relative">
-                      <div className="flex items-center justify-between gap-1">
-                        <div className="truncate">
-                          <p className="font-black text-brand-blue dark:text-[#F7F7F7] text-[9.5px] leading-tight truncate uppercase tracking-tighter">
-                            {tx.party || tx.category || 'N/A'}
-                          </p>
-                          {tx.note && (
-                            <p className="text-[7.5px] text-neutral-400 font-bold mt-0 opacity-80 whitespace-nowrap overflow-hidden text-ellipsis uppercase tracking-tighter">
-                              {tx.note}
-                            </p>
-                          )}
-                        </div>
-                        <button 
-                          onClick={() => handleCreatePartitionAt(tx)}
-                          title="Start New Balance from here"
-                          className="p-1.5 bg-brand-blue/10 dark:bg-brand-blue/30 text-brand-blue dark:text-brand-cyan rounded-lg transition-all active:scale-90 shrink-0"
-                        >
-                          <Scissors className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                    <td className="px-2 py-1.5 max-w-[200px]">
+                      <p className="font-bold text-brand-blue dark:text-[#F7F7F7] text-[9.5px] leading-tight truncate uppercase tracking-tight">
+                        {tx.party || tx.category || 'N/A'}
+                      </p>
+                      {tx.note && (
+                        <p className="text-[7px] text-neutral-400 font-bold mt-0 opacity-60 whitespace-nowrap overflow-hidden text-ellipsis uppercase tracking-tighter">
+                          {tx.note}
+                        </p>
+                      )}
                     </td>
                     <td className="px-2 py-1.5 text-right font-bold text-[9px]">
                       {tx.type === 'DEBIT' && <span className="text-brand-red">₹{tx.amount.toLocaleString('en-IN')}</span>}
