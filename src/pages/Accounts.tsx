@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction } from '../lib/db';
-import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark, Download, FileText, CheckCircle2, History, Calendar, ChevronDown, Printer, MoreHorizontal, Scissors } from 'lucide-react';
+import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark, Download, FileText, CheckCircle2, History, Calendar, ChevronDown, Printer, MoreHorizontal, Scissors, Filter } from 'lucide-react';
 import { BankLogo } from '../components/BankLogo';
 import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
 import { format, startOfDay, parseISO, endOfMonth, startOfMonth, subMonths, endOfDay, startOfWeek, endOfWeek, startOfYear, endOfYear, addMonths, subWeeks, addWeeks, subDays, addDays, subYears, addYears } from 'date-fns';
@@ -383,6 +383,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     start: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
     end: format(endOfMonth(new Date()), 'yyyy-MM-dd')
   });
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
 
 
 
@@ -611,10 +612,39 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="w-7 h-7 rounded-full bg-neutral-200 dark:bg-[#222222] flex items-center justify-center text-brand-blue dark:text-[#F7F7F7] hover:bg-neutral-300 transition-all">
-            <Plus className="w-5 h-5 rotate-45" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={() => setShowFilterMenu(!showFilterMenu)} 
+              className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${showFilterMenu ? 'bg-brand-blue text-white' : 'bg-neutral-200 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] hover:bg-neutral-300'}`}
+            >
+              <Filter className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={onClose} className="w-7 h-7 rounded-full bg-neutral-200 dark:bg-[#222222] flex items-center justify-center text-brand-blue dark:text-[#F7F7F7] hover:bg-neutral-300 transition-all">
+              <Plus className="w-5 h-5 rotate-45" />
+            </button>
+          </div>
         </div>
+
+        {showFilterMenu && (
+          <div className="mt-2 p-1 bg-neutral-100 dark:bg-[#1A1A1A] rounded-xl flex overflow-x-auto gap-1 animate-in slide-in-from-top-2 duration-200">
+            {(['ALL', 'YEAR', 'MONTH', 'WEEK', 'DAY', 'CUSTOM'] as const).map((g) => (
+              <button
+                key={g}
+                onClick={() => {
+                  setGranularity(g);
+                  setShowFilterMenu(false);
+                }}
+                className={`flex-1 px-2.5 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-tight transition-all shrink-0 ${
+                  granularity === g 
+                    ? 'bg-white dark:bg-[#333333] text-brand-blue dark:text-white shadow-sm' 
+                    : 'text-neutral-400 hover:text-neutral-500'
+                }`}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="mt-2 flex flex-col gap-1.5">
           <div className="bg-white dark:bg-[#111111] px-2 py-1.5 rounded-xl shadow-sm border border-neutral-100 dark:border-white/5 flex items-center justify-between">
@@ -671,44 +701,28 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="mt-2 flex flex-col sm:flex-row gap-2">
-          <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-0.5 rounded-lg flex-1 overflow-x-auto">
-            {(['ALL', 'YEAR', 'MONTH', 'WEEK', 'DAY', 'CUSTOM'] as const).map((g) => (
-              <button
-                key={g}
-                onClick={() => setGranularity(g)}
-                className={`flex-1 px-2 py-1.5 rounded-md text-[8px] font-black uppercase tracking-tight transition-all shrink-0 ${
-                  granularity === g 
-                    ? 'bg-white dark:bg-[#333333] text-brand-blue dark:text-white shadow-sm' 
-                    : 'text-neutral-400 hover:text-neutral-500'
-                }`}
-              >
-                {g}
-              </button>
-            ))}
-          </div>
-
+        {/* Date Navigator (condensed) */}
+        <div className="mt-1.5 flex flex-col gap-1">
           {granularity === 'CUSTOM' && (
-            <div className="flex items-center gap-1 bg-neutral-100 dark:bg-[#1A1A1A] px-2 py-1 rounded-xl">
+            <div className="flex items-center justify-between bg-neutral-100 dark:bg-[#1A1A1A] px-2 py-1.5 rounded-lg">
               <input 
                 type="date"
                 value={customRange.start}
                 onChange={(e) => setCustomRange(prev => ({ ...prev, start: e.target.value }))}
-                className="bg-transparent text-[9px] font-black text-brand-blue dark:text-white outline-none"
+                className="bg-transparent text-[8px] font-black text-brand-blue dark:text-white outline-none"
               />
-              <span className="text-[9px] font-black text-neutral-400">TO</span>
+              <span className="text-[7px] font-black text-neutral-400 mx-1">TO</span>
               <input 
                 type="date"
                 value={customRange.end}
                 onChange={(e) => setCustomRange(prev => ({ ...prev, end: e.target.value }))}
-                className="bg-transparent text-[9px] font-black text-brand-blue dark:text-white outline-none"
+                className="bg-transparent text-[8px] font-black text-brand-blue dark:text-white outline-none"
               />
             </div>
           )}
 
           {granularity !== 'ALL' && granularity !== 'CUSTOM' && (
-            <div className="flex items-center gap-1 bg-neutral-100 dark:bg-[#1A1A1A] px-1.5 py-1 rounded-lg">
+            <div className="flex items-center justify-center gap-2 bg-neutral-100 dark:bg-[#1A1A1A] py-1 rounded-lg">
               <button 
                 onClick={() => {
                   if (granularity === 'DAY') setReferenceDate(subDays(referenceDate, 1));
@@ -716,14 +730,14 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                   if (granularity === 'MONTH') setReferenceDate(subMonths(referenceDate, 1));
                   if (granularity === 'YEAR') setReferenceDate(subYears(referenceDate, 1));
                 }}
-                className="p-1 text-brand-blue dark:text-neutral-400"
+                className="p-1 text-brand-blue dark:text-neutral-400 active:scale-90"
               >
                 <ChevronDown className="w-3.5 h-3.5 rotate-90" />
               </button>
-              <span className="text-[8.5px] font-black text-brand-blue dark:text-white min-w-[60px] text-center uppercase tracking-tighter">
+              <span className="text-[9px] font-black text-brand-blue dark:text-white min-w-[70px] text-center uppercase tracking-widest">
                 {granularity === 'DAY' && format(referenceDate, 'dd MMM yy')}
                 {granularity === 'WEEK' && `Wk ${format(referenceDate, 'ww, yy')}`}
-                {granularity === 'MONTH' && format(referenceDate, 'MMM yy')}
+                {granularity === 'MONTH' && format(referenceDate, 'MMM yyyy')}
                 {granularity === 'YEAR' && format(referenceDate, 'yyyy')}
               </span>
               <button 
@@ -733,7 +747,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                   if (granularity === 'MONTH') setReferenceDate(addMonths(referenceDate, 1));
                   if (granularity === 'YEAR') setReferenceDate(addYears(referenceDate, 1));
                 }}
-                className="p-1 text-brand-blue dark:text-neutral-400"
+                className="p-1 text-brand-blue dark:text-neutral-400 active:scale-90"
               >
                 <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
               </button>
