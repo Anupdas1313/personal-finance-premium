@@ -537,7 +537,9 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
 
     // Calculate current period totals for the partition
     const lastClosing = closings.length > 0 ? closings[closings.length - 1] : null;
-    const startLimit = lastClosing ? new Date(lastClosing.closingDate).getTime() : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
+    const startLimit = lastClosing 
+      ? new Date(lastClosing.closingDate).getTime() 
+      : (account.startingBalanceDate ? new Date(account.startingBalanceDate).setHours(0,0,0,0) - 1 : 0);
     
     // We get ALL transactions to calculate current live period totals correctly
     const liveTxs = transactions.filter(tx => {
@@ -775,7 +777,10 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             {(granularity === 'ALL' || startDateLimit <= (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : Date.now())) && (
               <tr className="bg-neutral-50/20 dark:bg-white/[0.01] border-b border-dotted border-neutral-100 dark:border-white/5">
                 <td className="px-2 py-1.5 text-center">
-                  <span className="text-[7px] font-black text-neutral-400 uppercase tracking-tighter">INIT</span>
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="text-[7px] font-black text-neutral-400 uppercase tracking-tighter">INIT</span>
+                    <span className="text-[6px] text-neutral-400 uppercase font-bold">{account.startingBalanceDate ? format(new Date(account.startingBalanceDate), 'dd MMM') : ''}</span>
+                  </div>
                 </td>
                 <td className="px-2 py-1.5">
                   <div className="flex flex-col">
