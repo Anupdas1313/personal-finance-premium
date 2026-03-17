@@ -352,12 +352,12 @@ export default function Accounts() {
 
 function PartitionRow({ partition }: { partition: any }) {
   return (
-    <tr className="bg-brand-blue/[0.03] dark:bg-brand-blue/[0.1] border-y border-brand-blue/5 dark:border-brand-blue/20">
-      <td colSpan={5} className="px-2 py-1.5">
+    <tr className="bg-brand-blue/[0.05] dark:bg-brand-blue/[0.15] border-y border-brand-blue/10 dark:border-brand-blue/30">
+      <td colSpan={5} className="px-2 py-2">
         <div className="flex items-center justify-end">
-          <div className="flex items-center gap-2">
-            <span className="text-[7px] font-black text-brand-blue/40 dark:text-white/40 uppercase tracking-[0.1em]">New Start Balance</span>
-            <span className="text-[9.5px] font-black text-brand-blue dark:text-white">₹{partition.closingBalance.toLocaleString()}</span>
+          <div className="flex items-center gap-2.5">
+            <span className="text-[8px] font-black text-brand-blue/60 dark:text-white/50 uppercase tracking-[0.15em]">New Start Balance</span>
+            <span className="text-[11px] font-black text-brand-blue dark:text-white tracking-tight">₹{partition.closingBalance.toLocaleString()}</span>
           </div>
         </div>
       </td>
@@ -751,32 +751,32 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
       {/* Ledger Table */}
       <div className="flex-1 overflow-auto bg-white dark:bg-[#060608] pb-32">
         <table className="w-full border-collapse border-spacing-0 text-[10px] min-w-[320px]">
-          <thead className="sticky top-0 z-10 bg-neutral-50 dark:bg-[#111111]">
-            <tr className="text-[7px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 dark:border-[#222222]">
-              <th className="w-12 px-2 py-2 text-left">Date</th>
-              <th className="px-2 py-2 text-left">Particulars</th>
-              <th className="w-20 px-2 py-2 text-right">Debit (Dr)</th>
-              <th className="w-20 px-2 py-2 text-right">Credit (Cr)</th>
-              <th className="w-24 px-2 py-2 text-right">Balance</th>
+          <thead className="sticky top-0 z-10 bg-neutral-100 dark:bg-[#111111] shadow-sm">
+            <tr className="text-[8.5px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-widest border-b border-neutral-200 dark:border-[#222222]">
+              <th className="w-14 px-2 py-2.5 text-left">Date</th>
+              <th className="px-2 py-2.5 text-left">Particulars</th>
+              <th className="w-20 px-2 py-2.5 text-right">Debit (Dr)</th>
+              <th className="w-20 px-2 py-2.5 text-right">Credit (Cr)</th>
+              <th className="w-24 px-2 py-2.5 text-right">Balance</th>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-[#0C0C0F]">
             {/* ABSOLUTE START: Initial Opening Balance Row */}
             {/* Only show if we are looking at the 'ALL' view OR if the start of current period is before/at the first transaction */}
             {(granularity === 'ALL' || startDateLimit <= (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : Date.now())) && (
-              <tr className="bg-neutral-50/20 dark:bg-white/[0.01] border-b border-dotted border-neutral-100 dark:border-white/5">
-                <td className="px-2 py-1.5 text-center">
-                  <span className="text-[7px] font-black text-neutral-400 uppercase tracking-tighter">INIT</span>
+              <tr className="bg-neutral-50/40 dark:bg-white/[0.02] border-b border-dotted border-neutral-200 dark:border-white/10">
+                <td className="px-2 py-2 text-center border-r border-neutral-100 dark:border-white/5">
+                  <span className="text-[8px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-tighter">INIT</span>
                 </td>
-                <td className="px-2 py-1.5">
+                <td className="px-2 py-2">
                   <div className="flex flex-col">
-                    <p className="text-[9px] font-black text-brand-blue/30 dark:text-white/30 uppercase tracking-widest leading-none">Starting Balance</p>
-                    <p className="text-[7px] text-neutral-400 font-bold mt-0.5 uppercase">Account Opened</p>
+                    <p className="text-[10px] font-black text-brand-blue/50 dark:text-white/40 uppercase tracking-wider leading-none">Opening Balance</p>
+                    <p className="text-[8px] text-neutral-500 font-bold mt-1 uppercase tracking-tight">Account System Start</p>
                   </div>
                 </td>
-                <td className="px-2 py-1.5 text-right"></td>
-                <td className="px-2 py-1.5 text-right"></td>
-                <td className="px-2 py-1.5 text-right font-bold text-brand-blue/40 dark:text-white/40 text-[9px]">
+                <td className="px-2 py-2 text-right"></td>
+                <td className="px-2 py-2 text-right"></td>
+                <td className="px-2 py-2 text-right font-black text-brand-blue dark:text-white text-[10.5px]">
                   ₹{account.startingBalance.toLocaleString()}
                 </td>
               </tr>
@@ -794,39 +794,39 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               return (
                 <React.Fragment key={tx.id || idx}>
                   {partitionInBetween && <PartitionRow partition={partitionInBetween} />}
-                  <tr className="border-b border-neutral-50 dark:border-[#1A1A1A] hover:bg-neutral-50/50 transition-colors group">
-                    <td className="px-2 py-1.5 text-neutral-400 text-[8px] text-center font-bold">
+                  <tr className="border-b border-neutral-100 dark:border-[#1A1A1A] hover:bg-neutral-50 transition-colors group">
+                    <td className="px-2 py-2 text-neutral-600 dark:text-neutral-400 text-[10px] text-center font-black border-r border-neutral-50 dark:border-white/5">
                       <div className="flex flex-col items-center justify-center relative">
                         <button 
                           onClick={() => handleCreatePartitionAt(tx)}
                           title="Start New Balance from here"
                           className="absolute inset-0 z-20 flex items-center justify-center bg-white dark:bg-[#0C0C0F] opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
                         >
-                          <Scissors className="w-3.5 h-3.5 text-brand-blue dark:text-brand-cyan" />
+                          <Scissors className="w-4 h-4 text-brand-blue dark:text-brand-cyan" />
                         </button>
-                        <span>{format(new Date(tx.dateTime), 'dd')}</span>
-                        <span className="text-[6.5px] uppercase">{format(new Date(tx.dateTime), 'MMM')}</span>
+                        <span className="leading-tight">{format(new Date(tx.dateTime), 'dd')}</span>
+                        <span className="text-[7.5px] uppercase tracking-tighter leading-none font-bold">{format(new Date(tx.dateTime), 'MMM')}</span>
                       </div>
                     </td>
-                    <td className="px-2 py-1.5 max-w-[200px]">
-                      <p className="font-bold text-brand-blue dark:text-[#F7F7F7] text-[9.5px] leading-tight truncate uppercase tracking-tight">
+                    <td className="px-3 py-2 max-w-[200px]">
+                      <p className="font-black text-brand-blue dark:text-[#F7F7F7] text-[11px] leading-tight truncate uppercase tracking-tight">
                         {tx.party || tx.category || 'N/A'}
                       </p>
                       {tx.note && (
-                        <p className="text-[7px] text-neutral-400 font-bold mt-0 opacity-60 whitespace-nowrap overflow-hidden text-ellipsis uppercase tracking-tighter">
+                        <p className="text-[8.5px] text-neutral-500 dark:text-neutral-400 font-bold mt-0.5 leading-tight uppercase tracking-tight">
                           {tx.note}
                         </p>
                       )}
                     </td>
-                    <td className="px-2 py-1.5 text-right font-bold text-[9px]">
-                      {tx.type === 'DEBIT' && <span className="text-brand-red">₹{tx.amount.toLocaleString('en-IN')}</span>}
-                      {tx.type !== 'DEBIT' && <span className="text-neutral-200"></span>}
+                    <td className="px-2 py-2 text-right font-bold text-[10.5px]">
+                      {tx.type === 'DEBIT' && <span className="text-brand-red font-black">₹{tx.amount.toLocaleString('en-IN')}</span>}
+                      {tx.type !== 'DEBIT' && <span className="text-neutral-200 dark:text-white/5"></span>}
                     </td>
-                    <td className="px-2 py-1.5 text-right font-bold text-[9px]">
-                      {tx.type === 'CREDIT' && <span className="text-brand-green">₹{tx.amount.toLocaleString('en-IN')}</span>}
-                      {tx.type !== 'CREDIT' && <span className="text-neutral-200"></span>}
+                    <td className="px-2 py-2 text-right font-bold text-[10.5px]">
+                      {tx.type === 'CREDIT' && <span className="text-brand-green font-black">₹{tx.amount.toLocaleString('en-IN')}</span>}
+                      {tx.type !== 'CREDIT' && <span className="text-neutral-200 dark:text-white/5"></span>}
                     </td>
-                    <td className={`px-2 py-1.5 text-right font-black text-[9.5px] ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
+                    <td className={`px-2 py-2 text-right font-black text-[11px] ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
                       ₹{tx.runningBalance.toLocaleString('en-IN')}
                     </td>
                   </tr>
