@@ -597,66 +597,60 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     <div className="fixed inset-0 bg-white dark:bg-[#060608] z-[100] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
       {/* Header */}
       <div className="bg-neutral-50 dark:bg-[#0C0C0F] border-b border-neutral-200 dark:border-[#222222] px-4 py-2">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-white dark:bg-[#1A1A1A] rounded-xl flex items-center justify-center p-1 border border-neutral-100 dark:border-[#333333]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <div className="w-6 h-6 bg-white dark:bg-[#1A1A1A] rounded-lg flex items-center justify-center p-0.5 border border-neutral-100 dark:border-[#333333]">
               <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
             </div>
             <div>
-              <h2 className="text-sm font-black text-brand-blue dark:text-[#F7F7F7] uppercase tracking-tighter">{account.bankName}</h2>
-              <div className="flex items-center gap-2">
-                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest leading-none">**** {account.accountLast4}</p>
-                <div className="w-1 h-1 rounded-full bg-neutral-300" />
-                <p className="text-[10px] font-black text-brand-blue/60 dark:text-white/60 uppercase">Total: ₹{actualTotalBalance.toLocaleString()}</p>
+              <h2 className="text-[11px] font-black text-brand-blue dark:text-[#F7F7F7] uppercase tracking-tighter leading-none mb-0.5">{account.bankName}</h2>
+              <div className="flex items-center gap-1">
+                <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest leading-none">{account.accountLast4}</p>
+                <div className="w-0.5 h-0.5 rounded-full bg-neutral-300" />
+                <p className="text-[8px] font-black text-brand-blue/60 dark:text-white/60 uppercase">₹{actualTotalBalance.toLocaleString()}</p>
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-[#222222] flex items-center justify-center text-brand-blue dark:text-[#F7F7F7] hover:bg-neutral-300 transition-all">
-            <Plus className="w-6 h-6 rotate-45" />
+          <button onClick={onClose} className="w-7 h-7 rounded-full bg-neutral-200 dark:bg-[#222222] flex items-center justify-center text-brand-blue dark:text-[#F7F7F7] hover:bg-neutral-300 transition-all">
+            <Plus className="w-5 h-5 rotate-45" />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <div className="bg-white dark:bg-[#111111] p-2.5 rounded-2xl shadow-sm border border-neutral-100 dark:border-white/5">
-            <div className="flex items-center justify-between mb-2 pb-2 border-b border-neutral-50 dark:border-white/5">
+        <div className="mt-2 flex flex-col gap-1.5">
+          <div className="bg-white dark:bg-[#111111] px-2 py-1.5 rounded-xl shadow-sm border border-neutral-100 dark:border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
               <div className="flex flex-col">
-                <p className="text-[7px] font-black text-neutral-400 uppercase mb-0.5">Opening</p>
-                <p className="text-xs font-black text-brand-blue/60 dark:text-white/60">₹{openingBalanceForView.toLocaleString()}</p>
+                <p className="text-[6px] font-black text-neutral-400 uppercase">Opening</p>
+                <p className="text-[10px] font-black text-brand-blue/60 dark:text-white/60">₹{openingBalanceForView.toLocaleString()}</p>
               </div>
-              <div className="w-px h-6 bg-neutral-100 dark:bg-white/10" />
-              <div className="flex flex-col text-right">
-                <p className="text-[7px] font-black text-neutral-400 uppercase mb-0.5">Closing</p>
-                <p className="text-xs font-black text-brand-blue dark:text-white">₹{currentViewStateBalance.toLocaleString()}</p>
+              <div className="w-px h-5 bg-neutral-100 dark:bg-white/10" />
+              <div className="flex flex-col">
+                <p className="text-[6px] font-black text-neutral-400 uppercase">Closing</p>
+                <p className="text-[10px] font-black text-brand-blue dark:text-white">₹{currentViewStateBalance.toLocaleString()}</p>
               </div>
             </div>
-            <div className="flex justify-between items-center px-1">
-              <div className="flex items-center gap-2">
-                <span className="text-[7px] font-black text-brand-green uppercase">In:</span>
-                <span className="text-[10px] font-black text-brand-green">₹{totalCredit.toLocaleString()}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[7px] font-black text-brand-red uppercase">Out:</span>
-                <span className="text-[10px] font-black text-brand-red">₹{totalDebit.toLocaleString()}</span>
-              </div>
+            <div className="flex items-center gap-2 italic">
+              <span className="text-[8px] font-bold text-brand-green">IN: ₹{totalCredit.toLocaleString()}</span>
+              <span className="text-[8px] font-bold text-brand-red">OUT: ₹{totalDebit.toLocaleString()}</span>
             </div>
           </div>
 
-            <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-1.5">
+            <button 
+              onClick={handleStartNewBalance}
+              className="flex items-center justify-center gap-1.5 bg-brand-green text-white py-1.5 rounded-lg font-black text-[8px] uppercase"
+            >
+              <Plus className="w-2.5 h-2.5" />
+              New Start Balance
+            </button>
+            <div className="relative">
               <button 
-                onClick={handleStartNewBalance}
-                className="w-full flex items-center justify-center gap-2 bg-brand-green text-white py-2.5 rounded-xl font-black text-[9px] uppercase shadow-lg shadow-brand-green/10"
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                className="w-full flex items-center justify-center gap-1.5 bg-white dark:bg-[#1A1A1A] text-brand-blue dark:text-white py-1.5 rounded-lg border border-neutral-100 dark:border-[#222222] font-black text-[8px] uppercase"
               >
-                <Plus className="w-3 h-3" />
-                New Start Balance
+                <Download className="w-2.5 h-2.5" />
+                Export Ledger
               </button>
-              <div className="relative">
-                <button 
-                  onClick={() => setShowExportMenu(!showExportMenu)}
-                  className="w-full h-full flex items-center justify-center gap-2 bg-white dark:bg-[#1A1A1A] text-brand-blue dark:text-white py-2.5 rounded-xl border border-neutral-100 dark:border-[#222222] font-black text-[9px] uppercase shadow-sm"
-                >
-                  <Download className="w-3 h-3" />
-                  Export Ledger
-                </button>
               {showExportMenu && (
                 <div className="absolute top-full mt-2 right-0 w-48 bg-white dark:bg-[#1C1C22] shadow-2xl shadow-black/20 rounded-xl border border-neutral-100 dark:border-[#222222] z-[110] overflow-hidden flex flex-col">
                   <button onClick={downloadPDF} className="p-3 text-left text-[10px] font-black text-brand-blue dark:text-white hover:bg-neutral-50 dark:hover:bg-white/5 flex items-center gap-2">
@@ -679,15 +673,15 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
 
         {/* Filters */}
         <div className="mt-2 flex flex-col sm:flex-row gap-2">
-          <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-0.5 rounded-xl flex-1 overflow-x-auto">
+          <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-0.5 rounded-lg flex-1 overflow-x-auto">
             {(['ALL', 'YEAR', 'MONTH', 'WEEK', 'DAY', 'CUSTOM'] as const).map((g) => (
               <button
                 key={g}
                 onClick={() => setGranularity(g)}
-                className={`flex-1 px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-tight transition-all shrink-0 ${
+                className={`flex-1 px-2 py-1.5 rounded-md text-[8px] font-black uppercase tracking-tight transition-all shrink-0 ${
                   granularity === g 
                     ? 'bg-white dark:bg-[#333333] text-brand-blue dark:text-white shadow-sm' 
-                    : 'text-neutral-400'
+                    : 'text-neutral-400 hover:text-neutral-500'
                 }`}
               >
                 {g}
@@ -714,7 +708,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
           )}
 
           {granularity !== 'ALL' && granularity !== 'CUSTOM' && (
-            <div className="flex items-center gap-1 bg-neutral-100 dark:bg-[#1A1A1A] px-2 py-1 rounded-xl">
+            <div className="flex items-center gap-1 bg-neutral-100 dark:bg-[#1A1A1A] px-1.5 py-1 rounded-lg">
               <button 
                 onClick={() => {
                   if (granularity === 'DAY') setReferenceDate(subDays(referenceDate, 1));
@@ -724,12 +718,12 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                 }}
                 className="p-1 text-brand-blue dark:text-neutral-400"
               >
-                <ChevronDown className="w-4 h-4 rotate-90" />
+                <ChevronDown className="w-3.5 h-3.5 rotate-90" />
               </button>
-              <span className="text-[9px] font-black text-brand-blue dark:text-white min-w-[70px] text-center uppercase tracking-tighter">
-                {granularity === 'DAY' && format(referenceDate, 'dd MMM yyyy')}
-                {granularity === 'WEEK' && `Week ${format(referenceDate, 'ww, yyyy')}`}
-                {granularity === 'MONTH' && format(referenceDate, 'MMM yyyy')}
+              <span className="text-[8.5px] font-black text-brand-blue dark:text-white min-w-[60px] text-center uppercase tracking-tighter">
+                {granularity === 'DAY' && format(referenceDate, 'dd MMM yy')}
+                {granularity === 'WEEK' && `Wk ${format(referenceDate, 'ww, yy')}`}
+                {granularity === 'MONTH' && format(referenceDate, 'MMM yy')}
                 {granularity === 'YEAR' && format(referenceDate, 'yyyy')}
               </span>
               <button 
@@ -741,7 +735,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                 }}
                 className="p-1 text-brand-blue dark:text-neutral-400"
               >
-                <ChevronDown className="w-4 h-4 -rotate-90" />
+                <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
               </button>
             </div>
           )}
