@@ -112,7 +112,7 @@ export default function Accounts() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-4xl font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">Accounts</h1>
+        <h1 className="text-4xl font-heading font-semibold text-brand-blue dark:text-[#F7F7F7] tracking-tight">Accounts</h1>
 
         <button
           onClick={() => {
@@ -122,7 +122,7 @@ export default function Accounts() {
               setIsAdding(true);
             }
           }}
-          className="flex items-center gap-2 px-6 py-3 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl hover:bg-brand-green/90 hover:ring-2 hover:ring-brand-cyan transition-all font-black shadow-lg shadow-brand-green/10 active:scale-95"
+          className="flex items-center gap-2 px-6 py-3 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl hover:bg-brand-green/90 hover:ring-2 hover:ring-brand-cyan transition-all font-semibold shadow-lg shadow-brand-green/10 active:scale-95"
         >
           <Plus className="w-5 h-5" />
           {isAdding && !editingAccountId ? 'Cancel' : 'Add New'}
@@ -131,7 +131,7 @@ export default function Accounts() {
 
       {isAdding && (
         <div className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_8px_40px_rgba(26,35,126,0.08)] border border-brand-blue/5 dark:border-[#222222]">
-          <h2 className="text-xl font-black text-brand-blue dark:text-[#F7F7F7] mb-5 tracking-tight flex items-center gap-2">
+          <h2 className="text-xl font-heading font-semibold text-brand-blue dark:text-[#F7F7F7] mb-5 tracking-tight flex items-center gap-2">
             <div className="w-2 h-6 bg-brand-green rounded-full"></div>
             {editingAccountId ? 'Edit Account' : 'New Account'}
           </h2>
@@ -147,7 +147,7 @@ export default function Accounts() {
                     if (t === 'CASH' && !bankName) setBankName('Cash Wallet');
                     if (t === 'CASH' && !accountLast4) setAccountLast4('CASH');
                   }}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-black transition-all ${
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                     accountType === t
                       ? 'bg-brand-blue text-white shadow-lg scale-105'
                       : 'text-brand-blue/40 hover:text-brand-blue dark:hover:text-[#F7F7F7]'
@@ -198,7 +198,7 @@ export default function Accounts() {
                           <div className="w-5 h-5 bg-white rounded flex items-center justify-center p-0.5 shadow-sm shrink-0">
                             <Icon className="w-full h-full object-contain" />
                           </div>
-                          <span className="text-[11px] font-bold">{bank.id}</span>
+                          <span className="text-[11px] font-semibold">{bank.id}</span>
                         </button>
                       );
                     })}
@@ -206,7 +206,7 @@ export default function Accounts() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-black text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-wider">
+                <label className="block text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-[0.2em]">
                   {accountType === 'CASH' ? 'Reference' : 'Account Last 4'}
                 </label>
                 <input
@@ -220,7 +220,7 @@ export default function Accounts() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-black text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-wider">Starting Balance (₹)</label>
+                <label className="block text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-[0.2em]">Starting Balance (₹)</label>
                 <input
                   type="number"
                   value={startingBalance}
@@ -232,7 +232,7 @@ export default function Accounts() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-black text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-wider">Starting Date</label>
+                <label className="block text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-[0.2em]">Starting Date</label>
                 <input
                   type="date"
                   value={startingBalanceDate}
@@ -247,13 +247,13 @@ export default function Accounts() {
               <button
                 type="button"
                 onClick={resetForm}
-                className="px-6 py-3 text-brand-blue dark:text-[#F7F7F7] hover:bg-brand-blue/5 dark:hover:bg-[#222222] font-black rounded-xl transition-colors"
+                className="px-6 py-3 text-brand-blue dark:text-[#F7F7F7] hover:bg-brand-blue/5 dark:hover:bg-[#222222] font-semibold rounded-xl transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-6 py-3 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-black rounded-xl hover:bg-brand-green/90 hover:ring-2 hover:ring-brand-cyan transition-all shadow-lg active:scale-95"
+                className="px-6 py-3 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-semibold rounded-xl hover:bg-brand-green/90 hover:ring-2 hover:ring-brand-cyan transition-all shadow-lg active:scale-95"
               >
                 {editingAccountId ? 'Update Account' : 'Save Account'}
               </button>
@@ -276,7 +276,7 @@ export default function Accounts() {
                     <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
                   </div>
                   {account.type && (
-                    <div className={`ml-3 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                    <div className={`ml-3 px-2 py-0.5 rounded-md text-[9px] font-semibold uppercase tracking-[0.2em] ${
                       account.type === 'CASH' ? 'bg-brand-green/10 text-brand-green' : 
                       account.type === 'CREDIT_CARD' ? 'bg-brand-gold/10 text-brand-gold' : 
                       'bg-brand-blue/10 text-brand-blue'
@@ -302,13 +302,13 @@ export default function Accounts() {
                     </button>
                   </div>
                 </div>
-                <h3 className="text-2xl font-black text-brand-blue dark:text-[#F7F7F7] truncate">{account.bankName}</h3>
-                <p className="text-brand-blue opacity-50 dark:text-[#A0A0A0] font-black mt-0.5">
+                <h3 className="text-2xl font-heading font-semibold text-brand-blue dark:text-[#F7F7F7] tracking-tight truncate">{account.bankName}</h3>
+                <p className="text-brand-blue/40 dark:text-[#A0A0A0] font-semibold mt-0.5 text-xs">
                   {account.type === 'CASH' ? account.accountLast4 : `**** ${account.accountLast4}`}
                 </p>
                 <div className="mt-4">
-                  <p className="text-[10px] font-black text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-widest mb-1">Current Balance</p>
-                  <p className={`text-2xl font-black tracking-tighter ${currentBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
+                  <p className="text-[10px] font-semibold text-brand-blue/40 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-1.5">Current Balance</p>
+                  <p className={`text-2xl font-heading font-semibold tracking-tight ${currentBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
                     ₹{currentBalance.toLocaleString('en-IN')}
                   </p>
                 </div>
@@ -318,18 +318,18 @@ export default function Accounts() {
                   <div className="bg-brand-green/5 dark:bg-brand-green/10 p-2.5 rounded-xl border border-brand-green/10">
                     <div className="flex items-center gap-1.5 text-brand-green mb-1">
                       <ArrowDownLeft className="w-3 h-3" />
-                      <span className="text-[10px] font-black uppercase tracking-tight">Month Inflow</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.1em]">Month Inflow</span>
                     </div>
-                    <p className="text-sm font-black text-brand-green">
+                    <p className="text-sm font-heading font-semibold text-brand-green">
                       ₹{(accountBreakdown[account.id!]?.inflow || 0).toLocaleString('en-IN')}
                     </p>
                   </div>
                   <div className="bg-brand-red/5 dark:bg-brand-red/10 p-2.5 rounded-xl border border-brand-red/10">
                     <div className="flex items-center gap-1.5 text-brand-red mb-1">
                       <ArrowUpRight className="w-3 h-3" />
-                      <span className="text-[10px] font-black uppercase tracking-tight">Month Outflow</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.1em]">Month Outflow</span>
                     </div>
-                    <p className="text-sm font-black text-brand-red">
+                    <p className="text-sm font-heading font-semibold text-brand-red">
                       ₹{(accountBreakdown[account.id!]?.outflow || 0).toLocaleString('en-IN')}
                     </p>
                   </div>
@@ -356,8 +356,8 @@ function PartitionRow({ partition }: { partition: any }) {
       <td colSpan={5} className="px-2 py-2">
         <div className="flex items-center justify-end">
           <div className="flex items-center gap-2.5">
-            <span className="text-[8px] font-black text-brand-blue/60 dark:text-white/50 uppercase tracking-[0.15em]">New Start Balance</span>
-            <span className="text-[11px] font-black text-brand-blue dark:text-white tracking-tight">₹{partition.closingBalance.toLocaleString()}</span>
+            <span className="text-[8px] font-semibold text-brand-blue/60 dark:text-white/50 uppercase tracking-[0.2em]">New Start Balance</span>
+            <span className="text-[11px] font-semibold text-brand-blue dark:text-white tracking-tight">₹{partition.closingBalance.toLocaleString()}</span>
           </div>
         </div>
       </td>
@@ -604,11 +604,11 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
             </div>
             <div>
-              <h2 className="text-[11px] font-black text-brand-blue dark:text-[#F7F7F7] uppercase tracking-tighter leading-none mb-0.5">{account.bankName}</h2>
+              <h2 className="text-[11px] font-semibold text-brand-blue dark:text-[#F7F7F7] uppercase tracking-widest leading-none mb-0.5">{account.bankName}</h2>
               <div className="flex items-center gap-1">
                 <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest leading-none">{account.accountLast4}</p>
                 <div className="w-0.5 h-0.5 rounded-full bg-neutral-300" />
-                <p className="text-[8px] font-black text-brand-blue/60 dark:text-white/60 uppercase">₹{actualTotalBalance.toLocaleString()}</p>
+                <p className="text-[8px] font-semibold text-brand-blue/60 dark:text-white/60 uppercase">₹{actualTotalBalance.toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -634,7 +634,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                   setGranularity(g);
                   setShowFilterMenu(false);
                 }}
-                className={`flex-1 px-2.5 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-tight transition-all shrink-0 ${
+                className={`flex-1 px-2.5 py-1.5 rounded-lg text-[8px] font-semibold uppercase tracking-[0.1em] transition-all shrink-0 ${
                   granularity === g 
                     ? 'bg-white dark:bg-[#333333] text-brand-blue dark:text-white shadow-sm' 
                     : 'text-neutral-400 hover:text-neutral-500'
@@ -650,13 +650,13 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
           <div className="bg-white dark:bg-[#111111] px-2 py-1.5 rounded-xl shadow-sm border border-neutral-100 dark:border-white/5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex flex-col">
-                <p className="text-[6px] font-black text-neutral-400 uppercase">Opening</p>
-                <p className="text-[10px] font-black text-brand-blue/60 dark:text-white/60">₹{openingBalanceForView.toLocaleString()}</p>
+                <p className="text-[6px] font-semibold text-neutral-400 uppercase tracking-[0.1em]">Opening</p>
+                <p className="text-[10px] font-semibold text-brand-blue/50 dark:text-white/40">₹{openingBalanceForView.toLocaleString()}</p>
               </div>
               <div className="w-px h-5 bg-neutral-100 dark:bg-white/10" />
               <div className="flex flex-col">
-                <p className="text-[6px] font-black text-neutral-400 uppercase">Closing</p>
-                <p className="text-[10px] font-black text-brand-blue dark:text-white">₹{currentViewStateBalance.toLocaleString()}</p>
+                <p className="text-[6px] font-semibold text-neutral-400 uppercase tracking-[0.1em]">Closing</p>
+                <p className="text-[10px] font-semibold text-brand-blue dark:text-white">₹{currentViewStateBalance.toLocaleString()}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 italic">
@@ -668,7 +668,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
           <div className="grid grid-cols-2 gap-1.5">
             <button 
               onClick={handleStartNewBalance}
-              className="flex items-center justify-center gap-1.5 bg-brand-green text-white py-1.5 rounded-lg font-black text-[8px] uppercase"
+              className="flex items-center justify-center gap-1.5 bg-brand-green text-white py-1.5 rounded-lg font-semibold text-[8px] uppercase tracking-[0.1em]"
             >
               <Plus className="w-2.5 h-2.5" />
               New Start Balance
@@ -676,7 +676,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             <div className="relative">
               <button 
                 onClick={() => setShowExportMenu(!showExportMenu)}
-                className="w-full flex items-center justify-center gap-1.5 bg-white dark:bg-[#1A1A1A] text-brand-blue dark:text-white py-1.5 rounded-lg border border-neutral-100 dark:border-[#222222] font-black text-[8px] uppercase"
+                className="w-full flex items-center justify-center gap-1.5 bg-white dark:bg-[#1A1A1A] text-brand-blue dark:text-white py-1.5 rounded-lg border border-neutral-100 dark:border-[#222222] font-semibold text-[8px] uppercase tracking-[0.1em]"
               >
                 <Download className="w-2.5 h-2.5" />
                 Export Ledger

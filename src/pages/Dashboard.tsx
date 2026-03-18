@@ -249,14 +249,14 @@ export default function Dashboard() {
       {/* Greeting Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-black text-[#1A237E] dark:text-[#A0A0A0] tracking-wide uppercase opacity-70">{greeting},</p>
-          <h1 className="text-3xl font-black text-[#1A237E] dark:text-[#F7F7F7] leading-tight">Proshanjit 👋</h1>
+          <p className="text-sm font-semibold text-[#1A237E]/60 dark:text-[#A0A0A0] tracking-[0.1em] uppercase">{greeting},</p>
+          <h1 className="text-3xl font-heading font-semibold text-[#1A237E] dark:text-[#F7F7F7] leading-tight tracking-tight">Proshanjit 👋</h1>
         </div>
 
         <div className="flex items-center gap-3">
           <div
             title="Proshanjit"
-            className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1A237E] to-[#4A4ABF] flex items-center justify-center text-white font-black text-lg select-none shadow-lg cursor-pointer border-2 border-white dark:border-[#1A1A1E]"
+            className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1A237E] to-[#4A4ABF] flex items-center justify-center text-white font-heading font-bold text-lg select-none shadow-lg cursor-pointer border-2 border-white dark:border-[#1A1A1E]"
           >
             A
           </div>
@@ -277,14 +277,14 @@ export default function Dashboard() {
 
         <div className="relative z-10 flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <h2 className="text-[10px] font-black text-brand-blue/40 dark:text-[#A0A0A0] tracking-widest uppercase">Cash Flow</h2>
+            <h2 className="text-[10px] font-semibold text-brand-blue/60 dark:text-[#A0A0A0] tracking-[0.2em] uppercase">Cash Flow</h2>
             {isAmountsHidden ? <EyeOff className="w-3 h-3 text-brand-blue/20" /> : <Eye className="w-3 h-3 text-brand-blue/20" />}
           </div>
           <div className="relative" onClick={(e) => e.stopPropagation()}>
             <select
               value={timeFilter}
               onChange={(e) => setTimeFilter(e.target.value as any)}
-              className="appearance-none bg-white dark:bg-[#1A1A1A] hover:bg-neutral-50 text-brand-blue/60 dark:text-white/90 text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full pr-7 cursor-pointer outline-none transition-colors border border-brand-blue/10"
+              className="appearance-none bg-white dark:bg-[#1A1A1A] hover:bg-neutral-50 text-brand-blue/60 dark:text-white/90 text-[9px] font-semibold uppercase tracking-[0.1em] px-3 py-1 rounded-full pr-7 cursor-pointer outline-none transition-colors border border-brand-blue/10"
             >
               <option value="This Month">This Month</option>
               <option value="This Year">This Year</option>
@@ -296,8 +296,8 @@ export default function Dashboard() {
 
         <div className="relative z-10 flex justify-between items-stretch mb-8 gap-10">
           <div className="flex-1 overflow-hidden py-2">
-            <p className="text-[9px] font-black text-rose-500 tracking-widest uppercase mb-2">Spending</p>
-            <p className="text-2xl font-black text-brand-blue dark:text-white tracking-tighter truncate">
+            <p className="text-[10px] font-semibold text-rose-500/80 tracking-[0.2em] uppercase mb-2">Spending</p>
+            <p className="text-3xl font-heading font-semibold text-brand-blue dark:text-white tracking-tight truncate">
               {isAmountsHidden ? '••••••' : `₹${totalSpending.toLocaleString('en-IN')}`}
             </p>
           </div>
@@ -305,8 +305,8 @@ export default function Dashboard() {
           <div className="w-[1px] bg-brand-blue/10 dark:bg-white/10 self-stretch my-2"></div>
 
           <div className="flex-1 text-right overflow-hidden py-2">
-            <p className="text-[9px] font-black text-emerald-500 tracking-widest uppercase mb-2">Income</p>
-            <p className="text-2xl font-black text-brand-blue dark:text-white tracking-tighter truncate">
+            <p className="text-[10px] font-semibold text-emerald-500/80 tracking-[0.2em] uppercase mb-2">Income</p>
+            <p className="text-3xl font-heading font-semibold text-brand-blue dark:text-white tracking-tight truncate">
               {isAmountsHidden ? '••••••' : `₹${totalIncome.toLocaleString('en-IN')}`}
             </p>
           </div>
@@ -314,14 +314,14 @@ export default function Dashboard() {
 
         <div className="relative z-10 bg-white/60 dark:bg-white/5 border border-brand-blue/5 dark:border-white/10 rounded-2xl p-4 flex justify-between items-center backdrop-blur-sm">
           <div className="flex flex-col">
-            <p className="text-[9px] font-black text-brand-blue/40 dark:text-white/30 uppercase tracking-widest leading-none mb-1">Total Wealth</p>
+            <p className="text-[10px] font-semibold text-brand-blue/50 dark:text-white/40 uppercase tracking-widest leading-none mb-1.5">Total Wealth</p>
             {timeFilter !== 'All Time' && (
-              <p className={`text-[8px] font-bold ${monthDelta >= 0 ? 'text-emerald-500' : 'text-rose-500'} uppercase`}>
+              <p className={`text-[9px] font-semibold ${monthDelta >= 0 ? 'text-emerald-500' : 'text-rose-500'} uppercase tracking-[0.1em]`}>
                 {monthDelta >= 0 ? '+' : ''}₹{monthDelta.toLocaleString('en-IN')} this {timeFilter === 'This Month' ? 'month' : 'year'}
               </p>
             )}
           </div>
-          <p className={`text-lg font-black tracking-tighter text-brand-blue dark:text-white`}>
+          <p className={`text-xl font-heading font-semibold tracking-tight text-brand-blue dark:text-white`}>
             {isAmountsHidden ? '••••••' : `₹${totalWealth.toLocaleString('en-IN')}`}
           </p>
         </div>
@@ -331,8 +331,8 @@ export default function Dashboard() {
         {/* Accounts List */}
         <div className="bg-white dark:bg-[#0C0C0F] rounded-[28px] shadow-[0_8px_40px_rgba(26,35,126,0.08)] dark:shadow-none border border-[#EBEBEB] dark:border-[#1A1A1E] overflow-hidden">
           <div className="p-6 border-b border-[#EBEBEB] dark:border-[#1A1A1E] flex justify-between items-center">
-            <h2 className="text-xl font-black text-[#1A237E] dark:text-[#F7F7F7]">Your Accounts</h2>
-            <Link to="/accounts" className="text-sm font-black text-[#00A86B] dark:text-[#A0A0A0] hover:underline transition-colors uppercase tracking-wider">Manage</Link>
+            <h2 className="text-xl font-heading font-semibold text-[#1A237E] dark:text-[#F7F7F7] tracking-tight">Your Accounts</h2>
+            <Link to="/accounts" className="text-sm font-semibold text-[#00A86B] dark:text-emerald-500/70 hover:underline transition-colors uppercase tracking-[0.2em]">Manage</Link>
           </div>
 
 
@@ -347,13 +347,13 @@ export default function Dashboard() {
                       <BankLogo bankName={acc.bankName} type={(acc as any).type} className="w-full h-full" />
                     </div>
                     <div>
-                      <p className="font-black text-[#111111] dark:text-[#F7F7F7]">{acc.bankName}</p>
-                      <p className="text-xs text-[#525252] dark:text-[#A0A0A0] font-bold mt-0.5">
+                      <p className="font-semibold text-[#111111] dark:text-[#F7F7F7]">{acc.bankName}</p>
+                      <p className="text-xs text-[#525252] dark:text-[#A0A0A0] font-medium mt-0.5">
                         {(acc as any).type === 'CASH' ? acc.accountLast4 : `**** ${acc.accountLast4}`}
                       </p>
                     </div>
                   </div>
-                  <p className="font-black text-[#111111] dark:text-[#F7F7F7]">
+                  <p className="font-heading font-semibold text-[#111111] dark:text-[#F7F7F7] tracking-tight">
                     ₹{acc.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </p>
 
@@ -366,8 +366,8 @@ export default function Dashboard() {
         {/* Recent Transactions */}
         <div className="bg-transparent overflow-hidden">
           <div className="pb-5 flex justify-between items-center px-1">
-            <h2 className="text-xl font-black text-[#1A237E] dark:text-[#F7F7F7]">Recent Transactions</h2>
-            <Link to="/transactions" className="text-sm font-black text-[#00A86B] dark:text-[#A0A0A0] hover:underline transition-colors uppercase tracking-wider">View All</Link>
+            <h2 className="text-xl font-heading font-semibold text-[#1A237E] dark:text-[#F7F7F7] tracking-tight">Recent Transactions</h2>
+            <Link to="/transactions" className="text-sm font-semibold text-[#00A86B] dark:text-emerald-500/70 hover:underline transition-colors uppercase tracking-[0.2em]">View All</Link>
           </div>
 
 
@@ -400,12 +400,12 @@ export default function Dashboard() {
                       
                       {/* Title & Subtext */}
                       <div>
-                        <p className="font-black text-brand-blue dark:text-[#F7F7F7] text-base group-hover:text-brand-green dark:group-hover:text-white transition-colors">
+                        <p className="font-semibold text-brand-blue dark:text-[#F7F7F7] text-base group-hover:text-brand-green dark:group-hover:text-white transition-colors">
                           {tx.party || tx.note || tx.category}
                         </p>
 
 
-                        <div className="flex items-center text-xs text-[#525252] dark:text-[#A0A0A0] font-bold mt-0.5 gap-1.5">
+                        <div className="flex items-center text-xs text-[#525252] dark:text-[#A0A0A0] font-medium mt-0.5 gap-1.5">
 
                           {tx.paymentMethod === 'UPI' ? <Smartphone className="w-3.5 h-3.5" /> : 
                            tx.paymentMethod === 'Bank' || tx.paymentMethod === 'Bank Transfer' ? <Landmark className="w-3.5 h-3.5" /> : 
@@ -418,13 +418,13 @@ export default function Dashboard() {
                     
                     {/* Amount & Date (Right Aligned) */}
                     <div className="text-right">
-                      <p className={`font-black text-base tracking-tight ${tx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-blue dark:text-[#F7F7F7]'}`}>
+                      <p className={`font-heading font-semibold text-base tracking-tight ${tx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-blue dark:text-[#F7F7F7]'}`}>
                         {tx.type === 'CREDIT' ? '+' : ''}₹{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </p>
 
 
 
-                      <p className="text-xs text-[#717171] dark:text-[#A0A0A0] font-medium mt-0.5">
+                      <p className="text-[10px] text-[#717171] dark:text-[#A0A0A0] font-medium mt-0.5 uppercase tracking-[0.1em]">
                         {dateStr}
                       </p>
                     </div>
@@ -443,7 +443,7 @@ export default function Dashboard() {
             <button onClick={closeMenu} className="text-[#717171] dark:text-[#A0A0A5] hover:text-[#222222] dark:hover:text-white p-1.5 -ml-1 transition-colors">
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <h2 className="text-[14px] font-bold text-[#222222] dark:text-white tracking-tight">Add Transaction</h2>
+            <h2 className="text-[14px] font-semibold text-[#222222] dark:text-white tracking-tight">Add Transaction</h2>
 
             <div className="w-6" /> {/* Spacer to balance back arrow */}
           </div>
@@ -455,19 +455,19 @@ export default function Dashboard() {
 
               <button 
                 onClick={() => setType('DEBIT')}
-                className={`flex-1 py-1.5 text-[12px] font-black rounded-xl transition-all uppercase tracking-widest ${type === 'DEBIT' ? 'bg-brand-red text-white shadow-lg' : 'text-brand-blue/30 hover:text-brand-blue'}`}
+                className={`flex-1 py-1.5 text-[12px] font-semibold rounded-xl transition-all uppercase tracking-[0.2em] ${type === 'DEBIT' ? 'bg-brand-red text-white shadow-lg' : 'text-brand-blue/30 hover:text-brand-blue'}`}
               >
                 Outflow
               </button>
               <button 
                 onClick={() => setType('CREDIT')}
-                className={`flex-1 py-1.5 text-[12px] font-black rounded-xl transition-all uppercase tracking-widest ${type === 'CREDIT' ? 'bg-brand-green text-white shadow-lg' : 'text-brand-blue/30 hover:text-brand-blue'}`}
+                className={`flex-1 py-1.5 text-[12px] font-semibold rounded-xl transition-all uppercase tracking-[0.2em] ${type === 'CREDIT' ? 'bg-brand-green text-white shadow-lg' : 'text-brand-blue/30 hover:text-brand-blue'}`}
               >
                 Inflow
               </button>
               <button 
                 onClick={() => setType('TRANSFER')}
-                className={`flex-1 py-1.5 text-[12px] font-black rounded-xl transition-all uppercase tracking-widest ${type === 'TRANSFER' ? 'bg-brand-blue text-white shadow-lg' : 'text-brand-blue/30 hover:text-brand-blue'}`}
+                className={`flex-1 py-1.5 text-[12px] font-semibold rounded-xl transition-all uppercase tracking-[0.2em] ${type === 'TRANSFER' ? 'bg-brand-blue text-white shadow-lg' : 'text-brand-blue/30 hover:text-brand-blue'}`}
               >
                 Transfer
               </button>
@@ -480,7 +480,7 @@ export default function Dashboard() {
                 <div className="bg-white dark:bg-[#1C1C22] p-3 rounded-xl border border-[#EBEBEB] dark:border-white/5 flex items-center justify-between active:bg-neutral-50 dark:active:bg-[#2C2C34] transition-colors">
                   <div className="flex items-center gap-3">
                     <Calendar className="w-4 h-4 text-[#1A237E] dark:text-[#6C6CF0]" />
-                    <span className="text-[13px] font-black text-[#1A237E] dark:text-white">
+                    <span className="text-[13px] font-semibold text-[#1A237E] dark:text-white">
                       {isToday(new Date(transactionDate)) ? 'Today, ' : isYesterday(new Date(transactionDate)) ? 'Yesterday, ' : format(new Date(transactionDate), 'dd MMM, ')}
                       {format(new Date(transactionDate), 'hh:mm a')}
                     </span>
@@ -509,8 +509,8 @@ export default function Dashboard() {
                       onClick={() => setExpenseType(expenseType === tagName ? '' : tagName)}
                       className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border whitespace-nowrap ${
                         expenseType === tagName 
-                          ? 'bg-brand-blue text-white border-transparent shadow-md' 
-                          : 'bg-white dark:bg-[#1C1C22] border-[#EBEBEB] dark:border-white/5 text-brand-blue/60 dark:text-[#A0A0A5] hover:ring-1 hover:ring-brand-cyan'
+                          ? 'bg-brand-blue text-white border-transparent shadow-md font-semibold' 
+                          : 'bg-white dark:bg-[#1C1C22] border-[#EBEBEB] dark:border-white/5 text-brand-blue/60 dark:text-[#A0A0A5] hover:ring-1 hover:ring-brand-cyan font-medium'
                       }`}
 
 
@@ -538,7 +538,7 @@ export default function Dashboard() {
                   onChange={e => setAmount(e.target.value)}
                   placeholder="0.00"
                   step="0.01"
-                  className="bg-transparent text-[20px] font-black text-brand-blue dark:text-white outline-none w-full placeholder:text-[#D1D1D1] dark:placeholder:text-[#2C2C34] min-w-0"
+                  className="bg-transparent text-[20px] font-semibold text-brand-blue dark:text-white outline-none w-full placeholder:text-[#D1D1D1] dark:placeholder:text-[#2C2C34] min-w-0"
 
 
 
@@ -609,7 +609,7 @@ export default function Dashboard() {
                     value={partyName}
                     onChange={e => setPartyName(e.target.value)}
                     placeholder={type === 'DEBIT' ? 'Paid to...' : 'Received from...'}
-                    className="bg-transparent flex-1 text-[14px] font-black text-brand-blue dark:text-white outline-none placeholder:text-[#A0A0A0] dark:placeholder:text-[#4A4A52]"
+                    className="bg-transparent flex-1 text-[14px] font-semibold text-brand-blue dark:text-white outline-none placeholder:text-[#A0A0A0] dark:placeholder:text-[#4A4A52]"
                   />
 
 
@@ -741,7 +741,7 @@ export default function Dashboard() {
                   <button 
                     onClick={handleSaveManual}
                     disabled={!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
-                    className={`flex-[2] py-2.5 rounded-xl font-extrabold text-[13px] transition-all transform active:scale-[0.98] ${
+                    className={`flex-[2] py-2.5 rounded-xl font-semibold text-[13px] transition-all transform active:scale-[0.98] ${
                       (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
                       ? 'bg-[#2C2C34] text-[#5A5A62] cursor-not-allowed opacity-50'
                       : 'bg-[#00A86B] text-white shadow-lg shadow-emerald-500/10 dark:shadow-none hover:bg-[#00925d] hover:ring-2 hover:ring-[#82EEFD]'

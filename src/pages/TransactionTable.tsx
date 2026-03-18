@@ -400,8 +400,8 @@ export default function TransactionTable() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-xl font-black text-brand-blue dark:text-[#F7F7F7]">Manifest</h1>
-            <p className="text-[10px] text-brand-blue/30 dark:text-[#A0A0A0] font-black uppercase tracking-widest mt-0.5">
+            <h1 className="text-xl font-heading font-semibold text-brand-blue dark:text-[#F7F7F7]">Manifest</h1>
+            <p className="text-[10px] text-brand-blue/30 dark:text-[#A0A0A0] font-semibold uppercase tracking-[0.2em] mt-0.5">
               {filteredAndSortedTransactions.length} of {allTransactionsRaw.length} points
             </p>
           </div>
@@ -445,9 +445,9 @@ export default function TransactionTable() {
                 <div className="flex flex-col items-center justify-center text-center px-1">
                   <div className="flex items-center justify-center gap-1.5 mb-2">
                     <ArrowDownLeft className="w-3.5 h-3.5 text-brand-red" />
-                    <span className="text-[10px] font-black text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-widest">Outflow</span>
+                    <span className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em]">Outflow</span>
                   </div>
-                  <div className="text-base sm:text-2xl font-black text-brand-red truncate w-full">
+                  <div className="text-base sm:text-2xl font-semibold text-brand-red truncate w-full">
                     <CountUp value={summary.spent} prefix="-₹" />
                   </div>
                 </div>
@@ -455,9 +455,9 @@ export default function TransactionTable() {
                 <div className="flex flex-col items-center justify-center text-center px-1">
                   <div className="flex items-center justify-center gap-1.5 mb-2">
                     <ArrowUpRight className="w-3.5 h-3.5 text-brand-green" />
-                    <span className="text-[10px] font-black text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-widest">Inflow</span>
+                    <span className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em]">Inflow</span>
                   </div>
-                  <div className="text-base sm:text-2xl font-black text-brand-green truncate w-full">
+                  <div className="text-base sm:text-2xl font-semibold text-brand-green truncate w-full">
                     <CountUp value={summary.received} prefix="+₹" />
                   </div>
                 </div>
@@ -465,10 +465,10 @@ export default function TransactionTable() {
                 <div className="flex flex-col items-center justify-center text-center px-1">
                   <div className="flex items-center justify-center gap-1.5 mb-2">
                     <Wallet className="w-3.5 h-3.5 text-brand-blue dark:text-[#F7F7F7]" />
-                    <span className="text-[10px] font-black text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-widest">Net Change</span>
+                    <span className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em]">Net Change</span>
                   </div>
 
-                  <div className={`text-base sm:text-2xl font-black truncate w-full ${summary.received - summary.spent >= 0 ? 'text-brand-green' : 'text-brand-red'}`}>
+                  <div className={`text-base sm:text-2xl font-semibold truncate w-full ${summary.received - summary.spent >= 0 ? 'text-brand-green' : 'text-brand-red'}`}>
                     <CountUp value={Math.abs(summary.received - summary.spent)} prefix={summary.received - summary.spent >= 0 ? '+₹' : '-₹'} />
                   </div>
                 </div>
@@ -487,7 +487,7 @@ export default function TransactionTable() {
                 placeholder="Locate within manifest..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-neutral-50 dark:bg-[#1A1A1A] border border-brand-blue/10 dark:border-[#222222] rounded-xl outline-none text-sm font-black text-brand-blue dark:text-[#F7F7F7] focus:ring-2 focus:ring-brand-cyan transition-all"
+                className="w-full pl-10 pr-4 py-2 bg-neutral-50 dark:bg-[#1A1A1A] border border-brand-blue/10 dark:border-[#222222] rounded-xl outline-none text-sm font-medium text-brand-blue dark:text-[#F7F7F7] focus:ring-2 focus:ring-brand-cyan transition-all"
               />
 
             </div>
@@ -530,7 +530,7 @@ export default function TransactionTable() {
         <div className="bg-white dark:bg-[#111111] border border-brand-blue/5 dark:border-[#222222] rounded-[24px] shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-brand-blue text-white uppercase tracking-[0.2em] text-[10px]">
+              <thead className="bg-brand-blue text-white uppercase tracking-[0.2em] text-[10px] font-semibold">
 
 
                 <tr>
@@ -547,36 +547,36 @@ export default function TransactionTable() {
                 {paginatedTransactions.map(tx => (
                   <tr key={tx.id} className="hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] transition-colors border-b border-[#EBEBEB] dark:border-transparent">
                     <td className="px-4 py-4 sm:py-3 text-brand-blue dark:text-white">
-                      <div className="font-black">
+                      <div className="font-semibold text-sm">
                         {safeFormatDate(tx.dateTime, 'MMM d, yyyy')}
                       </div>
-                      <div className="text-[10px] text-brand-blue/30 dark:text-[#A0A0A0] md:hidden font-black uppercase tracking-tighter">
+                      <div className="text-[10px] text-brand-blue/30 dark:text-[#A0A0A0] md:hidden font-semibold uppercase tracking-widest">
                         {safeFormatDate(tx.dateTime, 'hh:mm a')}
                       </div>
                     </td>
 
 
                     <td className="hidden md:table-cell px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${tx.type === 'CREDIT' ? 'bg-brand-green/10 text-brand-green' : 'bg-brand-red/10 text-brand-red'}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-widest ${tx.type === 'CREDIT' ? 'bg-brand-green/10 text-brand-green' : 'bg-brand-red/10 text-brand-red'}`}>
                         {tx.type}
                       </span>
                     </td>
 
-                    <td className="hidden sm:table-cell px-4 py-3 font-bold text-[#525252] dark:text-[#A0A0A0]">{tx.category}</td>
+                    <td className="hidden sm:table-cell px-4 py-3 font-semibold text-[#525252] dark:text-[#A0A0A0]">{tx.category}</td>
                     <td className="px-4 py-3">
-                      <div className="font-black text-brand-blue dark:text-[#F7F7F7] max-w-[120px] sm:max-w-[200px] truncate">
+                      <div className="font-semibold text-brand-blue dark:text-[#F7F7F7] max-w-[120px] sm:max-w-[200px] truncate">
                         {tx.party || '—'}
                       </div>
-                      <div className="text-[10px] text-brand-blue/30 dark:text-[#A0A0A0] lg:hidden max-w-[120px] truncate font-black uppercase tracking-widest">
+                      <div className="text-[10px] text-brand-blue/30 dark:text-[#A0A0A0] lg:hidden max-w-[120px] truncate font-semibold uppercase tracking-widest">
                         {tx.note}
                       </div>
                     </td>
 
-                    <td className="hidden lg:table-cell px-4 py-3 font-bold text-[#525252] dark:text-[#A0A0A0] max-w-[200px] truncate">
+                    <td className="hidden lg:table-cell px-4 py-3 font-medium text-[#525252] dark:text-[#A0A0A0] max-w-[200px] truncate">
                       {tx.note || '—'}
                     </td>
 
-                    <td className={`px-4 py-3 text-right font-black ${tx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-red'}`}>
+                    <td className={`px-4 py-3 text-right font-semibold ${tx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-red'}`}>
                       {tx.type === 'CREDIT' ? '+' : '-'}₹{(tx.amount || 0).toLocaleString('en-IN')}
                     </td>
 
@@ -591,9 +591,9 @@ export default function TransactionTable() {
           
           {totalPages > 1 && (
             <div className="px-4 py-3 flex items-center justify-between border-t border-brand-blue/5">
-              <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="p-1 px-4 border border-brand-blue/10 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-50 hover:bg-brand-blue/5 transition-all">Prev</button>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-blue/40">Page {currentPage} / {totalPages}</span>
-              <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="p-1 px-4 border border-brand-blue/10 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-50 hover:bg-brand-blue/5 transition-all">Next</button>
+                <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="p-1 px-4 border border-brand-blue/10 rounded-xl text-[10px] font-semibold uppercase tracking-widest disabled:opacity-50 hover:bg-brand-blue/5 transition-all">Prev</button>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-blue/40">Page {currentPage} / {totalPages}</span>
+                <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="p-1 px-4 border border-brand-blue/10 rounded-xl text-[10px] font-semibold uppercase tracking-widest disabled:opacity-50 hover:bg-brand-blue/5 transition-all">Next</button>
             </div>
 
           )}

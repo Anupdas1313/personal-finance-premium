@@ -116,13 +116,13 @@ export default function SMSParser() {
         <div className="w-20 h-20 bg-neutral-100 dark:bg-[#1A1A1A] rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-blue/5 dark:border-[#222222]">
           <MessageSquareText className="w-10 h-10 text-brand-blue dark:text-[#F7F7F7]" />
         </div>
-        <h1 className="text-4xl font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">SMS Pipeline</h1>
-        <p className="text-brand-blue/40 dark:text-[#A0A0A0] mt-2 font-black uppercase tracking-widest text-xs">Automated transaction extraction</p>
+        <h1 className="text-4xl font-heading font-semibold text-brand-blue dark:text-[#F7F7F7] tracking-tight">SMS Pipeline</h1>
+        <p className="text-brand-blue/40 dark:text-[#A0A0A0] mt-2 font-semibold uppercase tracking-[0.2em] text-xs">Automated transaction extraction</p>
       </div>
 
 
       <div className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-sm border border-brand-blue/5 dark:border-[#222222]">
-        <label className="block text-[10px] font-black text-brand-blue/40 dark:text-[#F7F7F7] mb-2 uppercase tracking-widest">Input Buffer</label>
+        <label className="block text-[10px] font-semibold text-brand-blue/40 dark:text-[#F7F7F7] mb-2 uppercase tracking-[0.2em]">Input Buffer</label>
 
         <textarea
           value={smsText}
@@ -134,7 +134,7 @@ export default function SMSParser() {
           <button
             onClick={handleParse}
             disabled={!smsText.trim()}
-            className="px-6 py-2.5 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-black rounded-xl hover:bg-brand-green/90 transition-all disabled:opacity-50 uppercase text-[10px] tracking-widest shadow-lg shadow-brand-green/10"
+            className="px-6 py-2.5 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-semibold rounded-xl hover:bg-brand-green/90 transition-all disabled:opacity-50 uppercase text-[10px] tracking-[0.2em] shadow-lg shadow-brand-green/10"
           >
             Extract Details
           </button>
@@ -144,7 +144,7 @@ export default function SMSParser() {
 
       {parsedData && (
         <div className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-[#EBEBEB] dark:border-[#222222] animate-in fade-in slide-in-from-bottom-4">
-          <h2 className="text-lg font-black text-[#111111] dark:text-[#F7F7F7] mb-6">Extracted Details</h2>
+          <h2 className="text-lg font-semibold text-[#111111] dark:text-[#F7F7F7] mb-6 tracking-tight">Extracted Details</h2>
 
           
         <div className="flex flex-wrap gap-2 mb-6">
@@ -153,7 +153,7 @@ export default function SMSParser() {
                 key={cat}
                 type="button"
                 onClick={() => setExpenseType(expenseType === cat ? '' : cat)}
-                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+                className={`px-4 py-2 rounded-full text-[10px] font-semibold uppercase tracking-[0.1em] transition-all ${
                   expenseType === cat 
                     ? 'bg-brand-blue text-white shadow-lg' 
                     : 'bg-brand-blue/5 text-brand-blue/40 hover:text-brand-blue border border-brand-blue/10 dark:border-[#222222]'
@@ -167,24 +167,24 @@ export default function SMSParser() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <label className="block text-[10px] font-black text-brand-blue/40 dark:text-[#F7F7F7] mb-1 uppercase tracking-widest">Amount (₹)</label>
+              <label className="block text-[10px] font-semibold text-brand-blue/40 dark:text-[#F7F7F7] mb-1 uppercase tracking-[0.2em]">Amount (₹)</label>
               <input
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
                 step="0.01"
-                className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan outline-none font-black text-brand-blue dark:text-[#F7F7F7] bg-white dark:bg-[#111111]"
+                className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan outline-none font-semibold text-brand-blue dark:text-[#F7F7F7] bg-white dark:bg-[#111111]"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-black text-brand-blue/40 dark:text-[#F7F7F7] mb-1 uppercase tracking-widest">Type</label>
+              <label className="block text-[10px] font-semibold text-brand-blue/40 dark:text-[#F7F7F7] mb-1 uppercase tracking-[0.2em]">Type</label>
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as 'CREDIT' | 'DEBIT' | '')}
-                className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan outline-none font-black text-brand-blue dark:text-[#F7F7F7] bg-white dark:bg-[#111111]"
+                className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan outline-none font-semibold text-brand-blue dark:text-[#F7F7F7] bg-white dark:bg-[#111111]"
                 required
               >
                 <option value="" disabled>Select type</option>
@@ -247,11 +247,11 @@ export default function SMSParser() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-black text-brand-blue/40 dark:text-[#F7F7F7] mb-1 uppercase tracking-widest">Select Account</label>
+                <label className="block text-[10px] font-semibold text-brand-blue/40 dark:text-[#F7F7F7] mb-1 uppercase tracking-[0.2em]">Select Account</label>
                 <select
                   value={selectedAccountId}
                   onChange={(e) => setSelectedAccountId(Number(e.target.value) || '')}
-                  className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan outline-none font-black text-brand-blue dark:text-[#F7F7F7] bg-white dark:bg-[#111111]"
+                  className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan outline-none font-semibold text-brand-blue dark:text-[#F7F7F7] bg-white dark:bg-[#111111]"
                   required
                 >
 
@@ -267,12 +267,12 @@ export default function SMSParser() {
                 )}
               </div>
               <div>
-                <label className="block text-[10px] font-black text-brand-blue/40 dark:text-[#F7F7F7] mb-1 uppercase tracking-widest">Timestamp</label>
+                <label className="block text-[10px] font-semibold text-brand-blue/40 dark:text-[#F7F7F7] mb-1 uppercase tracking-[0.2em]">Timestamp</label>
                 <input
                   type="datetime-local"
                   value={transactionDate}
                   onChange={(e) => setTransactionDate(e.target.value)}
-                  className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan outline-none font-black text-brand-blue dark:text-[#F7F7F7] bg-white dark:bg-[#111111]"
+                  className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan outline-none font-semibold text-brand-blue dark:text-[#F7F7F7] bg-white dark:bg-[#111111]"
                   required
                 />
               </div>
@@ -326,7 +326,7 @@ export default function SMSParser() {
             )}
 
             {status === 'error' && (
-              <div className="p-3 bg-brand-red/10 border border-brand-red/20 text-brand-red rounded-xl flex items-center gap-2 text-xs font-black uppercase tracking-widest">
+              <div className="p-3 bg-brand-red/10 border border-brand-red/20 text-brand-red rounded-xl flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.1em]">
                 <AlertCircle className="w-4 h-4" />
                 {errorMessage}
               </div>
@@ -334,7 +334,7 @@ export default function SMSParser() {
 
 
             {status === 'success' && (
-              <div className="p-3 bg-brand-green/10 border border-brand-green/20 text-brand-green rounded-xl flex items-center gap-2 text-xs font-black uppercase tracking-widest">
+              <div className="p-3 bg-brand-green/10 border border-brand-green/20 text-brand-green rounded-xl flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.1em]">
                 <CheckCircle2 className="w-4 h-4" />
                 Deployed successfully!
               </div>
@@ -344,14 +344,14 @@ export default function SMSParser() {
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={() => setParsedData(null)}
-                className="px-6 py-2.5 text-brand-blue/40 dark:text-[#F7F7F7] hover:bg-brand-blue/5 font-black rounded-xl transition-colors uppercase text-[10px] tracking-widest"
+                className="px-6 py-2.5 text-brand-blue/40 dark:text-[#F7F7F7] hover:bg-brand-blue/5 font-semibold rounded-xl transition-colors uppercase text-[10px] tracking-[0.2em]"
               >
                 Abort
               </button>
               <button
                 onClick={handleSave}
                 disabled={!amount || !type || !partyName || !selectedAccountId || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
-                className="px-6 py-2.5 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-black rounded-xl hover:bg-brand-green/90 transition-all disabled:opacity-50 uppercase text-[10px] tracking-widest shadow-lg shadow-brand-green/10"
+                className="px-6 py-2.5 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-semibold rounded-xl hover:bg-brand-green/90 transition-all disabled:opacity-50 uppercase text-[10px] tracking-[0.2em] shadow-lg shadow-brand-green/10"
               >
                 Commit Transaction
               </button>

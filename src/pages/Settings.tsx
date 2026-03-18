@@ -144,8 +144,8 @@ export default function Settings() {
           <SettingsIcon className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="text-4xl font-black tracking-tighter text-brand-blue dark:text-[#F7F7F7]">Settings</h1>
-          <p className="text-brand-blue/40 dark:text-[#A0A0A0] font-black mt-1 uppercase tracking-wider text-[10px]">Cloud Infrastructure Control</p>
+          <h1 className="text-4xl font-heading font-semibold tracking-tight text-brand-blue dark:text-[#F7F7F7]">Settings</h1>
+          <p className="text-brand-blue/40 dark:text-[#A0A0A0] font-semibold mt-1 uppercase tracking-[0.2em] text-[10px]">Cloud Infrastructure Control</p>
         </div>
       </div>
 
@@ -164,7 +164,7 @@ export default function Settings() {
 
       {/* SECTION: THEME */}
       <section>
-        <h2 className="text-[10px] font-black text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Appearance</h2>
+        <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Appearance</h2>
         <div className="bg-white dark:bg-[#111111] rounded-[32px] border border-brand-blue/5 dark:border-[#222222] shadow-sm overflow-hidden">
 
 
@@ -175,8 +175,8 @@ export default function Settings() {
                 <Palette className="w-5 h-5 text-brand-blue dark:text-inherit" />
               </div>
               <div>
-                <p className="font-black text-brand-blue dark:text-[#F7F7F7]">App Theme</p>
-                <p className="text-xs font-black text-brand-blue/30 dark:text-[#A0A0A0] mt-0.5 uppercase tracking-wider">Choose individual aesthetic context</p>
+                <p className="font-semibold text-brand-blue dark:text-[#F7F7F7]">App Theme</p>
+                <p className="text-xs font-medium text-brand-blue/30 dark:text-[#A0A0A0] mt-0.5 uppercase tracking-[0.1em]">Choose individual aesthetic context</p>
               </div>
             </div>
 
@@ -236,7 +236,7 @@ export default function Settings() {
 
       {/* SECTION: CATEGORIES */}
       <section>
-        <h2 className="text-xs font-black text-[#1A237E] dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2 opacity-70">Categories</h2>
+        <h2 className="text-xs font-semibold text-[#1A237E] dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2 opacity-70">Categories</h2>
         <div className="bg-white dark:bg-[#111111] rounded-[32px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_20px_50px_rgba(26,35,126,0.05)] dark:shadow-none overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222]">
 
 
@@ -247,8 +247,8 @@ export default function Settings() {
                 <Tag className="w-5 h-5 text-brand-blue dark:text-inherit" />
               </div>
               <div>
-                <p className="font-black text-brand-blue dark:text-[#F7F7F7]">Categorization Engine</p>
-                <p className="text-xs font-black text-brand-blue/30 dark:text-[#A0A0A0] mt-0.5 uppercase tracking-wider">Configure meta-tags for financial data</p>
+                <p className="font-semibold text-brand-blue dark:text-[#F7F7F7]">Categorization Engine</p>
+                <p className="text-xs font-medium text-brand-blue/30 dark:text-[#A0A0A0] mt-0.5 uppercase tracking-[0.1em]">Configure meta-tags for financial data</p>
               </div>
             </div>
 
@@ -258,7 +258,7 @@ export default function Settings() {
             <div className="pl-0 sm:pl-[3.25rem] space-y-4">
               <div className="flex flex-wrap gap-2">
                 {categories.map((category) => (
-                  <div key={category} className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] rounded-full text-xs font-black border border-brand-blue/10 dark:border-[#333333] shadow-sm">
+                  <div key={category} className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] rounded-full text-xs font-semibold border border-brand-blue/10 dark:border-[#333333] shadow-sm">
                     {category}
 
                     <button onClick={() => removeCategory(category)} className="text-brand-blue/20 dark:text-[#666666] hover:text-brand-red transition-colors">
@@ -276,12 +276,12 @@ export default function Settings() {
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value)}
                     placeholder="E.g., Pet Supplies"
-                    className="flex-1 px-4 py-2.5 bg-neutral-50 dark:bg-[#1A1A1A] border border-brand-blue/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-cyan transition-all text-sm font-black text-brand-blue dark:text-[#F7F7F7] placeholder-brand-blue/20"
+                    className="flex-1 px-4 py-2.5 bg-neutral-50 dark:bg-[#1A1A1A] border border-brand-blue/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-cyan transition-all text-sm font-medium text-brand-blue dark:text-[#F7F7F7] placeholder-brand-blue/20"
                   />
                   <button
                     type="submit"
                     disabled={!newCategory.trim()}
-                    className="px-6 py-2.5 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl font-black hover:bg-brand-green/90 hover:ring-2 hover:ring-brand-cyan transition-all disabled:opacity-50 text-xs uppercase tracking-widest shadow-lg shadow-brand-green/10"
+                    className="px-6 py-2.5 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl font-semibold hover:bg-brand-green/90 hover:ring-2 hover:ring-brand-cyan transition-all disabled:opacity-50 text-xs uppercase tracking-[0.2em] shadow-lg shadow-brand-green/10"
                   >
                     Deploy
                   </button>
@@ -297,7 +297,7 @@ export default function Settings() {
                       showMessage('success', 'Categories reset to default');
                     }
                   }}
-                  className="px-4 py-2.5 text-xs font-black text-brand-blue/40 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-[#F7F7F7] hover:bg-brand-blue/5 rounded-xl transition-colors uppercase tracking-widest"
+                  className="px-4 py-2.5 text-xs font-semibold text-brand-blue/40 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-[#F7F7F7] hover:bg-brand-blue/5 rounded-xl transition-colors uppercase tracking-[0.2em]"
                 >
                   Restore Defaults
                 </button>
@@ -311,7 +311,7 @@ export default function Settings() {
 
       {/* SECTION: DATA MANAGEMENT */}
       <section>
-        <h2 className="text-xs font-black text-[#525252] dark:text-[#A0A0A0] uppercase tracking-wider mb-3 px-2">Data & Storage</h2>
+        <h2 className="text-xs font-semibold text-[#525252] dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-3 px-2">Data & Storage</h2>
         <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-none overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222]">
 
           
@@ -321,8 +321,8 @@ export default function Settings() {
                 <Download className="w-5 h-5 text-brand-blue dark:text-inherit" />
               </div>
               <div>
-                <p className="font-black text-brand-blue dark:text-[#F7F7F7]">Archive Pipeline</p>
-                <p className="text-xs font-black text-brand-blue/30 dark:text-[#A0A0A0] mt-0.5 uppercase tracking-wider">Export data cluster to JSON</p>
+                <p className="font-semibold text-brand-blue dark:text-[#F7F7F7]">Archive Pipeline</p>
+                <p className="text-xs font-medium text-brand-blue/30 dark:text-[#A0A0A0] mt-0.5 uppercase tracking-[0.1em]">Export data cluster to JSON</p>
               </div>
             </div>
 
@@ -331,7 +331,7 @@ export default function Settings() {
             <button
               onClick={handleExportData}
               disabled={isExporting}
-              className="px-5 py-2.5 bg-white dark:bg-[#111111] border border-brand-blue/10 text-brand-blue dark:text-[#F7F7F7] rounded-xl font-black hover:bg-brand-blue/5 transition-all disabled:opacity-50 text-xs uppercase tracking-widest w-full sm:w-auto text-center shadow-sm"
+              className="px-5 py-2.5 bg-white dark:bg-[#111111] border border-brand-blue/10 text-brand-blue dark:text-[#F7F7F7] rounded-xl font-semibold hover:bg-brand-blue/5 transition-all disabled:opacity-50 text-xs uppercase tracking-[0.2em] w-full sm:w-auto text-center shadow-sm"
             >
 
               {isExporting ? 'Exporting...' : 'Export JSON'}
@@ -345,8 +345,8 @@ export default function Settings() {
                 <Upload className="w-5 h-5 text-brand-blue dark:text-inherit" />
               </div>
               <div>
-                <p className="font-black text-brand-blue dark:text-[#F7F7F7]">Restore Protocol</p>
-                <p className="text-xs font-black text-brand-blue/30 dark:text-[#A0A0A0] mt-0.5 uppercase tracking-wider">Sync data cluster from file</p>
+                <p className="font-semibold text-brand-blue dark:text-[#F7F7F7]">Restore Protocol</p>
+                <p className="text-xs font-medium text-brand-blue/30 dark:text-[#A0A0A0] mt-0.5 uppercase tracking-[0.1em]">Sync data cluster from file</p>
               </div>
             </div>
 
@@ -356,7 +356,7 @@ export default function Settings() {
               <input type="file" accept=".json" ref={fileInputRef} onChange={handleImportData} className="hidden" id="import-file" />
               <label
                 htmlFor="import-file"
-                className={`block w-full sm:w-auto px-5 py-2.5 bg-white dark:bg-[#111111] border border-brand-blue/10 text-brand-blue dark:text-[#F7F7F7] rounded-xl font-black hover:bg-brand-blue/5 transition-all cursor-pointer text-center text-xs uppercase tracking-widest shadow-sm ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}
+                className={`block w-full sm:w-auto px-5 py-2.5 bg-white dark:bg-[#111111] border border-brand-blue/10 text-brand-blue dark:text-[#F7F7F7] rounded-xl font-semibold hover:bg-brand-blue/5 transition-all cursor-pointer text-center text-xs uppercase tracking-[0.2em] shadow-sm ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}
               >
 
                 {isImporting ? 'Importing...' : 'Import JSON'}
@@ -370,7 +370,7 @@ export default function Settings() {
 
       {/* SECTION: DANGER ZONE */}
       <section>
-        <h2 className="text-[10px] font-black text-brand-red uppercase tracking-[0.2em] mb-4 px-2">Terminal Phase</h2>
+        <h2 className="text-[10px] font-semibold text-brand-red uppercase tracking-[0.3em] mb-4 px-2">Terminal Phase</h2>
         <div className="bg-brand-red/5 rounded-3xl border border-brand-red/10 overflow-hidden divide-y divide-brand-red/10">
 
           
@@ -380,14 +380,14 @@ export default function Settings() {
                 <ShieldAlert className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-black text-brand-red">Purge Local Cluster</p>
-                <p className="text-xs font-black text-brand-red/40 mt-0.5 uppercase tracking-wider">Zero-out all local storage points</p>
+                <p className="font-semibold text-brand-red">Purge Local Cluster</p>
+                <p className="text-xs font-medium text-brand-red/40 mt-0.5 uppercase tracking-[0.1em]">Zero-out all local storage points</p>
               </div>
             </div>
             <button
               onClick={handleClearData}
               disabled={isClearing}
-              className="px-6 py-3 bg-brand-red text-white rounded-xl font-black hover:bg-brand-red/90 transition-all disabled:opacity-50 text-[10px] uppercase tracking-[0.2em] w-full sm:w-auto flex justify-center items-center gap-2 shadow-lg shadow-brand-red/10"
+              className="px-6 py-3 bg-brand-red text-white rounded-xl font-semibold hover:bg-brand-red/90 transition-all disabled:opacity-50 text-[10px] uppercase tracking-[0.3em] w-full sm:w-auto flex justify-center items-center gap-2 shadow-lg shadow-brand-red/10"
             >
               <Trash2 className="w-4 h-4"/>
               {isClearing ? 'Purging...' : 'Wipe System'}

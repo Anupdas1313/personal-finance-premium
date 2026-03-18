@@ -140,20 +140,22 @@ export default function Reports() {
     <div className="space-y-6 max-w-4xl mx-auto">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-black text-brand-blue dark:text-white tracking-tighter">Reports</h1>
-          <p className="text-brand-blue/50 dark:text-[#A0A0A0] font-bold mt-1 uppercase text-xs tracking-widest">Advanced Financial Manifest & Export</p>
+        <div>
+          <h1 className="text-4xl font-heading font-semibold text-brand-blue dark:text-white tracking-tight">Reports</h1>
+          <p className="text-brand-blue/50 dark:text-[#A0A0A0] font-semibold mt-1 uppercase text-[10px] tracking-[0.2em]">Advanced Financial Manifest & Export</p>
+        </div>
         </div>
         
         <div className="flex gap-2">
           <button 
             onClick={exportCSV}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-neutral-100 dark:bg-[#1A1A1A] text-brand-blue dark:text-white rounded-xl font-black text-[10px] uppercase border border-neutral-200 dark:border-white/5 hover:bg-neutral-200 transition-all"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-neutral-100 dark:bg-[#1A1A1A] text-brand-blue dark:text-white rounded-xl font-semibold text-[10px] uppercase border border-neutral-200 dark:border-white/5 hover:bg-neutral-200 transition-all tracking-[0.1em]"
           >
             <Printer className="w-3.5 h-3.5" /> CSV
           </button>
           <button 
             onClick={exportPDF}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-brand-blue text-white rounded-xl font-black text-[10px] uppercase shadow-lg shadow-brand-blue/20 hover:scale-105 transition-all"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-brand-blue text-white rounded-xl font-semibold text-[10px] uppercase shadow-lg shadow-brand-blue/20 hover:scale-105 transition-all tracking-[0.1em]"
           >
             <Download className="w-3.5 h-3.5" /> Export PDF
           </button>
@@ -165,12 +167,12 @@ export default function Reports() {
         
         {/* Account Selection */}
         <div className="space-y-2">
-          <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Asset Source</label>
+          <label className="text-[10px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">Asset Source</label>
           <div className="relative">
             <select 
               value={selectedAccountId}
               onChange={(e) => setSelectedAccountId(e.target.value)}
-              className="w-full appearance-none bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-4 py-3 rounded-xl text-xs font-black uppercase outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all"
+              className="w-full appearance-none bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-4 py-3 rounded-xl text-xs font-semibold uppercase outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all tracking-[0.05em]"
             >
               <option value="ALL">All Consolidated Accounts</option>
               {accounts.map(acc => (
@@ -183,33 +185,33 @@ export default function Reports() {
 
         {/* Date Filters */}
         <div className="space-y-2">
-          <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Time Horizon (Start)</label>
+          <label className="text-[10px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">Time Horizon (Start)</label>
           <input 
             type="date"
             value={dateRange.start}
             onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-            className="w-full bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-4 py-3 rounded-xl text-xs font-black outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all"
+            className="w-full bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-4 py-3 rounded-xl text-xs font-semibold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all"
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Time Horizon (End)</label>
+          <label className="text-[10px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">Time Horizon (End)</label>
           <input 
             type="date"
             value={dateRange.end}
             onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-            className="w-full bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-4 py-3 rounded-xl text-xs font-black outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all"
+            className="w-full bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-4 py-3 rounded-xl text-xs font-semibold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all"
           />
         </div>
 
         {/* Segment Filters */}
         <div className="space-y-2">
-          <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Logistics (Method)</label>
+          <label className="text-[10px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">Logistics (Method)</label>
           <div className="relative">
             <select 
               value={selectedMethod}
               onChange={(e) => setSelectedMethod(e.target.value)}
-              className="w-full appearance-none bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-4 py-3 rounded-xl text-xs font-black uppercase outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all"
+              className="w-full appearance-none bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-4 py-3 rounded-xl text-xs font-semibold uppercase outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all tracking-[0.05em]"
             >
               <option value="ALL">Any Payment Method</option>
               {['Bank', 'UPI', 'Credit Card', 'Cash', 'Bank Transfer'].map(m => <option key={m} value={m}>{m}</option>)}
@@ -219,12 +221,12 @@ export default function Reports() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Tagging (Segment)</label>
+          <label className="text-[10px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">Tagging (Segment)</label>
           <div className="relative">
             <select 
               value={selectedTag}
               onChange={(e) => setSelectedTag(e.target.value)}
-              className="w-full appearance-none bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-4 py-3 rounded-xl text-xs font-black uppercase outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all"
+              className="w-full appearance-none bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-4 py-3 rounded-xl text-xs font-semibold uppercase outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all tracking-[0.05em]"
             >
               <option value="ALL">Any Tag (Home/Personal)</option>
               {['Personal', 'Home'].map(t => <option key={t} value={t}>{t}</option>)}
@@ -234,12 +236,12 @@ export default function Reports() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Categorization</label>
+          <label className="text-[10px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">Categorization</label>
           <div className="relative">
             <select 
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full appearance-none bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-4 py-3 rounded-xl text-xs font-black uppercase outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all"
+              className="w-full appearance-none bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-4 py-3 rounded-xl text-xs font-semibold uppercase outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all tracking-[0.02em]"
             >
               <option value="ALL">All Categories</option>
               {categories.map(c => <option key={c} value={c}>{c}</option>)}
@@ -253,26 +255,26 @@ export default function Reports() {
       {/* Stats Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-emerald-50 dark:bg-emerald-500/10 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-500/20">
-          <p className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-1">Total Savings (Inflow)</p>
-          <p className="text-xl font-black text-emerald-700 dark:text-white tracking-tighter">₹{totals.income.toLocaleString()}</p>
+          <p className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em] mb-1.5">Total Savings (Inflow)</p>
+          <p className="text-xl font-heading font-semibold text-emerald-700 dark:text-white tracking-tight">₹{totals.income.toLocaleString()}</p>
         </div>
         <div className="bg-rose-50 dark:bg-rose-500/10 p-5 rounded-2xl border border-rose-100 dark:border-rose-500/20">
-          <p className="text-[9px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest mb-1">Total Spending (Outflow)</p>
-          <p className="text-xl font-black text-rose-700 dark:text-white tracking-tighter">₹{totals.expense.toLocaleString()}</p>
+          <p className="text-[9px] font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-[0.2em] mb-1.5">Total Spending (Outflow)</p>
+          <p className="text-xl font-heading font-semibold text-rose-700 dark:text-white tracking-tight">₹{totals.expense.toLocaleString()}</p>
         </div>
         <div className="bg-brand-blue p-5 rounded-2xl shadow-xl shadow-brand-blue/10">
-          <p className="text-[9px] font-black text-white/50 uppercase tracking-widest mb-1">Net Position</p>
-          <p className="text-xl font-black text-white tracking-tighter">₹{(totals.income - totals.expense).toLocaleString()}</p>
+          <p className="text-[9px] font-semibold text-white/50 uppercase tracking-[0.2em] mb-1.5">Net Position</p>
+          <p className="text-xl font-heading font-semibold text-white tracking-tight">₹{(totals.income - totals.expense).toLocaleString()}</p>
         </div>
       </div>
 
       {/* Manifest Table */}
       <div className="bg-white dark:bg-[#0C0C0C] rounded-[32px] border border-neutral-100 dark:border-[#1A1A1E] overflow-hidden shadow-sm">
         <div className="px-6 py-4 border-b border-neutral-100 dark:border-[#1A1A1E] flex justify-between items-center">
-          <h3 className="text-xs font-black text-brand-blue dark:text-white uppercase tracking-widest flex items-center gap-2">
+          <h3 className="text-xs font-heading font-semibold text-brand-blue dark:text-white uppercase tracking-[0.2em] flex items-center gap-2">
             <FileText className="w-4 h-4 text-brand-green" />
             Report Manifest 
-            <span className="bg-neutral-100 dark:bg-[#222222] text-neutral-500 px-2 py-0.5 rounded-full text-[9px] font-black ml-2">
+            <span className="bg-neutral-100 dark:bg-[#222222] text-neutral-500 px-2 py-0.5 rounded-full text-[9px] font-semibold ml-2">
               {filteredTransactions.length} Items Selected
             </span>
           </h3>
@@ -282,27 +284,27 @@ export default function Reports() {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-neutral-50 dark:bg-[#111111] border-b border-neutral-100 dark:border-[#222222]">
-                <th className="px-6 py-4 text-[9px] font-black text-neutral-400 uppercase tracking-widest">Date</th>
-                <th className="px-6 py-4 text-[9px] font-black text-neutral-400 uppercase tracking-widest">Particulars</th>
-                <th className="px-6 py-4 text-[9px] font-black text-neutral-400 uppercase tracking-widest text-right">Debit (Dr)</th>
-                <th className="px-6 py-4 text-[9px] font-black text-neutral-400 uppercase tracking-widest text-right">Credit (Cr)</th>
+                <th className="px-6 py-4 text-[9px] font-semibold text-neutral-400 uppercase tracking-[0.2em]">Date</th>
+                <th className="px-6 py-4 text-[9px] font-semibold text-neutral-400 uppercase tracking-[0.2em]">Particulars</th>
+                <th className="px-6 py-4 text-[9px] font-semibold text-neutral-400 uppercase tracking-[0.2em] text-right">Debit (Dr)</th>
+                <th className="px-6 py-4 text-[9px] font-semibold text-neutral-400 uppercase tracking-[0.2em] text-right">Credit (Cr)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-50 dark:divide-[#1A1A1A]">
               {filteredTransactions.map(tx => (
                 <tr key={tx.id} className="hover:bg-neutral-50 dark:hover:bg-[#151515] transition-colors group">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-[11px] font-black text-brand-blue dark:text-white">{format(new Date(tx.dateTime), 'dd MMM yyyy')}</p>
-                    <p className="text-[8px] text-neutral-400 font-bold uppercase">{format(new Date(tx.dateTime), 'h:mm a')}</p>
+                    <p className="text-[11px] font-semibold text-brand-blue dark:text-white tracking-tight">{format(new Date(tx.dateTime), 'dd MMM yyyy')}</p>
+                    <p className="text-[8px] text-neutral-400 font-semibold uppercase tracking-[0.1em]">{format(new Date(tx.dateTime), 'h:mm a')}</p>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-[11px] font-black text-brand-blue dark:text-white uppercase truncate max-w-[200px] tracking-tight">{tx.party || tx.category}</p>
+                    <p className="text-[11px] font-semibold text-brand-blue dark:text-white uppercase truncate max-w-[200px] tracking-tight">{tx.party || tx.category}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[8px] px-1.5 py-0.5 rounded bg-brand-blue/5 dark:bg-[#222222] text-brand-blue/50 dark:text-[#A0A0A0] font-black uppercase tracking-tighter">
+                      <span className="text-[8px] px-1.5 py-0.5 rounded bg-brand-blue/5 dark:bg-[#222222] text-brand-blue/40 dark:text-[#A0A0A0] font-semibold uppercase tracking-[0.1em]">
                         {tx.paymentMethod}
                       </span>
                       {tx.expenseType && (
-                        <span className="text-[8px] font-black text-neutral-300 uppercase tracking-widest flex items-center gap-1">
+                        <span className="text-[8px] font-semibold text-neutral-300 uppercase tracking-[0.2em] flex items-center gap-1">
                           <Tag className="w-2 h-2" /> {tx.expenseType}
                         </span>
                       )}
@@ -310,12 +312,12 @@ export default function Reports() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     {tx.type === 'DEBIT' ? (
-                      <span className="text-[11px] font-black text-rose-500">₹{tx.amount.toLocaleString()}</span>
+                      <span className="text-[11px] font-heading font-semibold text-rose-500 tracking-tight">₹{tx.amount.toLocaleString()}</span>
                     ) : <span className="text-neutral-200">—</span>}
                   </td>
                   <td className="px-6 py-4 text-right">
                     {tx.type === 'CREDIT' ? (
-                      <span className="text-[11px] font-black text-emerald-500">₹{tx.amount.toLocaleString()}</span>
+                      <span className="text-[11px] font-heading font-semibold text-emerald-500 tracking-tight">₹{tx.amount.toLocaleString()}</span>
                     ) : <span className="text-neutral-200">—</span>}
                   </td>
                 </tr>
@@ -325,7 +327,7 @@ export default function Reports() {
                   <td colSpan={4} className="py-20 text-center">
                     <div className="flex flex-col items-center opacity-20">
                       <Filter className="w-12 h-12 mb-4" />
-                      <p className="text-xs font-black uppercase tracking-[0.2em]">Refine your filters to generate report</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.3em]">Refine your filters to generate report</p>
                     </div>
                   </td>
                 </tr>

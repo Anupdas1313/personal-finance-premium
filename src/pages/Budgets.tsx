@@ -75,19 +75,19 @@ export default function Budgets() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-4xl font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">Budgets</h1>
+        <h1 className="text-4xl font-heading font-semibold text-brand-blue dark:text-[#F7F7F7] tracking-tight">Budgets</h1>
         <div className="flex items-center gap-4 bg-white dark:bg-[#111111] px-4 py-2 rounded-[24px] shadow-sm border border-brand-blue/5 dark:border-[#222222] w-full sm:w-auto justify-between sm:justify-start">
-          <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className="text-brand-blue/40 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-[#F7F7F7] font-black">&lt;</button>
-          <span className="font-black text-brand-blue dark:text-[#F7F7F7] min-w-[120px] text-center uppercase tracking-widest text-xs">
+          <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className="text-brand-blue/40 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-[#F7F7F7] font-semibold">&lt;</button>
+          <span className="font-semibold text-brand-blue dark:text-[#F7F7F7] min-w-[120px] text-center uppercase tracking-[0.2em] text-[10px]">
             {format(currentMonth, 'MMMM yyyy')}
           </span>
-          <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className="text-brand-blue/40 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-[#F7F7F7] font-black">&gt;</button>
+          <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className="text-brand-blue/40 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-[#F7F7F7] font-semibold">&gt;</button>
         </div>
       </div>
 
       <div className="bg-white dark:bg-[#111111] p-6 rounded-[20px] shadow-sm border border-brand-blue/5 dark:border-[#222222]">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-black text-brand-blue dark:text-[#F7F7F7] flex items-center gap-2">
+          <h2 className="text-lg font-heading font-semibold text-brand-blue dark:text-[#F7F7F7] flex items-center gap-2">
             <Target className="w-5 h-5 text-brand-blue/40" />
             Set Thresholds
           </h2>
@@ -99,7 +99,7 @@ export default function Budgets() {
               setSelectedCategory(categories[0] || 'Other');
               setIsModalOpen(true);
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl hover:bg-brand-green/90 transition-all font-black text-xs uppercase tracking-widest shadow-lg shadow-brand-green/10"
+            className="flex items-center gap-2 px-4 py-2 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl hover:bg-brand-green/90 transition-all font-semibold text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-brand-green/10"
           >
             <Plus className="w-4 h-4" />
             Define
@@ -111,7 +111,7 @@ export default function Budgets() {
             <div className="w-16 h-16 bg-neutral-100 dark:bg-[#1A1A1A] rounded-full flex items-center justify-center mx-auto mb-4">
               <Target className="w-8 h-8 text-[#B0B0B0] dark:text-[#666666]" />
             </div>
-            <p className="text-brand-blue/40 dark:text-[#A0A0A0] font-black uppercase tracking-widest text-xs">Zero definitions for {format(currentMonth, 'MMMM')}.</p>
+            <p className="text-brand-blue/40 dark:text-[#A0A0A0] font-semibold uppercase tracking-[0.2em] text-[10px]">Zero definitions for {format(currentMonth, 'MMMM')}.</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -124,9 +124,9 @@ export default function Budgets() {
                 <div key={budget.id} className="p-5 rounded-2xl border border-brand-blue/5 bg-neutral-50 dark:bg-[#1A1A1A]/50 hover:bg-brand-blue/5 transition-colors">
                   <div className="flex justify-between items-center mb-3">
                     <div className="flex items-center gap-3">
-                      <h3 className="font-black text-brand-blue dark:text-[#F7F7F7]">{budget.category}</h3>
+                      <h3 className="font-semibold text-brand-blue dark:text-[#F7F7F7]">{budget.category}</h3>
                       {isOverBudget && (
-                        <span className="flex items-center gap-1 text-[9px] font-black text-brand-red bg-brand-red/10 px-2 py-0.5 rounded-full uppercase tracking-tighter shadow-sm border border-brand-red/10">
+                        <span className="flex items-center gap-1 text-[9px] font-semibold text-brand-red bg-brand-red/10 px-2 py-0.5 rounded-full uppercase tracking-widest shadow-sm border border-brand-red/10">
                           <AlertCircle className="w-3 h-3" /> Breach
                         </span>
                       )}
@@ -142,13 +142,13 @@ export default function Budgets() {
                   </div>
                   
                   <div className="flex justify-between items-end mb-2">
-                    <p className="text-brand-blue/40 dark:text-[#A0A0A0] text-sm font-black">
-                      <span className={`font-black text-lg ${isOverBudget ? 'text-brand-red' : 'text-brand-blue dark:text-[#F7F7F7]'}`}>
+                    <p className="text-brand-blue/40 dark:text-[#A0A0A0] text-sm font-medium">
+                      <span className={`font-semibold text-lg ${isOverBudget ? 'text-brand-red' : 'text-brand-blue dark:text-[#F7F7F7]'}`}>
                         ₹{spent.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
                       </span>
                       {' '} / ₹{budget.amount.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
                     </p>
-                    <p className="text-sm font-black text-brand-blue dark:text-[#F7F7F7]">
+                    <p className="text-sm font-semibold text-brand-blue dark:text-[#F7F7F7]">
                       {percentage.toFixed(0)}%
                     </p>
                   </div>
@@ -170,7 +170,7 @@ export default function Budgets() {
         <div className="fixed inset-0 bg-brand-blue/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-[#111111] rounded-[24px] shadow-2xl w-full max-w-md border border-brand-blue/5">
             <div className="p-6 border-b border-brand-blue/5 flex justify-between items-center">
-              <h2 className="text-xl font-black text-brand-blue dark:text-[#F7F7F7]">
+              <h2 className="text-xl font-heading font-semibold text-brand-blue dark:text-[#F7F7F7]">
                 {editingId ? 'Modify Threshold' : 'Define Threshold'}
               </h2>
               <button
@@ -183,11 +183,11 @@ export default function Budgets() {
 
             <div className="p-6 space-y-5">
               <div>
-                <label className="block text-[10px] font-black text-brand-blue/40 mb-1.5 uppercase tracking-widest">Category</label>
+                <label className="block text-[10px] font-semibold text-brand-blue/40 mb-1.5 uppercase tracking-[0.2em]">Category</label>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-4 py-3 border border-brand-blue/10 rounded-xl focus:ring-2 focus:ring-brand-cyan outline-none transition-shadow font-black bg-white dark:bg-[#111111] text-brand-blue"
+                  className="w-full px-4 py-3 border border-brand-blue/10 rounded-xl focus:ring-2 focus:ring-brand-cyan outline-none transition-shadow font-medium bg-white dark:bg-[#111111] text-brand-blue"
                   required
                 >
                   {categories.map(cat => (
@@ -197,14 +197,14 @@ export default function Budgets() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-brand-blue/40 mb-1.5 uppercase tracking-widest">Threshold Amount (₹)</label>
+                <label className="block text-[10px] font-semibold text-brand-blue/40 mb-1.5 uppercase tracking-[0.2em]">Threshold Amount (₹)</label>
                 <input
                   type="number"
                   value={budgetAmount}
                   onChange={(e) => setBudgetAmount(e.target.value)}
                   placeholder="e.g. 5000"
                   step="100"
-                  className="w-full px-4 py-3 border border-brand-blue/10 rounded-xl focus:ring-2 focus:ring-brand-cyan outline-none transition-shadow font-black bg-white dark:bg-[#111111] text-brand-blue"
+                  className="w-full px-4 py-3 border border-brand-blue/10 rounded-xl focus:ring-2 focus:ring-brand-cyan outline-none transition-shadow font-medium bg-white dark:bg-[#111111] text-brand-blue"
                   required
                 />
               </div>
@@ -212,14 +212,14 @@ export default function Budgets() {
               <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-brand-blue/5">
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="px-6 py-3 text-brand-blue/40 hover:text-brand-blue font-black rounded-xl transition-colors uppercase text-[10px] tracking-widest"
+                  className="px-6 py-3 text-brand-blue/40 hover:text-brand-blue font-semibold rounded-xl transition-colors uppercase text-[10px] tracking-[0.2em]"
                 >
                   Reject
                 </button>
                 <button
                   onClick={handleSaveBudget}
                   disabled={!budgetAmount || !selectedCategory}
-                  className="px-6 py-3 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-black rounded-xl hover:bg-brand-green/90 transition-all shadow-lg shadow-brand-green/20 uppercase text-[10px] tracking-widest"
+                   className="px-6 py-3 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-semibold rounded-xl hover:bg-brand-green/90 transition-all shadow-lg shadow-brand-green/20 uppercase text-[10px] tracking-[0.2em]"
                 >
                   {editingId ? 'Update' : 'Commit'}
                 </button>
