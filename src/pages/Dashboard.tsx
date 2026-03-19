@@ -250,15 +250,15 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold text-[#1A237E]/60 dark:text-[#A0A0A0] tracking-[0.1em] uppercase">{greeting},</p>
-          <h1 className="text-3xl font-heading font-semibold text-[#1A237E] dark:text-[#F7F7F7] leading-tight tracking-tight">Proshanjit 👋</h1>
+          <h1 className="text-3xl font-heading font-semibold text-[#1A237E] dark:text-[#F7F7F7] leading-tight tracking-tight">Guest User 👋</h1>
         </div>
 
         <div className="flex items-center gap-3">
           <div
-            title="Proshanjit"
+            title="Guest User"
             className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1A237E] to-[#4A4ABF] flex items-center justify-center text-white font-heading font-bold text-lg select-none shadow-lg cursor-pointer border-2 border-white dark:border-[#1A1A1E]"
           >
-            A
+            G
           </div>
 
         </div>

@@ -1,5 +1,5 @@
 {
-  "name": "Proshanjit's Personal Finance",
+  "name": "Guest's Personal Finance",
   "description": "A web-based personal finance tracker that parses bank SMS messages to log transactions and calculate balances locally.",
   "requestFramePermissions": []
 }
