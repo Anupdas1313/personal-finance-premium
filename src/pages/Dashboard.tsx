@@ -65,7 +65,7 @@ export default function Dashboard() {
   };
 
   const [amount, setAmount] = useState('');
-  const [type, setType] = useState<'CREDIT' | 'DEBIT' | 'TRANSFER' | ''>('');
+  const [type, setType] = useState<'CREDIT' | 'DEBIT' | 'TRANSFER' | ''>('DEBIT');
   const [category, setCategory] = useState('Other');
   const [note, setNote] = useState('');
   const [partyName, setPartyName] = useState('');
@@ -76,7 +76,17 @@ export default function Dashboard() {
   );
   const [paymentMethod, setPaymentMethod] = useState<'Bank' | 'UPI' | 'Credit Card' | 'Cash' | 'Bank Transfer'>('Bank');
   const [upiApp, setUpiApp] = useState<string>('');
-  const [expenseType, setExpenseType] = useState<string>('');
+  const [expenseType, setExpenseType] = useState<string>('Personal');
+
+  // Auto-select first account when accounts load and none selected
+  useEffect(() => {
+    if (accounts.length > 0 && !selectedAccountId) {
+      const firstAcc = accounts[0];
+      setSelectedAccountId(firstAcc.id!);
+      if ((firstAcc as any).type === 'CASH') setPaymentMethod('Cash');
+      else if ((firstAcc as any).type === 'CREDIT_CARD') setPaymentMethod('Credit Card');
+    }
+  }, [accounts]);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [timeFilter, setTimeFilter] = useState<'All Time' | 'This Month' | 'This Year'>('All Time');
@@ -157,14 +167,14 @@ export default function Dashboard() {
         closeMenu();
         setStatus('idle');
         setAmount('');
-        setType('');
+        setType('DEBIT');
         setNote('');
         setPartyName('');
         setCategory('Other');
         setTransactionDate(new Date().toISOString().slice(0, 16));
         setPaymentMethod('Bank');
         setUpiApp('');
-        setExpenseType('');
+        setExpenseType('Personal');
         setToAccountId('');
       }, 800);
     } catch (error) {
@@ -436,326 +446,266 @@ export default function Dashboard() {
       {/* Manual Entry Modal - Compact Pill-Based UX Redesign */}
       {isAddingManual && createPortal(
         <div className="fixed inset-0 bg-[#F7F7F7] dark:bg-[#0F0F13] text-[#222222] dark:text-white z-[9999] flex flex-col animate-in fade-in slide-in-from-bottom-5 duration-300 font-sans">
-          <div className="flex items-center justify-between px-4 py-1 pt-safe-top bg-white dark:bg-[#1C1C22] border-b border-[#EBEBEB] dark:border-white/5 z-20">
+          {/* Header with inline Save */}
+          <div className="flex items-center justify-between px-4 py-2 pt-safe-top bg-white dark:bg-[#1C1C22] border-b border-[#EBEBEB] dark:border-white/5 z-20">
             <button onClick={closeMenu} className="text-[#717171] dark:text-[#A0A0A5] hover:text-[#222222] dark:hover:text-white p-1.5 -ml-1 transition-colors">
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-5 h-5" />
             </button>
             <h2 className="text-[14px] font-semibold text-[#222222] dark:text-white tracking-tight">Add Transaction</h2>
-
-            <div className="w-6" /> {/* Spacer to balance back arrow */}
+            <button 
+              onClick={handleSaveManual}
+              disabled={!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
+              className={`px-4 py-1.5 rounded-xl text-[12px] font-bold transition-all active:scale-95 ${
+                (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
+                ? 'bg-neutral-200 dark:bg-[#2C2C34] text-neutral-400 dark:text-[#5A5A62] cursor-not-allowed'
+                : 'bg-brand-green text-white shadow-md shadow-emerald-500/20'
+              }`}
+            >
+              {status === 'success' ? '✓ Saved' : 'Save'}
+            </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto w-full px-4 pt-2 pb-safe space-y-3.5 scrollbar-hide no-scrollbar">
-            
-            {/* 1. Transaction Type Toggle (Top Priority) */}
-            <div className="flex bg-white dark:bg-[#1C1C22] p-1 rounded-2xl border border-[#EBEBEB] dark:border-white/5">
+          {/* Status Feedback */}
+          {status === 'success' && (
+            <div className="flex items-center justify-center gap-2 py-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs animate-in fade-in">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Transaction saved!
+            </div>
+          )}
+          {status === 'error' && (
+            <div className="flex items-center justify-center gap-2 py-2 bg-rose-50 dark:bg-rose-500/10 text-rose-500 font-bold text-xs">
+              <AlertCircle className="w-3.5 h-3.5" />
+              {errorMessage}
+            </div>
+          )}
 
+          <div className="flex-1 overflow-y-auto w-full px-4 pt-3 pb-safe space-y-3 scrollbar-hide no-scrollbar">
+            
+            {/* 1. Type Toggle — Pre-selected DEBIT */}
+            <div className="flex bg-white dark:bg-[#1C1C22] p-1 rounded-2xl border border-[#EBEBEB] dark:border-white/5">
               <button 
                 onClick={() => setType('DEBIT')}
-                className={`flex-1 py-1.5 text-[12px] font-semibold rounded-xl transition-all uppercase tracking-[0.2em] ${type === 'DEBIT' ? 'bg-brand-red text-white shadow-lg' : 'text-brand-blue/30 hover:text-brand-blue'}`}
+                className={`flex-1 py-2 text-[11px] font-bold rounded-xl transition-all uppercase tracking-[0.15em] ${type === 'DEBIT' ? 'bg-rose-500 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'}`}
               >
                 Outflow
               </button>
               <button 
                 onClick={() => setType('CREDIT')}
-                className={`flex-1 py-1.5 text-[12px] font-semibold rounded-xl transition-all uppercase tracking-[0.2em] ${type === 'CREDIT' ? 'bg-brand-green text-white shadow-lg' : 'text-brand-blue/30 hover:text-brand-blue'}`}
+                className={`flex-1 py-2 text-[11px] font-bold rounded-xl transition-all uppercase tracking-[0.15em] ${type === 'CREDIT' ? 'bg-brand-green text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'}`}
               >
                 Inflow
               </button>
               <button 
                 onClick={() => setType('TRANSFER')}
-                className={`flex-1 py-1.5 text-[12px] font-semibold rounded-xl transition-all uppercase tracking-[0.2em] ${type === 'TRANSFER' ? 'bg-brand-blue text-white shadow-lg' : 'text-brand-blue/30 hover:text-brand-blue'}`}
+                className={`flex-1 py-2 text-[11px] font-bold rounded-xl transition-all uppercase tracking-[0.15em] ${type === 'TRANSFER' ? 'bg-brand-blue text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'}`}
               >
                 Transfer
               </button>
-
-            </div>
-            {/* Date and Time Selector */}
-            <div className="space-y-2">
-              <p className="text-[10px] font-bold text-[#A0A0A5] uppercase tracking-wider px-1">Date & Time</p>
-              <div className="relative">
-                <div className="bg-white dark:bg-[#1C1C22] p-3 rounded-xl border border-[#EBEBEB] dark:border-white/5 flex items-center justify-between active:bg-neutral-50 dark:active:bg-[#2C2C34] transition-colors">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-4 h-4 text-[#1A237E] dark:text-[#6C6CF0]" />
-                    <span className="text-[13px] font-semibold text-[#1A237E] dark:text-white">
-                      {isToday(new Date(transactionDate)) ? 'Today, ' : isYesterday(new Date(transactionDate)) ? 'Yesterday, ' : format(new Date(transactionDate), 'dd MMM, ')}
-                      {format(new Date(transactionDate), 'hh:mm a')}
-                    </span>
-                  </div>
-                  <input 
-                    type="datetime-local"
-                    value={transactionDate}
-                    onChange={(e) => setTransactionDate(e.target.value)}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                  />
-                  <ChevronDown className="w-4 h-4 text-[#1A237E] dark:text-[#717171]" />
-
-
-                </div>
-              </div>
             </div>
 
-            {/* 2. Important Filter Tags (#personal, #home) - Ultra Compact Scrollable */}
-            {type !== 'TRANSFER' && (
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold text-[#A0A0A5] uppercase tracking-wider px-1">Tags</p>
-                <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
-                  {['Personal', 'Home'].map(tagName => (
-                    <button 
-                      key={tagName} 
-                      onClick={() => setExpenseType(expenseType === tagName ? '' : tagName)}
-                      className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border whitespace-nowrap ${
-                        expenseType === tagName 
-                          ? 'bg-brand-blue text-white border-transparent shadow-md font-semibold' 
-                          : 'bg-white dark:bg-[#1C1C22] border-[#EBEBEB] dark:border-white/5 text-brand-blue/60 dark:text-[#A0A0A5] hover:ring-1 hover:ring-brand-cyan font-medium'
-                      }`}
-
-
-                    >
-                      #{tagName}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 3. Amount & Account Row */}
-            <div className={`bg-white dark:bg-[#1C1C22] rounded-xl border border-[#EBEBEB] dark:border-white/5 flex ${type === 'TRANSFER' ? 'flex-col divide-y' : 'divide-x'} divide-[#EBEBEB] dark:divide-white/5 overflow-hidden shadow-inner`}>
-
-              
-              {/* Amount Input (Left) */}
-              <div className={`flex items-center gap-1.5 p-2 ${type === 'TRANSFER' ? 'w-full' : 'w-[45%]'} focus-within:bg-neutral-50 dark:focus-within:bg-white/[0.02] transition-colors shrink-0`}>
-                <span className="text-base font-bold text-[#717171] dark:text-[#A0A0A5]">₹</span>
-
+            {/* 2. Amount — Hero Input */}
+            <div className="bg-white dark:bg-[#1C1C22] rounded-2xl border border-[#EBEBEB] dark:border-white/5 p-4">
+              <div className="flex items-center justify-center gap-1">
+                <span className="text-2xl font-bold text-neutral-300 dark:text-neutral-600">₹</span>
                 <input 
                   type="number"
                   inputMode="decimal"
                   autoFocus
                   value={amount}
                   onChange={e => setAmount(e.target.value)}
-                  placeholder="0.00"
+                  placeholder="0"
                   step="0.01"
-                  className="bg-transparent text-[20px] font-semibold text-brand-blue dark:text-white outline-none w-full placeholder:text-[#D1D1D1] dark:placeholder:text-[#2C2C34] min-w-0"
-
-
-
+                  className="bg-transparent text-[36px] font-heading font-bold text-center outline-none w-full placeholder:text-neutral-200 dark:placeholder:text-[#2A2A2A] min-w-0 text-brand-blue dark:text-white tracking-tight"
+                  style={{ maxWidth: '240px' }}
                 />
               </div>
+              {/* Inline Date */}
+              <div className="relative flex items-center justify-center mt-1">
+                <div className="flex items-center gap-1.5 text-neutral-400 dark:text-neutral-500">
+                  <Calendar className="w-3 h-3" />
+                  <span className="text-[11px] font-semibold">
+                    {isToday(new Date(transactionDate)) ? 'Today' : isYesterday(new Date(transactionDate)) ? 'Yesterday' : format(new Date(transactionDate), 'dd MMM')}
+                    {', '}{format(new Date(transactionDate), 'hh:mm a')}
+                  </span>
+                  <ChevronDown className="w-3 h-3" />
+                </div>
+                <input 
+                  type="datetime-local"
+                  value={transactionDate}
+                  onChange={(e) => setTransactionDate(e.target.value)}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                />
+              </div>
+            </div>
 
-              {/* Account Selection (Right) */}
-              <div className={`p-1 flex-1 flex items-center overflow-x-auto no-scrollbar bg-neutral-100/50 dark:bg-black/10`}>
+            {/* 3. Account Selection */}
+            <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
+              {accounts.map(acc => (
+                <button 
+                  key={acc.id} 
+                  onClick={() => {
+                    if (type === 'TRANSFER') {
+                      if (!selectedAccountId) setSelectedAccountId(acc.id!);
+                      else if (selectedAccountId === acc.id) setSelectedAccountId('');
+                      else setToAccountId(acc.id!);
+                    } else {
+                      setSelectedAccountId(acc.id!);
+                      if ((acc as any).type === 'CASH') setPaymentMethod('Cash');
+                      else if ((acc as any).type === 'CREDIT_CARD') setPaymentMethod('Credit Card');
+                      else if (paymentMethod === 'Cash' || paymentMethod === 'Credit Card') setPaymentMethod('Bank');
+                    }
+                  }}
+                  className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border transition-all relative ${
+                    selectedAccountId === acc.id || toAccountId === acc.id
+                      ? 'bg-brand-blue/10 dark:bg-brand-blue/20 border-brand-blue ring-1 ring-brand-cyan/30 shadow-sm' 
+                      : 'bg-white dark:bg-[#1C1C22] border-[#EBEBEB] dark:border-white/5 hover:border-brand-cyan'
+                  }`}
+                >
+                  {selectedAccountId === acc.id && type === 'TRANSFER' && (
+                    <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-[#3B3B98] text-white text-[6px] font-bold px-1.5 py-0.5 rounded-full">FROM</div>
+                  )}
+                  {toAccountId === acc.id && type === 'TRANSFER' && (
+                    <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-brand-blue text-white text-[6px] font-bold px-1.5 py-0.5 rounded-full">TO</div>
+                  )}
+                  <div className="w-6 h-6 rounded-lg bg-white flex items-center justify-center p-1 shadow-sm border border-neutral-100">
+                    <BankLogo bankName={acc.bankName} type={(acc as any).type} className="w-full h-full" />
+                  </div>
+                  <span className={`text-[11px] font-bold whitespace-nowrap ${
+                    selectedAccountId === acc.id || toAccountId === acc.id
+                      ? 'text-brand-blue dark:text-white'
+                      : 'text-neutral-500 dark:text-neutral-400'
+                  }`}>
+                    {acc.bankName.length > 12 ? acc.bankName.substring(0, 12) + '…' : acc.bankName}
+                  </span>
+                </button>
+              ))}
+            </div>
 
-                <div className="flex gap-1.5 items-center">
-                  {accounts.map(acc => (
+            {/* 4. Tag + Category Combined Row */}
+            <div className="bg-white dark:bg-[#1C1C22] rounded-2xl border border-[#EBEBEB] dark:border-white/5 p-3 space-y-3">
+              {/* Tags */}
+              {type !== 'TRANSFER' && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest shrink-0">Tag</span>
+                  <div className="flex gap-1.5">
+                    {['Personal', 'Home'].map(tagName => (
+                      <button 
+                        key={tagName} 
+                        onClick={() => setExpenseType(expenseType === tagName ? '' : tagName)}
+                        className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all border ${
+                          expenseType === tagName 
+                            ? 'bg-brand-blue text-white border-transparent shadow-sm' 
+                            : 'bg-neutral-50 dark:bg-black/20 border-[#EBEBEB] dark:border-white/5 text-neutral-400'
+                        }`}
+                      >
+                        #{tagName}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Category — Emoji Grid (compact) */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Category</span>
+                  <span className="text-[10px] font-bold text-brand-blue dark:text-brand-cyan">{category}</span>
+                </div>
+                <div className="grid grid-cols-9 gap-1">
+                  {CATEGORIES.map(cat => (
                     <button 
-                      key={acc.id} 
-                      onClick={() => {
-                        if (type === 'TRANSFER') {
-                          if (!selectedAccountId) setSelectedAccountId(acc.id!);
-                          else if (selectedAccountId === acc.id) setSelectedAccountId('');
-                          else setToAccountId(acc.id!);
-                        } else {
-                          setSelectedAccountId(acc.id!);
-                          // Auto-select payment method based on account type
-                          if ((acc as any).type === 'CASH') setPaymentMethod('Cash');
-                          else if ((acc as any).type === 'CREDIT_CARD') setPaymentMethod('Credit Card');
-                          else if (paymentMethod === 'Cash' || paymentMethod === 'Credit Card') setPaymentMethod('Bank');
-                        }
-                      }}
-                      className={`shrink-0 flex flex-col items-center justify-center gap-0.5 p-1 rounded-lg border transition-all group relative ${
-                        selectedAccountId === acc.id || toAccountId === acc.id
-                          ? 'bg-brand-blue/10 dark:bg-brand-blue/20 border-brand-blue text-brand-blue dark:text-white shadow-sm ring-1 ring-brand-cyan/30' 
-                          : 'bg-white dark:bg-[#1C1C22] border-[#EBEBEB] dark:border-white/5 text-brand-blue/60 dark:text-[#A0A0A5] hover:bg-neutral-50 dark:hover:bg-[#2C2C34]'
+                      key={cat} 
+                      onClick={() => setCategory(cat)}
+                      title={cat}
+                      className={`aspect-square rounded-xl flex items-center justify-center text-[18px] transition-all ${
+                        category === cat 
+                          ? 'bg-brand-blue/10 dark:bg-brand-blue/20 ring-2 ring-brand-blue dark:ring-brand-cyan scale-110 shadow-sm' 
+                          : 'bg-neutral-50 dark:bg-black/20 hover:bg-neutral-100 dark:hover:bg-white/5 active:scale-90'
                       }`}
-
-
-                      style={{ minWidth: '52px' }}
                     >
-                      {selectedAccountId === acc.id && type === 'TRANSFER' && (
-                        <div className="absolute -top-1.5 bg-[#3B3B98] text-[6px] font-bold px-1 py-0.5 rounded shadow-lg border border-white/10">FROM</div>
-                      )}
-                      {toAccountId === acc.id && type === 'TRANSFER' && (
-                        <div className="absolute -top-1.5 bg-brand-blue text-[6px] font-bold px-1 py-0.5 rounded shadow-lg border border-white/10">TO</div>
-                      )}
-
-                      
-                      <div className="w-5 h-5 rounded-lg bg-white flex items-center justify-center p-1 shadow-sm">
-                        <BankLogo bankName={acc.bankName} type={(acc as any).type} className="w-full h-full" />
-                      </div>
-                      <span className="text-[7.5px] font-bold whitespace-nowrap overflow-hidden text-ellipsis w-full text-center tracking-wide">
-                        {acc.bankName.substring(0, 10)}
-                      </span>
+                      {CATEGORY_ICONS[cat] || '📝'}
                     </button>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* 4. Identity, Remarks & Payment Group */}
-            <div className="bg-white dark:bg-[#1C1C22] rounded-xl border border-[#EBEBEB] dark:border-white/5 divide-y divide-[#EBEBEB] dark:divide-white/5">
-
-              {/* Paid via / Received from (Hide for Transfer) */}
+            {/* 5. Party + Note + Payment — Combined Compact Section */}
+            <div className="bg-white dark:bg-[#1C1C22] rounded-2xl border border-[#EBEBEB] dark:border-white/5 divide-y divide-[#EBEBEB] dark:divide-white/5">
+              {/* Party Name */}
               {type !== 'TRANSFER' && (
-                <div className="flex items-center gap-2.5 p-2">
-                  <div className="w-7 h-7 rounded-lg bg-neutral-100 dark:bg-black/40 flex items-center justify-center shrink-0 border border-[#EBEBEB] dark:border-white/5">
-                    <User className="w-3.5 h-3.5 text-[#717171] dark:text-[#A0A0A5]" />
-
-                  </div>
+                <div className="flex items-center gap-2 px-3 py-2.5">
+                  <User className="w-4 h-4 text-neutral-300 dark:text-neutral-600 shrink-0" />
                   <input 
                     type="text"
                     value={partyName}
                     onChange={e => setPartyName(e.target.value)}
-                    placeholder={type === 'DEBIT' ? 'Paid to...' : 'Received from...'}
-                    className="bg-transparent flex-1 text-[14px] font-semibold text-brand-blue dark:text-white outline-none placeholder:text-[#A0A0A0] dark:placeholder:text-[#4A4A52]"
+                    placeholder={type === 'DEBIT' ? 'Paid to…' : 'Received from…'}
+                    className="bg-transparent flex-1 text-[13px] font-semibold text-brand-blue dark:text-white outline-none placeholder:text-neutral-300 dark:placeholder:text-neutral-600"
                   />
-
-
                 </div>
               )}
 
-              {/* Remarks */}
-              <div className="flex items-center gap-2.5 p-2">
-                <div className="w-7 h-7 rounded-lg bg-neutral-100 dark:bg-black/40 flex items-center justify-center shrink-0 border border-[#EBEBEB] dark:border-white/5">
-                  <AlignLeft className="w-3.5 h-3.5 text-[#717171] dark:text-[#A0A0A5]" />
-
-                </div>
+              {/* Note */}
+              <div className="flex items-center gap-2 px-3 py-2.5">
+                <AlignLeft className="w-4 h-4 text-neutral-300 dark:text-neutral-600 shrink-0" />
                 <input 
                   type="text"
                   value={note}
                   onChange={e => setNote(e.target.value)}
-                  placeholder="Add remarks..."
-                  className="bg-transparent flex-1 text-[13px] font-bold text-brand-blue dark:text-white/90 outline-none placeholder:text-[#A0A0A0] dark:placeholder:text-[#4A4A52]"
-
-
+                  placeholder="Add a note…"
+                  className="bg-transparent flex-1 text-[13px] font-semibold text-brand-blue dark:text-white/90 outline-none placeholder:text-neutral-300 dark:placeholder:text-neutral-600"
                 />
               </div>
 
-              {/* Payment Mode Selector (Compact Grid) */}
-              <div className="p-2 space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-[9px] font-bold text-[#A0A0A5] uppercase tracking-wider">Payment Method</p>
-                  {paymentMethod && <span className="text-[9px] font-bold text-brand-blue dark:text-brand-cyan">{paymentMethod}</span>}
-
-
-
-                </div>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {[
-                    { id: 'UPI', label: 'UPI', icon: <Smartphone className="w-3 h-3" /> },
-                    { id: 'Bank Transfer', label: 'Bank', icon: <Landmark className="w-3 h-3" /> },
-                    { id: 'Credit Card', label: 'Card', icon: <CreditCard className="w-3 h-3" /> },
-                    { id: 'Cash', label: 'Cash', icon: <Coins className="w-3 h-3" /> },
-                  ].map((method) => (
-                    <button 
-                      key={method.id} 
-                      onClick={() => setPaymentMethod(method.id as any)}
-                      className={`py-1.5 rounded-lg text-[10px] font-bold transition-all flex flex-col items-center gap-1 border ${
-                        paymentMethod === method.id 
-                          ? 'bg-brand-green border-brand-green text-white shadow-lg scale-95' 
-                          : 'bg-[#F7F7F7] dark:bg-black/20 border-[#EBEBEB] dark:border-white/5 text-[#717171] dark:text-[#A0A0A5] active:scale-95 hover:border-brand-cyan'
-                      }`}
-
-                    >
-                      {method.icon}
-                      {method.label}
-                    </button>
-                  ))}
+              {/* Payment Method — Compact Inline */}
+              <div className="px-3 py-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest shrink-0">Via</span>
+                  <div className="flex gap-1 flex-1">
+                    {[
+                      { id: 'UPI', label: 'UPI', icon: <Smartphone className="w-3 h-3" /> },
+                      { id: 'Bank Transfer', label: 'Bank', icon: <Landmark className="w-3 h-3" /> },
+                      { id: 'Credit Card', label: 'Card', icon: <CreditCard className="w-3 h-3" /> },
+                      { id: 'Cash', label: 'Cash', icon: <Coins className="w-3 h-3" /> },
+                    ].map((method) => (
+                      <button 
+                        key={method.id} 
+                        onClick={() => setPaymentMethod(method.id as any)}
+                        className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[9px] font-bold transition-all border ${
+                          paymentMethod === method.id 
+                            ? 'bg-brand-green border-brand-green text-white shadow-sm' 
+                            : 'bg-neutral-50 dark:bg-black/20 border-transparent text-neutral-400 active:scale-95'
+                        }`}
+                      >
+                        {method.icon}
+                        <span className="hidden sm:inline">{method.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {paymentMethod === 'UPI' && (
-                  <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-1">
+                  <div className="flex gap-1.5 mt-2">
                     {['GPay', 'PhonePe', 'Paytm'].map(app => (
                       <button 
                         key={app} 
                         onClick={() => setUpiApp(app)}
-                        className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${
-                        upiApp === app 
-                          ? 'bg-brand-blue text-white border-brand-blue shadow-md' 
-                          : 'bg-[#F7F7F7] dark:bg-black/20 border-[#EBEBEB] dark:border-white/5 text-[#717171] hover:border-brand-cyan'
-                      }`}
-
+                        className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all border ${
+                          upiApp === app 
+                            ? 'bg-brand-blue text-white border-brand-blue shadow-sm' 
+                            : 'bg-neutral-50 dark:bg-black/20 border-[#EBEBEB] dark:border-white/5 text-neutral-400'
+                        }`}
                       >
                         {app}
                       </button>
                     ))}
                   </div>
                 )}
-
               </div>
             </div>
-
-            {/* 5. Quick Selectors (Category, Account, Payment) */}
-            <div className="space-y-4">
-              {/* Category */}
-              <div className="space-y-1.5">
-                <p className="text-[10px] font-bold text-[#A0A0A5] uppercase tracking-wider px-1">Category</p>
-                <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4">
-                  {CATEGORIES.map(cat => (
-                    <button 
-                      key={cat} 
-                      onClick={() => setCategory(cat)}
-                      className={`px-3.5 py-2 rounded-xl text-[13px] font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-                        category === cat 
-                          ? 'bg-brand-blue text-white dark:bg-white dark:text-black shadow-md scale-105' 
-                          : 'bg-white dark:bg-[#1C1C22] text-brand-blue/60 dark:text-[#A0A0A5] border border-[#EBEBEB] dark:border-white/5 hover:border-brand-cyan'
-                      }`}
-
-
-                    >
-                      <span className="text-[15px]">{CATEGORY_ICONS[cat] || '📝'}</span>
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-
-
-              {/* Compact Actions inside the form */}
-              <div className="pt-2 space-y-2">
-                {status === 'success' && (
-                  <div className="flex items-center justify-center gap-2 py-1 text-emerald-600 dark:text-emerald-500 font-bold text-xs animate-in fade-in slide-in-from-bottom-1">
-
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    Transaction saved successfully
-                  </div>
-                )}
-                {status === 'error' && (
-                  <div className="flex items-center justify-center gap-2 py-1 text-rose-500 font-bold text-xs">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    {errorMessage}
-                  </div>
-                )}
-                
-                <div className="flex gap-2">
-                  <button 
-                    onClick={closeMenu}
-                    className="flex-1 py-2.5 rounded-xl font-bold text-[13px] text-[#717171] dark:text-[#A0A0A5] bg-white dark:bg-[#1C1C22] border border-[#EBEBEB] dark:border-white/5 hover:bg-neutral-50 dark:hover:bg-[#2C2C34] transition-colors"
-
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={handleSaveManual}
-                    disabled={!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
-                    className={`flex-[2] py-2.5 rounded-xl font-semibold text-[13px] transition-all transform active:scale-[0.98] ${
-                      (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
-                      ? 'bg-[#2C2C34] text-[#5A5A62] cursor-not-allowed opacity-50'
-                      : 'bg-[#00A86B] text-white shadow-lg shadow-emerald-500/10 dark:shadow-none hover:bg-[#00925d] hover:ring-2 hover:ring-[#82EEFD]'
-                    }`}
-
-                  >
-                    {status === 'success' ? 'Saved!' : 'Save Transaction'}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-
 
           </div>
-
-
         </div>,
         document.body
       )}
