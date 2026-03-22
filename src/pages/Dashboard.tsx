@@ -488,16 +488,16 @@ export default function Dashboard() {
           <div className="flex-1 overflow-y-auto w-full px-4 pt-3 pb-32 space-y-2.5 scrollbar-hide no-scrollbar">
             
             {/* 1. Hero Card: Consolidates Flow, Amount, and Bank */}
-            <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-3 shadow-sm flex flex-col gap-4">
+            <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-2 shadow-sm flex flex-col gap-2.5">
               {/* Top Row: Full-width Type Toggle */}
-              <div className="flex bg-[#F7F7F7] dark:bg-white/5 p-1 rounded-2xl w-full shrink-0">
-                <button onClick={() => setType('DEBIT')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'DEBIT' ? 'bg-white dark:bg-[#2C2C34] text-brand-red shadow-sm' : 'text-neutral-400'}`}>Outflow</button>
-                <button onClick={() => setType('CREDIT')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'CREDIT' ? 'bg-white dark:bg-[#2C2C34] text-brand-green shadow-sm' : 'text-neutral-400'}`}>Inflow</button>
-                <button onClick={() => setType('TRANSFER')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'TRANSFER' ? 'bg-white dark:bg-[#2C2C34] text-brand-blue dark:text-brand-cyan shadow-sm' : 'text-neutral-400'}`}>Transfer</button>
+              <div className="flex bg-[#F7F7F7] dark:bg-white/5 p-0.5 rounded-2xl w-full shrink-0">
+                <button onClick={() => setType('DEBIT')} className={`flex-1 py-1 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'DEBIT' ? 'bg-white dark:bg-[#2C2C34] text-brand-red shadow-sm' : 'text-neutral-400'}`}>Outflow</button>
+                <button onClick={() => setType('CREDIT')} className={`flex-1 py-1 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'CREDIT' ? 'bg-white dark:bg-[#2C2C34] text-brand-green shadow-sm' : 'text-neutral-400'}`}>Inflow</button>
+                <button onClick={() => setType('TRANSFER')} className={`flex-1 py-1 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'TRANSFER' ? 'bg-white dark:bg-[#2C2C34] text-brand-blue dark:text-brand-cyan shadow-sm' : 'text-neutral-400'}`}>Transfer</button>
               </div>
 
               {/* Middle Row: Split 50/50 (Amount Left, Bank Right) */}
-              <div className="grid grid-cols-2 gap-4 items-center h-[125px]">
+              <div className="grid grid-cols-2 gap-2.5 items-center h-[112px]">
                 {/* LEFT: Amount Segment */}
                 <div className="flex flex-col items-center gap-1.5 border-r border-[#EBEBEB] dark:border-white/5 pr-4">
                   <div className="flex items-baseline gap-1">
