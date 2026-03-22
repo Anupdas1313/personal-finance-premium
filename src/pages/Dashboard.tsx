@@ -485,7 +485,7 @@ export default function Dashboard() {
               {errorMessage}
             </div>
           )}
-          <div className="flex-1 overflow-y-auto w-full px-4 pt-3 pb-safe space-y-2.5 scrollbar-hide no-scrollbar">
+          <div className="flex-1 overflow-y-auto w-full px-4 pt-3 pb-32 space-y-2.5 scrollbar-hide no-scrollbar">
             
             {/* 1. Hero Card — Amount & Type */}
             <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-2.5 shadow-sm flex flex-col items-center gap-2.5">
