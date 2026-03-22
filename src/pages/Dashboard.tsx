@@ -487,28 +487,61 @@ export default function Dashboard() {
           )}
           <div className="flex-1 overflow-y-auto w-full px-4 pt-3 pb-32 space-y-2.5 scrollbar-hide no-scrollbar">
             
-            {/* 1. Hero Card — Amount & Type */}
-            <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-2.5 shadow-sm flex flex-col items-center gap-2.5">
-              <div className="flex bg-[#F7F7F7] dark:bg-white/5 p-1 rounded-2xl w-full">
-                <button onClick={() => setType('DEBIT')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'DEBIT' ? 'bg-white dark:bg-[#2C2C34] text-brand-red shadow-sm' : 'text-neutral-400'}`}>Outflow</button>
-                <button onClick={() => setType('CREDIT')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'CREDIT' ? 'bg-white dark:bg-[#2C2C34] text-brand-green shadow-sm' : 'text-neutral-400'}`}>Inflow</button>
-                <button onClick={() => setType('TRANSFER')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'TRANSFER' ? 'bg-white dark:bg-[#2C2C34] text-brand-blue dark:text-brand-cyan shadow-sm' : 'text-neutral-400'}`}>Transfer</button>
+            {/* 1. Combined Hero: Amount (Left) & Bank (Right) */}
+            <div className="grid grid-cols-2 gap-2.5 h-[160px] sm:h-[180px]">
+              {/* LEFT: Amount & Type */}
+              <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-3 shadow-sm flex flex-col items-center justify-between gap-2 overflow-hidden">
+                <div className="flex flex-col gap-1 w-full shrink-0">
+                  <button onClick={() => setType('DEBIT')} className={`w-full py-1 text-[9px] font-bold rounded-lg transition-all uppercase tracking-[0.1em] border ${type === 'DEBIT' ? 'bg-brand-red text-white border-transparent' : 'bg-transparent text-neutral-400 border-[#EBEBEB] dark:border-white/5'}`}>Debit</button>
+                  <button onClick={() => setType('CREDIT')} className={`w-full py-1 text-[9px] font-bold rounded-lg transition-all uppercase tracking-[0.1em] border ${type === 'CREDIT' ? 'bg-brand-green text-white border-transparent' : 'bg-transparent text-neutral-400 border-[#EBEBEB] dark:border-white/5'}`}>Credit</button>
+                  <button onClick={() => setType('TRANSFER')} className={`w-full py-1 text-[9px] font-bold rounded-lg transition-all uppercase tracking-[0.1em] border ${type === 'TRANSFER' ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue border-transparent' : 'bg-transparent text-neutral-400 border-[#EBEBEB] dark:border-white/5'}`}>Swap</button>
+                </div>
+
+                <div className="flex flex-col items-center gap-0 w-full shrink-0">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-sm font-bold text-neutral-300 dark:text-[#333333]">₹</span>
+                    <input 
+                      type="number" inputMode="decimal" autoFocus value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" step="0.01"
+                      className="bg-transparent text-xl font-heading font-bold text-center outline-none min-w-0 w-full text-brand-blue dark:text-white tracking-tight caret-brand-cyan"
+                    />
+                  </div>
+                  <div className="relative mt-1">
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#F7F7F7] dark:bg-white/5 text-neutral-400 dark:text-neutral-500 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors">
+                      <Calendar className="w-2.5 h-2.5" />
+                      <span className="text-[8px] font-bold uppercase tracking-wider">{format(new Date(transactionDate), 'dd MMM, hh:mm a')}</span>
+                    </div>
+                    <input type="datetime-local" value={transactionDate} onChange={(e) => setTransactionDate(e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+                  </div>
+                </div>
               </div>
 
-              <div className="flex flex-col items-center gap-0 w-full">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-xl font-bold text-neutral-300 dark:text-[#333333]">₹</span>
-                  <input 
-                    type="number" inputMode="decimal" autoFocus value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" step="0.01"
-                    className="bg-transparent text-2xl font-heading font-bold text-center outline-none min-w-[100px] max-w-full text-brand-blue dark:text-white tracking-tight caret-brand-cyan"
-                  />
-                </div>
-                <div className="relative mt-1">
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F7F7F7] dark:bg-white/5 text-neutral-400 dark:text-neutral-500 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors">
-                    <Calendar className="w-3 h-3" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">{isToday(new Date(transactionDate)) ? 'Today' : isYesterday(new Date(transactionDate)) ? 'Yesterday' : format(new Date(transactionDate), 'dd MMM')}, {format(new Date(transactionDate), 'hh:mm a')}</span>
-                  </div>
-                  <input type="datetime-local" value={transactionDate} onChange={(e) => setTransactionDate(e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+              {/* RIGHT: Bank Selection */}
+              <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-2 shadow-sm flex flex-col overflow-hidden">
+                <div className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest pl-1 mb-2 shrink-0 text-center">Select Account</div>
+                <div className="flex-1 overflow-y-auto space-y-1.5 no-scrollbar scroll-smooth">
+                  {accounts.map(acc => (
+                    <button 
+                      key={acc.id} 
+                      onClick={() => {
+                          if (type === 'TRANSFER') {
+                            if (!selectedAccountId) setSelectedAccountId(acc.id!);
+                            else if (selectedAccountId === acc.id) setSelectedAccountId('');
+                            else setToAccountId(acc.id!);
+                          } else {
+                            setSelectedAccountId(acc.id!);
+                            if ((acc as any).type === 'CASH') setPaymentMethod('Cash');
+                            else if ((acc as any).type === 'CREDIT_CARD') setPaymentMethod('Credit Card');
+                            else if (paymentMethod === 'Cash' || paymentMethod === 'Credit Card') setPaymentMethod('Bank');
+                          }
+                      }}
+                      className={`w-full flex items-center gap-2 px-2 py-2 rounded-xl border transition-all relative ${selectedAccountId === acc.id || toAccountId === acc.id ? 'bg-brand-blue/5 dark:bg-brand-cyan/5 border-brand-blue dark:border-brand-cyan shadow-sm' : 'bg-[#F7F7F7] dark:bg-white/[0.02] border-transparent'}`}
+                    >
+                      {selectedAccountId === acc.id && type === 'TRANSFER' && <div className="absolute -top-1 right-1 bg-brand-blue text-white text-[5px] font-bold px-1 py-0.5 rounded-full uppercase tracking-tighter z-10">From</div>}
+                      {toAccountId === acc.id && type === 'TRANSFER' && <div className="absolute -top-1 right-1 bg-brand-cyan text-brand-blue text-[5px] font-bold px-1 py-0.5 rounded-full uppercase tracking-tighter z-10">To</div>}
+                      <div className="w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center p-0.5 shadow-sm shrink-0"><BankLogo bankName={acc.bankName} type={(acc as any).type} className="w-full h-full" /></div>
+                      <span className={`text-[9px] font-bold truncate ${(selectedAccountId === acc.id || toAccountId === acc.id) ? 'text-brand-blue dark:text-brand-cyan' : 'text-neutral-500 dark:text-[#A0A0A5]'}`}>{acc.bankName}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -546,35 +579,6 @@ export default function Dashboard() {
               <div className="flex items-center gap-3 px-4 py-3 group">
                 <AlignLeft className="w-4 h-4 text-neutral-300 dark:text-[#333333]" />
                 <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="Add a note…" className="bg-transparent flex-1 text-[12px] font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-200 dark:placeholder:text-[#333333]" />
-              </div>
-            </div>
-
-            {/* 4. Account selection */}
-            <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-3 space-y-3">
-              <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
-                {accounts.map(acc => (
-                  <button 
-                    key={acc.id} 
-                    onClick={() => {
-                        if (type === 'TRANSFER') {
-                          if (!selectedAccountId) setSelectedAccountId(acc.id!);
-                          else if (selectedAccountId === acc.id) setSelectedAccountId('');
-                          else setToAccountId(acc.id!);
-                        } else {
-                          setSelectedAccountId(acc.id!);
-                          if ((acc as any).type === 'CASH') setPaymentMethod('Cash');
-                          else if ((acc as any).type === 'CREDIT_CARD') setPaymentMethod('Credit Card');
-                          else if (paymentMethod === 'Cash' || paymentMethod === 'Credit Card') setPaymentMethod('Bank');
-                        }
-                    }}
-                    className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border transition-all relative ${selectedAccountId === acc.id || toAccountId === acc.id ? 'bg-brand-blue/5 dark:bg-brand-cyan/5 border-brand-blue dark:border-brand-cyan shadow-sm' : 'bg-[#F7F7F7] dark:bg-white/[0.02] border-transparent'}`}
-                  >
-                    {selectedAccountId === acc.id && type === 'TRANSFER' && <div className="absolute -top-1 bg-brand-blue text-white text-[6px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-tighter">From</div>}
-                    {toAccountId === acc.id && type === 'TRANSFER' && <div className="absolute -top-1 bg-brand-cyan text-brand-blue text-[6px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-tighter">To</div>}
-                    <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center p-0.5 shadow-sm"><BankLogo bankName={acc.bankName} type={(acc as any).type} className="w-full h-full" /></div>
-                    <span className={`text-[11px] font-bold ${(selectedAccountId === acc.id || toAccountId === acc.id) ? 'text-brand-blue dark:text-brand-cyan' : 'text-neutral-500 dark:text-[#A0A0A5]'}`}>{acc.bankName.length > 8 ? acc.bankName.slice(0, 8) + '…' : acc.bankName}</span>
-                  </button>
-                ))}
               </div>
             </div>
 
