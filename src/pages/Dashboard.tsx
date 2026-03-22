@@ -82,8 +82,8 @@ export default function Dashboard() {
   const [transactionDate, setTransactionDate] = useState<string>(
     new Date().toISOString().slice(0, 16)
   );
-  const [paymentMethod, setPaymentMethod] = useState<'Bank' | 'UPI' | 'Credit Card' | 'Cash' | 'Bank Transfer'>('Bank');
-  const [upiApp, setUpiApp] = useState<string>('');
+  const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'Bank' | 'Cash' | 'Credit Card' | 'Bank Transfer'>('UPI');
+  const [upiApp, setUpiApp] = useState('GPay');
   const { tags } = useTags();
   const [expenseType, setExpenseType] = useState<string>('');
 
@@ -189,8 +189,8 @@ export default function Dashboard() {
         setPartyName('');
         setCategory('Other');
         setTransactionDate(new Date().toISOString().slice(0, 16));
-        setPaymentMethod('Bank');
-        setUpiApp('');
+        setPaymentMethod('UPI');
+        setUpiApp('GPay');
         setExpenseType(tags[0] || '');
         setToAccountId('');
       }, 800);
@@ -594,8 +594,12 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* 6. Payment Method */}
+            {/* 6. Payment Method — Intelligence Layer */}
             <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">Payment Logistics</span>
+                <span className="text-[10px] font-bold text-brand-blue dark:text-brand-cyan px-2 py-0.5 bg-brand-blue/5 dark:bg-brand-cyan/5 rounded-full lowercase tracking-wider">{paymentMethod}</span>
+              </div>
               <div className="grid grid-cols-4 gap-2">
                 {[
                   { id: 'UPI', label: 'UPI', icon: <Smartphone className="w-3.5 h-3.5" /> },
@@ -610,13 +614,30 @@ export default function Dashboard() {
                 ))}
               </div>
 
-              {paymentMethod === 'UPI' && (
-                <div className="flex gap-2">
-                  {['GPay', 'PhonePe', 'Paytm'].map(app => (
-                    <button key={app} onClick={() => setUpiApp(app)} className={`flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all border ${upiApp === app ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue border-transparent' : 'bg-neutral-50 dark:bg-white/[0.02] border-neutral-100 dark:border-white/5 text-neutral-400'}`}>{app}</button>
-                  ))}
-                </div>
-              )}
+              {/* Contextual Sub-Selection */}
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                {paymentMethod === 'UPI' && (
+                  <div className="flex gap-2">
+                    {['GPay', 'PhonePe', 'Paytm'].map(app => (
+                      <button key={app} onClick={() => setUpiApp(app)} className={`flex-1 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all border ${upiApp === app ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue border-transparent' : 'bg-neutral-50 dark:bg-white/[0.02] border-neutral-100 dark:border-white/5 text-neutral-400'}`}>{app}</button>
+                    ))}
+                  </div>
+                )}
+                {paymentMethod === 'Credit Card' && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {accounts.filter(a => (a as any).type === 'CREDIT_CARD').map(card => (
+                      <button key={card.id} onClick={() => setSelectedAccountId(card.id!)} className={`px-2.5 py-1 rounded-lg text-[8px] font-bold uppercase transition-all border ${selectedAccountId === card.id ? 'bg-brand-blue text-white border-transparent' : 'bg-neutral-50 dark:bg-white/5 border-neutral-100 dark:border-white/5 text-neutral-400'}`}>{card.bankName}</button>
+                    ))}
+                  </div>
+                )}
+                {paymentMethod === 'Cash' && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {accounts.filter(a => (a as any).type === 'CASH').map(wallet => (
+                      <button key={wallet.id} onClick={() => setSelectedAccountId(wallet.id!)} className={`px-2.5 py-1 rounded-lg text-[8px] font-bold uppercase transition-all border ${selectedAccountId === wallet.id ? 'bg-brand-blue text-white border-transparent' : 'bg-neutral-50 dark:bg-white/5 border-neutral-100 dark:border-white/5 text-neutral-400'}`}>{wallet.bankName}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {status === 'error' && <div className="px-5 py-2 rounded-2xl bg-rose-50 dark:bg-brand-red/10 text-brand-red text-center text-[10px] font-bold uppercase tracking-wider">{errorMessage}</div>}
@@ -627,7 +648,7 @@ export default function Dashboard() {
             <button 
               onClick={handleSaveManual}
               disabled={!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
-              className={`w-[60%] py-2.5 rounded-2xl text-[12px] font-black transition-all active:scale-[0.98] shadow-2xl flex items-center justify-center gap-2 uppercase tracking-widest ${
+              className={`w-[45%] py-2 rounded-2xl text-[11px] font-black transition-all active:scale-[0.98] shadow-2xl flex items-center justify-center gap-2 uppercase tracking-widest ${
                 (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
                 ? 'bg-neutral-100 dark:bg-[#1C1C22] text-neutral-300 dark:text-[#4A4A52] cursor-not-allowed border border-[#EBEBEB] dark:border-transparent opacity-50'
                 : 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue shadow-brand-blue/30 dark:shadow-brand-cyan/20'
