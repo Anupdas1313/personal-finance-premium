@@ -469,17 +469,7 @@ export default function Dashboard() {
               <X className="w-5 h-5" />
             </button>
             <h2 className="text-[13px] font-heading font-bold text-brand-blue dark:text-white tracking-tight">Add Transaction</h2>
-            <button 
-              onClick={handleSaveManual}
-              disabled={!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
-              className={`px-4 py-1.5 rounded-xl text-[11px] font-bold transition-all active:scale-95 ${
-                (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
-                ? 'bg-neutral-100 dark:bg-[#1C1C22] text-neutral-300 dark:text-[#4A4A52] cursor-not-allowed'
-                : 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue shadow-lg shadow-brand-blue/10 dark:shadow-brand-cyan/20'
-              }`}
-            >
-              {status === 'success' ? 'Saved' : 'Save'}
-            </button>
+            <div className="w-7"></div> {/* Spacer to keep title centered */}
           </div>
 
           {/* Status Feedback */}
@@ -525,10 +515,21 @@ export default function Dashboard() {
 
             {/* 2. Classification Tags — Right after Amount */}
             {type !== 'TRANSFER' && tags.length > 0 && (
-              <div className="flex items-center justify-between px-1">
-                <div className="flex gap-2 w-full">
+              <div className="flex flex-col gap-2 px-1">
+                <label className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest pl-1">Classification</label>
+                <div className="flex flex-wrap gap-2 w-full">
                   {tags.map(tagName => (
-                    <button key={tagName} onClick={() => setExpenseType(expenseType === tagName ? '' : tagName)} className={`flex-1 py-1.5 rounded-xl text-[10px] font-bold transition-all border ${expenseType === tagName ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue border-transparent shadow-sm' : 'bg-white dark:bg-[#111111] dark:bg-white/[0.02] border-[#EBEBEB] dark:border-white/5 text-neutral-400'}`}>#{tagName}</button>
+                    <button 
+                      key={tagName} 
+                      onClick={() => setExpenseType(expenseType === tagName ? '' : tagName)} 
+                      className={`flex-[1_0_21%] sm:flex-none sm:px-4 py-2 rounded-xl text-[10px] font-bold transition-all border ${
+                        expenseType === tagName 
+                          ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue border-transparent shadow-sm' 
+                          : 'bg-white dark:bg-[#111111] dark:bg-white/[0.02] border-[#EBEBEB] dark:border-white/5 text-neutral-400 dark:text-neutral-500'
+                      }`}
+                    >
+                      #{tagName}
+                    </button>
                   ))}
                 </div>
               </div>
@@ -616,6 +617,31 @@ export default function Dashboard() {
             </div>
 
             {status === 'error' && <div className="px-5 py-2 rounded-2xl bg-rose-50 dark:bg-brand-red/10 text-brand-red text-center text-[10px] font-bold uppercase tracking-wider">{errorMessage}</div>}
+          </div>
+
+          {/* Persistent Save Button — Bottom Right */}
+          <div className="fixed bottom-6 right-6 z-50">
+            <button 
+              onClick={handleSaveManual}
+              disabled={!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
+              className={`px-8 py-4 rounded-2xl text-[13px] font-black transition-all active:scale-90 shadow-2xl flex items-center gap-2 uppercase tracking-widest ${
+                (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
+                ? 'bg-neutral-100 dark:bg-[#1C1C22] text-neutral-300 dark:text-[#4A4A52] cursor-not-allowed border border-[#EBEBEB] dark:border-transparent'
+                : 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue shadow-brand-blue/30 dark:shadow-brand-cyan/20 ring-4 ring-brand-blue/10 dark:ring-brand-cyan/10 hover:brightness-110'
+              }`}
+            >
+              {status === 'success' ? (
+                <>
+                  <CheckCircle2 className="w-5 h-5" />
+                  Saved
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5" />
+                  Deploy Entry
+                </>
+              )}
+            </button>
           </div>
         </div>,
         document.body
