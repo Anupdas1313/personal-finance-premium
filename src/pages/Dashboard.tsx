@@ -464,12 +464,12 @@ export default function Dashboard() {
       {isAddingManual && createPortal(
         <div className="fixed inset-0 bg-[#F7F7F7] dark:bg-[#0A0A0A] text-[#222222] dark:text-white z-[9999] flex flex-col animate-in fade-in slide-in-from-bottom-5 duration-300 font-sans">
           {/* Elegant Header — More compact */}
-          <div className="flex items-center justify-between px-4 py-2 pt-safe-top bg-white dark:bg-[#111111] border-b border-[#EBEBEB] dark:border-white/5 shadow-sm z-20">
+          <div className="flex items-center justify-between px-3 py-1 pt-safe-top bg-white dark:bg-[#111111] border-b border-[#EBEBEB] dark:border-white/5 shadow-sm z-20">
             <button onClick={closeMenu} className="text-[#717171] dark:text-[#A0A0A5] hover:text-brand-blue dark:hover:text-brand-cyan transition-colors p-1">
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
-            <h2 className="text-[13px] font-heading font-bold text-brand-blue dark:text-white tracking-tight">Add Transaction</h2>
-            <div className="w-7"></div> {/* Spacer to keep title centered */}
+            <h2 className="text-[12px] font-heading font-bold text-brand-blue dark:text-white tracking-tight">Add Transaction</h2>
+            <div className="w-6"></div> {/* Spacer to keep title centered */}
           </div>
 
           {/* Status Feedback */}
@@ -622,21 +622,21 @@ export default function Dashboard() {
             {status === 'error' && <div className="px-5 py-2 rounded-2xl bg-rose-50 dark:bg-brand-red/10 text-brand-red text-center text-[10px] font-bold uppercase tracking-wider">{errorMessage}</div>}
           </div>
 
-          {/* Persistent Action Bar — Full Width Fixed Bottom */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-[#0A0A0A]/80 backdrop-blur-xl border-t border-[#EBEBEB] dark:border-white/5 z-50">
+          {/* Persistent Action Bar — Fixed Bottom Optimized */}
+          <div className="fixed bottom-0 left-0 right-0 p-3 bg-white/80 dark:bg-[#0A0A0A]/80 backdrop-blur-xl border-t border-[#EBEBEB] dark:border-white/5 z-50 flex justify-center">
             <button 
               onClick={handleSaveManual}
               disabled={!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
-              className={`w-full py-4 rounded-2xl text-[14px] font-black transition-all active:scale-[0.98] shadow-2xl flex items-center justify-center gap-3 uppercase tracking-widest ${
+              className={`w-[60%] py-2.5 rounded-2xl text-[12px] font-black transition-all active:scale-[0.98] shadow-2xl flex items-center justify-center gap-2 uppercase tracking-widest ${
                 (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
-                ? 'bg-neutral-100 dark:bg-[#1C1C22] text-neutral-300 dark:text-[#4A4A52] cursor-not-allowed border border-[#EBEBEB] dark:border-transparent'
+                ? 'bg-neutral-100 dark:bg-[#1C1C22] text-neutral-300 dark:text-[#4A4A52] cursor-not-allowed border border-[#EBEBEB] dark:border-transparent opacity-50'
                 : 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue shadow-brand-blue/30 dark:shadow-brand-cyan/20'
               }`}
             >
               {status === 'success' ? (
-                <> <CheckCircle2 className="w-5 h-5" /> ENTRY DEPLOYED </>
+                <> <CheckCircle2 className="w-4 h-4" /> ENTRY SAVED </>
               ) : (
-                <> <Save className="w-5 h-5 text-current opacity-60" /> DEPLOY ENTRY </>
+                <> <Save className="w-4 h-4 text-current opacity-60" /> SAVE ENTRY </>
               )}
             </button>
           </div>
