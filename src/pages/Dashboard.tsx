@@ -582,26 +582,14 @@ export default function Dashboard() {
             </div>
 
             {/* 5. Category Grid — Integrated */}
-            <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-4 space-y-3">
+            <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-3 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">Taxonomy</span>
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">Choose Category</span>
                 <span className="text-[10px] font-bold text-brand-blue dark:text-brand-cyan px-2 py-0.5 bg-brand-blue/5 dark:bg-brand-cyan/5 rounded-full lowercase tracking-wider">{category}</span>
               </div>
-              <div className="grid grid-cols-5 gap-1.5">
+              <div className="grid grid-cols-9 gap-1.5">
                 {CATEGORIES.map(cat => (
-                  <button 
-                    key={cat} 
-                    onClick={() => setCategory(cat)} 
-                    title={cat} 
-                    className={`flex flex-col items-center justify-center p-2.5 rounded-2xl transition-all gap-1.5 ${
-                      category === cat 
-                        ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue shadow-lg scale-105 border-transparent' 
-                        : 'bg-[#F7F7F7] dark:bg-white/[0.02] text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/10 border-[#EBEBEB] dark:border-white/5 border'
-                    }`}
-                  >
-                    <span className="text-[20px]">{CATEGORY_ICONS[cat] || '📝'}</span>
-                    <span className="text-[7px] font-bold uppercase tracking-tighter w-full truncate text-center leading-none">{cat}</span>
-                  </button>
+                  <button key={cat} onClick={() => setCategory(cat)} title={cat} className={`aspect-square rounded-lg flex items-center justify-center text-[18px] transition-all ${category === cat ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue shadow-lg scale-110' : 'bg-[#F7F7F7] dark:bg-white/[0.02] text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/10 active:scale-95'}`}>{CATEGORY_ICONS[cat] || '📝'}</button>
                 ))}
               </div>
             </div>
