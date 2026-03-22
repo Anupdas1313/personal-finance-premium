@@ -1,6 +1,6 @@
 import React from 'react';
 import { getBankByPattern } from './BankLogosData';
-import { Wallet, CreditCard, Landmark } from 'lucide-react';
+import { Banknote, CreditCard, Landmark } from 'lucide-react';
 
 interface BankLogoProps {
   bankName: string;
@@ -17,7 +17,7 @@ export const BankLogo: React.FC<BankLogoProps> = ({ bankName, className = "w-5 h
   }
 
   if (type === 'CASH') {
-    return <Wallet className={`${className} text-emerald-600`} />;
+    return <Banknote className={`${className} text-emerald-600`} />;
   }
 
   if (type === 'CREDIT_CARD') {

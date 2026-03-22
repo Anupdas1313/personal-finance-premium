@@ -308,7 +308,7 @@ export default function Accounts() {
                 </p>
                 <div className="mt-4">
                   <p className="text-[10px] font-semibold text-brand-blue/40 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-1.5">Current Balance</p>
-                  <p className={`text-2xl font-heading font-semibold tracking-tight ${currentBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-brand-red'}`}>
+                  <p className={`text-2xl font-heading font-semibold tracking-tight ${currentBalance >= 0 ? 'text-brand-blue dark:text-brand-cyan' : 'text-brand-red'}`}>
                     ₹{currentBalance.toLocaleString('en-IN')}
                   </p>
                 </div>

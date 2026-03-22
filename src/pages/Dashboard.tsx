@@ -80,7 +80,7 @@ export default function Dashboard() {
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [timeFilter, setTimeFilter] = useState<'All Time' | 'This Month' | 'This Year'>('All Time');
-  const [isAmountsHidden, setIsAmountsHidden] = useState(true);
+  const [isAmountsHidden, setIsAmountsHidden] = useState(false);
   
   const { categories: appCategories } = useCategories();
 
@@ -256,9 +256,9 @@ export default function Dashboard() {
         <div className="flex items-center gap-3">
           <div
             title="Guest User"
-            className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1A237E] to-[#4A4ABF] flex items-center justify-center text-white font-heading font-bold text-lg select-none shadow-lg cursor-pointer border-2 border-white dark:border-[#1A1A1E]"
+            className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1A237E] to-[#4A4ABF] flex items-center justify-center text-white select-none shadow-lg cursor-pointer border-2 border-white dark:border-[#1A1A1E]"
           >
-            G
+            <User className="w-6 h-6" />
           </div>
 
         </div>
@@ -269,8 +269,7 @@ export default function Dashboard() {
 
       {/* Cash Flow Hero Card */}
       <div 
-        className="relative overflow-hidden rounded-[28px] bg-[#F8FAFF] dark:bg-[#111111] p-6 shadow-[0_20px_50px_rgba(26,35,126,0.04)] border border-brand-blue/5 dark:border-white/5 cursor-pointer group"
-        onClick={() => setIsAmountsHidden(!isAmountsHidden)}
+        className="relative overflow-hidden rounded-[28px] bg-[#F0F4FF] dark:bg-[#111111] p-6 shadow-[0_20px_50px_rgba(26,35,126,0.04)] border border-brand-blue/5 dark:border-white/5 group"
       >
         <div className="absolute top-0 right-0 w-48 h-48 bg-brand-blue/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
@@ -278,7 +277,6 @@ export default function Dashboard() {
         <div className="relative z-10 flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <h2 className="text-[10px] font-semibold text-brand-blue/60 dark:text-[#A0A0A0] tracking-[0.2em] uppercase">Cash Flow</h2>
-            {isAmountsHidden ? <EyeOff className="w-3 h-3 text-brand-blue/20" /> : <Eye className="w-3 h-3 text-brand-blue/20" />}
           </div>
           <div className="relative" onClick={(e) => e.stopPropagation()}>
             <select
@@ -298,7 +296,7 @@ export default function Dashboard() {
           <div className="flex-1 overflow-hidden py-2">
             <p className="text-[10px] font-semibold text-rose-500/80 tracking-[0.2em] uppercase mb-2">Spending</p>
             <p className="text-3xl font-heading font-semibold text-brand-blue dark:text-white tracking-tight truncate">
-              {isAmountsHidden ? '••••••' : `₹${totalSpending.toLocaleString('en-IN')}`}
+              ₹{totalSpending.toLocaleString('en-IN')}
             </p>
           </div>
           
@@ -307,7 +305,7 @@ export default function Dashboard() {
           <div className="flex-1 text-right overflow-hidden py-2">
             <p className="text-[10px] font-semibold text-emerald-500/80 tracking-[0.2em] uppercase mb-2">Income</p>
             <p className="text-3xl font-heading font-semibold text-brand-blue dark:text-white tracking-tight truncate">
-              {isAmountsHidden ? '••••••' : `₹${totalIncome.toLocaleString('en-IN')}`}
+              ₹{totalIncome.toLocaleString('en-IN')}
             </p>
           </div>
         </div>
@@ -321,8 +319,8 @@ export default function Dashboard() {
               </p>
             )}
           </div>
-          <p className={`text-xl font-heading font-semibold tracking-tight text-brand-blue dark:text-white`}>
-            {isAmountsHidden ? '••••••' : `₹${totalWealth.toLocaleString('en-IN')}`}
+          <p className={`text-xl font-heading font-semibold tracking-tight text-brand-blue dark:text-brand-cyan`}>
+            ₹{totalWealth.toLocaleString('en-IN')}
           </p>
         </div>
       </div>
@@ -353,7 +351,7 @@ export default function Dashboard() {
                       </p>
                     </div>
                   </div>
-                  <p className="font-heading font-semibold text-[#111111] dark:text-[#F7F7F7] tracking-tight">
+                  <p className="font-heading font-semibold text-brand-blue dark:text-brand-cyan tracking-tight">
                     ₹{acc.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </p>
 
@@ -418,10 +416,9 @@ export default function Dashboard() {
                     
                     {/* Amount & Date (Right Aligned) */}
                     <div className="text-right">
-                      <p className={`font-heading font-semibold text-base tracking-tight ${tx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-blue dark:text-[#F7F7F7]'}`}>
+                      <p className={`font-heading font-semibold text-base tracking-tight ${tx.type === 'CREDIT' ? 'text-brand-green' : 'text-rose-500'}`}>
                         {tx.type === 'CREDIT' ? '+' : ''}₹{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </p>
-
 
 
                       <p className="text-[10px] text-[#717171] dark:text-[#A0A0A0] font-medium mt-0.5 uppercase tracking-[0.1em]">
