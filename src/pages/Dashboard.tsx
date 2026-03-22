@@ -497,7 +497,7 @@ export default function Dashboard() {
               </div>
 
               {/* Middle Row: Split 50/50 (Amount Left, Bank Right) */}
-              <div className="grid grid-cols-2 gap-4 items-center h-[90px]">
+              <div className="grid grid-cols-2 gap-4 items-center h-[125px]">
                 {/* LEFT: Amount Segment */}
                 <div className="flex flex-col items-center gap-1.5 border-r border-[#EBEBEB] dark:border-white/5 pr-4">
                   <div className="flex items-baseline gap-1">
@@ -568,28 +568,40 @@ export default function Dashboard() {
             )}
 
             {/* 3. Recipient & Remark Card */}
-            <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-1 divide-y divide-[#EBEBEB] dark:divide-white/5">
+            <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-0.5 divide-y divide-[#EBEBEB] dark:divide-white/5 mx-1">
               {type !== 'TRANSFER' && (
-                <div className="flex items-center gap-3 px-4 py-3 group">
-                  <User className="w-4 h-4 text-neutral-300 dark:text-[#333333]" />
-                  <input type="text" value={partyName} onChange={e => setPartyName(e.target.value)} placeholder={type === 'DEBIT' ? 'Recipient…' : 'Source…'} className="bg-transparent flex-1 text-[12px] font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-200 dark:placeholder:text-[#333333]" />
+                <div className="flex items-center gap-3 px-4 py-2 group">
+                  <User className="w-3.5 h-3.5 text-neutral-300 dark:text-[#333333]" />
+                  <input type="text" value={partyName} onChange={e => setPartyName(e.target.value)} placeholder={type === 'DEBIT' ? 'Payee…' : 'Source…'} className="bg-transparent flex-1 text-[11px] font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-200 dark:placeholder:text-[#333333]" />
                 </div>
               )}
-              <div className="flex items-center gap-3 px-4 py-3 group">
-                <AlignLeft className="w-4 h-4 text-neutral-300 dark:text-[#333333]" />
-                <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="Add a note…" className="bg-transparent flex-1 text-[12px] font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-200 dark:placeholder:text-[#333333]" />
+              <div className="flex items-center gap-3 px-4 py-2 group">
+                <AlignLeft className="w-3.5 h-3.5 text-neutral-300 dark:text-[#333333]" />
+                <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="Add specific details…" className="bg-transparent flex-1 text-[11px] font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-200 dark:placeholder:text-[#333333]" />
               </div>
             </div>
 
             {/* 5. Category Grid — Integrated */}
-            <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-3 space-y-3">
+            <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">Choose Category</span>
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">Taxonomy</span>
                 <span className="text-[10px] font-bold text-brand-blue dark:text-brand-cyan px-2 py-0.5 bg-brand-blue/5 dark:bg-brand-cyan/5 rounded-full lowercase tracking-wider">{category}</span>
               </div>
-              <div className="grid grid-cols-9 gap-1.5">
+              <div className="grid grid-cols-5 gap-1.5">
                 {CATEGORIES.map(cat => (
-                  <button key={cat} onClick={() => setCategory(cat)} title={cat} className={`aspect-square rounded-lg flex items-center justify-center text-[18px] transition-all ${category === cat ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue shadow-lg scale-110' : 'bg-[#F7F7F7] dark:bg-white/[0.02] text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/10 active:scale-95'}`}>{CATEGORY_ICONS[cat] || '📝'}</button>
+                  <button 
+                    key={cat} 
+                    onClick={() => setCategory(cat)} 
+                    title={cat} 
+                    className={`flex flex-col items-center justify-center p-2.5 rounded-2xl transition-all gap-1.5 ${
+                      category === cat 
+                        ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue shadow-lg scale-105 border-transparent' 
+                        : 'bg-[#F7F7F7] dark:bg-white/[0.02] text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/10 border-[#EBEBEB] dark:border-white/5 border'
+                    }`}
+                  >
+                    <span className="text-[20px]">{CATEGORY_ICONS[cat] || '📝'}</span>
+                    <span className="text-[7px] font-bold uppercase tracking-tighter w-full truncate text-center leading-none">{cat}</span>
+                  </button>
                 ))}
               </div>
             </div>
@@ -622,27 +634,21 @@ export default function Dashboard() {
             {status === 'error' && <div className="px-5 py-2 rounded-2xl bg-rose-50 dark:bg-brand-red/10 text-brand-red text-center text-[10px] font-bold uppercase tracking-wider">{errorMessage}</div>}
           </div>
 
-          {/* Persistent Save Button — Bottom Right */}
-          <div className="fixed bottom-6 right-6 z-50">
+          {/* Persistent Action Bar — Full Width Fixed Bottom */}
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-[#0A0A0A]/80 backdrop-blur-xl border-t border-[#EBEBEB] dark:border-white/5 z-50">
             <button 
               onClick={handleSaveManual}
               disabled={!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
-              className={`px-8 py-4 rounded-2xl text-[13px] font-black transition-all active:scale-90 shadow-2xl flex items-center gap-2 uppercase tracking-widest ${
+              className={`w-full py-4 rounded-2xl text-[14px] font-black transition-all active:scale-[0.98] shadow-2xl flex items-center justify-center gap-3 uppercase tracking-widest ${
                 (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
                 ? 'bg-neutral-100 dark:bg-[#1C1C22] text-neutral-300 dark:text-[#4A4A52] cursor-not-allowed border border-[#EBEBEB] dark:border-transparent'
-                : 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue shadow-brand-blue/30 dark:shadow-brand-cyan/20 ring-4 ring-brand-blue/10 dark:ring-brand-cyan/10 hover:brightness-110'
+                : 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue shadow-brand-blue/30 dark:shadow-brand-cyan/20'
               }`}
             >
               {status === 'success' ? (
-                <>
-                  <CheckCircle2 className="w-5 h-5" />
-                  Saved
-                </>
+                <> <CheckCircle2 className="w-5 h-5" /> ENTRY DEPLOYED </>
               ) : (
-                <>
-                  <Save className="w-5 h-5" />
-                  Deploy Entry
-                </>
+                <> <Save className="w-5 h-5 text-current opacity-60" /> DEPLOY ENTRY </>
               )}
             </button>
           </div>
