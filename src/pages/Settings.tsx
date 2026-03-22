@@ -4,6 +4,7 @@ import { cn } from '../lib/utils';
 import { db } from '../lib/db';
 import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as SettingsIcon, X, Moon, Sun, Monitor, Palette, Tag, ShieldAlert } from 'lucide-react';
 import { useCategories } from '../hooks/useCategories';
+import { useTags } from '../hooks/useTags';
 import { useTheme } from '../components/ThemeProvider';
 
 export default function Settings() {
@@ -14,7 +15,10 @@ export default function Settings() {
   const [newCategory, setNewCategory] = useState('');
   
   const { categories, addCategory, removeCategory, resetCategories } = useCategories();
+  const { tags, addTag, removeTag, resetTags } = useTags();
   const { theme, setTheme } = useTheme();
+  
+  const [newTag, setNewTag] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -134,6 +138,16 @@ export default function Settings() {
       showMessage('success', 'Category added successfully');
     } else {
       showMessage('error', 'Category already exists or is invalid');
+    }
+  };
+
+  const handleAddTag = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (addTag(newTag)) {
+      setNewTag('');
+      showMessage('success', 'Tag added successfully');
+    } else {
+      showMessage('error', 'Tag already exists or is invalid');
     }
   };
 
@@ -306,6 +320,60 @@ export default function Settings() {
             </div>
           </div>
 
+          <div className="p-5 flex flex-col gap-5 border-t border-[#EBEBEB] dark:border-[#222222]">
+            <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
+              <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
+                <Tag className="w-5 h-5 text-brand-blue dark:text-inherit" />
+              </div>
+              <div>
+                <p className="font-semibold text-brand-blue dark:text-[#F7F7F7]">Transaction Classifiers</p>
+                <p className="text-xs font-medium text-brand-blue/30 dark:text-[#A0A0A0] mt-0.5 uppercase tracking-[0.1em]">Customize global transaction tags</p>
+              </div>
+            </div>
+
+            <div className="pl-0 sm:pl-[3.25rem] space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {tags.map((tag) => (
+                  <div key={tag} className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] rounded-full text-xs font-semibold border border-brand-blue/10 dark:border-[#333333] shadow-sm">
+                    #{tag}
+                    <button onClick={() => removeTag(tag)} className="text-brand-blue/20 dark:text-[#666666] hover:text-brand-red transition-colors">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <form onSubmit={handleAddTag} className="flex flex-1 gap-2">
+                  <input
+                    type="text"
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    placeholder="E.g., Business, Urgent"
+                    className="flex-1 px-4 py-2.5 bg-neutral-50 dark:bg-[#1A1A1A] border border-brand-blue/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-cyan transition-all text-sm font-medium text-brand-blue dark:text-[#F7F7F7] placeholder-brand-blue/20"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newTag.trim()}
+                    className="px-6 py-2.5 bg-brand-cyan dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl font-semibold hover:bg-brand-cyan/90 transition-all disabled:opacity-50 text-xs uppercase tracking-[0.2em] shadow-lg shadow-brand-cyan/10"
+                  >
+                    Deploy
+                  </button>
+                </form>
+                <button
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to restore default tags?')) {
+                      resetTags();
+                      showMessage('success', 'Tags reset to default');
+                    }
+                  }}
+                  className="px-4 py-2.5 text-xs font-semibold text-brand-blue/40 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-[#F7F7F7] hover:bg-brand-blue/5 rounded-xl transition-colors uppercase tracking-[0.2em]"
+                >
+                  Restore
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

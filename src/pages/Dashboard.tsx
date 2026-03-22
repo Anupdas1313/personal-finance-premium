@@ -7,6 +7,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useCategories } from '../hooks/useCategories';
+import { useTags } from '../hooks/useTags';
 
 const CATEGORIES = ['Food', 'Transport', 'Rent', 'Shopping', 'Bills', 'Entertainment', 'Salary', 'Transfer', 'Other'];
 
@@ -83,7 +84,15 @@ export default function Dashboard() {
   );
   const [paymentMethod, setPaymentMethod] = useState<'Bank' | 'UPI' | 'Credit Card' | 'Cash' | 'Bank Transfer'>('Bank');
   const [upiApp, setUpiApp] = useState<string>('');
-  const [expenseType, setExpenseType] = useState<string>('Personal');
+  const { tags } = useTags();
+  const [expenseType, setExpenseType] = useState<string>('');
+
+  // Set default expense type once tags load
+  useEffect(() => {
+    if (tags.length > 0 && !expenseType) {
+      setExpenseType(tags[0]);
+    }
+  }, [tags]);
 
   // Auto-select first account when accounts load and none selected
   useEffect(() => {
@@ -93,7 +102,8 @@ export default function Dashboard() {
       if ((firstAcc as any).type === 'CASH') setPaymentMethod('Cash');
       else if ((firstAcc as any).type === 'CREDIT_CARD') setPaymentMethod('Credit Card');
     }
-  }, [accounts]);
+  }, [accounts, selectedAccountId]);
+
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [timeFilter, setTimeFilter] = useState<'All Time' | 'This Month' | 'This Year'>('All Time');
@@ -181,7 +191,7 @@ export default function Dashboard() {
         setTransactionDate(new Date().toISOString().slice(0, 16));
         setPaymentMethod('Bank');
         setUpiApp('');
-        setExpenseType('Personal');
+        setExpenseType(tags[0] || '');
         setToAccountId('');
       }, 800);
     } catch (error) {
@@ -514,10 +524,10 @@ export default function Dashboard() {
             </div>
 
             {/* 2. Classification Tags — Right after Amount */}
-            {type !== 'TRANSFER' && (
+            {type !== 'TRANSFER' && tags.length > 0 && (
               <div className="flex items-center justify-between px-1">
                 <div className="flex gap-2 w-full">
-                  {['Personal', 'Home'].map(tagName => (
+                  {tags.map(tagName => (
                     <button key={tagName} onClick={() => setExpenseType(expenseType === tagName ? '' : tagName)} className={`flex-1 py-1.5 rounded-xl text-[10px] font-bold transition-all border ${expenseType === tagName ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue border-transparent shadow-sm' : 'bg-white dark:bg-[#111111] dark:bg-white/[0.02] border-[#EBEBEB] dark:border-white/5 text-neutral-400'}`}>#{tagName}</button>
                   ))}
                 </div>

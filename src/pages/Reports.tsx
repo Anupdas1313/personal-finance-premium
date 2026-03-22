@@ -7,12 +7,14 @@ import { Download, FileText, Printer, ChevronDown, Calendar, Filter, User, Smart
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useCategories } from '../hooks/useCategories';
+import { useTags } from '../hooks/useTags';
 
 export default function Reports() {
   const [searchParams] = useSearchParams();
   const accountIdParam = searchParams.get('accountId');
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
   const { categories } = useCategories();
+  const { tags } = useTags();
 
   // Filter States
   const [selectedAccountId, setSelectedAccountId] = useState<string | 'ALL'>(accountIdParam || 'ALL');
@@ -228,8 +230,8 @@ export default function Reports() {
               onChange={(e) => setSelectedTag(e.target.value)}
               className="w-full appearance-none bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-4 py-3 rounded-xl text-xs font-semibold uppercase outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all tracking-[0.05em]"
             >
-              <option value="ALL">Any Tag (Home/Personal)</option>
-              {['Personal', 'Home'].map(t => <option key={t} value={t}>{t}</option>)}
+              <option value="ALL">Any Tag (No Classification)</option>
+              {tags.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
           </div>

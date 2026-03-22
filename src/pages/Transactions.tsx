@@ -5,6 +5,7 @@ import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, Trash2, A
 import { useState, Fragment } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCategories } from '../hooks/useCategories';
+import { useTags } from '../hooks/useTags';
 
 const CATEGORY_ICONS: Record<string, string> = {
   'Food': '🍔',
@@ -67,11 +68,14 @@ export default function Transactions() {
   const [editNote, setEditNote] = useState('');
   const [editParty, setEditParty] = useState('');
   const [editCategory, setEditCategory] = useState('');
+  const [editExpenseType, setEditExpenseType] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   const { categories: appCategories } = useCategories();
+  const { tags } = useTags();
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
 
   const filterStart = dateRange ? dateRange.start : startOfMonth(currentMonth);
   const filterEnd = dateRange ? dateRange.end : endOfMonth(currentMonth);
@@ -84,6 +88,7 @@ export default function Transactions() {
   let filteredTransactions = allTransactions.filter(tx => {
     const matchesEntryType = entryTypeFilter === 'ALL' || tx.type === entryTypeFilter;
     const matchesSortType = sortTypeFilter === 'ALL' || tx.expenseType === sortTypeFilter;
+    const matchesCategory = categoryFilter === 'ALL' || tx.category === categoryFilter;
     
     let matchesSearch = true;
     if (searchTerm.trim()) {
@@ -97,7 +102,7 @@ export default function Transactions() {
         amountStr.includes(lowerSearch);
     }
 
-    return matchesEntryType && matchesSortType && matchesSearch;
+    return matchesEntryType && matchesSortType && matchesCategory && matchesSearch;
   });
 
   // Sort
@@ -174,6 +179,7 @@ export default function Transactions() {
     setEditNote(tx.note || '');
     setEditParty(tx.party || '');
     setEditCategory(tx.category || 'Other');
+    setEditExpenseType(tx.expenseType || '');
   };
 
   const saveEdit = async () => {
@@ -183,6 +189,7 @@ export default function Transactions() {
       note: editNote,
       party: editParty,
       category: editCategory,
+      expenseType: editExpenseType
     });
     setIsEditing(false);
     setSelectedTx(null);
@@ -383,14 +390,25 @@ export default function Transactions() {
 
             </div>
             <div>
+              <label className="block text-[10px] font-semibold text-[#666666] uppercase tracking-[0.2em] mb-3">Classification</label>
+              <div className="flex flex-wrap gap-2">
+                {['ALL', ...tags].map(tag => (
+                  <button key={tag} onClick={() => setSortTypeFilter(tag)}
+                    className={`px-4 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-[0.2em] transition-all ${sortTypeFilter === tag ? 'bg-brand-blue text-white shadow-md' : 'bg-brand-blue/5 text-brand-blue/40'}`}
+                  >
+                    {tag === 'ALL' ? 'All' : tag}
+                  </button>
+                )) }
+              </div>
+            </div>
+            <div>
               <label className="block text-[10px] font-semibold text-[#666666] uppercase tracking-[0.2em] mb-3">Categories</label>
               <div className="flex flex-wrap gap-2">
-                {['ALL', ...appCategories].map(type => (
-                  <button key={type} onClick={() => setSortTypeFilter(type)}
-                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${sortTypeFilter === type ? 'bg-[#222222] text-white dark:bg-white dark:text-[#111111]' : 'bg-neutral-100 dark:bg-[#1A1A1A] text-[#717171] dark:text-[#717171] hover:text-[#222222] dark:hover:text-[#A0A0A0]'}`}
-
+                {['ALL', ...appCategories].map(cat => (
+                  <button key={cat} onClick={() => setCategoryFilter(cat)}
+                    className={`px-4 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-[0.2em] transition-all ${categoryFilter === cat ? 'bg-brand-blue text-white shadow-md' : 'bg-brand-blue/5 text-brand-blue/40'}`}
                   >
-                    {type}
+                    {cat === 'ALL' ? 'All' : cat}
                   </button>
                 )) }
               </div>
@@ -601,7 +619,21 @@ export default function Transactions() {
                   <div><label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Amount *</label><input type="number" value={editAmount} onChange={e => setEditAmount(e.target.value.toString().replace(/,/g, ''))} step="0.01" className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]" /></div>
                   <div><label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Party</label><input type="text" value={editParty} onChange={e => setEditParty(e.target.value)} className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]" /></div>
                   <div><label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Note</label><input type="text" value={editNote} onChange={e => setEditNote(e.target.value)} className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]" /></div>
-                  <div><label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Category</label><select value={editCategory} onChange={e => setEditCategory(e.target.value)} className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]">{['Food', 'Transport', 'Rent', 'Shopping', 'Bills', 'Entertainment', 'Salary', 'Transfer', 'Other'].map(c => (<option key={c} value={c}>{c}</option>))}</select></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Category</label>
+                      <select value={editCategory} onChange={e => setEditCategory(e.target.value)} className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]">
+                        {['Food', 'Transport', 'Rent', 'Shopping', 'Bills', 'Entertainment', 'Salary', 'Transfer', 'Other'].map(c => (<option key={c} value={c}>{c}</option>))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Classification</label>
+                      <select value={editExpenseType} onChange={e => setEditExpenseType(e.target.value)} className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]">
+                        <option value="">No Tax</option>
+                        {tags.map(tag => (<option key={tag} value={tag}>{tag}</option>))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <>

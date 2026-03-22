@@ -9,6 +9,7 @@ import autoTable from 'jspdf-autotable';
 import { toBlob } from 'html-to-image';
 import { motion, useSpring, useTransform } from 'framer-motion';
 import { useCategories } from '../hooks/useCategories';
+import { useTags } from '../hooks/useTags';
 
 function CountUp({ value, prefix = '', suffix = '' }: { value: number, prefix?: string, suffix?: string }) {
   const spring = useSpring(0, { bounce: 0, duration: 1500 });
@@ -98,6 +99,7 @@ export default function TransactionTable() {
   const summaryRef = useRef<HTMLDivElement>(null);
   
   const { categories: appCategories } = useCategories();
+  const { tags } = useTags();
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.3));
@@ -500,29 +502,99 @@ export default function TransactionTable() {
           </div>
 
           {isFiltersExpanded && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="flex flex-col gap-3 pt-2 border-t border-[#EBEBEB] dark:border-[#222222]">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <select
-                  value={datePreset}
-                  onChange={(e) => handleDatePresetChange(e.target.value)}
-                  className="px-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-sm outline-none bg-white dark:bg-[#111111]"
-                >
-                  <option value="ALL_TIME">All Time</option>
-                  <option value="TODAY">Today</option>
-                  <option value="YESTERDAY">Yesterday</option>
-                  <option value="THIS_WEEK">This Week</option>
-                  <option value="THIS_MONTH">This Month</option>
-                  <option value="CUSTOM">Custom Date</option>
-                </select>
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="flex flex-col gap-4 pt-4 border-t border-[#EBEBEB] dark:border-[#222222]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                {/* Date Filter */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-brand-blue/40 uppercase tracking-widest pl-1">Timeline</label>
+                  <select
+                    value={datePreset}
+                    onChange={(e) => handleDatePresetChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-xs font-semibold outline-none bg-white dark:bg-[#111111] text-brand-blue dark:text-white"
+                  >
+                    <option value="ALL_TIME">All Time</option>
+                    <option value="TODAY">Today</option>
+                    <option value="YESTERDAY">Yesterday</option>
+                    <option value="THIS_WEEK">This Week</option>
+                    <option value="THIS_MONTH">This Month</option>
+                    <option value="CUSTOM">Custom Range</option>
+                  </select>
+                </div>
 
-                {datePreset === 'CUSTOM' && (
-                  <div className="flex items-center gap-2">
-                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="px-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-sm" />
-                    <span>to</span>
-                    <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="px-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-sm" />
-                  </div>
-                )}
+                {/* Type Filter */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-brand-blue/40 uppercase tracking-widest pl-1">Nature</label>
+                  <select
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                    className="w-full px-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-xs font-semibold outline-none bg-white dark:bg-[#111111] text-brand-blue dark:text-white"
+                  >
+                    <option value="ALL">All Types</option>
+                    <option value="DEBIT">Outflow (Debit)</option>
+                    <option value="CREDIT">Inflow (Credit)</option>
+                    <option value="TRANSFER">Inter-Account</option>
+                  </select>
+                </div>
+
+                {/* Account Filter */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-brand-blue/40 uppercase tracking-widest pl-1">Sub-Ledger</label>
+                  <select
+                    value={filterAccount}
+                    onChange={(e) => setFilterAccount(e.target.value)}
+                    className="w-full px-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-xs font-semibold outline-none bg-white dark:bg-[#111111] text-brand-blue dark:text-white"
+                  >
+                    <option value="ALL">All Accounts</option>
+                    {accounts.map(acc => (
+                      <option key={acc.id} value={String(acc.id)}>{acc.bankName}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Classification Filter (Tags) */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-brand-blue/40 uppercase tracking-widest pl-1">Classifier</label>
+                  <select
+                    value={filterExpenseType}
+                    onChange={(e) => setFilterExpenseType(e.target.value)}
+                    className="w-full px-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-xs font-semibold outline-none bg-white dark:bg-[#111111] text-brand-blue dark:text-white"
+                  >
+                    <option value="ALL">All Tags</option>
+                    {tags.map(tag => (
+                      <option key={tag} value={tag}>{tag}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Category Filter */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-brand-blue/40 uppercase tracking-widest pl-1">Taxonomy</label>
+                  <select
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                    className="w-full px-3 py-2 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-xs font-semibold outline-none bg-white dark:bg-[#111111] text-brand-blue dark:text-white"
+                  >
+                    <option value="ALL">All Categories</option>
+                    {appCategories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
+
+              {datePreset === 'CUSTOM' && (
+                <div className="flex items-center gap-3 p-3 bg-neutral-100 dark:bg-[#1A1A1A] rounded-2xl animate-in fade-in slide-in-from-top-2">
+                  <div className="flex-1 flex flex-col gap-1">
+                    <label className="text-[8px] font-bold text-brand-blue/30 uppercase tracking-[0.2em] pl-1">Commencement</label>
+                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-1.5 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-xs font-semibold bg-white dark:bg-[#111111]" />
+                  </div>
+                  <div className="text-brand-blue/20 dark:text-[#333333] pt-4 font-bold">➔</div>
+                  <div className="flex-1 flex flex-col gap-1">
+                    <label className="text-[8px] font-bold text-brand-blue/30 uppercase tracking-[0.2em] pl-1">Termination</label>
+                    <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-1.5 border border-[#EBEBEB] dark:border-[#222222] rounded-xl text-xs font-semibold bg-white dark:bg-[#111111]" />
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
         </div>
