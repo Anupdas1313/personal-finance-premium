@@ -498,7 +498,7 @@ export default function Dashboard() {
           <div className="flex-1 overflow-y-auto w-full px-4 pt-3 pb-safe space-y-2.5 scrollbar-hide no-scrollbar">
             
             {/* 1. Hero Card — Amount & Type */}
-            <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-4 shadow-sm flex flex-col items-center gap-4">
+            <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-2.5 shadow-sm flex flex-col items-center gap-2.5">
               <div className="flex bg-[#F7F7F7] dark:bg-white/5 p-1 rounded-2xl w-full">
                 <button onClick={() => setType('DEBIT')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'DEBIT' ? 'bg-white dark:bg-[#2C2C34] text-brand-red shadow-sm' : 'text-neutral-400'}`}>Outflow</button>
                 <button onClick={() => setType('CREDIT')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'CREDIT' ? 'bg-white dark:bg-[#2C2C34] text-brand-green shadow-sm' : 'text-neutral-400'}`}>Inflow</button>
@@ -510,7 +510,7 @@ export default function Dashboard() {
                   <span className="text-xl font-bold text-neutral-300 dark:text-[#333333]">₹</span>
                   <input 
                     type="number" inputMode="decimal" autoFocus value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" step="0.01"
-                    className="bg-transparent text-3xl font-heading font-bold text-center outline-none min-w-[100px] max-w-full text-brand-blue dark:text-white tracking-tight caret-brand-cyan"
+                    className="bg-transparent text-2xl font-heading font-bold text-center outline-none min-w-[100px] max-w-full text-brand-blue dark:text-white tracking-tight caret-brand-cyan"
                   />
                 </div>
                 <div className="relative mt-1">
