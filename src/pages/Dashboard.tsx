@@ -513,7 +513,18 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* 2. Recipient & Remark Card */}
+            {/* 2. Classification Tags — Right after Amount */}
+            {type !== 'TRANSFER' && (
+              <div className="flex items-center justify-between px-1">
+                <div className="flex gap-2 w-full">
+                  {['Personal', 'Home'].map(tagName => (
+                    <button key={tagName} onClick={() => setExpenseType(expenseType === tagName ? '' : tagName)} className={`flex-1 py-1.5 rounded-xl text-[10px] font-bold transition-all border ${expenseType === tagName ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue border-transparent shadow-sm' : 'bg-white dark:bg-[#111111] dark:bg-white/[0.02] border-[#EBEBEB] dark:border-white/5 text-neutral-400'}`}>#{tagName}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 3. Recipient & Remark Card */}
             <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-1 divide-y divide-[#EBEBEB] dark:divide-white/5">
               {type !== 'TRANSFER' && (
                 <div className="flex items-center gap-3 px-4 py-3 group">
@@ -527,7 +538,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* 3. Account selection */}
+            {/* 4. Account selection */}
             <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-3 space-y-3">
               <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
                 {accounts.map(acc => (
@@ -556,14 +567,10 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* 4. Category Grid & Tags — Integrated */}
+            {/* 5. Category Grid — Integrated */}
             <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-3 space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex gap-1.5">
-                  {['Personal', 'Home'].map(tagName => (
-                    <button key={tagName} onClick={() => setExpenseType(expenseType === tagName ? '' : tagName)} className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all border ${expenseType === tagName ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue border-transparent' : 'bg-[#F7F7F7] dark:bg-white/[0.02] border-transparent text-neutral-400'}`}>#{tagName}</button>
-                  ))}
-                </div>
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">Choose Category</span>
                 <span className="text-[10px] font-bold text-brand-blue dark:text-brand-cyan px-2 py-0.5 bg-brand-blue/5 dark:bg-brand-cyan/5 rounded-full lowercase tracking-wider">{category}</span>
               </div>
               <div className="grid grid-cols-9 gap-1.5">
@@ -573,7 +580,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* 5. Payment Method */}
+            {/* 6. Payment Method */}
             <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-3 space-y-3">
               <div className="grid grid-cols-4 gap-2">
                 {[
