@@ -89,71 +89,83 @@ export default function Dashboard() {
   
   const { categories: appCategories } = useCategories();
 
-  const handleSaveManual = async () => {
-    if (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType)) {
+  const handleSaveManual = async (txData?: any) => {
+    const currentAmount = txData?.amount || amount;
+    const currentType = txData?.type || type;
+    const currentSelectedAccountId = txData?.selectedAccountId || selectedAccountId;
+    const currentToAccountId = txData?.toAccountId || toAccountId;
+    const currentPaymentMethod = txData?.paymentMethod || paymentMethod;
+    const currentUpiApp = txData?.upiApp || upiApp;
+    const currentExpenseType = txData?.expenseType || expenseType;
+    const currentPartyName = txData?.partyName || partyName;
+    const currentNote = txData?.note || note;
+    const currentCategory = txData?.category || category;
+    const currentTransactionDate = txData?.transactionDate || transactionDate;
+
+    if (!currentAmount || !currentType || !currentSelectedAccountId || (currentType !== 'TRANSFER' && !currentExpenseType)) {
       setStatus('error');
       setErrorMessage('Missing required fields.');
       return;
     }
 
     try {
-      if (type === 'TRANSFER') {
-        if (!toAccountId) {
+      if (currentType === 'TRANSFER') {
+        if (!currentToAccountId) {
           setStatus('error');
           setErrorMessage('Please select a destination account for the transfer.');
           return;
         }
-        if (selectedAccountId === toAccountId) {
+        if (currentSelectedAccountId === currentToAccountId) {
           setStatus('error');
           setErrorMessage('Source and destination accounts cannot be the same.');
           return;
         }
 
-        const isTodaySelected = format(new Date(transactionDate), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
-        const finalDateTime = isTodaySelected ? new Date() : new Date(transactionDate);
+        const isTodaySelected = format(new Date(currentTransactionDate), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+        const finalDateTime = isTodaySelected ? new Date() : new Date(currentTransactionDate);
 
         // Add DEBIT transaction for source account
         await db.transactions.add({
-          accountId: Number(selectedAccountId),
-          amount: parseFloat(amount.toString().replace(/,/g, '')) || 0,
+          accountId: Number(currentSelectedAccountId),
+          amount: parseFloat(currentAmount.toString().replace(/,/g, '')) || 0,
           type: 'DEBIT',
           dateTime: finalDateTime,
-          note: note || `Transfer to ${accounts.find(a => a.id === toAccountId)?.bankName}`,
+          note: currentNote || `Transfer to ${accounts.find(a => a.id === currentToAccountId)?.bankName}`,
           category: 'Transfer',
-          paymentMethod,
-          upiApp: paymentMethod === 'UPI' ? upiApp : undefined,
-          party: accounts.find(a => a.id === toAccountId)?.bankName || 'Other Account',
-          expenseType,
+          paymentMethod: currentPaymentMethod,
+          upiApp: currentPaymentMethod === 'UPI' ? currentUpiApp : undefined,
+          party: accounts.find(a => a.id === currentToAccountId)?.bankName || 'Other Account',
+          expenseType: currentExpenseType,
         });
 
         // Add CREDIT transaction for destination account
         await db.transactions.add({
-          accountId: Number(toAccountId),
-          amount: parseFloat(amount.toString().replace(/,/g, '')) || 0,
+          accountId: Number(currentToAccountId),
+          amount: parseFloat(currentAmount.toString().replace(/,/g, '')) || 0,
           type: 'CREDIT',
           dateTime: finalDateTime,
-          note: note || `Transfer from ${accounts.find(a => a.id === selectedAccountId)?.bankName}`,
+          note: currentNote || `Transfer from ${accounts.find(a => a.id === currentSelectedAccountId)?.bankName}`,
           category: 'Transfer',
-          paymentMethod,
-          upiApp: paymentMethod === 'UPI' ? upiApp : undefined,
-          party: accounts.find(a => a.id === selectedAccountId)?.bankName || 'Other Account',
-          expenseType,
+          paymentMethod: currentPaymentMethod,
+          upiApp: currentPaymentMethod === 'UPI' ? currentUpiApp : undefined,
+          party: accounts.find(a => a.id === currentSelectedAccountId)?.bankName || 'Other Account',
+          expenseType: currentExpenseType,
         });
       } else {
-        const isTodaySelected = format(new Date(transactionDate), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
-        const finalDateTime = isTodaySelected ? new Date() : new Date(transactionDate);
+        const isTodaySelected = format(new Date(currentTransactionDate), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+        const finalDateTime = isTodaySelected ? new Date() : new Date(currentTransactionDate);
 
         await db.transactions.add({
-          accountId: Number(selectedAccountId),
-          amount: parseFloat(amount.toString().replace(/,/g, '')) || 0,
-          type: type as 'CREDIT' | 'DEBIT',
+          accountId: Number(currentSelectedAccountId),
+          amount: parseFloat(currentAmount.toString().replace(/,/g, '')) || 0,
+          type: currentType as 'CREDIT' | 'DEBIT',
           dateTime: finalDateTime,
-          note: note || '',
-          category,
-          paymentMethod,
-          upiApp: paymentMethod === 'UPI' ? upiApp : undefined,
-          party: partyName,
-          expenseType,
+          note: currentNote || '',
+          category: currentCategory,
+          paymentMethod: currentPaymentMethod,
+          upiApp: currentPaymentMethod === 'UPI' ? currentUpiApp : undefined,
+          party: currentPartyName,
+          expenseType: currentExpenseType,
         });
       }
       
@@ -483,18 +495,7 @@ export default function Dashboard() {
                  accounts={accounts} 
                  tags={tags} 
                  onSave={(tx) => {
-                   setAmount(tx.amount);
-                   setCategory(tx.category);
-                   setSelectedAccountId(tx.selectedAccountId);
-                   setToAccountId(tx.toAccountId || '');
-                   setType(tx.type);
-                   setPaymentMethod(tx.paymentMethod || 'UPI');
-                   setUpiApp(tx.upiApp || 'GPay');
-                   setExpenseType(tx.expenseType || tags[0]);
-                   setPartyName(tx.partyName || '');
-                   setNote(tx.note || '');
-                   setTransactionDate(tx.transactionDate);
-                   setTimeout(handleSaveManual, 100);
+                   handleSaveManual(tx);
                  }} 
                />
             </div>

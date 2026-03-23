@@ -31,13 +31,11 @@ const MERCHANT_KNOWLEDGE: Record<string, { category: string, tag: string }> = {
   'amazon': { category: 'Shopping', tag: 'Personal' },
   'netflix': { category: 'Bills', tag: 'Personal' },
   'spotify': { category: 'Entertainment', tag: 'Personal' },
-  'salary': { category: 'Salary', tag: 'Work' },
-  'income': { category: 'Other', tag: 'Personal' },
 };
 
 export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags }) => {
   const [messages, setMessages] = useState<any[]>([
-    { role: 'ai', content: "Hi! I won't guess your transaction type anymore. I'll ask you to confirm if it's an Inflow (Income) or Outflow (Expense). How can I help?" }
+    { role: 'ai', content: "Hi! I'm smarter now. I'll save your entries instantly and use professional bank short-forms like SBI and HDFC!" }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -84,9 +82,9 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     let amount = kMatch ? (parseFloat(kMatch[1]) * 1000).toString() : (t.match(/\b\d+(?:\.\d+)?\b/)?.[0] || '');
     
     let type = '';
-    if (t.match(/\b(received|got|salary|income|credit|add|deposit|gift|bonus)\b/)) type = 'CREDIT';
+    if (t.match(/\b(received|got|salary|income|credit|add|deposit)\b/)) type = 'CREDIT';
     else if (t.match(/\b(transfer|moved|move|sent|send)\b/)) type = 'TRANSFER';
-    else if (t.match(/\b(paid|spent|bought|expense|debit|gave|gave to)\b/)) type = 'DEBIT';
+    else if (t.match(/\b(paid|spent|bought|expense|debit|gave)\b/)) type = 'DEBIT';
 
     let accountId = '', toAccountId = '', autoPaymentMethod = '', upiApp = '';
     const acc = resolveBank(t);
@@ -129,8 +127,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     if (stage === 'IDLE' || stage === 'PREVIEW') {
       const p = parseUniversal(userMsg);
       updated = {
-        ...updated, amount: p.amount || updated.amount, 
-        type: p.type || updated.type, // ABSOLUTELY NO DEFAULTING TO DEBIT
+        ...updated, amount: p.amount || updated.amount, type: p.type || updated.type,
         selectedAccountId: p.accountId || updated.selectedAccountId, toAccountId: p.toAccountId || updated.toAccountId,
         paymentMethod: p.autoPaymentMethod || updated.paymentMethod, upiApp: p.upiApp || updated.upiApp,
         category: p.category || updated.category, expenseType: p.tag || updated.expenseType, 
@@ -194,7 +191,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       checkNextStep(updated);
     }
     else if (stage === 'ASK_NOTE') {
-      if (!userMsg.trim() || userMsg.match(/(skip|no)/i)) addAIMessage("A remark is mandatory. Describe this entry!");
+      if (!userMsg.trim() || userMsg.match(/(skip|no)/i)) addAIMessage("A remark is required. Describe this entry!");
       else { updated.note = userMsg; setPendingTx(updated); checkNextStep(updated); }
     }
     else if (stage === 'ASK_DATE') {
@@ -205,14 +202,28 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     }
   };
 
-  const getBankDisplay = (acc: any) => acc.bankName.split(' ').filter((w:any)=>w.length>2).map((w:any)=>w[0]).join('').toUpperCase() || acc.bankName.split(' ')[0];
+  const getBankDisplay = (acc: any) => {
+    const n = acc.bankName.toLowerCase();
+    if (n.includes('state bank')) return 'SBI';
+    if (n.includes('hdfc')) return 'HDFC';
+    if (n.includes('icici')) return 'ICICI';
+    if (n.includes('axis')) return 'AXIS';
+    if (n.includes('punjab national')) return 'PNB';
+    if (n.includes('bank of baroda')) return 'BOB';
+    if (n.includes('kotak')) return 'KOTAK';
+    if (n.includes('canara')) return 'CANARA';
+    if (n.includes('idfc')) return 'IDFC';
+    
+    const words = acc.bankName.split(' ');
+    if (words.length === 1) return words[0];
+    if (words.length === 2 && words[1].toLowerCase() === 'bank') return words[0];
+    
+    return words.filter((w:any)=>w.length>2).map((w:any)=>w[0]).join('').toUpperCase() || words[0];
+  };
 
   const checkNextStep = (tx: any) => {
     if (!tx.amount) { setStage('ASK_AMOUNT'); addAIMessage("How much was the amount?"); }
-    else if (!tx.type) { 
-        setStage('ASK_TYPE'); 
-        addAIMessage("Is this an Outflow (Expense) or Inflow (Income)?", ['Outflow/Expense', 'Inflow/Income', 'Transfer']); 
-    }
+    else if (!tx.type) { setStage('ASK_TYPE'); addAIMessage("Is this an Outflow (Expense) or Inflow (Income)?", ['Outflow/Expense', 'Inflow/Income', 'Transfer']); }
     else if (!tx.selectedAccountId) { setStage('ASK_BANK'); addAIMessage(tx.type === 'CREDIT' ? "Received in which account?" : "Paid from which account?", accounts.map(a => getBankDisplay(a))); }
     else if (tx.type === 'TRANSFER' && !tx.toAccountId) { setStage('ASK_BANK'); addAIMessage("Move to which account?", accounts.filter(a => a.id !== tx.selectedAccountId).map(a => getBankDisplay(a))); }
     else if (!tx.paymentMethod) { setStage('ASK_PAYMENT_METHOD'); addAIMessage("Payment Method:", ['UPI', 'Credit Card', 'Cash', 'Bank Transfer']); }
@@ -274,7 +285,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
             <div className="grid grid-cols-2 gap-2 mb-3 px-0.5">
                <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
                  <Landmark className="w-3 h-3 text-neutral-400" />
-                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">{pendingTx.type === 'CREDIT' ? 'Recipient' : 'Source'}</span><span className="text-[9px] font-bold text-brand-blue dark:text-white truncate">{accounts.find(a=>a.id === pendingTx.selectedAccountId)?.bankName || '-'}</span></div>
+                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">{pendingTx.type === 'CREDIT' ? 'Recipient' : 'Source'}</span><span className="text-[9px] font-bold text-brand-blue dark:text-white truncate">{getBankDisplay(accounts.find(a=>a.id === pendingTx.selectedAccountId) || {bankName: '-'})}</span></div>
                </div>
                <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
                  <AppWindow className="w-3 h-3 text-neutral-400" />
