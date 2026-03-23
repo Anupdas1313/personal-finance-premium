@@ -158,7 +158,7 @@ export default function Accounts() {
       </div>
 
       {isAdding && (
-        <div className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_8px_40px_rgba(26,35,126,0.08)] border border-brand-blue/5 dark:border-[#222222]">
+        <div className="bg-[#F0F4FF] dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_8px_40px_rgba(26,35,126,0.08)] border border-brand-blue/5 dark:border-[#222222]">
           <h2 className="text-xl font-heading font-semibold text-brand-blue dark:text-[#F7F7F7] mb-5 tracking-tight flex items-center gap-2">
             <div className="w-2 h-6 bg-brand-green rounded-full"></div>
             {editingAccountId ? 'Edit Account' : 'New Account'}
@@ -320,7 +320,7 @@ export default function Accounts() {
                     <div 
                       key={account.id} 
                       onClick={() => setSelectedAccountId(account.id!)}
-                      className="bg-white dark:bg-[#111111] p-4.5 rounded-[22px] shadow-[0_4px_12px_rgba(26,35,126,0.03)] border border-[#EBEBEB] dark:border-white/5 flex flex-col justify-between hover:shadow-[0_10px_25px_rgba(26,35,126,0.08)] transition-all transform hover:-translate-y-1 cursor-pointer"
+                      className="bg-[#F0F4FF] dark:bg-[#111111] p-4.5 rounded-[22px] shadow-[0_4px_12px_rgba(26,35,126,0.03)] border border-brand-blue/5 dark:border-white/5 flex flex-col justify-between hover:shadow-[0_10px_25px_rgba(26,35,126,0.08)] transition-all transform hover:-translate-y-1 cursor-pointer"
                     >
                       <div>
                         <div className="flex justify-between items-start mb-4" onClick={(e) => e.stopPropagation()}>

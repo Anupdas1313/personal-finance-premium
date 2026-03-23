@@ -344,7 +344,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 gap-6">
         {/* Accounts List */}
-        <div className="bg-white dark:bg-[#0C0C0F] rounded-[28px] shadow-[0_8px_40px_rgba(26,35,126,0.08)] dark:shadow-none border border-[#EBEBEB] dark:border-[#1A1A1E] overflow-hidden">
+        <div className="bg-[#F0F4FF] dark:bg-[#0C0C0F] rounded-[28px] shadow-[0_8px_40px_rgba(26,35,126,0.08)] dark:shadow-none border border-brand-blue/5 dark:border-[#1A1A1E] overflow-hidden">
           <div className="p-6 border-b border-[#EBEBEB] dark:border-[#1A1A1E] flex justify-between items-center">
             <h2 className="text-xl font-heading font-semibold text-[#1A237E] dark:text-[#F7F7F7] tracking-tight">Your Accounts</h2>
             <Link to="/accounts" className="text-sm font-semibold text-[#00A86B] dark:text-emerald-500/70 hover:underline transition-colors uppercase tracking-[0.2em]">Manage</Link>
@@ -381,7 +381,8 @@ export default function Dashboard() {
 
       {/* Manual Entry Modal - Compact Pill-Based UX Redesign */}
       {isAddingManual && createPortal(
-        <div className="fixed inset-0 bg-[#F7F7F7] dark:bg-[#0A0A0A] text-[#222222] dark:text-white z-[9999] flex flex-col animate-in fade-in slide-in-from-bottom-5 duration-300 font-sans">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center p-0 sm:p-4 bg-brand-blue/20 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="w-full max-w-lg bg-white dark:bg-[#0C0C0F] rounded-t-[32px] sm:rounded-[32px] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 duration-500 border border-white/20">
           {/* Elegant Header — More compact */}
           <div className="flex items-center justify-between px-3 py-1.5 pt-safe-top bg-white dark:bg-[#111111] border-b border-[#EBEBEB] dark:border-white/5 shadow-sm z-20">
             <button onClick={closeMenu} className="text-[#717171] dark:text-[#A0A0A5] hover:text-brand-blue dark:hover:text-brand-cyan transition-colors p-1">
@@ -433,9 +434,9 @@ export default function Dashboard() {
               <div className="flex-1 overflow-y-auto w-full px-4 pt-4 pb-24 space-y-2 scrollbar-hide no-scrollbar">
                 
                 {/* 1. Hero Card: Consolidates Flow, Amount, and Bank */}
-                <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-white/5 p-1 flex flex-col gap-1.5 shadow-sm">
+                <div className="bg-[#F0F4FF] dark:bg-[#111111] rounded-2xl border border-brand-blue/5 dark:border-white/5 p-1 flex flex-col gap-1.5 shadow-sm">
                   {/* Top Row: Full-width Type Toggle */}
-                  <div className="flex bg-[#F7F7F7] dark:bg-white/5 p-0.5 rounded-2xl w-full shrink-0">
+                  <div className="flex bg-[#F0F4FF] dark:bg-white/5 p-0.5 rounded-2xl w-full shrink-0">
                     <button onClick={() => setType('DEBIT')} className={`flex-1 py-1 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'DEBIT' ? 'bg-white dark:bg-[#2C2C34] text-brand-red shadow-sm' : 'text-neutral-400'}`}>Outflow</button>
                     <button onClick={() => setType('CREDIT')} className={`flex-1 py-1 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'CREDIT' ? 'bg-white dark:bg-[#2C2C34] text-brand-green shadow-sm' : 'text-neutral-400'}`}>Inflow</button>
                     <button onClick={() => setType('TRANSFER')} className={`flex-1 py-1 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'TRANSFER' ? 'bg-white dark:bg-[#2C2C34] text-brand-green shadow-sm' : 'text-neutral-400'}`}>Transfer</button>
@@ -453,7 +454,7 @@ export default function Dashboard() {
                         />
                       </div>
                       <div className="relative">
-                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F7F7F7] dark:bg-white/5 text-neutral-400 dark:text-neutral-500 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors">
+                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F0F4FF] dark:bg-white/5 text-neutral-400 dark:text-neutral-500 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors">
                           <Calendar className="w-2.5 h-2.5" />
                           <span className="text-[8px] font-bold uppercase tracking-wider">{format(new Date(transactionDate), 'dd MMM, hh:mm a')}</span>
                         </div>
@@ -478,7 +479,7 @@ export default function Dashboard() {
                                 else if (paymentMethod === 'Cash' || paymentMethod === 'Credit Card') setPaymentMethod('Bank');
                               }
                           }}
-                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-xl border transition-all relative ${selectedAccountId === acc.id || toAccountId === acc.id ? 'bg-brand-green/5 dark:bg-brand-green/5 border-brand-green dark:border-brand-green shadow-sm' : 'bg-[#F7F7F7] dark:bg-white/[0.02] border-transparent'}`}
+                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-xl border transition-all relative ${selectedAccountId === acc.id || toAccountId === acc.id ? 'bg-brand-green/5 dark:bg-brand-green/5 border-brand-green dark:border-brand-green shadow-sm' : 'bg-[#F0F4FF] dark:bg-white/[0.02] border-transparent'}`}
                         >
                           {selectedAccountId === acc.id && type === 'TRANSFER' && <div className="absolute -top-1 right-1 bg-brand-green text-white text-[5px] font-bold px-1 py-0.5 rounded-full uppercase tracking-tighter">F</div>}
                           {toAccountId === acc.id && type === 'TRANSFER' && <div className="absolute -top-1 right-1 bg-brand-cyan text-brand-blue text-[5px] font-bold px-1 py-0.5 rounded-full uppercase tracking-tighter">T</div>}
@@ -513,7 +514,7 @@ export default function Dashboard() {
                 )}
 
                 {/* 3. Recipient & Remark Card */}
-                <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-white/5 p-0 shadow-sm divide-y divide-[#EBEBEB] dark:divide-white/5 mx-1">
+                <div className="bg-[#F0F4FF] dark:bg-[#111111] rounded-2xl border border-brand-blue/5 dark:border-white/5 p-0 shadow-sm divide-y divide-[#EBEBEB] dark:divide-white/5 mx-1">
                   {type !== 'TRANSFER' && (
                     <div className="flex items-center gap-4 px-4 py-5 group">
                       <User className="w-5 h-5 text-neutral-400 dark:text-[#555555]" />
@@ -527,7 +528,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* 5. Category Grid — Integrated */}
-                <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-white/5 p-2 space-y-1.5 shadow-sm">
+                <div className="bg-[#F0F4FF] dark:bg-[#111111] rounded-2xl border border-brand-blue/5 dark:border-white/5 p-2 space-y-1.5 shadow-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">Choose Category</span>
                     <span className="text-[10px] font-bold text-brand-green dark:text-brand-green px-2 py-0.5 bg-brand-green/5 dark:bg-brand-green/5 rounded-full lowercase tracking-wider">{category}</span>
@@ -540,7 +541,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* 6. Payment Method — Intelligence Layer */}
-                <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-white/5 p-2 space-y-2 shadow-sm">
+                <div className="bg-[#F0F4FF] dark:bg-[#111111] rounded-2xl border border-brand-blue/5 dark:border-white/5 p-2 space-y-2 shadow-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">Payment Logistics</span>
                     <span className="text-[10px] font-bold text-brand-green dark:text-brand-green px-2 py-0.5 bg-brand-green/5 dark:bg-brand-green/5 rounded-full lowercase tracking-wider">{paymentMethod}</span>
@@ -617,6 +618,7 @@ export default function Dashboard() {
               </div>
             </>
           )}
+          </div>
         </div>,
         document.body
       )}
