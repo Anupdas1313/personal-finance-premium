@@ -368,7 +368,7 @@ export default function Dashboard() {
                       </p>
                     </div>
                   </div>
-                  <p className="font-heading font-semibold text-brand-green dark:text-brand-cyan tracking-tight">
+                  <p className={`font-heading font-semibold tracking-tight ${acc.currentBalance < 0 ? 'text-brand-red' : 'text-brand-green'} dark:text-brand-cyan`}>
                     ₹{acc.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </p>
 
@@ -585,7 +585,13 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {status === 'error' && <div className="px-5 py-2 rounded-2xl bg-rose-50 dark:bg-brand-red/10 text-brand-red text-center text-[10px] font-bold uppercase tracking-wider">{errorMessage}</div>}
+                {/* Low Balance Warning */}
+                {type === 'DEBIT' && amount && parseFloat(amount.toString().replace(/,/g, '')) > (balances.find(a => a.id === selectedAccountId)?.currentBalance || 0) && (
+                  <div className="flex items-center gap-1.5 text-brand-red animate-pulse">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span className="text-[9px] font-black uppercase tracking-widest">Low Balance Warning</span>
+                  </div>
+                )}
               </div>
 
               {/* Persistent Action Bar — Fixed Bottom Optimized */}
