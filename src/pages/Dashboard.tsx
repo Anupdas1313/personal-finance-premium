@@ -486,6 +486,7 @@ export default function Dashboard() {
                    setAmount(tx.amount);
                    setCategory(tx.category);
                    setSelectedAccountId(tx.selectedAccountId);
+                   setToAccountId(tx.toAccountId || '');
                    setType(tx.type);
                    setPaymentMethod(tx.paymentMethod || 'UPI');
                    setUpiApp(tx.upiApp || 'GPay');
