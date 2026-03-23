@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, CheckCircle2, Sparkles, Calendar, User as UserIcon, Landmark, Smartphone, CreditCard, Coins, Tag } from 'lucide-react';
+import { Send, Bot, CheckCircle2, Sparkles, Calendar, User as UserIcon, Landmark, Smartphone, CreditCard, Coins, Tag, Lightbulb } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { CATEGORIES, CATEGORY_ICONS } from '../constants';
 
@@ -12,9 +12,31 @@ interface AIChatEntryProps {
 
 type ChatStage = 'IDLE' | 'ASK_AMOUNT' | 'ASK_TYPE' | 'ASK_BANK' | 'ASK_PAYMENT_METHOD' | 'ASK_CATEGORY' | 'ASK_TAG' | 'ASK_PAYEE' | 'ASK_NOTE' | 'ASK_DATE' | 'PREVIEW';
 
+// Advanced Semantic Dictionary for local "intelligence"
+const MERCHANT_KNOWLEDGE: Record<string, { category: string, tag: string }> = {
+  'starbucks': { category: 'Food', tag: 'Personal' },
+  'mcdonalds': { category: 'Food', tag: 'Personal' },
+  'kfc': { category: 'Food', tag: 'Personal' },
+  'zomato': { category: 'Food', tag: 'Personal' },
+  'swiggy': { category: 'Food', tag: 'Personal' },
+  'uber': { category: 'Transport', tag: 'Work' },
+  'ola': { category: 'Transport', tag: 'Personal' },
+  'rapido': { category: 'Transport', tag: 'Personal' },
+  'amazon': { category: 'Shopping', tag: 'Personal' },
+  'flipkart': { category: 'Shopping', tag: 'Personal' },
+  'blinkit': { category: 'Shopping', tag: 'Personal' },
+  'zepto': { category: 'Shopping', tag: 'Personal' },
+  'netflix': { category: 'Bills', tag: 'Personal' },
+  'spotify': { category: 'Entertainment', tag: 'Personal' },
+  'jio': { category: 'Bills', tag: 'Personal' },
+  'airtel': { category: 'Bills', tag: 'Personal' },
+  'shell': { category: 'Transport', tag: 'Personal' },
+  'pvr': { category: 'Entertainment', tag: 'Personal' },
+};
+
 export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags }) => {
   const [messages, setMessages] = useState<any[]>([
-    { role: 'ai', content: "Hi! I'm your advanced AI assistant. Tell me about a transaction (e.g., 'Paid to Hrisav for food 500 using SBI' or 'Got 5k salary in HDFC'), and I'll break it down step-by-step!" }
+    { role: 'ai', content: "Hi! I'm your advanced AI assistant. You can say things like 'Spent 500 at Starbucks' and I'll even predict the category for you! How can I help today?" }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -31,7 +53,8 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     partyName: '',
     note: '',
     transactionDate: new Date().toISOString().slice(0, 16),
-    _dateConfirmed: false
+    _dateConfirmed: false,
+    _isPredicted: false
   });
 
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -51,7 +74,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
   const parseUniversal = (text: string) => {
     const t = text.toLowerCase();
     
-    // Amount Detection (handle 1k, 1.5k, etc)
+    // 1. Amount Detection (handle 1k, 1.5k, etc)
     const kMatch = t.match(/(\d+(?:\.\d+)?)\s*k/i);
     let amount = '';
     if (kMatch) {
@@ -61,85 +84,84 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       if (basicMatch) amount = basicMatch[0];
     }
 
-    // Type detection based on semantics
+    // 2. Type detection based on semantics
     let type = '';
-    if (t.match(/\b(received|got|salary|added|income|refund)\b/)) type = 'CREDIT';
+    if (t.match(/\b(received|got|salary|added|income|refund|deposit)\b/)) type = 'CREDIT';
     else if (t.match(/\b(transfer|moved|sent)\b/)) type = 'TRANSFER';
-    else if (t.match(/\b(paid|spent|bought|gave)\b/)) type = 'DEBIT';
+    else if (t.match(/\b(paid|spent|bought|gave|purchased)\b/)) type = 'DEBIT';
 
-    // Bank Fuzzy + Acronym detection
+    // 3. Bank Fuzzy + Acronym detection
     let accountId = '';
     let autoPaymentMethod = '';
     for (const acc of accounts) {
       const nameStr = acc.bankName.toLowerCase();
+      // Generate multiple short-forms
       const words = nameStr.split(/[\s-]+/);
-      const initials = words.map(w => w[0]).join(''); // E.g., State Bank of India -> sboi
-      const initialsNoOf = words.filter(w => w !== 'of').map(w => w[0]).join(''); // -> sbi
-      
-      if (
-        t.includes(nameStr) || 
-        (initials.length > 1 && t.match(new RegExp(`\\b${initials}\\b`, 'i'))) ||
-        (initialsNoOf.length > 1 && t.match(new RegExp(`\\b${initialsNoOf}\\b`, 'i')))
-      ) {
+      const acronyms = [
+          words.map(w => w[0]).join(''), // SBI
+          words.filter(w => w.length > 2).map(w => w[0]).join(''), // S B I (filter small words)
+          nameStr.replace(/\s+/g, '') // HDFCBank
+      ];
+
+      if (t.includes(nameStr) || acronyms.some(acr => acr.length > 1 && t.includes(acr))) {
         accountId = acc.id!;
         if (acc.type === 'CREDIT_CARD') autoPaymentMethod = 'Credit Card';
         else if (acc.type === 'CASH') autoPaymentMethod = 'Cash';
+        else autoPaymentMethod = 'UPI';
         break;
       }
     }
 
-    // Payment Method Explicit Mentions
-    if (t.includes('upi') || t.includes('gpay') || t.includes('phonepe') || t.includes('paytm')) autoPaymentMethod = 'UPI';
-    else if (t.includes('cash')) autoPaymentMethod = 'Cash';
-    else if (t.includes('card')) autoPaymentMethod = 'Credit Card';
-    else if (t.includes('bank transfer') || t.includes('neft')) autoPaymentMethod = 'Bank Transfer';
-
-    // Category
+    // 4. Semantic Intelligence: Category & Tag Prediction
     let category = '';
+    let tag = '';
+    let isPredicted = false;
+
+    // Direct Category Keyword Detection
     for (const cat of CATEGORIES) {
       if (t.includes(cat.toLowerCase())) {
         category = cat;
         break;
       }
     }
-
-    // Classification Tag
-    let tag = '';
-    for (const tg of tags) {
-      if (t.includes(tg.toLowerCase())) {
-        tag = tg;
+    
+    // Knowledge Base Lookup
+    for (const [merchant, data] of Object.entries(MERCHANT_KNOWLEDGE)) {
+      if (t.includes(merchant)) {
+        category = category || data.category;
+        tag = tag || data.tag;
+        isPredicted = true;
         break;
       }
     }
 
-    // Deep Parsing for Payee and Note ("paid to [payee] for [note]")
+    // 5. Deep Parsing for Payee and Note
     let parsedPayee = '';
     let parsedNote = '';
     
-    // Extractor Regex
     const toMatch = text.match(/\bto\s+([A-Za-z0-9_]+)/i);
     const fromMatch = text.match(/\bfrom\s+([A-Za-z0-9_]+)/i);
     const forMatch = text.match(/\bfor\s+(.+?)(?:\s+(?:using|at|today|yesterday|with|in)\b|$)/i);
-    const atMatch = text.match(/\bat\s+([A-Za-z0-9_]+)/i);
+    const atMatch = text.match(/\bat\s+([A-Za-z0-9_ ]+)/i); // Extract multi-word place
 
     if (toMatch) parsedPayee = toMatch[1];
     else if (fromMatch) parsedPayee = fromMatch[1];
-    else if (atMatch) parsedPayee = atMatch[1];
+    else if (atMatch) parsedPayee = atMatch[1].split(' ')[0]; // Take first word for now
 
     if (forMatch) parsedNote = forMatch[1].trim();
 
-    // Date
+    // 6. Date
     let date = '';
     let dateConfirmed = false;
     if (t.includes('yesterday')) {
       date = format(subDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm");
       dateConfirmed = true;
-    } else if (t.includes('today') || t.includes('now')) {
+    } else if (t.includes('today')) {
       date = new Date().toISOString().slice(0, 16);
       dateConfirmed = true;
     }
 
-    return { amount, type, accountId, autoPaymentMethod, category, tag, parsedPayee, parsedNote, date, dateConfirmed };
+    return { amount, type, accountId, autoPaymentMethod, category, tag, parsedPayee, parsedNote, date, dateConfirmed, isPredicted };
   };
 
   const handleSend = () => {
@@ -155,7 +177,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       updated = {
         ...updated,
         amount: parsed.amount || updated.amount,
-        type: parsed.type || updated.type,
+        type: parsed.type || (updated.amount ? 'DEBIT' : updated.type), // Default to debit if amount mentioned
         selectedAccountId: parsed.accountId || updated.selectedAccountId,
         paymentMethod: parsed.autoPaymentMethod || updated.paymentMethod,
         category: parsed.category || updated.category,
@@ -163,12 +185,10 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         partyName: parsed.parsedPayee || updated.partyName,
         note: parsed.parsedNote || updated.note,
         transactionDate: parsed.date || updated.transactionDate,
-        _dateConfirmed: parsed.dateConfirmed || updated._dateConfirmed
+        _dateConfirmed: parsed.dateConfirmed || updated._dateConfirmed,
+        _isPredicted: parsed.isPredicted
       };
       
-      // If amount is given but type is missing, assume DEBIT for convenience if it's the first message
-      if (!updated.type && updated.amount) updated.type = 'DEBIT';
-
       setPendingTx(updated);
       checkNextStep(updated);
     } 
@@ -180,7 +200,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
          setPendingTx(updated);
          checkNextStep(updated);
       } else {
-         addAIMessage("I missed the number. How much was it?");
+         addAIMessage("I'm sorry, I didn't see a valid amount. How much was it? (e.g. 500 or 1.2k)");
       }
     } 
     else if (stage === 'ASK_TYPE') {
@@ -195,9 +215,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       let foundAcc: any = null;
       const t = userMsg.toLowerCase();
       for (const acc of accounts) {
-        const nameStr = acc.bankName.toLowerCase();
-        const initialsStr = nameStr.split(/[\s-]+/).map(w => w[0]).join('');
-        if (t.includes(nameStr) || (initialsStr.length > 1 && t.match(new RegExp(`\\b${initialsStr}\\b`, 'i')))) {
+        if (t.includes(acc.bankName.toLowerCase()) || t.includes(acc.bankName.toLowerCase().split(' ')[0])) {
           foundAcc = acc;
           break;
         }
@@ -209,7 +227,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         setPendingTx(updated);
         checkNextStep(updated);
       } else {
-        addAIMessage(`Could not find that bank. Please use short forms or names like: ${accounts.map(a=>a.bankName).join(', ')}`);
+        addAIMessage(`I couldn't identify that bank. Which one from your list did you use? (${accounts.map(a=>a.bankName).join(', ')})`);
       }
     }
     else if (stage === 'ASK_PAYMENT_METHOD') {
@@ -217,8 +235,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       if (t.includes('card')) updated.paymentMethod = 'Credit Card';
       else if (t.includes('cash')) updated.paymentMethod = 'Cash';
       else if (t.includes('bank') || t.includes('transfer')) updated.paymentMethod = 'Bank Transfer';
-      else updated.paymentMethod = 'UPI'; // default catch-all for this step
-      
+      else updated.paymentMethod = 'UPI';
       setPendingTx(updated);
       checkNextStep(updated);
     }
@@ -235,7 +252,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         setPendingTx(updated);
         checkNextStep(updated);
       } else {
-        addAIMessage(`Please pick a valid category: ${CATEGORIES.join(', ')}`);
+        addAIMessage(`Please specify a valid category from: ${CATEGORIES.join(', ')}`);
       }
     }
     else if (stage === 'ASK_TAG') {
@@ -251,12 +268,12 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         setPendingTx(updated);
         checkNextStep(updated);
       } else {
-        if (userMsg.toLowerCase() === 'skip' || userMsg.toLowerCase() === 'none') {
+        if (userMsg.toLowerCase() === 'skip' || userMsg.toLowerCase() === 'none' || userMsg.toLowerCase() === 'default') {
           updated.expenseType = tags[0] || 'Personal';
           setPendingTx(updated);
           checkNextStep(updated);
         } else {
-          addAIMessage(`Please pick a tag: ${tags.join(', ')} - or type 'skip'`);
+          addAIMessage(`Classification is required. Pick a tag (e.g. ${tags.join(', ')}) or type 'skip'.`);
         }
       }
     }
@@ -268,7 +285,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     else if (stage === 'ASK_NOTE') {
       const t = userMsg.toLowerCase();
       if (t === 'no' || t === 'skip' || t === 'none' || !userMsg.trim()) {
-        addAIMessage("Remark is mandatory for every entry. Please specify what this transaction was for!");
+        addAIMessage("Remark is mandatory. Just a brief description of what this was for!");
       } else {
         updated.note = userMsg;
         setPendingTx(updated);
@@ -291,36 +308,36 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
   const checkNextStep = (tx: any) => {
     if (!tx.amount) {
       setStage('ASK_AMOUNT');
-      addAIMessage("How much was the amount?");
+      addAIMessage("Got it. How much was the transaction amount?");
     } else if (!tx.type) {
       setStage('ASK_TYPE');
-      addAIMessage("Was this an INFLOW (received) or OUTFLOW (spent)?");
+      addAIMessage("Was this an INFLOW or OUTFLOW?");
     } else if (!tx.selectedAccountId) {
       setStage('ASK_BANK');
-      // Suggesting shortforms contextually
-      const accShorts = accounts.map(a => a.bankName.split(' ').map(w=>w[0]).join('').toUpperCase());
-      addAIMessage(`Which account? You can use short forms like ${accShorts.join(', ')} or type 'Cash'.`);
+      addAIMessage("Which account was used for this?");
     } else if (!tx.paymentMethod) {
       setStage('ASK_PAYMENT_METHOD');
-      addAIMessage("Payment Method mandatory: Was it UPI, Card, Cash, or Bank Transfer?");
+      addAIMessage("Was the payment method UPI, Card, or Cash?");
     } else if (!tx.category) {
       setStage('ASK_CATEGORY');
-      addAIMessage(tx.partyName ? `What category is ${tx.partyName}?` : `Pick a Category: ${CATEGORIES.slice(0,4).join(', ')}...`);
+      addAIMessage("What category does this fall under?");
     } else if (!tx.expenseType && tx.type !== 'TRANSFER') {
       setStage('ASK_TAG');
-      addAIMessage(`Ensure classification: Pick a Tag (${tags.join(', ')}) or type 'skip'`);
+      addAIMessage(`How should I classify this? (${tags.join(', ')})`);
     } else if (!tx.partyName && tx.type !== 'TRANSFER') {
       setStage('ASK_PAYEE');
-      addAIMessage(tx.type === 'DEBIT' ? "Paid to whom? (Payee) Type 'skip' if none." : "Received from whom? Type 'skip' if none.");
+      addAIMessage("Who was this transaction with (Payee)? Type 'skip' if none.");
     } else if (!tx.note) {
       setStage('ASK_NOTE');
-      addAIMessage("Remark is mandatory: What was this specifically for?");
+      addAIMessage("One last thing: What's the remark for this entry?");
     } else if (!tx._dateConfirmed) {
       setStage('ASK_DATE');
-      addAIMessage("When did this happen? (e.g. 'today' or 'yesterday') type 'skip' for now.");
+      addAIMessage("When did this happen? (today, yesterday, or type 'skip')");
     } else {
       setStage('PREVIEW');
-      addAIMessage("Awesome! I've deeply analyzed that. Verify the Smart Preview!");
+      addAIMessage(tx._isPredicted 
+        ? "I've intelligently analyzed that and predicted the details! Check the preview below." 
+        : "Perfect! Every detail is logged. Ready to save?");
     }
   };
 
@@ -338,9 +355,9 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         {isTyping && (
           <div className="flex justify-start">
             <div className="bg-white dark:bg-[#111111] px-4 py-2.5 rounded-2xl flex items-center gap-1 border border-[#EBEBEB] dark:border-white/5 shadow-sm">
-              <span className="w-1.5 h-1.5 bg-neutral-300 dark:bg-neutral-600 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-              <span className="w-1.5 h-1.5 bg-neutral-300 dark:bg-neutral-600 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-              <span className="w-1.5 h-1.5 bg-neutral-300 dark:bg-neutral-600 rounded-full animate-bounce"></span>
+              <span className="w-1 h-1 bg-brand-blue dark:bg-brand-cyan/40 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+              <span className="w-1 h-1 bg-brand-blue dark:bg-brand-cyan/40 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+              <span className="w-1 h-1 bg-brand-blue dark:bg-brand-cyan/40 rounded-full animate-bounce"></span>
             </div>
           </div>
         )}
@@ -349,7 +366,13 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
       <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-[#F7F7F7] via-[#F7F7F7]/95 dark:from-[#0A0A0A] dark:via-[#0A0A0A]/95 space-y-3 z-10">
         {stage === 'PREVIEW' && (
-          <div className="mx-1 p-3 bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-white/5 rounded-3xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="mx-1 p-3 bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-white/5 rounded-3xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 relative overflow-hidden">
+            {pendingTx._isPredicted && (
+              <div className="absolute top-0 right-0 px-3 py-1 bg-brand-blue/10 dark:bg-brand-cyan/10 text-brand-blue dark:text-brand-cyan text-[7px] font-black uppercase tracking-[0.2em] rounded-bl-xl border-l border-b border-brand-blue/20 dark:border-brand-cyan/20">
+                AI Prediction Active
+              </div>
+            )}
+            
             <div className="flex items-center justify-between mb-3 px-1">
               <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-brand-blue" /> Smart Preview</span>
               <button onClick={() => { setStage('IDLE'); setPendingTx({...pendingTx, _dateConfirmed: false}); }} className="text-[8px] font-bold text-brand-blue dark:text-brand-cyan uppercase bg-brand-blue/5 px-2 py-1 rounded-lg">Edit All</button>
@@ -362,15 +385,18 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
               </div>
               <div className="bg-[#F7F7F7] dark:bg-white/5 p-2 rounded-2xl flex items-center gap-2">
                 <div className="text-lg">{CATEGORY_ICONS[pendingTx.category] || '📦'}</div>
-                <div className="flex flex-col"><span className="text-[8px] font-black text-neutral-400 uppercase leading-none">Category</span><span className="text-[10px] font-bold text-brand-blue dark:text-white truncate">{pendingTx.category}</span></div>
+                <div className="flex flex-col">
+                  <span className="text-[8px] font-black text-neutral-400 uppercase leading-none">Category</span>
+                  <span className="text-[10px] font-bold text-brand-blue dark:text-white truncate">{pendingTx.category}</span>
+                </div>
               </div>
             </div>
 
             <div className="space-y-1.5 mb-3 px-1 bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-2xl">
-              <div className="flex items-center justify-between text-[9px]"><span className="text-neutral-400 font-bold flex items-center gap-1.5"><Landmark className="w-2.5 h-2.5" /> Account</span><span className="text-brand-blue dark:text-white font-bold">{accounts.find(a => a.id === pendingTx.selectedAccountId)?.bankName || 'Unknown'} - {pendingTx.paymentMethod}</span></div>
-              <div className="flex items-center justify-between text-[9px]"><span className="text-neutral-400 font-bold flex items-center gap-1.5"><Tag className="w-2.5 h-2.5" /> Tag</span><span className="text-brand-blue dark:text-white font-bold">#{pendingTx.expenseType}</span></div>
-              <div className="flex items-center justify-between text-[9px]"><span className="text-neutral-400 font-bold flex items-center gap-1.5"><UserIcon className="w-2.5 h-2.5" /> Party / Note</span><span className="text-brand-blue dark:text-white font-bold truncate max-w-[120px] text-right">{pendingTx.partyName || '-'} • {pendingTx.note || '-'}</span></div>
-              <div className="flex items-center justify-between text-[9px]"><span className="text-neutral-400 font-bold flex items-center gap-1.5"><Calendar className="w-2.5 h-2.5" /> Date</span><span className="text-brand-blue dark:text-white font-bold">{format(new Date(pendingTx.transactionDate), 'dd MMM')}</span></div>
+              <div className="flex items-center justify-between text-[9px]"><span className="text-neutral-400 font-bold flex items-center gap-1.5"><Landmark className="w-2.5 h-2.5" /> Source</span><span className="text-brand-blue dark:text-white font-bold">{accounts.find(a => a.id === pendingTx.selectedAccountId)?.bankName || 'Unknown'} • {pendingTx.paymentMethod}</span></div>
+              <div className="flex items-center justify-between text-[9px]"><span className="text-neutral-400 font-bold flex items-center gap-1.5"><Tag className="w-2.5 h-2.5" /> Class</span><span className="text-brand-blue dark:text-white font-bold">#{pendingTx.expenseType}</span></div>
+              <div className="flex items-center justify-between text-[9px]"><span className="text-neutral-400 font-bold flex items-center gap-1.5"><UserIcon className="w-2.5 h-2.5" /> Entity</span><span className="text-brand-blue dark:text-white font-bold truncate max-w-[120px] text-right">{pendingTx.partyName || '-'}</span></div>
+              <div className="flex items-center justify-between text-[9px]"><span className="text-brand-blue dark:text-white font-black flex items-center gap-1.5"><Lightbulb className="w-2.5 h-2.5 text-amber-500" /> Detail</span><span className="text-brand-blue dark:text-white font-bold truncate max-w-[150px] text-right italic">{pendingTx.note || 'No Remark'}</span></div>
             </div>
 
             <button onClick={() => onSave(pendingTx)} className="w-full py-3 bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 transition-transform active:scale-95"><CheckCircle2 className="w-4 h-4" /> Save Entry</button>
@@ -378,7 +404,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         )}
         
         <div className="flex items-center gap-2 bg-white dark:bg-[#111111] p-1.5 rounded-2xl border border-[#EBEBEB] dark:border-white/5 shadow-xl">
-          <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder={stage === 'IDLE' ? "Say: 'Spent 500 on coffee'..." : "Type your answer..."} className="flex-1 bg-transparent px-3 py-2 text-[12px] font-bold outline-none dark:text-white placeholder:text-neutral-400" />
+          <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder={stage === 'IDLE' ? "Say: 'Spent 500 at Starbucks'..." : "Type your answer..."} className="flex-1 bg-transparent px-3 py-2 text-[12px] font-bold outline-none dark:text-white placeholder:text-neutral-400" />
           <button onClick={handleSend} className="w-10 h-10 bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue rounded-xl flex items-center justify-center shadow-lg transition-transform active:scale-90"><Send className="w-4 h-4" /></button>
         </div>
       </div>
