@@ -35,26 +35,16 @@ const MERCHANT_KNOWLEDGE: Record<string, { category: string, tag: string }> = {
 
 export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags }) => {
   const [messages, setMessages] = useState<any[]>([
-    { role: 'ai', content: "Hi! I won't assume anything anymore. I'll ask for every detail—including your UPI apps and tags—to ensure perfect logging!" }
+    { role: 'ai', content: "Hi! I'm now fully context-aware. If you say 'received', I'll specifically ask for where you received it and from whom! How can I help?" }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [stage, setStage] = useState<ChatStage>('IDLE');
   
   const [pendingTx, setPendingTx] = useState<any>({
-    type: '',
-    amount: '',
-    category: '',
-    selectedAccountId: '',
-    toAccountId: '',
-    paymentMethod: '',
-    upiApp: '',
-    expenseType: '',
-    partyName: '',
-    note: '',
-    transactionDate: new Date().toISOString().slice(0, 16),
-    _dateConfirmed: false,
-    _isPredicted: false
+    type: '', amount: '', category: '', selectedAccountId: '', toAccountId: '',
+    paymentMethod: '', upiApp: '', expenseType: '', partyName: '', note: '',
+    transactionDate: new Date().toISOString().slice(0, 16), _dateConfirmed: false, _isPredicted: false
   });
 
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -92,22 +82,20 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     let amount = kMatch ? (parseFloat(kMatch[1]) * 1000).toString() : (t.match(/\b\d+(?:\.\d+)?\b/)?.[0] || '');
     
     let type = '';
-    if (t.match(/\b(received|got|salary|income|credit)\b/)) type = 'CREDIT';
-    else if (t.match(/\b(transfer|moved|send|move|sent)\b/)) type = 'TRANSFER';
-    else if (t.match(/\b(paid|spent|bought|expense|debit)\b/)) type = 'DEBIT';
+    if (t.match(/\b(received|got|salary|income|credit|add|deposit)\b/)) type = 'CREDIT';
+    else if (t.match(/\b(transfer|moved|move|sent|send)\b/)) type = 'TRANSFER';
+    else if (t.match(/\b(paid|spent|bought|expense|debit|gave)\b/)) type = 'DEBIT';
 
-    let accountId = '', toAccountId = '', autoPaymentMethod = '';
+    let accountId = '', toAccountId = '', autoPaymentMethod = '', upiApp = '';
     const acc = resolveBank(t);
     if (acc) {
       accountId = acc.id!;
       autoPaymentMethod = acc.type === 'CREDIT_CARD' ? 'Credit Card' : acc.type === 'CASH' ? 'Cash' : 'UPI';
     }
 
-    let upiApp = '';
     if (t.includes('gpay')) upiApp = 'GPay';
     else if (t.includes('phonepe')) upiApp = 'PhonePe';
     else if (t.includes('paytm')) upiApp = 'Paytm';
-    else if (t.includes('amazon pay')) upiApp = 'Amazon Pay';
 
     let category = '', tag = '', isPredicted = false;
     for (const cat of CATEGORIES) { if (t.includes(cat.toLowerCase())) { category = cat; break; } }
@@ -116,7 +104,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     }
 
     let parsedPayee = '', parsedNote = '';
-    const toMatch = text.match(/\b(to|paid to|at)\s+([A-Za-z0-9_]+)/i);
+    const toMatch = text.match(/\b(to|paid to|at|from|received from)\s+([A-Za-z0-9_]+)/i);
     const forMatch = text.match(/\b(for|remark|not|note)\s+(.+?)(?:\s+(?:using|at|today|yesterday|with|in|from|to)\b|$)/i);
     if (toMatch && type !== 'TRANSFER') parsedPayee = toMatch[2];
     if (forMatch) parsedNote = forMatch[2].trim();
@@ -158,7 +146,8 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       } else addAIMessage("Amount, please?");
     } 
     else if (stage === 'ASK_TYPE') {
-      updated.type = userMsg.toLowerCase().includes('transfer') ? 'TRANSFER' : (userMsg.toLowerCase().match(/(in|received)/) ? 'CREDIT' : 'DEBIT');
+      const t = userMsg.toLowerCase();
+      updated.type = t.includes('transfer') ? 'TRANSFER' : (t.includes('received') || t.includes('in') || t.includes('credit') ? 'CREDIT' : 'DEBIT');
       setPendingTx(updated);
       checkNextStep(updated);
     }
@@ -172,7 +161,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         }
         setPendingTx(updated);
         checkNextStep(updated);
-      } else addAIMessage("Which account?");
+      } else addAIMessage(updated.type === 'CREDIT' ? "Which account did you receive it in?" : "Which account was used?");
     }
     else if (stage === 'ASK_PAYMENT_METHOD') {
       updated.paymentMethod = userMsg;
@@ -200,7 +189,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       checkNextStep(updated);
     }
     else if (stage === 'ASK_NOTE') {
-      if (!userMsg.trim() || userMsg.match(/(skip|no)/i)) addAIMessage("A remark is required. Why this entry?");
+      if (!userMsg.trim() || userMsg.match(/(skip|no)/i)) addAIMessage("A remark is required. Summarize this entry!");
       else { updated.note = userMsg; setPendingTx(updated); checkNextStep(updated); }
     }
     else if (stage === 'ASK_DATE') {
@@ -214,18 +203,18 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
   const getBankDisplay = (acc: any) => acc.bankName.split(' ').filter((w:any)=>w.length>2).map((w:any)=>w[0]).join('').toUpperCase() || acc.bankName.split(' ')[0];
 
   const checkNextStep = (tx: any) => {
-    if (!tx.amount) { setStage('ASK_AMOUNT'); addAIMessage("How much was the amount?"); }
-    else if (!tx.type) { setStage('ASK_TYPE'); addAIMessage("Transaction Type?", ['Debit', 'Credit', 'Transfer']); }
-    else if (!tx.selectedAccountId) { setStage('ASK_BANK'); addAIMessage("From Account:", accounts.map(a => getBankDisplay(a))); }
-    else if (tx.type === 'TRANSFER' && !tx.toAccountId) { setStage('ASK_BANK'); addAIMessage("To Account:", accounts.filter(a => a.id !== tx.selectedAccountId).map(a => getBankDisplay(a))); }
+    if (!tx.amount) { setStage('ASK_AMOUNT'); addAIMessage("Got it! How much was the transaction?"); }
+    else if (!tx.type) { setStage('ASK_TYPE'); addAIMessage("Was this an INFLOW (received) or OUTFLOW (spent)?", ['Inflow/Credit', 'Outflow/Debit', 'Transfer']); }
+    else if (!tx.selectedAccountId) { setStage('ASK_BANK'); addAIMessage(tx.type === 'CREDIT' ? "Which account did you receive it in?" : "Which account did you pay from?", accounts.map(a => getBankDisplay(a))); }
+    else if (tx.type === 'TRANSFER' && !tx.toAccountId) { setStage('ASK_BANK'); addAIMessage("Where did you move the money TO?", accounts.filter(a => a.id !== tx.selectedAccountId).map(a => getBankDisplay(a))); }
     else if (!tx.paymentMethod) { setStage('ASK_PAYMENT_METHOD'); addAIMessage("Payment Method:", ['UPI', 'Credit Card', 'Cash', 'Bank Transfer']); }
-    else if (tx.paymentMethod === 'UPI' && !tx.upiApp) { setStage('ASK_UPI_APP'); addAIMessage("Which UPI App?", ['GPay', 'PhonePe', 'Paytm', 'Amazon Pay']); }
+    else if (tx.paymentMethod === 'UPI' && !tx.upiApp) { setStage('ASK_UPI_APP'); addAIMessage("Which UPI App?", ['GPay', 'PhonePe', 'Paytm']); }
     else if (!tx.category && tx.type !== 'TRANSFER') { setStage('ASK_CATEGORY'); addAIMessage("Category:", CATEGORIES); }
     else if (!tx.expenseType && tx.type !== 'TRANSFER') { setStage('ASK_TAG'); addAIMessage("Classification Tag:", [...tags, 'skip']); }
-    else if (!tx.partyName && tx.type !== 'TRANSFER') { setStage('ASK_PAYEE'); addAIMessage("Payee Name? (e.g. Hrisav) Or 'skip'."); }
-    else if (!tx.note) { setStage('ASK_NOTE'); addAIMessage("Remark mandatory: Describe this entry."); }
-    else if (!tx._dateConfirmed) { setStage('ASK_DATE'); addAIMessage("Date:", ['Today', 'Yesterday']); }
-    else { setStage('PREVIEW'); addAIMessage("Check the preview and Save!"); }
+    else if (!tx.partyName && tx.type !== 'TRANSFER') { setStage('ASK_PAYEE'); addAIMessage(tx.type === 'CREDIT' ? "Received from whom?" : "Paid to whom? (e.g. Starbucks)"); }
+    else if (!tx.note) { setStage('ASK_NOTE'); addAIMessage("Remark is mandatory: What was this for?"); }
+    else if (!tx._dateConfirmed) { setStage('ASK_DATE'); addAIMessage("When did this happen?", ['Today', 'Yesterday']); }
+    else { setStage('PREVIEW'); addAIMessage("Details captured perfectly! Save Entry?"); }
   };
 
   return (
@@ -289,7 +278,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
                </div>
                <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
                  <Lightbulb className="w-3 h-3 text-neutral-400" />
-                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Remark</span><span className="text-[9px] font-bold text-brand-blue dark:text-white truncate italic">{pendingTx.note}</span></div>
+                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Remark</span><span className="text-[9px] font-bold text-brand-blue dark:text-white truncate">{pendingTx.note}</span></div>
                </div>
             </div>
 
@@ -297,7 +286,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
           </div>
         )}
         <div className="flex items-center gap-2 bg-white dark:bg-[#111111] p-1.5 rounded-2xl border border-[#EBEBEB] dark:border-white/5 shadow-xl">
-          <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Ask AI... (e.g. 'Paid 500 via sbi')" className="flex-1 bg-transparent px-3 py-2 text-[12px] font-bold outline-none dark:text-white" />
+          <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Ask AI... (e.g. 'Received 500')" className="flex-1 bg-transparent px-3 py-2 text-[12px] font-bold outline-none dark:text-white" />
           <button onClick={() => handleSend()} className="w-10 h-10 bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition-transform"><Send className="w-4 h-4" /></button>
         </div>
       </div>
