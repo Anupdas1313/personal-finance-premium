@@ -109,6 +109,34 @@ export default function Accounts() {
     }
   };
 
+  const groupedAccounts = useMemo(() => {
+    const groups = {
+      BANK: [] as any[],
+      CASH: [] as any[],
+      CREDIT_CARD: [] as any[]
+    };
+    accounts.forEach(acc => {
+      const type = acc.type || 'BANK';
+      if (groups[type as keyof typeof groups]) {
+        groups[type as keyof typeof groups].push(acc);
+      }
+    });
+    return groups;
+  }, [accounts]);
+
+  const getGroupTitle = (type: string) => {
+    switch(type) {
+      case 'BANK': return { title: 'Bank Accounts', icon: <Landmark className="w-5 h-5" />, color: 'text-brand-blue' };
+      case 'CASH': return { title: 'Cash & Wallets', icon: <Wallet className="w-5 h-5" />, color: 'text-brand-green' };
+      case 'CREDIT_CARD': return { title: 'Credit Cards', icon: <CreditCard className="w-5 h-5" />, color: 'text-brand-red' };
+      default: return { title: 'Other Assets', icon: <MoreHorizontal className="w-5 h-5" />, color: 'text-neutral-400' };
+    }
+  };
+
+  const getGroupTotal = (accList: any[]) => {
+    return accList.reduce((sum, acc) => sum + (accountBreakdown[acc.id!]?.currentBalance || 0), 0);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -260,80 +288,99 @@ export default function Accounts() {
             </div>
           </form>
         </div>
-      )}      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {accounts.map(account => {
-          const info = accountBreakdown[account.id!];
-          const currentBalance = info?.currentBalance || 0;
+      )}      <div className="space-y-10">
+        {(Object.entries(groupedAccounts) as [keyof typeof groupedAccounts, any[]][]).map(([type, accList]) => {
+          if (accList.length === 0) return null;
+          const { title, icon, color } = getGroupTitle(type);
+          const total = getGroupTotal(accList);
+          
           return (
-            <div 
-              key={account.id} 
-              onClick={() => setSelectedAccountId(account.id!)}
-              className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_6px_16px_rgba(26,35,126,0.04)] border border-[#EBEBEB] dark:border-[#222222] flex flex-col justify-between hover:shadow-[0_12px_30px_rgba(26,35,126,0.1)] transition-all transform hover:-translate-y-1 cursor-pointer"
-            >
-              <div>
-                <div className="flex justify-between items-start mb-5" onClick={(e) => e.stopPropagation()}>
-                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center p-2 shadow-sm border border-[#EBEBEB] shrink-0">
-                    <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
-                  </div>
-                  {account.type && (
-                    <div className={`ml-3 px-2 py-0.5 rounded-md text-[9px] font-semibold uppercase tracking-[0.2em] ${
-                      account.type === 'CASH' ? 'bg-brand-green/10 text-brand-green' : 
-                      account.type === 'CREDIT_CARD' ? 'bg-brand-gold/10 text-brand-gold' : 
-                      'bg-brand-blue/10 text-brand-blue'
-                    }`}>
-                      {account.type.replace('_', ' ')}
-                    </div>
-                  )}
-                  <div className="flex-1" />
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleEdit(account)}
-                      className="text-brand-blue/40 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-[#F7F7F7] transition-colors p-2 rounded-full hover:bg-brand-blue/5 dark:hover:bg-[#222222]"
-                      title="Edit Account"
-                    >
-                      <Pencil className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(account.id!)}
-                      className="text-brand-blue/40 dark:text-[#A0A0A0] hover:text-brand-red transition-colors p-2 rounded-full hover:bg-brand-red/5"
-                      title="Delete Account"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+            <div key={type} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <div className="flex items-center justify-between px-2 pt-2 border-b border-[#EBEBEB] dark:border-[#222222] pb-4">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2.5 rounded-xl bg-neutral-100 dark:bg-white/5 ${color}`}>{icon}</div>
+                  <div>
+                    <h2 className="text-xl font-heading font-black text-brand-blue dark:text-white tracking-tight leading-none mb-1">{title}</h2>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400">{accList.length} Accounts Registered</p>
                   </div>
                 </div>
-                <h3 className="text-2xl font-heading font-semibold text-brand-blue dark:text-[#F7F7F7] tracking-tight truncate">{account.bankName}</h3>
-                <p className="text-brand-blue/40 dark:text-[#A0A0A0] font-semibold mt-0.5 text-xs">
-                  {account.type === 'CASH' ? account.accountLast4 : `**** ${account.accountLast4}`}
-                </p>
-                <div className="mt-4">
-                  <p className="text-[10px] font-semibold text-brand-blue/40 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-1.5">Current Balance</p>
-                  <p className={`text-2xl font-heading font-semibold tracking-tight ${currentBalance >= 0 ? 'text-brand-blue dark:text-brand-cyan' : 'text-brand-red'}`}>
-                    ₹{currentBalance.toLocaleString('en-IN')}
+                <div className="text-right">
+                  <p className="text-[8px] font-black text-neutral-400 uppercase tracking-widest mb-1">Cumulative Balance</p>
+                  <p className={`text-xl font-heading font-black tracking-tight ${total >= 0 ? color : 'text-brand-red'}`}>
+                    ₹{total.toLocaleString('en-IN')}
                   </p>
                 </div>
               </div>
-              <div className="mt-4 pt-4 border-t border-[#EBEBEB] dark:border-[#222222] space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-brand-green/5 dark:bg-brand-green/10 p-2.5 rounded-xl border border-brand-green/10">
-                    <div className="flex items-center gap-1.5 text-brand-green mb-1">
-                      <ArrowDownLeft className="w-3 h-3" />
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.1em]">Month Inflow</span>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {accList.map(account => {
+                  const info = accountBreakdown[account.id!];
+                  const currentBalance = info?.currentBalance || 0;
+                  return (
+                    <div 
+                      key={account.id} 
+                      onClick={() => setSelectedAccountId(account.id!)}
+                      className="bg-white dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_6px_16px_rgba(26,35,126,0.04)] border border-[#EBEBEB] dark:border-[#222222] flex flex-col justify-between hover:shadow-[0_12px_30px_rgba(26,35,126,0.1)] transition-all transform hover:-translate-y-1 cursor-pointer"
+                    >
+                      <div>
+                        <div className="flex justify-between items-start mb-5" onClick={(e) => e.stopPropagation()}>
+                          <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center p-2 shadow-sm border border-[#EBEBEB] shrink-0">
+                            <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
+                          </div>
+                          <div className="flex-1" />
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleEdit(account)}
+                              className="text-brand-blue/40 dark:text-[#A0A0A0] hover:text-brand-green dark:hover:text-white transition-colors p-2 rounded-full hover:bg-neutral-50 dark:hover:bg-[#222222]"
+                              title="Edit Account"
+                            >
+                              <Pencil className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(account.id!)}
+                              className="text-brand-blue/40 dark:text-[#A0A0A0] hover:text-brand-red transition-colors p-2 rounded-full hover:bg-brand-red/5"
+                              title="Delete Account"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </div>
+                        <h3 className="text-2xl font-heading font-semibold text-brand-blue dark:text-[#F7F7F7] tracking-tight truncate">{account.bankName}</h3>
+                        <p className="text-brand-blue/40 dark:text-[#A0A0A0] font-semibold mt-0.5 text-xs">
+                          {account.type === 'CASH' ? account.accountLast4 : `**** ${account.accountLast4}`}
+                        </p>
+                        <div className="mt-4">
+                          <p className="text-[10px] font-semibold text-brand-blue/40 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-1.5">Current Balance</p>
+                          <p className={`text-2xl font-heading font-semibold tracking-tight ${currentBalance >= 0 ? color : 'text-brand-red'}`}>
+                            ₹{currentBalance.toLocaleString('en-IN')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-[#EBEBEB] dark:border-[#222222] space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-brand-green/5 dark:bg-brand-green/10 p-2.5 rounded-xl border border-brand-green/10">
+                            <div className="flex items-center gap-1.5 text-brand-green mb-1">
+                              <ArrowDownLeft className="w-3 h-3" />
+                              <span className="text-[10px] font-semibold uppercase tracking-[0.1em]">Month In</span>
+                            </div>
+                            <p className="text-sm font-heading font-semibold text-brand-green">
+                              ₹{(accountBreakdown[account.id!]?.inflow || 0).toLocaleString('en-IN')}
+                            </p>
+                          </div>
+                          <div className="bg-brand-red/5 dark:bg-brand-red/10 p-2.5 rounded-xl border border-brand-red/10">
+                            <div className="flex items-center gap-1.5 text-brand-red mb-1">
+                              <ArrowUpRight className="w-3 h-3" />
+                              <span className="text-[10px] font-semibold uppercase tracking-[0.1em]">Month Out</span>
+                            </div>
+                            <p className="text-sm font-heading font-semibold text-brand-red">
+                              ₹{(accountBreakdown[account.id!]?.outflow || 0).toLocaleString('en-IN')}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-sm font-heading font-semibold text-brand-green">
-                      ₹{(accountBreakdown[account.id!]?.inflow || 0).toLocaleString('en-IN')}
-                    </p>
-                  </div>
-                  <div className="bg-brand-red/5 dark:bg-brand-red/10 p-2.5 rounded-xl border border-brand-red/10">
-                    <div className="flex items-center gap-1.5 text-brand-red mb-1">
-                      <ArrowUpRight className="w-3 h-3" />
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.1em]">Month Outflow</span>
-                    </div>
-                    <p className="text-sm font-heading font-semibold text-brand-red">
-                      ₹{(accountBreakdown[account.id!]?.outflow || 0).toLocaleString('en-IN')}
-                    </p>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
             </div>
           );
