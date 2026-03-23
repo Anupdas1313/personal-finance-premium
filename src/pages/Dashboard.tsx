@@ -461,13 +461,13 @@ export default function Dashboard() {
             <div className="flex bg-[#F7F7F7] dark:bg-white/5 p-0.5 rounded-xl border border-[#EBEBEB] dark:border-white/5">
               <button 
                 onClick={() => setEntryMode('MANUAL')}
-                className={`px-3 py-1 text-[10px] font-black rounded-lg transition-all ${entryMode === 'MANUAL' ? 'bg-white dark:bg-white/10 text-brand-blue dark:text-brand-cyan shadow-sm' : 'text-neutral-400'}`}
+                className={`px-3 py-1 text-[10px] font-black rounded-lg transition-all ${entryMode === 'MANUAL' ? 'bg-white dark:bg-white/10 text-brand-green dark:text-brand-green shadow-sm' : 'text-neutral-400'}`}
               >
                 Manual
               </button>
               <button 
                 onClick={() => setEntryMode('CHAT')}
-                className={`px-3 py-1 text-[10px] font-black rounded-lg transition-all flex items-center gap-1.5 ${entryMode === 'CHAT' ? 'bg-white dark:bg-white/10 text-brand-blue dark:text-brand-cyan shadow-sm' : 'text-neutral-400'}`}
+                className={`px-3 py-1 text-[10px] font-black rounded-lg transition-all flex items-center gap-1.5 ${entryMode === 'CHAT' ? 'bg-white dark:bg-white/10 text-brand-green dark:text-brand-green shadow-sm' : 'text-neutral-400'}`}
               >
                 <Wand2 className="w-3 h-3" /> AI Chat
               </button>
@@ -509,7 +509,7 @@ export default function Dashboard() {
                   <div className="flex bg-[#F7F7F7] dark:bg-white/5 p-0.5 rounded-2xl w-full shrink-0">
                     <button onClick={() => setType('DEBIT')} className={`flex-1 py-1 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'DEBIT' ? 'bg-white dark:bg-[#2C2C34] text-brand-red shadow-sm' : 'text-neutral-400'}`}>Outflow</button>
                     <button onClick={() => setType('CREDIT')} className={`flex-1 py-1 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'CREDIT' ? 'bg-white dark:bg-[#2C2C34] text-brand-green shadow-sm' : 'text-neutral-400'}`}>Inflow</button>
-                    <button onClick={() => setType('TRANSFER')} className={`flex-1 py-1 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'TRANSFER' ? 'bg-white dark:bg-[#2C2C34] text-brand-blue dark:text-brand-cyan shadow-sm' : 'text-neutral-400'}`}>Transfer</button>
+                    <button onClick={() => setType('TRANSFER')} className={`flex-1 py-1 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'TRANSFER' ? 'bg-white dark:bg-[#2C2C34] text-brand-green shadow-sm' : 'text-neutral-400'}`}>Transfer</button>
                   </div>
 
                   {/* Middle Row: Split 50/50 (Amount Left, Bank Right) */}
@@ -520,7 +520,7 @@ export default function Dashboard() {
                         <span className="text-sm font-bold text-neutral-300 dark:text-[#333333]">₹</span>
                         <input 
                           type="number" inputMode="decimal" autoFocus value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" step="0.01"
-                          className="bg-transparent text-xl font-heading font-bold text-center outline-none min-w-0 w-full text-brand-blue dark:text-white tracking-tight caret-brand-cyan"
+                          className="bg-transparent text-xl font-heading font-bold text-center outline-none min-w-0 w-full text-brand-green dark:text-white tracking-tight caret-brand-green"
                         />
                       </div>
                       <div className="relative">
@@ -549,12 +549,12 @@ export default function Dashboard() {
                                 else if (paymentMethod === 'Cash' || paymentMethod === 'Credit Card') setPaymentMethod('Bank');
                               }
                           }}
-                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-xl border transition-all relative ${selectedAccountId === acc.id || toAccountId === acc.id ? 'bg-brand-blue/5 dark:bg-brand-cyan/5 border-brand-blue dark:border-brand-cyan shadow-sm' : 'bg-[#F7F7F7] dark:bg-white/[0.02] border-transparent'}`}
+                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-xl border transition-all relative ${selectedAccountId === acc.id || toAccountId === acc.id ? 'bg-brand-green/5 dark:bg-brand-green/5 border-brand-green dark:border-brand-green shadow-sm' : 'bg-[#F7F7F7] dark:bg-white/[0.02] border-transparent'}`}
                         >
-                          {selectedAccountId === acc.id && type === 'TRANSFER' && <div className="absolute -top-1 right-1 bg-brand-blue text-white text-[5px] font-bold px-1 py-0.5 rounded-full uppercase tracking-tighter">F</div>}
+                          {selectedAccountId === acc.id && type === 'TRANSFER' && <div className="absolute -top-1 right-1 bg-brand-green text-white text-[5px] font-bold px-1 py-0.5 rounded-full uppercase tracking-tighter">F</div>}
                           {toAccountId === acc.id && type === 'TRANSFER' && <div className="absolute -top-1 right-1 bg-brand-cyan text-brand-blue text-[5px] font-bold px-1 py-0.5 rounded-full uppercase tracking-tighter">T</div>}
                           <div className="w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center p-0.5 shadow-sm shrink-0"><BankLogo bankName={acc.bankName} type={(acc as any).type} className="w-full h-full" /></div>
-                          <span className={`text-[9px] font-bold truncate ${(selectedAccountId === acc.id || toAccountId === acc.id) ? 'text-brand-blue dark:text-brand-cyan' : 'text-neutral-500 dark:text-[#A0A0A5]'}`}>{acc.bankName}</span>
+                          <span className={`text-[9px] font-bold truncate ${(selectedAccountId === acc.id || toAccountId === acc.id) ? 'text-brand-green dark:text-brand-green' : 'text-neutral-500 dark:text-[#A0A0A5]'}`}>{acc.bankName}</span>
                         </button>
                       ))}
                     </div>
@@ -572,7 +572,7 @@ export default function Dashboard() {
                           onClick={() => setExpenseType(expenseType === tagName ? '' : tagName)} 
                           className={`flex-[1_0_21%] sm:flex-none sm:px-3 py-1.5 rounded-xl text-[9px] font-bold transition-all border ${
                             expenseType === tagName 
-                              ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue border-transparent shadow-sm' 
+                              ? 'bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue border-transparent shadow-sm' 
                               : 'bg-white dark:bg-[#111111] dark:bg-white/[0.02] border-[#EBEBEB] dark:border-white/5 text-neutral-400 dark:text-neutral-500'
                           }`}
                         >
@@ -588,12 +588,12 @@ export default function Dashboard() {
                   {type !== 'TRANSFER' && (
                     <div className="flex items-center gap-4 px-4 py-5 group">
                       <User className="w-5 h-5 text-neutral-400 dark:text-[#555555]" />
-                      <input type="text" value={partyName} onChange={e => setPartyName(e.target.value)} placeholder={type === 'DEBIT' ? 'Payee…' : 'Source…'} className="bg-transparent flex-1 text-base font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-300 dark:placeholder:text-[#333333]" />
+                      <input type="text" value={partyName} onChange={e => setPartyName(e.target.value)} placeholder={type === 'DEBIT' ? 'Payee…' : 'Source…'} className="bg-transparent flex-1 text-base font-bold text-brand-green dark:text-white outline-none placeholder:text-neutral-300 dark:placeholder:text-[#333333]" />
                     </div>
                   )}
                   <div className="flex items-center gap-4 px-4 py-5 group">
                     <AlignLeft className="w-5 h-5 text-neutral-400 dark:text-[#555555]" />
-                    <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="Add specific details…" className="bg-transparent flex-1 text-base font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-300 dark:placeholder:text-[#333333]" />
+                    <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="Add specific details…" className="bg-transparent flex-1 text-base font-bold text-brand-green dark:text-white outline-none placeholder:text-neutral-300 dark:placeholder:text-[#333333]" />
                   </div>
                 </div>
 
@@ -601,11 +601,11 @@ export default function Dashboard() {
                 <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-white/5 p-2 space-y-1.5 shadow-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">Choose Category</span>
-                    <span className="text-[10px] font-bold text-brand-blue dark:text-brand-cyan px-2 py-0.5 bg-brand-blue/5 dark:bg-brand-cyan/5 rounded-full lowercase tracking-wider">{category}</span>
+                    <span className="text-[10px] font-bold text-brand-green dark:text-brand-green px-2 py-0.5 bg-brand-green/5 dark:bg-brand-green/5 rounded-full lowercase tracking-wider">{category}</span>
                   </div>
                   <div className="grid grid-cols-10 gap-1">
                     {CATEGORIES.map(cat => (
-                      <button key={cat} onClick={() => setCategory(cat)} title={cat} className={`aspect-square rounded-lg flex items-center justify-center text-[18px] transition-all ${category === cat ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue shadow-lg scale-110' : 'bg-[#F7F7F7] dark:bg-white/[0.02] text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/10 active:scale-95'}`}>{CATEGORY_ICONS[cat] || '📝'}</button>
+                      <button key={cat} onClick={() => setCategory(cat)} title={cat} className={`aspect-square rounded-lg flex items-center justify-center text-[18px] transition-all ${category === cat ? 'bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue shadow-lg scale-110' : 'bg-[#F7F7F7] dark:bg-white/[0.02] text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/10 active:scale-95'}`}>{CATEGORY_ICONS[cat] || '📝'}</button>
                     ))}
                   </div>
                 </div>
@@ -614,7 +614,7 @@ export default function Dashboard() {
                 <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-white/5 p-2 space-y-2 shadow-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">Payment Logistics</span>
-                    <span className="text-[10px] font-bold text-brand-blue dark:text-brand-cyan px-2 py-0.5 bg-brand-blue/5 dark:bg-brand-cyan/5 rounded-full lowercase tracking-wider">{paymentMethod}</span>
+                    <span className="text-[10px] font-bold text-brand-green dark:text-brand-green px-2 py-0.5 bg-brand-green/5 dark:bg-brand-green/5 rounded-full lowercase tracking-wider">{paymentMethod}</span>
                   </div>
                   <div className="grid grid-cols-4 gap-1.5">
                     {[
@@ -623,7 +623,7 @@ export default function Dashboard() {
                       { id: 'Credit Card', label: 'Card', icon: <CreditCard className="w-3 h-3" /> },
                       { id: 'Cash', label: 'Cash', icon: <Coins className="w-3 h-3" /> },
                     ].map((method) => (
-                      <button key={method.id} onClick={() => setPaymentMethod(method.id as any)} className={`flex items-center justify-center gap-1 py-1.5 rounded-xl border transition-all ${paymentMethod === method.id ? 'bg-brand-blue dark:bg-brand-cyan border-brand-blue dark:border-brand-cyan text-white dark:text-brand-blue shadow-md' : 'bg-[#F7F7F7] dark:bg-white/[0.02] border-transparent text-neutral-400'}`}>
+                      <button key={method.id} onClick={() => setPaymentMethod(method.id as any)} className={`flex items-center justify-center gap-1 py-1.5 rounded-xl border transition-all ${paymentMethod === method.id ? 'bg-brand-green dark:bg-brand-green border-brand-green dark:border-brand-green text-white dark:text-brand-blue shadow-md' : 'bg-[#F7F7F7] dark:bg-white/[0.02] border-transparent text-neutral-400'}`}>
                         {method.icon}
                         <span className="text-[8px] font-bold uppercase tracking-tighter">{method.label}</span>
                       </button>
@@ -635,21 +635,21 @@ export default function Dashboard() {
                     {paymentMethod === 'UPI' && (
                       <div className="flex gap-2">
                         {['GPay', 'PhonePe', 'Paytm'].map(app => (
-                          <button key={app} onClick={() => setUpiApp(app)} className={`flex-1 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all border ${upiApp === app ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue border-transparent' : 'bg-neutral-50 dark:bg-white/[0.02] border-neutral-100 dark:border-white/5 text-neutral-400'}`}>{app}</button>
+                          <button key={app} onClick={() => setUpiApp(app)} className={`flex-1 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all border ${upiApp === app ? 'bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue border-transparent' : 'bg-neutral-50 dark:bg-white/[0.02] border-neutral-100 dark:border-white/5 text-neutral-400'}`}>{app}</button>
                         ))}
                       </div>
                     )}
                     {paymentMethod === 'Credit Card' && (
                       <div className="flex flex-wrap gap-1.5">
                         {accounts.filter(a => (a as any).type === 'CREDIT_CARD').map(card => (
-                          <button key={card.id} onClick={() => setSelectedAccountId(card.id!)} className={`px-2.5 py-1 rounded-lg text-[8px] font-bold uppercase transition-all border ${selectedAccountId === card.id ? 'bg-brand-blue text-white border-transparent' : 'bg-neutral-50 dark:bg-white/5 border-neutral-100 dark:border-white/5 text-neutral-400'}`}>{card.bankName}</button>
+                          <button key={card.id} onClick={() => setSelectedAccountId(card.id!)} className={`px-2.5 py-1 rounded-lg text-[8px] font-bold uppercase transition-all border ${selectedAccountId === card.id ? 'bg-brand-green text-white border-transparent' : 'bg-neutral-50 dark:bg-white/5 border-neutral-100 dark:border-white/5 text-neutral-400'}`}>{card.bankName}</button>
                         ))}
                       </div>
                     )}
                     {paymentMethod === 'Cash' && (
                       <div className="flex flex-wrap gap-1.5">
                         {accounts.filter(a => (a as any).type === 'CASH').map(wallet => (
-                          <button key={wallet.id} onClick={() => setSelectedAccountId(wallet.id!)} className={`px-2.5 py-1 rounded-lg text-[8px] font-bold uppercase transition-all border ${selectedAccountId === wallet.id ? 'bg-brand-blue text-white border-transparent' : 'bg-neutral-50 dark:bg-white/5 border-neutral-100 dark:border-white/5 text-neutral-400'}`}>{wallet.bankName}</button>
+                          <button key={wallet.id} onClick={() => setSelectedAccountId(wallet.id!)} className={`px-2.5 py-1 rounded-lg text-[8px] font-bold uppercase transition-all border ${selectedAccountId === wallet.id ? 'bg-brand-green text-white border-transparent' : 'bg-neutral-50 dark:bg-white/5 border-neutral-100 dark:border-white/5 text-neutral-400'}`}>{wallet.bankName}</button>
                         ))}
                       </div>
                     )}
@@ -667,7 +667,7 @@ export default function Dashboard() {
                   className={`px-8 py-2.5 rounded-2xl text-[10px] font-black transition-all active:scale-[0.98] shadow-2xl flex items-center justify-center gap-2 uppercase tracking-widest ${
                     (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
                     ? 'bg-neutral-100 dark:bg-[#1C1C22] text-neutral-300 dark:text-[#4A4A52] cursor-not-allowed border border-[#EBEBEB] dark:border-transparent opacity-50'
-                    : 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue shadow-brand-blue/30 dark:shadow-brand-cyan/20'
+                    : 'bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue shadow-brand-green/30 dark:shadow-brand-green/20'
                   }`}
                 >
                   {status === 'success' ? (
@@ -676,7 +676,7 @@ export default function Dashboard() {
                     <> <Save className="w-4 h-4 text-current opacity-60" /> SAVE ENTRY </>
                   )}
                 </button>
-                <button onClick={() => setEntryMode('CHAT')} className="w-11 h-11 bg-brand-blue/5 dark:bg-brand-cyan/5 text-brand-blue dark:text-brand-cyan rounded-2xl flex items-center justify-center border border-brand-blue/10 dark:border-brand-cyan/10 transition-all active:scale-90 shadow-sm">
+                <button onClick={() => setEntryMode('CHAT')} className="w-11 h-11 bg-brand-green/5 dark:bg-brand-green/5 text-brand-green dark:text-brand-green rounded-2xl flex items-center justify-center border border-brand-green/10 dark:border-brand-green/10 transition-all active:scale-90 shadow-sm">
                    <Wand2 className="w-5 h-5" />
                 </button>
               </div>

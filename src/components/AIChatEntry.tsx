@@ -225,14 +225,14 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-64">
         {messages.map((msg, i) => (
           <div key={i} className={`flex flex-col ${msg.role === 'ai' ? 'items-start' : 'items-end'} gap-2 animate-in slide-in-from-bottom-2 duration-300`}>
-            <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-[12px] font-medium shadow-sm flex items-start gap-2.5 ${msg.role === 'ai' ? 'bg-white dark:bg-[#111111] text-neutral-800 dark:text-neutral-200 border border-[#EBEBEB] dark:border-white/5' : 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue'}`}>
+            <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-[12px] font-medium shadow-sm flex items-start gap-2.5 ${msg.role === 'ai' ? 'bg-white dark:bg-[#111111] text-neutral-800 dark:text-neutral-200 border border-[#EBEBEB] dark:border-white/5' : 'bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue'}`}>
               {msg.role === 'ai' && <Bot className="w-3.5 h-3.5 mt-0.5" />}
               <span className="leading-relaxed">{msg.content}</span>
             </div>
             {msg.options && (
               <div className="grid grid-cols-2 gap-2 w-full max-w-[85%]">
                 {msg.options.map((opt: string) => (
-                  <button key={opt} onClick={() => handleSend(opt)} className="px-3 py-2 bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-white/5 rounded-xl text-[10px] font-black uppercase text-brand-blue dark:text-brand-cyan hover:bg-brand-blue/5 transition-all shadow-sm active:scale-95 flex items-center justify-between group">
+                  <button key={opt} onClick={() => handleSend(opt)} className="px-3 py-2 bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-white/5 rounded-xl text-[10px] font-black uppercase text-brand-green dark:text-brand-green hover:bg-brand-green/5 transition-all shadow-sm active:scale-95 flex items-center justify-between group">
                     <span className="truncate">{opt}</span>
                     <ChevronRight className="w-3 h-3 opacity-30 group-hover:opacity-100" />
                   </button>
@@ -242,7 +242,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
           </div>
         ))}
         {isTyping && (
-          <div className="flex justify-start"><div className="bg-white dark:bg-[#111111] px-4 py-2.5 rounded-2xl flex items-center gap-1"><span className="w-1 h-1 bg-brand-blue dark:bg-brand-cyan rounded-full animate-bounce"></span><span className="w-1 h-1 bg-brand-blue dark:bg-brand-cyan rounded-full animate-bounce [animation-delay:-0.15s]"></span><span className="w-1 h-1 bg-brand-blue dark:bg-brand-cyan rounded-full animate-bounce [animation-delay:-0.3s]"></span></div></div>
+          <div className="flex justify-start"><div className="bg-white dark:bg-[#111111] px-4 py-2.5 rounded-2xl flex items-center gap-1"><span className="w-1 h-1 bg-brand-green dark:bg-brand-green rounded-full animate-bounce"></span><span className="w-1 h-1 bg-brand-green dark:bg-brand-green rounded-full animate-bounce [animation-delay:-0.15s]"></span><span className="w-1 h-1 bg-brand-green dark:bg-brand-green rounded-full animate-bounce [animation-delay:-0.3s]"></span></div></div>
         )}
         <div ref={chatEndRef} />
       </div>
@@ -251,46 +251,46 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         {stage === 'PREVIEW' && (
           <div className="mx-0.5 p-3 bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-white/5 rounded-3xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
             <div className="flex items-center justify-between mb-3 px-1">
-              <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-brand-blue" /> Smart Preview</span>
-              <button onClick={() => { setStage('IDLE'); setPendingTx({...pendingTx, _dateConfirmed: false, type: ''}); }} className="text-[8px] font-bold text-brand-blue dark:text-brand-cyan bg-brand-blue/5 px-2 py-1 rounded-lg">Reset</button>
+              <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-brand-green" /> Smart Preview</span>
+              <button onClick={() => { setStage('IDLE'); setPendingTx({...pendingTx, _dateConfirmed: false, type: ''}); }} className="text-[8px] font-bold text-brand-green dark:text-brand-green bg-brand-green/5 px-2 py-1 rounded-lg">Reset</button>
             </div>
             
             <div className="grid grid-cols-2 gap-2 mb-3">
               <div className="bg-[#F7F7F7] dark:bg-white/5 p-2 rounded-2xl flex flex-col items-center justify-center">
-                <span className="text-[17px] font-black text-brand-blue dark:text-white">₹{pendingTx.amount}</span>
+                <span className="text-[17px] font-black text-brand-green dark:text-white">₹{pendingTx.amount}</span>
                 <span className={`text-[7px] font-black uppercase ${pendingTx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-red'}`}>{pendingTx.type === 'CREDIT' ? 'Inflow' : 'Outflow'}</span>
               </div>
               <div className="bg-[#F7F7F7] dark:bg-white/5 p-2 rounded-2xl flex items-center gap-2">
                 <div className="text-xl">{CATEGORY_ICONS[pendingTx.category] || '📦'}</div>
-                <div className="flex flex-col"><span className="text-[8px] font-black text-neutral-400 uppercase leading-none">Category</span><span className="text-[10px] font-bold text-brand-blue dark:text-white truncate">{pendingTx.category}</span></div>
+                <div className="flex flex-col"><span className="text-[8px] font-black text-neutral-400 uppercase leading-none">Category</span><span className="text-[10px] font-bold text-brand-green dark:text-white truncate">{pendingTx.category}</span></div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2 mb-3 px-0.5">
                <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
                  <Landmark className="w-3 h-3 text-neutral-400" />
-                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">{pendingTx.type === 'CREDIT' ? 'Recipient' : 'Source'}</span><span className="text-[9px] font-bold text-brand-blue dark:text-white truncate">{accounts.find(a=>a.id === pendingTx.selectedAccountId)?.bankName || '-'}</span></div>
+                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">{pendingTx.type === 'CREDIT' ? 'Recipient' : 'Source'}</span><span className="text-[9px] font-bold text-brand-green dark:text-white truncate">{accounts.find(a=>a.id === pendingTx.selectedAccountId)?.bankName || '-'}</span></div>
                </div>
                <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
                  <AppWindow className="w-3 h-3 text-neutral-400" />
-                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Method</span><span className="text-[9px] font-bold text-brand-blue dark:text-white truncate">{pendingTx.upiApp || pendingTx.paymentMethod || '-'}</span></div>
+                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Method</span><span className="text-[9px] font-bold text-brand-green dark:text-white truncate">{pendingTx.upiApp || pendingTx.paymentMethod || '-'}</span></div>
                </div>
                <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
                  <Hash className="w-3 h-3 text-neutral-400" />
-                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Class</span><span className="text-[9px] font-bold text-brand-blue dark:text-white truncate">#{pendingTx.expenseType}</span></div>
+                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Class</span><span className="text-[9px] font-bold text-brand-green dark:text-white truncate">#{pendingTx.expenseType}</span></div>
                </div>
                <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
                  <Lightbulb className="w-3 h-3 text-neutral-400" />
-                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Remark</span><span className="text-[9px] font-bold text-brand-blue dark:text-white truncate">{pendingTx.note}</span></div>
+                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Remark</span><span className="text-[9px] font-bold text-brand-green dark:text-white truncate">{pendingTx.note}</span></div>
                </div>
             </div>
 
-            <button onClick={() => onSave(pendingTx)} className="w-full py-3.5 bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all"><CheckCircle2 className="w-4 h-4" /> Save Entry</button>
+            <button onClick={() => onSave(pendingTx)} className="w-full py-3.5 bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all"><CheckCircle2 className="w-4 h-4" /> Save Entry</button>
           </div>
         )}
         <div className="flex items-center gap-2 bg-white dark:bg-[#111111] p-1.5 rounded-2xl border border-[#EBEBEB] dark:border-white/5 shadow-xl">
           <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Ask AI..." className="flex-1 bg-transparent px-3 py-2 text-[12px] font-bold outline-none dark:text-white" />
-          <button onClick={() => handleSend()} className="w-10 h-10 bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition-transform"><Send className="w-4 h-4" /></button>
+          <button onClick={() => handleSend()} className="w-10 h-10 bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition-transform"><Send className="w-4 h-4" /></button>
         </div>
       </div>
     </div>
