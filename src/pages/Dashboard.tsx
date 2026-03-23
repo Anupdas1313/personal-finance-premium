@@ -487,6 +487,8 @@ export default function Dashboard() {
                    setCategory(tx.category);
                    setSelectedAccountId(tx.selectedAccountId);
                    setType(tx.type);
+                   setPaymentMethod(tx.paymentMethod || 'UPI');
+                   setUpiApp(tx.upiApp || 'GPay');
                    setExpenseType(tx.expenseType || tags[0]);
                    setPartyName(tx.partyName || '');
                    setNote(tx.note || '');
