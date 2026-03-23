@@ -12,6 +12,21 @@ interface AIChatEntryProps {
 
 type ChatStage = 'IDLE' | 'ASK_AMOUNT' | 'ASK_TYPE' | 'ASK_BANK' | 'ASK_PAYMENT_METHOD' | 'ASK_CATEGORY' | 'ASK_TAG' | 'ASK_PAYEE' | 'ASK_NOTE' | 'ASK_DATE' | 'PREVIEW';
 
+// Common Indian Bank Acronyms for local intelligence
+const COMMON_BANK_NICKNAMES: Record<string, string> = {
+  'sbi': 'state bank',
+  'pnb': 'punjab national',
+  'hdfc': 'hdfc bank',
+  'icici': 'icici bank',
+  'axis': 'axis bank',
+  'kotak': 'kotak mahindra',
+  'bob': 'bank of baroda',
+  'idfc': 'idfc first',
+  'boi': 'bank of india',
+  'canara': 'canara bank',
+  'central': 'central bank',
+};
+
 const MERCHANT_KNOWLEDGE: Record<string, { category: string, tag: string }> = {
   'starbucks': { category: 'Food', tag: 'Personal' },
   'mcdonalds': { category: 'Food', tag: 'Personal' },
@@ -29,7 +44,7 @@ const MERCHANT_KNOWLEDGE: Record<string, { category: string, tag: string }> = {
 
 export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags }) => {
   const [messages, setMessages] = useState<any[]>([
-    { role: 'ai', content: "Welcome! I'm your high-precision AI. Tell me about a transaction (e.g. 'Paid 500 for lunch'), and I'll guide you through the mandatory details!" }
+    { role: 'ai', content: "Hi! I'm smarter now. Try saying 'sbi' or 'hdfc' instead of full bank names, and I'll catch it instantly! How can I help?" }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -67,10 +82,24 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
   const resolveBank = (textSnippet: string) => {
     const t = textSnippet.toLowerCase();
+    
     for (const acc of accounts) {
       const nameStr = acc.bankName.toLowerCase();
-      const initials = nameStr.split(/[\s-]+/).filter(w => w.length > 1).map(w => w[0]).join('');
-      if (t.includes(nameStr) || (initials.length > 1 && t.match(new RegExp(`\\b${initials}\\b`, 'i')))) return acc;
+      // 1. Exact Name match or includes
+      if (t.includes(nameStr)) return acc;
+      
+      // 2. Acronym match (SBI, HDFC)
+      const words = nameStr.split(/[\s-]+/);
+      const acronym = words.filter(w => w.length > 1).map(w => w[0]).join('');
+      if (acronym.length > 1 && t.match(new RegExp(`\\b${acronym}\\b`, 'i'))) return acc;
+      
+      // 3. First word shortcut ("State" -> "State Bank of India")
+      if (t.match(new RegExp(`\\b${words[0]}\\b`, 'i'))) return acc;
+
+      // 4. Nickname map
+      for (const [nick, main] of Object.entries(COMMON_BANK_NICKNAMES)) {
+          if (t.includes(nick) && nameStr.includes(main)) return acc;
+      }
     }
     return null;
   };
@@ -99,10 +128,10 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     }
 
     let parsedPayee = '', parsedNote = '';
-    const toMatch = text.match(/\bto\s+([A-Za-z0-9_]+)/i);
-    const forMatch = text.match(/\bfor\s+(.+?)(?:\s+(?:using|at|today|yesterday|with|in)\b|$)/i);
-    if (toMatch && type !== 'TRANSFER') parsedPayee = toMatch[1];
-    if (forMatch) parsedNote = forMatch[1].trim();
+    const toMatch = text.match(/\b(to|paid to|at)\s+([A-Za-z0-9_]+)/i);
+    const forMatch = text.match(/\b(for|remark|not|note)\s+(.+?)(?:\s+(?:using|at|today|yesterday|with|in|from|to)\b|$)/i);
+    if (toMatch && type !== 'TRANSFER') parsedPayee = toMatch[2];
+    if (forMatch) parsedNote = forMatch[2].trim();
 
     let date = '', dateConfirmed = false;
     if (t.includes('yesterday')) { date = format(subDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"); dateConfirmed = true; }
@@ -156,7 +185,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         }
         setPendingTx(updated);
         checkNextStep(updated);
-      } else addAIMessage("Which account was used?");
+      } else addAIMessage("I missed the bank name. Which one did you use?");
     }
     else if (stage === 'ASK_PAYMENT_METHOD') {
       updated.paymentMethod = userMsg;
@@ -190,18 +219,24 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     }
   };
 
+  const getBankDisplay = (acc: any) => {
+      const words = acc.bankName.split(' ');
+      if (words.length > 2) return words.filter((w:any) => w.length > 2).map((w:any) => w[0]).join('').toUpperCase();
+      return words[0];
+  };
+
   const checkNextStep = (tx: any) => {
-    if (!tx.amount) { setStage('ASK_AMOUNT'); addAIMessage("Amount? (e.g. 500, 2k)"); }
-    else if (!tx.type) { setStage('ASK_TYPE'); addAIMessage("Transaction Type:", ['Debit', 'Credit', 'Transfer']); }
-    else if (!tx.selectedAccountId) { setStage('ASK_BANK'); addAIMessage("Which account?", accounts.map(a => a.bankName.split(' ')[0])); }
-    else if (tx.type === 'TRANSFER' && !tx.toAccountId) { setStage('ASK_BANK'); addAIMessage("Destination Account?", accounts.filter(a => a.id !== tx.selectedAccountId).map(a => a.bankName.split(' ')[0])); }
-    else if (!tx.paymentMethod) { setStage('ASK_PAYMENT_METHOD'); addAIMessage("Payment Method:", ['UPI', 'Credit Card', 'Cash', 'Bank Transfer']); }
-    else if (!tx.category && tx.type !== 'TRANSFER') { setStage('ASK_CATEGORY'); addAIMessage("Select Category:", CATEGORIES); }
-    else if (!tx.expenseType && tx.type !== 'TRANSFER') { setStage('ASK_TAG'); addAIMessage("Add Classification Tag:", [...tags, 'skip']); }
-    else if (!tx.partyName && tx.type !== 'TRANSFER') { setStage('ASK_PAYEE'); addAIMessage("Payee Name? (e.g. Starbucks, Hrisav) Or type 'skip'."); }
-    else if (!tx.note) { setStage('ASK_NOTE'); addAIMessage("Remark is mandatory: Describe this entry."); }
-    else if (!tx._dateConfirmed) { setStage('ASK_DATE'); addAIMessage("Date of transaction:", ['Today', 'Yesterday']); }
-    else { setStage('PREVIEW'); addAIMessage("Smart Preview generated! Ready to finalize."); }
+    if (!tx.amount) { setStage('ASK_AMOUNT'); addAIMessage("Amount? (e.g. 5k, 500)"); }
+    else if (!tx.type) { setStage('ASK_TYPE'); addAIMessage("Inflow or Outflow?", ['Debit', 'Credit', 'Transfer']); }
+    else if (!tx.selectedAccountId) { setStage('ASK_BANK'); addAIMessage("Confirmed Bank:", accounts.map(a => getBankDisplay(a))); }
+    else if (tx.type === 'TRANSFER' && !tx.toAccountId) { setStage('ASK_BANK'); addAIMessage("Log Destination:", accounts.filter(a => a.id !== tx.selectedAccountId).map(a => getBankDisplay(a))); }
+    else if (!tx.paymentMethod) { setStage('ASK_PAYMENT_METHOD'); addAIMessage("Method:", ['UPI', 'Credit Card', 'Cash', 'Bank Transfer']); }
+    else if (!tx.category && tx.type !== 'TRANSFER') { setStage('ASK_CATEGORY'); addAIMessage("Pick Category:", CATEGORIES); }
+    else if (!tx.expenseType && tx.type !== 'TRANSFER') { setStage('ASK_TAG'); addAIMessage("Classification Tag:", [...tags, 'skip']); }
+    else if (!tx.partyName && tx.type !== 'TRANSFER') { setStage('ASK_PAYEE'); addAIMessage("Paid to whom? (Or 'skip')"); }
+    else if (!tx.note) { setStage('ASK_NOTE'); addAIMessage("Remark is mandatory: Why this entry?"); }
+    else if (!tx._dateConfirmed) { setStage('ASK_DATE'); addAIMessage("Date:", ['Today', 'Yesterday']); }
+    else { setStage('PREVIEW'); addAIMessage("Details locked! Save now?"); }
   };
 
   return (
@@ -217,7 +252,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
             {msg.options && (
               <div className="grid grid-cols-2 gap-2 w-full max-w-[85%] animate-in fade-in slide-in-from-top-2 duration-400">
                 {msg.options.map((opt: string) => (
-                  <button key={opt} onClick={() => handleSend(opt)} className="px-3 py-2 bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-white/5 rounded-xl text-[10px] font-black uppercase text-brand-blue dark:text-brand-cyan hover:bg-brand-blue/5 transition-all shadow-sm active:scale-95 flex items-center justify-between group">
+                  <button key={opt} onClick={() => handleSend(opt)} className="px-3 py-2 bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-white/5 rounded-xl text-[11px] font-black uppercase text-brand-blue dark:text-brand-cyan hover:bg-brand-blue/5 transition-all shadow-sm active:scale-95 flex items-center justify-between group">
                     <span className="truncate">{opt}</span>
                     <ChevronRight className="w-3 h-3 opacity-30 group-hover:opacity-100 transition-opacity" />
                   </button>
@@ -252,16 +287,16 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
             </div>
 
             <div className="space-y-1.5 mb-3 px-1 bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-2xl">
-              <div className="flex items-center justify-between text-[9px]"><span className="text-neutral-400 font-bold flex items-center gap-1.5"><Landmark className="w-2.5 h-2.5" /> Source</span><span className="text-brand-blue dark:text-white font-bold">{accounts.find(a=>a.id === pendingTx.selectedAccountId)?.bankName || '-'} • {pendingTx.paymentMethod}</span></div>
-              <div className="flex items-center justify-between text-[9px]"><span className="text-neutral-400 font-bold flex items-center gap-1.5"><Hash className="w-2.5 h-2.5" /> Tag</span><span className="text-brand-blue dark:text-white font-bold">#{pendingTx.expenseType}</span></div>
-              <div className="flex items-center justify-between text-[9px]"><span className="text-neutral-400 font-bold flex items-center gap-1.5"><Lightbulb className="w-2.5 h-2.5" /> Detail</span><span className="text-brand-blue dark:text-white font-bold truncate max-w-[150px] text-right italic">{pendingTx.note}</span></div>
+              <div className="flex items-center justify-between text-[9px]"><span className="text-neutral-400 font-bold flex items-center gap-1.5"><Landmark className="w-2.5 h-2.5" /> Logged In</span><span className="text-brand-blue dark:text-white font-bold">{accounts.find(a=>a.id === pendingTx.selectedAccountId)?.bankName || '-'}</span></div>
+              <div className="flex items-center justify-between text-[9px]"><span className="text-neutral-400 font-bold flex items-center gap-1.5"><Hash className="w-2.5 h-2.5" /> Class</span><span className="text-brand-blue dark:text-white font-bold">#{pendingTx.expenseType}</span></div>
+              <div className="flex items-center justify-between text-[9px]"><span className="text-neutral-400 font-bold flex items-center gap-1.5"><Lightbulb className="w-2.5 h-2.5" /> Remark</span><span className="text-brand-blue dark:text-white font-bold truncate max-w-[150px] text-right italic">{pendingTx.note}</span></div>
             </div>
 
             <button onClick={() => onSave(pendingTx)} className="w-full py-3 bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-transform"><CheckCircle2 className="w-4 h-4" /> Save Entry</button>
           </div>
         )}
         <div className="flex items-center gap-2 bg-white dark:bg-[#111111] p-1.5 rounded-2xl border border-[#EBEBEB] dark:border-white/5 shadow-xl">
-          <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Type something..." className="flex-1 bg-transparent px-3 py-2 text-[12px] font-bold outline-none dark:text-white" />
+          <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Ask AI... (e.g. 'Paid 500 via sbi')" className="flex-1 bg-transparent px-3 py-2 text-[12px] font-bold outline-none dark:text-white" />
           <button onClick={() => handleSend()} className="w-10 h-10 bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition-transform"><Send className="w-4 h-4" /></button>
         </div>
       </div>
