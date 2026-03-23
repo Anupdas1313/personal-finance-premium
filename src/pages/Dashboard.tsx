@@ -504,7 +504,7 @@ export default function Dashboard() {
               <div className="flex-1 overflow-y-auto w-full px-4 pt-3 pb-32 space-y-2.5 scrollbar-hide no-scrollbar">
                 
                 {/* 1. Hero Card: Consolidates Flow, Amount, and Bank */}
-                <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-1.5 shadow-sm flex flex-col gap-2">
+                <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-[28px] border border-[#EBEBEB] dark:border-white/5 p-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col gap-2">
                   {/* Top Row: Full-width Type Toggle */}
                   <div className="flex bg-[#F7F7F7] dark:bg-white/5 p-0.5 rounded-2xl w-full shrink-0">
                     <button onClick={() => setType('DEBIT')} className={`flex-1 py-1 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'DEBIT' ? 'bg-white dark:bg-[#2C2C34] text-brand-red shadow-sm' : 'text-neutral-400'}`}>Outflow</button>
@@ -584,21 +584,21 @@ export default function Dashboard() {
                 )}
 
                 {/* 3. Recipient & Remark Card */}
-                <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-0.5 divide-y divide-[#EBEBEB] dark:divide-white/5 mx-1">
+                <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-[28px] border border-[#EBEBEB] dark:border-white/5 p-0.5 divide-y divide-[#EBEBEB] dark:divide-white/5 mx-1 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
                   {type !== 'TRANSFER' && (
-                    <div className="flex items-center gap-3 px-4 py-2 group">
-                      <User className="w-3.5 h-3.5 text-neutral-300 dark:text-[#333333]" />
-                      <input type="text" value={partyName} onChange={e => setPartyName(e.target.value)} placeholder={type === 'DEBIT' ? 'Payee…' : 'Source…'} className="bg-transparent flex-1 text-[11px] font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-200 dark:placeholder:text-[#333333]" />
+                    <div className="flex items-center gap-3 px-4 py-4 group">
+                      <User className="w-4 h-4 text-neutral-400 dark:text-[#555555]" />
+                      <input type="text" value={partyName} onChange={e => setPartyName(e.target.value)} placeholder={type === 'DEBIT' ? 'Payee…' : 'Source…'} className="bg-transparent flex-1 text-sm font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-300 dark:placeholder:text-[#333333]" />
                     </div>
                   )}
-                  <div className="flex items-center gap-3 px-4 py-2 group">
-                    <AlignLeft className="w-3.5 h-3.5 text-neutral-300 dark:text-[#333333]" />
-                    <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="Add specific details…" className="bg-transparent flex-1 text-[11px] font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-200 dark:placeholder:text-[#333333]" />
+                  <div className="flex items-center gap-3 px-4 py-4 group">
+                    <AlignLeft className="w-4 h-4 text-neutral-400 dark:text-[#555555]" />
+                    <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="Add specific details…" className="bg-transparent flex-1 text-sm font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-300 dark:placeholder:text-[#333333]" />
                   </div>
                 </div>
 
                 {/* 5. Category Grid — Integrated */}
-                <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-3 space-y-3">
+                <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-[28px] border border-[#EBEBEB] dark:border-white/5 p-3 space-y-3 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">Choose Category</span>
                     <span className="text-[10px] font-bold text-brand-blue dark:text-brand-cyan px-2 py-0.5 bg-brand-blue/5 dark:bg-brand-cyan/5 rounded-full lowercase tracking-wider">{category}</span>
@@ -611,7 +611,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* 6. Payment Method — Intelligence Layer */}
-                <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-3 space-y-3">
+                <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-[28px] border border-[#EBEBEB] dark:border-white/5 p-3 space-y-3 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">Payment Logistics</span>
                     <span className="text-[10px] font-bold text-brand-blue dark:text-brand-cyan px-2 py-0.5 bg-brand-blue/5 dark:bg-brand-cyan/5 rounded-full lowercase tracking-wider">{paymentMethod}</span>
@@ -660,21 +660,24 @@ export default function Dashboard() {
               </div>
 
               {/* Persistent Action Bar — Fixed Bottom Optimized */}
-              <div className="fixed bottom-0 left-0 right-0 p-3 bg-white/80 dark:bg-[#0A0A0A]/80 backdrop-blur-xl border-t border-[#EBEBEB] dark:border-white/5 z-50 flex justify-center">
+              <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-[#0A0A0A]/80 backdrop-blur-xl border-t border-[#EBEBEB] dark:border-white/5 z-50 flex justify-end items-center gap-3">
                 <button 
                   onClick={handleSaveManual}
                   disabled={!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
-                  className={`w-[45%] py-2 rounded-2xl text-[11px] font-black transition-all active:scale-[0.98] shadow-2xl flex items-center justify-center gap-2 uppercase tracking-widest ${
+                  className={`px-8 py-2.5 rounded-2xl text-[10px] font-black transition-all active:scale-[0.98] shadow-2xl flex items-center justify-center gap-2 uppercase tracking-widest ${
                     (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
                     ? 'bg-neutral-100 dark:bg-[#1C1C22] text-neutral-300 dark:text-[#4A4A52] cursor-not-allowed border border-[#EBEBEB] dark:border-transparent opacity-50'
                     : 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue shadow-brand-blue/30 dark:shadow-brand-cyan/20'
                   }`}
                 >
                   {status === 'success' ? (
-                    <> <CheckCircle2 className="w-4 h-4" /> ENTRY SAVED </>
+                    <> <CheckCircle2 className="w-4 h-4" /> SAVED </>
                   ) : (
                     <> <Save className="w-4 h-4 text-current opacity-60" /> SAVE ENTRY </>
                   )}
+                </button>
+                <button onClick={() => setEntryMode('CHAT')} className="w-11 h-11 bg-brand-blue/5 dark:bg-brand-cyan/5 text-brand-blue dark:text-brand-cyan rounded-2xl flex items-center justify-center border border-brand-blue/10 dark:border-brand-cyan/10 transition-all active:scale-90 shadow-sm">
+                   <Wand2 className="w-5 h-5" />
                 </button>
               </div>
             </>
