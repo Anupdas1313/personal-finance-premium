@@ -504,7 +504,7 @@ export default function Dashboard() {
               <div className="flex-1 overflow-y-auto w-full px-4 pt-3 pb-32 space-y-2.5 scrollbar-hide no-scrollbar">
                 
                 {/* 1. Hero Card: Consolidates Flow, Amount, and Bank */}
-                <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-2 shadow-sm flex flex-col gap-2.5">
+                <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-white/5 p-1.5 shadow-sm flex flex-col gap-2">
                   {/* Top Row: Full-width Type Toggle */}
                   <div className="flex bg-[#F7F7F7] dark:bg-white/5 p-0.5 rounded-2xl w-full shrink-0">
                     <button onClick={() => setType('DEBIT')} className={`flex-1 py-1 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'DEBIT' ? 'bg-white dark:bg-[#2C2C34] text-brand-red shadow-sm' : 'text-neutral-400'}`}>Outflow</button>
@@ -513,9 +513,9 @@ export default function Dashboard() {
                   </div>
 
                   {/* Middle Row: Split 50/50 (Amount Left, Bank Right) */}
-                  <div className="grid grid-cols-2 gap-2.5 items-center h-[112px]">
+                  <div className="grid grid-cols-2 gap-2.5 items-center h-[92px]">
                     {/* LEFT: Amount Segment */}
-                    <div className="flex flex-col items-center gap-1.5 border-r border-[#EBEBEB] dark:border-white/5 pr-4">
+                    <div className="flex flex-col items-center gap-1 border-r border-[#EBEBEB] dark:border-white/5 pr-4">
                       <div className="flex items-baseline gap-1">
                         <span className="text-sm font-bold text-neutral-300 dark:text-[#333333]">₹</span>
                         <input 
@@ -524,16 +524,16 @@ export default function Dashboard() {
                         />
                       </div>
                       <div className="relative">
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F7F7F7] dark:bg-white/5 text-neutral-400 dark:text-neutral-500 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors">
+                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F7F7F7] dark:bg-white/5 text-neutral-400 dark:text-neutral-500 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors">
                           <Calendar className="w-2.5 h-2.5" />
-                          <span className="text-[9px] font-bold uppercase tracking-wider">{format(new Date(transactionDate), 'dd MMM, hh:mm a')}</span>
+                          <span className="text-[8px] font-bold uppercase tracking-wider">{format(new Date(transactionDate), 'dd MMM, hh:mm a')}</span>
                         </div>
                         <input type="datetime-local" value={transactionDate} onChange={(e) => setTransactionDate(e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
                       </div>
                     </div>
 
                     {/* RIGHT: Compact Account Selector */}
-                    <div className="flex-1 overflow-y-auto space-y-1.5 no-scrollbar max-h-full">
+                    <div className="flex-1 overflow-y-auto space-y-1 no-scrollbar max-h-full">
                       {accounts.map(acc => (
                         <button 
                           key={acc.id} 
@@ -549,7 +549,7 @@ export default function Dashboard() {
                                 else if (paymentMethod === 'Cash' || paymentMethod === 'Credit Card') setPaymentMethod('Bank');
                               }
                           }}
-                          className={`w-full flex items-center gap-2 px-2 py-2 rounded-xl border transition-all relative ${selectedAccountId === acc.id || toAccountId === acc.id ? 'bg-brand-blue/5 dark:bg-brand-cyan/5 border-brand-blue dark:border-brand-cyan shadow-sm' : 'bg-[#F7F7F7] dark:bg-white/[0.02] border-transparent'}`}
+                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-xl border transition-all relative ${selectedAccountId === acc.id || toAccountId === acc.id ? 'bg-brand-blue/5 dark:bg-brand-cyan/5 border-brand-blue dark:border-brand-cyan shadow-sm' : 'bg-[#F7F7F7] dark:bg-white/[0.02] border-transparent'}`}
                         >
                           {selectedAccountId === acc.id && type === 'TRANSFER' && <div className="absolute -top-1 right-1 bg-brand-blue text-white text-[5px] font-bold px-1 py-0.5 rounded-full uppercase tracking-tighter">F</div>}
                           {toAccountId === acc.id && type === 'TRANSFER' && <div className="absolute -top-1 right-1 bg-brand-cyan text-brand-blue text-[5px] font-bold px-1 py-0.5 rounded-full uppercase tracking-tighter">T</div>}
