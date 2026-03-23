@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction } from '../lib/db';
 import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark, Download, FileText, CheckCircle2, History, Calendar, ChevronDown, Printer, MoreHorizontal, Scissors, Filter } from 'lucide-react';
-
 import { BankLogo } from '../components/BankLogo';
 import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
 import { format, startOfDay, parseISO, endOfMonth, startOfMonth, subMonths, endOfDay, startOfWeek, endOfWeek, startOfYear, endOfYear, addMonths, subWeeks, addWeeks, subDays, addDays, subYears, addYears } from 'date-fns';
@@ -54,59 +53,6 @@ export default function Accounts() {
     }, {} as Record<number, { inflow: number, outflow: number, currentBalance: number }>);
   }, [accounts, allTransactions]); // Only depend on accounts and allTransactions
 
-  // ----- Export Helpers ---------------------------------------------------
-  const flattenAccounts = (groups: Record<string, any[]>) => {
-    const rows: any[] = [];
-    Object.entries(groups).forEach(([type, list]) => {
-      list.forEach((acc: any) => {
-        rows.push({
-          type,
-          name: acc.bankName,
-          number: acc.accountLast4,
-          balance: acc.startingBalance,
-        });
-      });
-    });
-    return rows;
-  };
-
-  const toCSV = (rows: any[]) => {
-    if (!rows.length) return '';
-    const header = Object.keys(rows[0]).join(',');
-    const body = rows
-      .map(row =>
-        Object.values(row)
-          .map(v => `"${String(v).replace(/"/g, '""')}"`)
-          .join(',')
-      )
-      .join('\n');
-    return `${header}\n${body}`;
-  };
-
-  const handleExport = () => {
-    const rows = flattenAccounts(groupedAccounts);
-    const csv = toCSV(rows);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `Accounts_Export_${format(new Date(), 'dd_MMM_yyyy')}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // ----- UI ---------------------------------------------------
-  // Export button placed above the accounts grid
-  const exportButton = (
-    <button
-      onClick={handleExport}
-      className="flex items-center gap-1 bg-brand-green text-white px-3 py-1 rounded-md hover:bg-brand-green/90 transition-colors"
-    >
-      <Download className="w-4 h-4" /> Export CSV
-    </button>
-  );
   const handleAddAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bankName || !accountLast4 || !startingBalance) return;
@@ -196,29 +142,19 @@ export default function Accounts() {
       <div className="flex justify-between items-center">
         <h1 className="text-4xl font-heading font-semibold text-brand-blue dark:text-[#F7F7F7] tracking-tight">Accounts</h1>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-1.5 bg-brand-green/10 text-brand-green px-4 py-2 rounded-xl hover:bg-brand-green hover:text-white transition-all font-semibold shadow-sm"
-          >
-            <Download className="w-4 h-4" />
-            <span className="text-sm">Export CSV</span>
-          </button>
-
-          <button
-            onClick={() => {
-              if (isAdding) {
-                resetForm();
-              } else {
-                setIsAdding(true);
-              }
-            }}
-            className="flex items-center gap-2 px-6 py-3 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl hover:bg-brand-green/90 hover:ring-2 hover:ring-brand-cyan transition-all font-semibold shadow-lg shadow-brand-green/10 active:scale-95"
-          >
-            <Plus className="w-5 h-5" />
-            {isAdding && !editingAccountId ? 'Cancel' : 'Add New'}
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            if (isAdding) {
+              resetForm();
+            } else {
+              setIsAdding(true);
+            }
+          }}
+          className="flex items-center gap-2 px-6 py-3 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl hover:bg-brand-green/90 hover:ring-2 hover:ring-brand-cyan transition-all font-semibold shadow-lg shadow-brand-green/10 active:scale-95"
+        >
+          <Plus className="w-5 h-5" />
+          {isAdding && !editingAccountId ? 'Cancel' : 'Add New'}
+        </button>
       </div>
 
       {isAdding && (
