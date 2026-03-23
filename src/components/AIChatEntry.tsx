@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, CheckCircle2, Sparkles, Calendar, User as UserIcon, Landmark, Smartphone, CreditCard, Coins, Tag, Lightbulb, MoveHorizontal, Check, Zap, ChevronRight, Hash, AppWindow } from 'lucide-react';
+import { Send, Bot, CheckCircle2, Sparkles, Calendar, User as UserIcon, Landmark, Smartphone, CreditCard, Coins, Tag, Lightbulb, MoveHorizontal, Check, Zap, ChevronRight, Hash, AppWindow, Pencil } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { CATEGORIES, CATEGORY_ICONS } from '../constants';
 
@@ -134,17 +134,30 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         partyName: p.parsedPayee || updated.partyName, note: p.parsedNote || updated.note,
         transactionDate: p.date || updated.transactionDate, _dateConfirmed: p.dateConfirmed || updated._dateConfirmed, _isPredicted: p.isPredicted
       };
+      updated.amount = p.amount || updated.amount;
+      updated.type = p.type || updated.type;
+      updated.selectedAccountId = p.accountId || updated.selectedAccountId;
+      updated.toAccountId = p.toAccountId || updated.toAccountId;
+      updated.paymentMethod = p.autoPaymentMethod || updated.paymentMethod;
+      updated.upiApp = p.upiApp || updated.upiApp;
+      updated.category = p.category || updated.category;
+      updated.expenseType = p.tag || updated.expenseType; 
+      updated.partyName = p.parsedPayee || updated.partyName;
+      updated.note = p.parsedNote || updated.note;
+      updated.transactionDate = p.date || updated.transactionDate;
+      updated._dateConfirmed = p.dateConfirmed || updated._dateConfirmed;
+      updated._isPredicted = p.isPredicted;
       setPendingTx(updated);
       checkNextStep(updated);
     } 
     else if (stage === 'ASK_AMOUNT') {
-      const val = userMsg.match(/(\d+(?:\.\d+)?)\s*(k?)/i);
-      if (val) {
-         updated.amount = (val[2].toLowerCase() === 'k' ? parseFloat(val[1]) * 1000 : parseFloat(val[1])).toString();
-         setPendingTx(updated);
-         checkNextStep(updated);
-      } else addAIMessage("Amount, please?");
-    } 
+      const amt = parseFloat(userMsg.replace(/[^0-9.]/g, ''));
+      if (!isNaN(amt)) {
+        updated.amount = amt;
+        setPendingTx(updated);
+        checkNextStep(updated);
+      } else addAIMessage("Please provide a valid amount (e.g., 500).");
+    }
     else if (stage === 'ASK_TYPE') {
       const t = userMsg.toLowerCase();
       if (t.match(/\b(transfer|send|move)\b/)) updated.type = 'TRANSFER';
@@ -154,17 +167,23 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       checkNextStep(updated);
     }
     else if (stage === 'ASK_BANK') {
-      // Find account by full bank name in msgOverride
-      const acc = accounts.find(a => a.bankName === userMsg) || resolveBank(userMsg);
+      // Find account by full bank name OR the formatted display name "🏦 BankName"
+      const cleanName = userMsg.replace(/^(🏦|💵|💳)\s*/, '').trim();
+      const acc = accounts.find(a => a.bankName === cleanName) || resolveBank(cleanName);
+      
       if (acc) {
-        if (updated.type === 'TRANSFER' && updated.selectedAccountId) updated.toAccountId = acc.id;
-        else {
-           updated.selectedAccountId = acc.id;
-           updated.paymentMethod = acc.type === 'CREDIT_CARD' ? 'Credit Card' : acc.type === 'CASH' ? 'Cash' : 'UPI';
+        if (updated.type === 'TRANSFER' && updated.selectedAccountId && !updated.toAccountId) {
+          updated.toAccountId = acc.id;
+        } else {
+          updated.selectedAccountId = acc.id;
+          updated.paymentMethod = acc.type === 'CREDIT_CARD' ? 'Credit Card' : acc.type === 'CASH' ? 'Cash' : 'UPI';
         }
         setPendingTx(updated);
         checkNextStep(updated);
-      } else addAIMessage(updated.type === 'CREDIT' ? "Which account received this?" : "Which account did you pay from?");
+      } else {
+        const prompt = updated.type === 'CREDIT' ? "Which account received this?" : "Which account did you pay from?";
+        addAIMessage(prompt, getGroupedAccountOptions(updated));
+      }
     }
     else if (stage === 'ASK_PAYMENT_METHOD') {
       updated.paymentMethod = userMsg;
@@ -182,7 +201,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       checkNextStep(updated);
     }
     else if (stage === 'ASK_TAG') {
-      updated.expenseType = userMsg === 'skip' ? (tags[0] || 'Personal') : userMsg;
+      updated.expenseType = userMsg;
       setPendingTx(updated);
       checkNextStep(updated);
     }
@@ -203,21 +222,72 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     }
   };
 
-  const getBankDisplay = (acc: any) => acc.bankName; // STRICTLY RETURN REAL NAME
+  const getGroupedAccountOptions = (tx: any) => {
+    // If TRANSFER and we have source, filter it out
+    const available = tx.type === 'TRANSFER' && tx.selectedAccountId 
+      ? accounts.filter(a => a.id !== tx.selectedAccountId) 
+      : accounts;
+
+    return available.map(a => {
+      const emoji = a.type === 'BANK' ? '🏦' : a.type === 'CASH' ? '💵' : '💳';
+      return `${emoji} ${a.bankName}`;
+    });
+  };
+
+  const handleEdit = (field: string) => {
+    const updated = { ...pendingTx };
+    if (field === 'amount') { updated.amount = ''; setStage('ASK_AMOUNT'); addAIMessage("Correcting Amount: How much was it?"); }
+    if (field === 'bank') { updated.selectedAccountId = ''; setStage('ASK_BANK'); addAIMessage("Correcting Account: Which one did you use?", getGroupedAccountOptions(updated)); }
+    if (field === 'category') { updated.category = ''; setStage('ASK_CATEGORY'); addAIMessage("Correcting Category: Choose from below:", CATEGORIES); }
+    if (field === 'tag') { updated.expenseType = ''; setStage('ASK_TAG'); addAIMessage("Correcting Classification: Please select the correct tag:", tags); }
+    if (field === 'remark') { updated.note = ''; setStage('ASK_NOTE'); addAIMessage("Correcting Remark: Describe this entry."); }
+    setPendingTx(updated);
+  };
 
   const checkNextStep = (tx: any) => {
-    if (!tx.amount) { setStage('ASK_AMOUNT'); addAIMessage("How much was the amount?"); }
-    else if (!tx.type) { setStage('ASK_TYPE'); addAIMessage("Transaction Type?", ['Outflow/Expense', 'Inflow/Income', 'Transfer']); }
-    else if (!tx.selectedAccountId) { setStage('ASK_BANK'); addAIMessage(tx.type === 'CREDIT' ? "Received in which account?" : "Account used for payment:", accounts.map(a => a.bankName)); }
-    else if (tx.type === 'TRANSFER' && !tx.toAccountId) { setStage('ASK_BANK'); addAIMessage("Destination Account:", accounts.filter(a => a.id !== tx.selectedAccountId).map(a => a.bankName)); }
-    else if (!tx.paymentMethod) { setStage('ASK_PAYMENT_METHOD'); addAIMessage("Payment Method:", ['UPI', 'Credit Card', 'Cash', 'Bank Transfer']); }
-    else if (tx.paymentMethod === 'UPI' && !tx.upiApp) { setStage('ASK_UPI_APP'); addAIMessage("Which UPI App?", ['GPay', 'PhonePe', 'Paytm']); }
-    else if (!tx.category && tx.type !== 'TRANSFER') { setStage('ASK_CATEGORY'); addAIMessage("Category:", CATEGORIES); }
-    else if (!tx.expenseType && tx.type !== 'TRANSFER') { setStage('ASK_TAG'); addAIMessage("Classification Tag:", [...tags, 'skip']); }
-    else if (!tx.partyName && tx.type !== 'TRANSFER') { setStage('ASK_PAYEE'); addAIMessage(tx.type === 'CREDIT' ? "Who sent this money?" : "Paid to whom?"); }
-    else if (!tx.note) { setStage('ASK_NOTE'); addAIMessage("Remark mandatory: Describe this entry."); }
-    else if (!tx._dateConfirmed) { setStage('ASK_DATE'); addAIMessage("When was this done?", ['Today', 'Yesterday']); }
-    else { setStage('PREVIEW'); addAIMessage("All clear! Check and Save."); }
+    if (!tx.amount) { setStage('ASK_AMOUNT'); addAIMessage("What's the transaction amount?"); }
+    else if (!tx.type) { setStage('ASK_TYPE'); addAIMessage("Is this an Outflow (Expense), Inflow (Income), or a Transfer?", ['Outflow/Expense', 'Inflow/Income', 'Transfer']); }
+    else if (!tx.selectedAccountId) { 
+        setStage('ASK_BANK'); 
+        const prompt = tx.type === 'CREDIT' ? "Which account received this?" : "Which account did you use for payment?";
+        addAIMessage(prompt, getGroupedAccountOptions(tx)); 
+    }
+    else if (tx.type === 'TRANSFER' && !tx.toAccountId) { 
+        setStage('ASK_BANK'); 
+        addAIMessage("Destination Account (To):", getGroupedAccountOptions(tx)); 
+    }
+    else if (!tx.paymentMethod) { 
+        setStage('ASK_PAYMENT_METHOD'); 
+        addAIMessage("Payment Method used:", ['UPI', 'Credit Card', 'Cash', 'Bank Transfer']); 
+    }
+    else if (tx.paymentMethod === 'UPI' && !tx.upiApp) { 
+        setStage('ASK_UPI_APP'); 
+        addAIMessage("Which UPI App?", ['GPay', 'PhonePe', 'Paytm']); 
+    }
+    else if (!tx.category && tx.type !== 'TRANSFER') { 
+        setStage('ASK_CATEGORY'); 
+        addAIMessage("Select Category:", CATEGORIES); 
+    }
+    else if (!tx.expenseType && tx.type !== 'TRANSFER') { 
+        setStage('ASK_TAG'); 
+        addAIMessage("Classification is very important. Please select a tag:", tags); 
+    }
+    else if (!tx.partyName && tx.type !== 'TRANSFER') { 
+        setStage('ASK_PAYEE'); 
+        addAIMessage(tx.type === 'CREDIT' ? "Who sent this money? (or type Skip)" : "Paid to whom? (or type Skip)"); 
+    }
+    else if (!tx.note) { 
+        setStage('ASK_NOTE'); 
+        addAIMessage("Describe the entry (Remark is mandatory):"); 
+    }
+    else if (!tx._dateConfirmed) { 
+        setStage('ASK_DATE'); 
+        addAIMessage("When did this happen?", ['Today', 'Yesterday']); 
+    }
+    else { 
+        setStage('PREVIEW'); 
+        addAIMessage("Perfect! Your entry is ready. Tap Edit below if something is wrong."); 
+    }
   };
 
   return (
@@ -225,14 +295,14 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-64">
         {messages.map((msg, i) => (
           <div key={i} className={`flex flex-col ${msg.role === 'ai' ? 'items-start' : 'items-end'} gap-2 animate-in slide-in-from-bottom-2 duration-300`}>
-            <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-[12px] font-medium shadow-sm flex items-start gap-2.5 ${msg.role === 'ai' ? 'bg-white dark:bg-[#111111] text-neutral-800 dark:text-neutral-200 border border-[#EBEBEB] dark:border-white/5' : 'bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue'}`}>
+            <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-[12px] font-medium shadow-sm flex items-start gap-2.5 ${msg.role === 'ai' ? 'bg-white dark:bg-[#111111] text-neutral-800 dark:text-neutral-200 border border-brand-blue/5 dark:border-white/5' : 'bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue'}`}>
               {msg.role === 'ai' && <Bot className="w-3.5 h-3.5 mt-0.5" />}
               <span className="leading-relaxed">{msg.content}</span>
             </div>
             {msg.options && (
               <div className="grid grid-cols-2 gap-2 w-full max-w-[85%]">
                 {msg.options.map((opt: string) => (
-                  <button key={opt} onClick={() => handleSend(opt)} className="px-3 py-2 bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-white/5 rounded-xl text-[10px] font-black uppercase text-brand-green dark:text-brand-green hover:bg-brand-green/5 transition-all shadow-sm active:scale-95 flex items-center justify-between group">
+                  <button key={opt} onClick={() => handleSend(opt)} className="px-3 py-2 bg-white dark:bg-[#111111] border border-brand-blue/5 dark:border-white/5 rounded-xl text-[10px] font-black uppercase text-brand-green dark:text-brand-green hover:bg-brand-green/5 transition-all shadow-sm active:scale-95 flex items-center justify-between group">
                     <span className="truncate">{opt}</span>
                     <ChevronRight className="w-3 h-3 opacity-30 group-hover:opacity-100" />
                   </button>
@@ -252,34 +322,56 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
           <div className="mx-0.5 p-3 bg-[#F9FBFF] dark:bg-[#111111] border border-brand-blue/5 dark:border-white/5 rounded-3xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
             <div className="flex items-center justify-between mb-3 px-1">
               <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-brand-green" /> Smart Preview</span>
-              <button onClick={() => { setStage('IDLE'); setPendingTx({...pendingTx, _dateConfirmed: false, type: ''}); }} className="text-[8px] font-bold text-brand-green dark:text-brand-green bg-brand-green/5 px-2 py-1 rounded-lg">Reset</button>
+              <button 
+                onClick={() => { setStage('IDLE'); setPendingTx({...pendingTx, _dateConfirmed: false, type: ''}); setMessages([{role: 'ai', content: "Resetting... How much was the amount?"}]); setStage('ASK_AMOUNT'); }} 
+                className="text-[8px] font-black text-brand-green dark:text-brand-green bg-brand-green/5 px-2 py-1 rounded-lg uppercase tracking-widest"
+              >
+                Reset
+              </button>
             </div>
             
             <div className="grid grid-cols-2 gap-2 mb-3">
-              <div className="bg-[#F7F7F7] dark:bg-white/5 p-2 rounded-2xl flex flex-col items-center justify-center">
+              <div 
+                className="bg-white dark:bg-white/5 p-2 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:ring-2 ring-brand-green/30 transition-all group relative"
+                onClick={() => handleEdit('amount')}
+              >
+                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100"><Pencil className="w-2.5 h-2.5 text-brand-green" /></div>
                 <span className="text-[17px] font-black text-brand-green dark:text-white">₹{pendingTx.amount}</span>
                 <span className={`text-[7px] font-black uppercase ${pendingTx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-red'}`}>{pendingTx.type === 'CREDIT' ? 'Inflow' : 'Outflow'}</span>
               </div>
-              <div className="bg-[#F7F7F7] dark:bg-white/5 p-2 rounded-2xl flex items-center gap-2">
+              <div 
+                className="bg-white dark:bg-white/5 p-2 rounded-2xl flex items-center gap-2 cursor-pointer hover:ring-2 ring-brand-green/30 transition-all group relative"
+                onClick={() => handleEdit('category')}
+              >
+                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100"><Pencil className="w-2.5 h-2.5 text-brand-green" /></div>
                 <div className="text-xl">{CATEGORY_ICONS[pendingTx.category] || '📦'}</div>
                 <div className="flex flex-col"><span className="text-[8px] font-black text-neutral-400 uppercase leading-none">Category</span><span className="text-[10px] font-bold text-brand-green dark:text-white truncate">{pendingTx.category}</span></div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2 mb-3 px-0.5">
-               <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
+               <div 
+                 className="bg-white dark:bg-white/2 p-2 rounded-xl flex items-center gap-2 cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group relative border border-transparent hover:border-brand-green/20"
+                 onClick={() => handleEdit('bank')}
+               >
                  <Landmark className="w-3 h-3 text-neutral-400" />
                  <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">{pendingTx.type === 'CREDIT' ? 'Recipient' : 'Source'}</span><span className="text-[9px] font-bold text-brand-green dark:text-white truncate">{accounts.find(a=>a.id === pendingTx.selectedAccountId)?.bankName || '-'}</span></div>
                </div>
-               <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
+               <div className="bg-white dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
                  <AppWindow className="w-3 h-3 text-neutral-400" />
                  <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Method</span><span className="text-[9px] font-bold text-brand-green dark:text-white truncate">{pendingTx.upiApp || pendingTx.paymentMethod || '-'}</span></div>
                </div>
-               <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
+               <div 
+                 className="bg-white dark:bg-white/2 p-2 rounded-xl flex items-center gap-2 cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group relative border border-transparent hover:border-brand-green/20"
+                 onClick={() => handleEdit('tag')}
+               >
                  <Hash className="w-3 h-3 text-neutral-400" />
                  <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Class</span><span className="text-[9px] font-bold text-brand-green dark:text-white truncate">#{pendingTx.expenseType}</span></div>
                </div>
-               <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
+               <div 
+                 className="bg-white dark:bg-white/2 p-2 rounded-xl flex items-center gap-2 cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group relative border border-transparent hover:border-brand-green/20"
+                 onClick={() => handleEdit('remark')}
+               >
                  <Lightbulb className="w-3 h-3 text-neutral-400" />
                  <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Remark</span><span className="text-[9px] font-bold text-brand-green dark:text-white truncate">{pendingTx.note}</span></div>
                </div>

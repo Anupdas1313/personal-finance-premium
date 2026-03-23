@@ -63,7 +63,7 @@ export default function Dashboard() {
   const [upiApp, setUpiApp] = useState('GPay');
   const { tags } = useTags();
   const [expenseType, setExpenseType] = useState<string>('');
-  const [entryMode, setEntryMode] = useState<'MANUAL' | 'CHAT'>('MANUAL');
+  const [entryMode, setEntryMode] = useState<'MANUAL' | 'CHAT'>('CHAT');
 
   // Set default expense type once tags load
   useEffect(() => {
