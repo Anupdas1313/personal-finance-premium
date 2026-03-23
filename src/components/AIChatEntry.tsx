@@ -266,9 +266,14 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       checkNextStep(updated);
     }
     else if (stage === 'ASK_NOTE') {
-      updated.note = (userMsg.toLowerCase() === 'no' || userMsg.toLowerCase() === 'skip') ? '' : userMsg;
-      setPendingTx(updated);
-      checkNextStep(updated);
+      const t = userMsg.toLowerCase();
+      if (t === 'no' || t === 'skip' || t === 'none' || !userMsg.trim()) {
+        addAIMessage("Remark is mandatory for every entry. Please specify what this transaction was for!");
+      } else {
+        updated.note = userMsg;
+        setPendingTx(updated);
+        checkNextStep(updated);
+      }
     }
     else if (stage === 'ASK_DATE') {
       const t = userMsg.toLowerCase();
@@ -309,7 +314,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       addAIMessage(tx.type === 'DEBIT' ? "Paid to whom? (Payee) Type 'skip' if none." : "Received from whom? Type 'skip' if none.");
     } else if (!tx.note) {
       setStage('ASK_NOTE');
-      addAIMessage("Any remarks or note for this? Type 'no' to skip.");
+      addAIMessage("Remark is mandatory: What was this specifically for?");
     } else if (!tx._dateConfirmed) {
       setStage('ASK_DATE');
       addAIMessage("When did this happen? (e.g. 'today' or 'yesterday') type 'skip' for now.");
