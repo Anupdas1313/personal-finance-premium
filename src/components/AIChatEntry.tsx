@@ -31,11 +31,13 @@ const MERCHANT_KNOWLEDGE: Record<string, { category: string, tag: string }> = {
   'amazon': { category: 'Shopping', tag: 'Personal' },
   'netflix': { category: 'Bills', tag: 'Personal' },
   'spotify': { category: 'Entertainment', tag: 'Personal' },
+  'salary': { category: 'Salary', tag: 'Work' },
+  'income': { category: 'Other', tag: 'Personal' },
 };
 
 export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags }) => {
   const [messages, setMessages] = useState<any[]>([
-    { role: 'ai', content: "Hi! I'm now fully context-aware. If you say 'received', I'll specifically ask for where you received it and from whom! How can I help?" }
+    { role: 'ai', content: "Hi! I won't guess your transaction type anymore. I'll ask you to confirm if it's an Inflow (Income) or Outflow (Expense). How can I help?" }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -82,9 +84,9 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     let amount = kMatch ? (parseFloat(kMatch[1]) * 1000).toString() : (t.match(/\b\d+(?:\.\d+)?\b/)?.[0] || '');
     
     let type = '';
-    if (t.match(/\b(received|got|salary|income|credit|add|deposit)\b/)) type = 'CREDIT';
+    if (t.match(/\b(received|got|salary|income|credit|add|deposit|gift|bonus)\b/)) type = 'CREDIT';
     else if (t.match(/\b(transfer|moved|move|sent|send)\b/)) type = 'TRANSFER';
-    else if (t.match(/\b(paid|spent|bought|expense|debit|gave)\b/)) type = 'DEBIT';
+    else if (t.match(/\b(paid|spent|bought|expense|debit|gave|gave to)\b/)) type = 'DEBIT';
 
     let accountId = '', toAccountId = '', autoPaymentMethod = '', upiApp = '';
     const acc = resolveBank(t);
@@ -93,9 +95,9 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       autoPaymentMethod = acc.type === 'CREDIT_CARD' ? 'Credit Card' : acc.type === 'CASH' ? 'Cash' : 'UPI';
     }
 
-    if (t.includes('gpay')) upiApp = 'GPay';
-    else if (t.includes('phonepe')) upiApp = 'PhonePe';
-    else if (t.includes('paytm')) upiApp = 'Paytm';
+    if (t.match(/\b(gpay|google pay)\b/)) upiApp = 'GPay';
+    else if (t.match(/\b(phonepe|phone pe)\b/)) upiApp = 'PhonePe';
+    else if (t.match(/\b(paytm)\b/)) upiApp = 'Paytm';
 
     let category = '', tag = '', isPredicted = false;
     for (const cat of CATEGORIES) { if (t.includes(cat.toLowerCase())) { category = cat; break; } }
@@ -127,7 +129,8 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     if (stage === 'IDLE' || stage === 'PREVIEW') {
       const p = parseUniversal(userMsg);
       updated = {
-        ...updated, amount: p.amount || updated.amount, type: p.type || (p.amount ? 'DEBIT' : updated.type),
+        ...updated, amount: p.amount || updated.amount, 
+        type: p.type || updated.type, // ABSOLUTELY NO DEFAULTING TO DEBIT
         selectedAccountId: p.accountId || updated.selectedAccountId, toAccountId: p.toAccountId || updated.toAccountId,
         paymentMethod: p.autoPaymentMethod || updated.paymentMethod, upiApp: p.upiApp || updated.upiApp,
         category: p.category || updated.category, expenseType: p.tag || updated.expenseType, 
@@ -147,7 +150,9 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     } 
     else if (stage === 'ASK_TYPE') {
       const t = userMsg.toLowerCase();
-      updated.type = t.includes('transfer') ? 'TRANSFER' : (t.includes('received') || t.includes('in') || t.includes('credit') ? 'CREDIT' : 'DEBIT');
+      if (t.match(/\b(transfer|send|move)\b/)) updated.type = 'TRANSFER';
+      else if (t.match(/\b(received|inflow|income|credit|got|in)\b/)) updated.type = 'CREDIT';
+      else updated.type = 'DEBIT';
       setPendingTx(updated);
       checkNextStep(updated);
     }
@@ -161,7 +166,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         }
         setPendingTx(updated);
         checkNextStep(updated);
-      } else addAIMessage(updated.type === 'CREDIT' ? "Which account did you receive it in?" : "Which account was used?");
+      } else addAIMessage(updated.type === 'CREDIT' ? "Which account did you receive it in?" : "Which account did you pay from?");
     }
     else if (stage === 'ASK_PAYMENT_METHOD') {
       updated.paymentMethod = userMsg;
@@ -189,7 +194,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       checkNextStep(updated);
     }
     else if (stage === 'ASK_NOTE') {
-      if (!userMsg.trim() || userMsg.match(/(skip|no)/i)) addAIMessage("A remark is required. Summarize this entry!");
+      if (!userMsg.trim() || userMsg.match(/(skip|no)/i)) addAIMessage("A remark is mandatory. Describe this entry!");
       else { updated.note = userMsg; setPendingTx(updated); checkNextStep(updated); }
     }
     else if (stage === 'ASK_DATE') {
@@ -203,18 +208,21 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
   const getBankDisplay = (acc: any) => acc.bankName.split(' ').filter((w:any)=>w.length>2).map((w:any)=>w[0]).join('').toUpperCase() || acc.bankName.split(' ')[0];
 
   const checkNextStep = (tx: any) => {
-    if (!tx.amount) { setStage('ASK_AMOUNT'); addAIMessage("Got it! How much was the transaction?"); }
-    else if (!tx.type) { setStage('ASK_TYPE'); addAIMessage("Was this an INFLOW (received) or OUTFLOW (spent)?", ['Inflow/Credit', 'Outflow/Debit', 'Transfer']); }
-    else if (!tx.selectedAccountId) { setStage('ASK_BANK'); addAIMessage(tx.type === 'CREDIT' ? "Which account did you receive it in?" : "Which account did you pay from?", accounts.map(a => getBankDisplay(a))); }
-    else if (tx.type === 'TRANSFER' && !tx.toAccountId) { setStage('ASK_BANK'); addAIMessage("Where did you move the money TO?", accounts.filter(a => a.id !== tx.selectedAccountId).map(a => getBankDisplay(a))); }
+    if (!tx.amount) { setStage('ASK_AMOUNT'); addAIMessage("How much was the amount?"); }
+    else if (!tx.type) { 
+        setStage('ASK_TYPE'); 
+        addAIMessage("Is this an Outflow (Expense) or Inflow (Income)?", ['Outflow/Expense', 'Inflow/Income', 'Transfer']); 
+    }
+    else if (!tx.selectedAccountId) { setStage('ASK_BANK'); addAIMessage(tx.type === 'CREDIT' ? "Received in which account?" : "Paid from which account?", accounts.map(a => getBankDisplay(a))); }
+    else if (tx.type === 'TRANSFER' && !tx.toAccountId) { setStage('ASK_BANK'); addAIMessage("Move to which account?", accounts.filter(a => a.id !== tx.selectedAccountId).map(a => getBankDisplay(a))); }
     else if (!tx.paymentMethod) { setStage('ASK_PAYMENT_METHOD'); addAIMessage("Payment Method:", ['UPI', 'Credit Card', 'Cash', 'Bank Transfer']); }
     else if (tx.paymentMethod === 'UPI' && !tx.upiApp) { setStage('ASK_UPI_APP'); addAIMessage("Which UPI App?", ['GPay', 'PhonePe', 'Paytm']); }
     else if (!tx.category && tx.type !== 'TRANSFER') { setStage('ASK_CATEGORY'); addAIMessage("Category:", CATEGORIES); }
     else if (!tx.expenseType && tx.type !== 'TRANSFER') { setStage('ASK_TAG'); addAIMessage("Classification Tag:", [...tags, 'skip']); }
-    else if (!tx.partyName && tx.type !== 'TRANSFER') { setStage('ASK_PAYEE'); addAIMessage(tx.type === 'CREDIT' ? "Received from whom?" : "Paid to whom? (e.g. Starbucks)"); }
-    else if (!tx.note) { setStage('ASK_NOTE'); addAIMessage("Remark is mandatory: What was this for?"); }
+    else if (!tx.partyName && tx.type !== 'TRANSFER') { setStage('ASK_PAYEE'); addAIMessage(tx.type === 'CREDIT' ? "Received from whom?" : "Paid to whom?"); }
+    else if (!tx.note) { setStage('ASK_NOTE'); addAIMessage("Remark is mandatory: Describe this entry."); }
     else if (!tx._dateConfirmed) { setStage('ASK_DATE'); addAIMessage("When did this happen?", ['Today', 'Yesterday']); }
-    else { setStage('PREVIEW'); addAIMessage("Details captured perfectly! Save Entry?"); }
+    else { setStage('PREVIEW'); addAIMessage("Check details and confirm!"); }
   };
 
   return (
@@ -229,7 +237,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
             {msg.options && (
               <div className="grid grid-cols-2 gap-2 w-full max-w-[85%]">
                 {msg.options.map((opt: string) => (
-                  <button key={opt} onClick={() => handleSend(opt)} className="px-3 py-2 bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-white/5 rounded-xl text-[11px] font-black uppercase text-brand-blue dark:text-brand-cyan hover:bg-brand-blue/5 transition-all shadow-sm active:scale-95 flex items-center justify-between group">
+                  <button key={opt} onClick={() => handleSend(opt)} className="px-3 py-2 bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-white/5 rounded-xl text-[10px] font-black uppercase text-brand-blue dark:text-brand-cyan hover:bg-brand-blue/5 transition-all shadow-sm active:scale-95 flex items-center justify-between group">
                     <span className="truncate">{opt}</span>
                     <ChevronRight className="w-3 h-3 opacity-30 group-hover:opacity-100" />
                   </button>
@@ -249,13 +257,13 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
           <div className="mx-0.5 p-3 bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-white/5 rounded-3xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
             <div className="flex items-center justify-between mb-3 px-1">
               <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-brand-blue" /> Smart Preview</span>
-              <button onClick={() => { setStage('IDLE'); setPendingTx({...pendingTx, _dateConfirmed: false}); }} className="text-[8px] font-bold text-brand-blue dark:text-brand-cyan bg-brand-blue/5 px-2 py-1 rounded-lg">Reset</button>
+              <button onClick={() => { setStage('IDLE'); setPendingTx({...pendingTx, _dateConfirmed: false, type: ''}); }} className="text-[8px] font-bold text-brand-blue dark:text-brand-cyan bg-brand-blue/5 px-2 py-1 rounded-lg">Reset</button>
             </div>
             
             <div className="grid grid-cols-2 gap-2 mb-3">
               <div className="bg-[#F7F7F7] dark:bg-white/5 p-2 rounded-2xl flex flex-col items-center justify-center">
                 <span className="text-[17px] font-black text-brand-blue dark:text-white">₹{pendingTx.amount}</span>
-                <span className={`text-[7px] font-black uppercase ${pendingTx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-red'}`}>{pendingTx.type}</span>
+                <span className={`text-[7px] font-black uppercase ${pendingTx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-red'}`}>{pendingTx.type === 'CREDIT' ? 'Inflow/Income' : 'Outflow/Expense'}</span>
               </div>
               <div className="bg-[#F7F7F7] dark:bg-white/5 p-2 rounded-2xl flex items-center gap-2">
                 <div className="text-xl">{CATEGORY_ICONS[pendingTx.category] || '📦'}</div>
@@ -266,7 +274,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
             <div className="grid grid-cols-2 gap-2 mb-3 px-0.5">
                <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
                  <Landmark className="w-3 h-3 text-neutral-400" />
-                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Account</span><span className="text-[9px] font-bold text-brand-blue dark:text-white truncate">{accounts.find(a=>a.id === pendingTx.selectedAccountId)?.bankName || '-'}</span></div>
+                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">{pendingTx.type === 'CREDIT' ? 'Recipient' : 'Source'}</span><span className="text-[9px] font-bold text-brand-blue dark:text-white truncate">{accounts.find(a=>a.id === pendingTx.selectedAccountId)?.bankName || '-'}</span></div>
                </div>
                <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
                  <AppWindow className="w-3 h-3 text-neutral-400" />
@@ -274,7 +282,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
                </div>
                <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
                  <Hash className="w-3 h-3 text-neutral-400" />
-                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Classification</span><span className="text-[9px] font-bold text-brand-blue dark:text-white truncate">#{pendingTx.expenseType}</span></div>
+                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Class</span><span className="text-[9px] font-bold text-brand-blue dark:text-white truncate">#{pendingTx.expenseType}</span></div>
                </div>
                <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
                  <Lightbulb className="w-3 h-3 text-neutral-400" />
@@ -286,7 +294,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
           </div>
         )}
         <div className="flex items-center gap-2 bg-white dark:bg-[#111111] p-1.5 rounded-2xl border border-[#EBEBEB] dark:border-white/5 shadow-xl">
-          <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Ask AI... (e.g. 'Received 500')" className="flex-1 bg-transparent px-3 py-2 text-[12px] font-bold outline-none dark:text-white" />
+          <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Ask AI..." className="flex-1 bg-transparent px-3 py-2 text-[12px] font-bold outline-none dark:text-white" />
           <button onClick={() => handleSend()} className="w-10 h-10 bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition-transform"><Send className="w-4 h-4" /></button>
         </div>
       </div>
