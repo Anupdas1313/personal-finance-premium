@@ -309,19 +309,19 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="relative z-10 flex justify-between items-stretch mb-8 gap-10">
-          <div className="flex-1 overflow-hidden py-2">
+        <div className="relative z-10 flex justify-between items-stretch mb-8 gap-6">
+          <div className="flex-1 py-2">
             <p className="text-[10px] font-semibold text-rose-500/80 tracking-[0.2em] uppercase mb-2">Spending</p>
-            <p className="text-3xl font-heading font-semibold text-brand-blue dark:text-white tracking-tight truncate">
+            <p className="text-3xl font-heading font-semibold text-brand-blue dark:text-white tracking-tight">
               ₹{totalSpending.toLocaleString('en-IN')}
             </p>
           </div>
           
           <div className="w-[1px] bg-brand-blue/10 dark:bg-white/10 self-stretch my-2"></div>
 
-          <div className="flex-1 text-right overflow-hidden py-2">
+          <div className="flex-1 text-right py-2">
             <p className="text-[10px] font-semibold text-emerald-500/80 tracking-[0.2em] uppercase mb-2">Income</p>
-            <p className="text-3xl font-heading font-semibold text-brand-blue dark:text-white tracking-tight truncate">
+            <p className="text-3xl font-heading font-semibold text-brand-blue dark:text-white tracking-tight">
               ₹{totalIncome.toLocaleString('en-IN')}
             </p>
           </div>
@@ -342,7 +342,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* Accounts List */}
         <div className="bg-white dark:bg-[#0C0C0F] rounded-[28px] shadow-[0_8px_40px_rgba(26,35,126,0.08)] dark:shadow-none border border-[#EBEBEB] dark:border-[#1A1A1E] overflow-hidden">
           <div className="p-6 border-b border-[#EBEBEB] dark:border-[#1A1A1E] flex justify-between items-center">
@@ -368,83 +368,12 @@ export default function Dashboard() {
                       </p>
                     </div>
                   </div>
-                  <p className="font-heading font-semibold text-brand-blue dark:text-brand-cyan tracking-tight">
+                  <p className="font-heading font-semibold text-brand-green dark:text-brand-cyan tracking-tight">
                     ₹{acc.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </p>
 
                 </div>
               ))
-            )}
-          </div>
-        </div>
-
-        {/* Recent Transactions */}
-        <div className="bg-transparent overflow-hidden">
-          <div className="pb-5 flex justify-between items-center px-1">
-            <h2 className="text-xl font-heading font-semibold text-[#1A237E] dark:text-[#F7F7F7] tracking-tight">Recent Transactions</h2>
-            <Link to="/transactions" className="text-sm font-semibold text-[#00A86B] dark:text-emerald-500/70 hover:underline transition-colors uppercase tracking-[0.2em]">View All</Link>
-          </div>
-
-
-          <div className="space-y-3">
-            {transactions.length === 0 ? (
-              <div className="p-6 text-center text-[#717171] dark:text-[#A0A0A0] text-sm bg-white dark:bg-[#0C0C0F] rounded-[24px] border border-[#EBEBEB] dark:border-[#1A1A1E]">No transactions yet.</div>
-            ) : (
-              transactions.map(tx => {
-                const account = accounts.find(a => a.id === tx.accountId);
-                
-                // Format relative date
-                let dateStr = '';
-                if (isToday(tx.dateTime)) dateStr = 'Today';
-                else if (isYesterday(tx.dateTime)) dateStr = 'Yesterday';
-                else dateStr = format(tx.dateTime, 'MMM dd');
-
-                // Helper to get squircle icon styling based on dark mode category
-                const catColorClasses = CATEGORY_COLORS[tx.category] || CATEGORY_COLORS['Other'];
-
-                return (
-                  <div key={tx.id} className="p-4 bg-white dark:bg-[#0C0C0F] border border-[#EBEBEB] dark:border-[#1A1A1E] rounded-[24px] flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-[#15151A] transition-colors shadow-[0_8px_30px_rgba(26,35,126,0.06)] dark:shadow-none group cursor-pointer" onClick={() => navigate('/transactions')}>
-
-                    <div className="flex items-center gap-4">
-
-                      {/* Squircle Icon */}
-                      <div className={`w-12 h-12 rounded-[16px] flex items-center justify-center text-xl shrink-0 ${catColorClasses}`}>
-                        {CATEGORY_ICONS[tx.category] || '📝'}
-                      </div>
-
-                      
-                      {/* Title & Subtext */}
-                      <div>
-                        <p className="font-semibold text-brand-blue dark:text-[#F7F7F7] text-base group-hover:text-brand-green dark:group-hover:text-white transition-colors">
-                          {tx.party || tx.note || tx.category}
-                        </p>
-
-
-                        <div className="flex items-center text-xs text-[#525252] dark:text-[#A0A0A0] font-medium mt-0.5 gap-1.5">
-
-                          {tx.paymentMethod === 'UPI' ? <Smartphone className="w-3.5 h-3.5" /> : 
-                           tx.paymentMethod === 'Bank' || tx.paymentMethod === 'Bank Transfer' ? <Landmark className="w-3.5 h-3.5" /> : 
-                           tx.paymentMethod === 'Credit Card' ? <CreditCard className="w-3.5 h-3.5" /> :
-                           <Coins className="w-3.5 h-3.5" />}
-                          <span>{tx.paymentMethod === 'UPI' ? `UPI${tx.upiApp ? ` (${tx.upiApp})` : ''}` : tx.paymentMethod}</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Amount & Date (Right Aligned) */}
-                    <div className="text-right">
-                      <p className={`font-heading font-semibold text-base tracking-tight ${tx.type === 'CREDIT' ? 'text-brand-green' : 'text-rose-500'}`}>
-                        {tx.type === 'CREDIT' ? '+' : ''}₹{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                      </p>
-
-
-                      <p className="text-[10px] text-[#717171] dark:text-[#A0A0A0] font-medium mt-0.5 uppercase tracking-[0.1em]">
-                        {dateStr}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })
             )}
           </div>
         </div>
