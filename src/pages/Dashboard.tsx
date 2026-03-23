@@ -586,14 +586,14 @@ export default function Dashboard() {
                 {/* 3. Recipient & Remark Card */}
                 <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-white/5 p-0 shadow-sm divide-y divide-[#EBEBEB] dark:divide-white/5 mx-1">
                   {type !== 'TRANSFER' && (
-                    <div className="flex items-center gap-2.5 px-3 py-2.5 group">
-                      <User className="w-3.5 h-3.5 text-neutral-400 dark:text-[#555555]" />
-                      <input type="text" value={partyName} onChange={e => setPartyName(e.target.value)} placeholder={type === 'DEBIT' ? 'Payee…' : 'Source…'} className="bg-transparent flex-1 text-xs font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-300 dark:placeholder:text-[#333333]" />
+                    <div className="flex items-center gap-4 px-4 py-5 group">
+                      <User className="w-5 h-5 text-neutral-400 dark:text-[#555555]" />
+                      <input type="text" value={partyName} onChange={e => setPartyName(e.target.value)} placeholder={type === 'DEBIT' ? 'Payee…' : 'Source…'} className="bg-transparent flex-1 text-base font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-300 dark:placeholder:text-[#333333]" />
                     </div>
                   )}
-                  <div className="flex items-center gap-2.5 px-3 py-2.5 group">
-                    <AlignLeft className="w-3.5 h-3.5 text-neutral-400 dark:text-[#555555]" />
-                    <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="Add specific details…" className="bg-transparent flex-1 text-xs font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-300 dark:placeholder:text-[#333333]" />
+                  <div className="flex items-center gap-4 px-4 py-5 group">
+                    <AlignLeft className="w-5 h-5 text-neutral-400 dark:text-[#555555]" />
+                    <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="Add specific details…" className="bg-transparent flex-1 text-base font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-300 dark:placeholder:text-[#333333]" />
                   </div>
                 </div>
 
