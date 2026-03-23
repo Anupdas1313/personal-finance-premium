@@ -501,10 +501,10 @@ export default function Dashboard() {
             </div>
           ) : (
             <>
-              <div className="flex-1 overflow-y-auto w-full px-4 pt-3 pb-32 space-y-2.5 scrollbar-hide no-scrollbar">
+              <div className="flex-1 overflow-y-auto w-full px-4 pt-2 pb-24 space-y-1 scrollbar-hide no-scrollbar">
                 
                 {/* 1. Hero Card: Consolidates Flow, Amount, and Bank */}
-                <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-[28px] border border-[#EBEBEB] dark:border-white/5 p-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col gap-2">
+                <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-white/5 p-1 flex flex-col gap-1.5 shadow-sm">
                   {/* Top Row: Full-width Type Toggle */}
                   <div className="flex bg-[#F7F7F7] dark:bg-white/5 p-0.5 rounded-2xl w-full shrink-0">
                     <button onClick={() => setType('DEBIT')} className={`flex-1 py-1 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'DEBIT' ? 'bg-white dark:bg-[#2C2C34] text-brand-red shadow-sm' : 'text-neutral-400'}`}>Outflow</button>
@@ -513,7 +513,7 @@ export default function Dashboard() {
                   </div>
 
                   {/* Middle Row: Split 50/50 (Amount Left, Bank Right) */}
-                  <div className="grid grid-cols-2 gap-2.5 items-center h-[92px]">
+                  <div className="grid grid-cols-2 gap-2 items-center h-[80px]">
                     {/* LEFT: Amount Segment */}
                     <div className="flex flex-col items-center gap-1 border-r border-[#EBEBEB] dark:border-white/5 pr-4">
                       <div className="flex items-baseline gap-1">
@@ -563,14 +563,14 @@ export default function Dashboard() {
 
                 {/* 2. Classification Tags — Right after Amount */}
                 {type !== 'TRANSFER' && tags.length > 0 && (
-                  <div className="flex flex-col gap-2 px-1">
-                    <label className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest pl-1">Classification Tag</label>
+                  <div className="flex flex-col gap-1 px-1">
+                    <label className="text-[8px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest pl-1">Classification Tag</label>
                     <div className="flex flex-wrap gap-2 w-full">
                       {tags.map(tagName => (
                         <button 
                           key={tagName} 
                           onClick={() => setExpenseType(expenseType === tagName ? '' : tagName)} 
-                          className={`flex-[1_0_21%] sm:flex-none sm:px-4 py-2 rounded-xl text-[10px] font-bold transition-all border ${
+                          className={`flex-[1_0_21%] sm:flex-none sm:px-3 py-1.5 rounded-xl text-[9px] font-bold transition-all border ${
                             expenseType === tagName 
                               ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue border-transparent shadow-sm' 
                               : 'bg-white dark:bg-[#111111] dark:bg-white/[0.02] border-[#EBEBEB] dark:border-white/5 text-neutral-400 dark:text-neutral-500'
@@ -584,48 +584,48 @@ export default function Dashboard() {
                 )}
 
                 {/* 3. Recipient & Remark Card */}
-                <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-[28px] border border-[#EBEBEB] dark:border-white/5 p-0.5 divide-y divide-[#EBEBEB] dark:divide-white/5 mx-1 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+                <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-white/5 p-0 shadow-sm divide-y divide-[#EBEBEB] dark:divide-white/5 mx-1">
                   {type !== 'TRANSFER' && (
-                    <div className="flex items-center gap-3 px-4 py-4 group">
-                      <User className="w-4 h-4 text-neutral-400 dark:text-[#555555]" />
-                      <input type="text" value={partyName} onChange={e => setPartyName(e.target.value)} placeholder={type === 'DEBIT' ? 'Payee…' : 'Source…'} className="bg-transparent flex-1 text-sm font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-300 dark:placeholder:text-[#333333]" />
+                    <div className="flex items-center gap-2.5 px-3 py-1.5 group">
+                      <User className="w-3.5 h-3.5 text-neutral-400 dark:text-[#555555]" />
+                      <input type="text" value={partyName} onChange={e => setPartyName(e.target.value)} placeholder={type === 'DEBIT' ? 'Payee…' : 'Source…'} className="bg-transparent flex-1 text-xs font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-300 dark:placeholder:text-[#333333]" />
                     </div>
                   )}
-                  <div className="flex items-center gap-3 px-4 py-4 group">
-                    <AlignLeft className="w-4 h-4 text-neutral-400 dark:text-[#555555]" />
-                    <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="Add specific details…" className="bg-transparent flex-1 text-sm font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-300 dark:placeholder:text-[#333333]" />
+                  <div className="flex items-center gap-2.5 px-3 py-1.5 group">
+                    <AlignLeft className="w-3.5 h-3.5 text-neutral-400 dark:text-[#555555]" />
+                    <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="Add specific details…" className="bg-transparent flex-1 text-xs font-bold text-brand-blue dark:text-white outline-none placeholder:text-neutral-300 dark:placeholder:text-[#333333]" />
                   </div>
                 </div>
 
                 {/* 5. Category Grid — Integrated */}
-                <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-[28px] border border-[#EBEBEB] dark:border-white/5 p-3 space-y-3 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+                <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-white/5 p-2 space-y-1.5 shadow-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">Choose Category</span>
                     <span className="text-[10px] font-bold text-brand-blue dark:text-brand-cyan px-2 py-0.5 bg-brand-blue/5 dark:bg-brand-cyan/5 rounded-full lowercase tracking-wider">{category}</span>
                   </div>
-                  <div className="grid grid-cols-9 gap-1.5">
+                  <div className="grid grid-cols-10 gap-1">
                     {CATEGORIES.map(cat => (
-                      <button key={cat} onClick={() => setCategory(cat)} title={cat} className={`aspect-square rounded-lg flex items-center justify-center text-[18px] transition-all ${category === cat ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue shadow-lg scale-110' : 'bg-[#F7F7F7] dark:bg-white/[0.02] text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/10 active:scale-95'}`}>{CATEGORY_ICONS[cat] || '📝'}</button>
+                      <button key={cat} onClick={() => setCategory(cat)} title={cat} className={`aspect-square rounded-lg flex items-center justify-center text-[16px] transition-all ${category === cat ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue shadow-lg scale-110' : 'bg-[#F7F7F7] dark:bg-white/[0.02] text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/10 active:scale-95'}`}>{CATEGORY_ICONS[cat] || '📝'}</button>
                     ))}
                   </div>
                 </div>
 
                 {/* 6. Payment Method — Intelligence Layer */}
-                <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-[28px] border border-[#EBEBEB] dark:border-white/5 p-3 space-y-3 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+                <div className="bg-[#F7F7F7] dark:bg-[#111111] rounded-2xl border border-[#EBEBEB] dark:border-white/5 p-2 space-y-2 shadow-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">Payment Logistics</span>
                     <span className="text-[10px] font-bold text-brand-blue dark:text-brand-cyan px-2 py-0.5 bg-brand-blue/5 dark:bg-brand-cyan/5 rounded-full lowercase tracking-wider">{paymentMethod}</span>
                   </div>
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-4 gap-1.5">
                     {[
-                      { id: 'UPI', label: 'UPI', icon: <Smartphone className="w-3.5 h-3.5" /> },
-                      { id: 'Bank Transfer', label: 'Bank', icon: <Landmark className="w-3.5 h-3.5" /> },
-                      { id: 'Credit Card', label: 'Card', icon: <CreditCard className="w-3.5 h-3.5" /> },
-                      { id: 'Cash', label: 'Cash', icon: <Coins className="w-3.5 h-3.5" /> },
+                      { id: 'UPI', label: 'UPI', icon: <Smartphone className="w-3 h-3" /> },
+                      { id: 'Bank Transfer', label: 'Bank', icon: <Landmark className="w-3 h-3" /> },
+                      { id: 'Credit Card', label: 'Card', icon: <CreditCard className="w-3 h-3" /> },
+                      { id: 'Cash', label: 'Cash', icon: <Coins className="w-3 h-3" /> },
                     ].map((method) => (
-                      <button key={method.id} onClick={() => setPaymentMethod(method.id as any)} className={`flex items-center justify-center gap-1.5 py-2 rounded-xl border transition-all ${paymentMethod === method.id ? 'bg-brand-blue dark:bg-brand-cyan border-brand-blue dark:border-brand-cyan text-white dark:text-brand-blue shadow-md' : 'bg-[#F7F7F7] dark:bg-white/[0.02] border-transparent text-neutral-400'}`}>
+                      <button key={method.id} onClick={() => setPaymentMethod(method.id as any)} className={`flex items-center justify-center gap-1 py-1.5 rounded-xl border transition-all ${paymentMethod === method.id ? 'bg-brand-blue dark:bg-brand-cyan border-brand-blue dark:border-brand-cyan text-white dark:text-brand-blue shadow-md' : 'bg-[#F7F7F7] dark:bg-white/[0.02] border-transparent text-neutral-400'}`}>
                         {method.icon}
-                        <span className="text-[9px] font-bold uppercase tracking-tighter">{method.label}</span>
+                        <span className="text-[8px] font-bold uppercase tracking-tighter">{method.label}</span>
                       </button>
                     ))}
                   </div>
