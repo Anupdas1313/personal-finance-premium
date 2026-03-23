@@ -297,19 +297,19 @@ export default function Accounts() {
           return (
             <div key={type} className="pt-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
               <div className="flex items-center gap-4 px-1">
-                <div className={`flex items-center gap-3 px-6 py-3 rounded-full bg-[#1A237E] dark:bg-[#F7F7F7] shadow-[0_8px_30px_rgba(26,35,126,0.2)] dark:shadow-none`}>
-                  <div className="text-white dark:text-[#1A237E] shrink-0">{icon}</div>
+                <div className={`flex items-center gap-3 px-6 py-3 rounded-full bg-[#00A86B] dark:bg-[#F7F7F7] shadow-[0_8px_30px_rgba(0,168,107,0.2)] dark:shadow-none`}>
+                  <div className="text-white dark:text-[#00A86B] shrink-0">{icon}</div>
                   <div className="flex flex-col">
-                    <h2 className="text-[10px] font-heading font-black text-white dark:text-[#1A237E] uppercase tracking-[0.25em] leading-none mb-0.5 whitespace-nowrap">{title}</h2>
-                    <span className="text-[7px] font-bold text-white/60 dark:text-[#1A237E]/60 uppercase tracking-widest">{accList.length} Connected</span>
+                    <h2 className="text-[10px] font-heading font-black text-white dark:text-[#00A86B] uppercase tracking-[0.25em] leading-none mb-0.5 whitespace-nowrap">{title}</h2>
+                    <span className="text-[7px] font-bold text-white/60 dark:text-[#00A86B]/60 uppercase tracking-widest">{accList.length} Connected</span>
                   </div>
                 </div>
                 
-                <div className="flex-1 h-[2px] bg-gradient-to-r from-[#1A237E]/20 via-[#1A237E]/5 to-transparent dark:from-white/20 dark:via-white/5 dark:to-transparent" />
+                <div className="flex-1 h-[2px] bg-gradient-to-r from-[#00A86B]/20 via-[#00A86B]/5 to-transparent dark:from-white/20 dark:via-white/5 dark:to-transparent" />
                 
                 <div className="text-right pl-4">
                   <p className="text-[8px] font-black text-neutral-400 uppercase tracking-widest mb-0.5">Section Balance</p>
-                  <p className={`text-xl font-heading font-black tracking-tighter ${total >= 0 ? 'text-[#1A237E] dark:text-white' : 'text-brand-red'}`}>
+                  <p className={`text-xl font-heading font-black tracking-tighter ${total >= 0 ? 'text-[#00A86B] dark:text-white' : 'text-brand-red'}`}>
                     ₹{total.toLocaleString('en-IN')}
                   </p>
                 </div>
