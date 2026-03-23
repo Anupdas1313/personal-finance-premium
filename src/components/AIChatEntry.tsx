@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, CheckCircle2, Sparkles, Calendar, User as UserIcon, Landmark, Smartphone, CreditCard, Coins, Tag, Lightbulb, MoveHorizontal, Check, Zap, ChevronRight, Hash } from 'lucide-react';
+import { Send, Bot, CheckCircle2, Sparkles, Calendar, User as UserIcon, Landmark, Smartphone, CreditCard, Coins, Tag, Lightbulb, MoveHorizontal, Check, Zap, ChevronRight, Hash, AppWindow } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { CATEGORIES, CATEGORY_ICONS } from '../constants';
 
@@ -10,9 +10,8 @@ interface AIChatEntryProps {
   tags: string[];
 }
 
-type ChatStage = 'IDLE' | 'ASK_AMOUNT' | 'ASK_TYPE' | 'ASK_BANK' | 'ASK_PAYMENT_METHOD' | 'ASK_CATEGORY' | 'ASK_TAG' | 'ASK_PAYEE' | 'ASK_NOTE' | 'ASK_DATE' | 'PREVIEW';
+type ChatStage = 'IDLE' | 'ASK_AMOUNT' | 'ASK_TYPE' | 'ASK_BANK' | 'ASK_PAYMENT_METHOD' | 'ASK_UPI_APP' | 'ASK_CATEGORY' | 'ASK_TAG' | 'ASK_PAYEE' | 'ASK_NOTE' | 'ASK_DATE' | 'PREVIEW';
 
-// Common Indian Bank Acronyms for local intelligence
 const COMMON_BANK_NICKNAMES: Record<string, string> = {
   'sbi': 'state bank',
   'pnb': 'punjab national',
@@ -20,11 +19,6 @@ const COMMON_BANK_NICKNAMES: Record<string, string> = {
   'icici': 'icici bank',
   'axis': 'axis bank',
   'kotak': 'kotak mahindra',
-  'bob': 'bank of baroda',
-  'idfc': 'idfc first',
-  'boi': 'bank of india',
-  'canara': 'canara bank',
-  'central': 'central bank',
 };
 
 const MERCHANT_KNOWLEDGE: Record<string, { category: string, tag: string }> = {
@@ -34,17 +28,14 @@ const MERCHANT_KNOWLEDGE: Record<string, { category: string, tag: string }> = {
   'zomato': { category: 'Food', tag: 'Personal' },
   'swiggy': { category: 'Food', tag: 'Personal' },
   'uber': { category: 'Transport', tag: 'Work' },
-  'ola': { category: 'Transport', tag: 'Personal' },
   'amazon': { category: 'Shopping', tag: 'Personal' },
   'netflix': { category: 'Bills', tag: 'Personal' },
   'spotify': { category: 'Entertainment', tag: 'Personal' },
-  'jio': { category: 'Bills', tag: 'Personal' },
-  'airtel': { category: 'Bills', tag: 'Personal' },
 };
 
 export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags }) => {
   const [messages, setMessages] = useState<any[]>([
-    { role: 'ai', content: "Hi! I'm smarter now. Try saying 'sbi' or 'hdfc' instead of full bank names, and I'll catch it instantly! How can I help?" }
+    { role: 'ai', content: "Hi! I won't assume anything anymore. I'll ask for every detail—including your UPI apps and tags—to ensure perfect logging!" }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -57,7 +48,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     selectedAccountId: '',
     toAccountId: '',
     paymentMethod: '',
-    upiApp: 'GPay',
+    upiApp: '',
     expenseType: '',
     partyName: '',
     note: '',
@@ -82,21 +73,12 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
   const resolveBank = (textSnippet: string) => {
     const t = textSnippet.toLowerCase();
-    
     for (const acc of accounts) {
       const nameStr = acc.bankName.toLowerCase();
-      // 1. Exact Name match or includes
       if (t.includes(nameStr)) return acc;
-      
-      // 2. Acronym match (SBI, HDFC)
       const words = nameStr.split(/[\s-]+/);
       const acronym = words.filter(w => w.length > 1).map(w => w[0]).join('');
       if (acronym.length > 1 && t.match(new RegExp(`\\b${acronym}\\b`, 'i'))) return acc;
-      
-      // 3. First word shortcut ("State" -> "State Bank of India")
-      if (t.match(new RegExp(`\\b${words[0]}\\b`, 'i'))) return acc;
-
-      // 4. Nickname map
       for (const [nick, main] of Object.entries(COMMON_BANK_NICKNAMES)) {
           if (t.includes(nick) && nameStr.includes(main)) return acc;
       }
@@ -111,7 +93,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     
     let type = '';
     if (t.match(/\b(received|got|salary|income|credit)\b/)) type = 'CREDIT';
-    else if (t.match(/\b(transfer|moved|move|sent)\b/)) type = 'TRANSFER';
+    else if (t.match(/\b(transfer|moved|send|move|sent)\b/)) type = 'TRANSFER';
     else if (t.match(/\b(paid|spent|bought|expense|debit)\b/)) type = 'DEBIT';
 
     let accountId = '', toAccountId = '', autoPaymentMethod = '';
@@ -120,6 +102,12 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       accountId = acc.id!;
       autoPaymentMethod = acc.type === 'CREDIT_CARD' ? 'Credit Card' : acc.type === 'CASH' ? 'Cash' : 'UPI';
     }
+
+    let upiApp = '';
+    if (t.includes('gpay')) upiApp = 'GPay';
+    else if (t.includes('phonepe')) upiApp = 'PhonePe';
+    else if (t.includes('paytm')) upiApp = 'Paytm';
+    else if (t.includes('amazon pay')) upiApp = 'Amazon Pay';
 
     let category = '', tag = '', isPredicted = false;
     for (const cat of CATEGORIES) { if (t.includes(cat.toLowerCase())) { category = cat; break; } }
@@ -137,7 +125,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     if (t.includes('yesterday')) { date = format(subDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"); dateConfirmed = true; }
     else if (t.includes('today')) { date = new Date().toISOString().slice(0, 16); dateConfirmed = true; }
 
-    return { amount, type, accountId, toAccountId, autoPaymentMethod, category, tag, parsedPayee, parsedNote, date, dateConfirmed, isPredicted };
+    return { amount, type, accountId, toAccountId, autoPaymentMethod, upiApp, category, tag, parsedPayee, parsedNote, date, dateConfirmed, isPredicted };
   };
 
   const handleSend = (msgOverride?: string) => {
@@ -153,25 +141,24 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       updated = {
         ...updated, amount: p.amount || updated.amount, type: p.type || (p.amount ? 'DEBIT' : updated.type),
         selectedAccountId: p.accountId || updated.selectedAccountId, toAccountId: p.toAccountId || updated.toAccountId,
-        paymentMethod: p.autoPaymentMethod || updated.paymentMethod, category: p.category || updated.category,
-        expenseType: p.tag || updated.expenseType, partyName: p.parsedPayee || updated.partyName, note: p.parsedNote || updated.note,
+        paymentMethod: p.autoPaymentMethod || updated.paymentMethod, upiApp: p.upiApp || updated.upiApp,
+        category: p.category || updated.category, expenseType: p.tag || updated.expenseType, 
+        partyName: p.parsedPayee || updated.partyName, note: p.parsedNote || updated.note,
         transactionDate: p.date || updated.transactionDate, _dateConfirmed: p.dateConfirmed || updated._dateConfirmed, _isPredicted: p.isPredicted
       };
       setPendingTx(updated);
       checkNextStep(updated);
     } 
     else if (stage === 'ASK_AMOUNT') {
-      const amtMatch = userMsg.match(/(\d+(?:\.\d+)?)\s*(k?)/i);
-      if (amtMatch) {
-         const val = parseFloat(amtMatch[1]);
-         updated.amount = (amtMatch[2].toLowerCase() === 'k' ? val * 1000 : val).toString();
+      const val = userMsg.match(/(\d+(?:\.\d+)?)\s*(k?)/i);
+      if (val) {
+         updated.amount = (val[2].toLowerCase() === 'k' ? parseFloat(val[1]) * 1000 : parseFloat(val[1])).toString();
          setPendingTx(updated);
          checkNextStep(updated);
-      } else addAIMessage("I couldn't identify the amount. Re-type it, please!");
+      } else addAIMessage("Amount, please?");
     } 
     else if (stage === 'ASK_TYPE') {
-      const t = userMsg.toLowerCase();
-      updated.type = t.includes('transfer') ? 'TRANSFER' : (t.includes('in') || t.includes('received') ? 'CREDIT' : 'DEBIT');
+      updated.type = userMsg.toLowerCase().includes('transfer') ? 'TRANSFER' : (userMsg.toLowerCase().match(/(in|received)/) ? 'CREDIT' : 'DEBIT');
       setPendingTx(updated);
       checkNextStep(updated);
     }
@@ -185,10 +172,15 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         }
         setPendingTx(updated);
         checkNextStep(updated);
-      } else addAIMessage("I missed the bank name. Which one did you use?");
+      } else addAIMessage("Which account?");
     }
     else if (stage === 'ASK_PAYMENT_METHOD') {
       updated.paymentMethod = userMsg;
+      setPendingTx(updated);
+      checkNextStep(updated);
+    }
+    else if (stage === 'ASK_UPI_APP') {
+      updated.upiApp = userMsg;
       setPendingTx(updated);
       checkNextStep(updated);
     }
@@ -203,12 +195,12 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       checkNextStep(updated);
     }
     else if (stage === 'ASK_PAYEE') {
-      updated.partyName = (userMsg.toLowerCase() === 'none' || userMsg.toLowerCase() === 'skip') ? '' : userMsg;
+      updated.partyName = userMsg.match(/(skip|none)/i) ? '' : userMsg;
       setPendingTx(updated);
       checkNextStep(updated);
     }
     else if (stage === 'ASK_NOTE') {
-      if (!userMsg.trim() || userMsg.toLowerCase() === 'skip') addAIMessage("Remark is mandatory: What was the purpose?");
+      if (!userMsg.trim() || userMsg.match(/(skip|no)/i)) addAIMessage("A remark is required. Why this entry?");
       else { updated.note = userMsg; setPendingTx(updated); checkNextStep(updated); }
     }
     else if (stage === 'ASK_DATE') {
@@ -219,42 +211,38 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     }
   };
 
-  const getBankDisplay = (acc: any) => {
-      const words = acc.bankName.split(' ');
-      if (words.length > 2) return words.filter((w:any) => w.length > 2).map((w:any) => w[0]).join('').toUpperCase();
-      return words[0];
-  };
+  const getBankDisplay = (acc: any) => acc.bankName.split(' ').filter((w:any)=>w.length>2).map((w:any)=>w[0]).join('').toUpperCase() || acc.bankName.split(' ')[0];
 
   const checkNextStep = (tx: any) => {
-    if (!tx.amount) { setStage('ASK_AMOUNT'); addAIMessage("Amount? (e.g. 5k, 500)"); }
-    else if (!tx.type) { setStage('ASK_TYPE'); addAIMessage("Inflow or Outflow?", ['Debit', 'Credit', 'Transfer']); }
-    else if (!tx.selectedAccountId) { setStage('ASK_BANK'); addAIMessage("Confirmed Bank:", accounts.map(a => getBankDisplay(a))); }
-    else if (tx.type === 'TRANSFER' && !tx.toAccountId) { setStage('ASK_BANK'); addAIMessage("Log Destination:", accounts.filter(a => a.id !== tx.selectedAccountId).map(a => getBankDisplay(a))); }
-    else if (!tx.paymentMethod) { setStage('ASK_PAYMENT_METHOD'); addAIMessage("Method:", ['UPI', 'Credit Card', 'Cash', 'Bank Transfer']); }
-    else if (!tx.category && tx.type !== 'TRANSFER') { setStage('ASK_CATEGORY'); addAIMessage("Pick Category:", CATEGORIES); }
+    if (!tx.amount) { setStage('ASK_AMOUNT'); addAIMessage("How much was the amount?"); }
+    else if (!tx.type) { setStage('ASK_TYPE'); addAIMessage("Transaction Type?", ['Debit', 'Credit', 'Transfer']); }
+    else if (!tx.selectedAccountId) { setStage('ASK_BANK'); addAIMessage("From Account:", accounts.map(a => getBankDisplay(a))); }
+    else if (tx.type === 'TRANSFER' && !tx.toAccountId) { setStage('ASK_BANK'); addAIMessage("To Account:", accounts.filter(a => a.id !== tx.selectedAccountId).map(a => getBankDisplay(a))); }
+    else if (!tx.paymentMethod) { setStage('ASK_PAYMENT_METHOD'); addAIMessage("Payment Method:", ['UPI', 'Credit Card', 'Cash', 'Bank Transfer']); }
+    else if (tx.paymentMethod === 'UPI' && !tx.upiApp) { setStage('ASK_UPI_APP'); addAIMessage("Which UPI App?", ['GPay', 'PhonePe', 'Paytm', 'Amazon Pay']); }
+    else if (!tx.category && tx.type !== 'TRANSFER') { setStage('ASK_CATEGORY'); addAIMessage("Category:", CATEGORIES); }
     else if (!tx.expenseType && tx.type !== 'TRANSFER') { setStage('ASK_TAG'); addAIMessage("Classification Tag:", [...tags, 'skip']); }
-    else if (!tx.partyName && tx.type !== 'TRANSFER') { setStage('ASK_PAYEE'); addAIMessage("Paid to whom? (Or 'skip')"); }
-    else if (!tx.note) { setStage('ASK_NOTE'); addAIMessage("Remark is mandatory: Why this entry?"); }
+    else if (!tx.partyName && tx.type !== 'TRANSFER') { setStage('ASK_PAYEE'); addAIMessage("Payee Name? (e.g. Hrisav) Or 'skip'."); }
+    else if (!tx.note) { setStage('ASK_NOTE'); addAIMessage("Remark mandatory: Describe this entry."); }
     else if (!tx._dateConfirmed) { setStage('ASK_DATE'); addAIMessage("Date:", ['Today', 'Yesterday']); }
-    else { setStage('PREVIEW'); addAIMessage("Details locked! Save now?"); }
+    else { setStage('PREVIEW'); addAIMessage("Check the preview and Save!"); }
   };
 
   return (
     <div className="flex flex-col h-full bg-[#F7F7F7] dark:bg-[#0A0A0A] relative">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-60">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-64">
         {messages.map((msg, i) => (
           <div key={i} className={`flex flex-col ${msg.role === 'ai' ? 'items-start' : 'items-end'} gap-2 animate-in slide-in-from-bottom-2 duration-300`}>
             <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-[12px] font-medium shadow-sm flex items-start gap-2.5 ${msg.role === 'ai' ? 'bg-white dark:bg-[#111111] text-neutral-800 dark:text-neutral-200 border border-[#EBEBEB] dark:border-white/5' : 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue'}`}>
-              {msg.role === 'ai' && <Bot className="w-3.5 h-3.5 mt-0.5 shrink-0 opacity-60" />}
+              {msg.role === 'ai' && <Bot className="w-3.5 h-3.5 mt-0.5" />}
               <span className="leading-relaxed">{msg.content}</span>
             </div>
-            
             {msg.options && (
-              <div className="grid grid-cols-2 gap-2 w-full max-w-[85%] animate-in fade-in slide-in-from-top-2 duration-400">
+              <div className="grid grid-cols-2 gap-2 w-full max-w-[85%]">
                 {msg.options.map((opt: string) => (
                   <button key={opt} onClick={() => handleSend(opt)} className="px-3 py-2 bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-white/5 rounded-xl text-[11px] font-black uppercase text-brand-blue dark:text-brand-cyan hover:bg-brand-blue/5 transition-all shadow-sm active:scale-95 flex items-center justify-between group">
                     <span className="truncate">{opt}</span>
-                    <ChevronRight className="w-3 h-3 opacity-30 group-hover:opacity-100 transition-opacity" />
+                    <ChevronRight className="w-3 h-3 opacity-30 group-hover:opacity-100" />
                   </button>
                 ))}
               </div>
@@ -262,37 +250,50 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
           </div>
         ))}
         {isTyping && (
-          <div className="flex justify-start"><div className="bg-white dark:bg-[#111111] px-4 py-2.5 rounded-2xl flex items-center gap-1 border border-[#EBEBEB] dark:border-white/5 shadow-sm"><span className="w-1 h-1 bg-brand-blue dark:bg-brand-cyan rounded-full animate-bounce"></span><span className="w-1 h-1 bg-brand-blue dark:bg-brand-cyan rounded-full animate-bounce [animation-delay:-0.15s]"></span><span className="w-1 h-1 bg-brand-blue dark:bg-brand-cyan rounded-full animate-bounce [animation-delay:-0.3s]"></span></div></div>
+          <div className="flex justify-start"><div className="bg-white dark:bg-[#111111] px-4 py-2.5 rounded-2xl flex items-center gap-1"><span className="w-1 h-1 bg-brand-blue dark:bg-brand-cyan rounded-full animate-bounce"></span><span className="w-1 h-1 bg-brand-blue dark:bg-brand-cyan rounded-full animate-bounce [animation-delay:-0.15s]"></span><span className="w-1 h-1 bg-brand-blue dark:bg-brand-cyan rounded-full animate-bounce [animation-delay:-0.3s]"></span></div></div>
         )}
         <div ref={chatEndRef} />
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-[#F7F7F7] via-[#F7F7F7]/95 dark:from-[#0A0A0A] dark:via-[#0A0A0A]/95 space-y-3 z-10">
         {stage === 'PREVIEW' && (
-          <div className="mx-1 p-3 bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-white/5 rounded-3xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
+          <div className="mx-0.5 p-3 bg-white dark:bg-[#111111] border border-[#EBEBEB] dark:border-white/5 rounded-3xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
             <div className="flex items-center justify-between mb-3 px-1">
               <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-brand-blue" /> Smart Preview</span>
-              <button onClick={() => { setStage('IDLE'); setPendingTx({...pendingTx, _dateConfirmed: false}); }} className="text-[8px] font-bold text-brand-blue dark:text-brand-cyan bg-brand-blue/5 px-2 py-1 rounded-lg">Edit</button>
+              <button onClick={() => { setStage('IDLE'); setPendingTx({...pendingTx, _dateConfirmed: false}); }} className="text-[8px] font-bold text-brand-blue dark:text-brand-cyan bg-brand-blue/5 px-2 py-1 rounded-lg">Reset</button>
             </div>
             
             <div className="grid grid-cols-2 gap-2 mb-3">
               <div className="bg-[#F7F7F7] dark:bg-white/5 p-2 rounded-2xl flex flex-col items-center justify-center">
-                <span className="text-[16px] font-black text-brand-blue dark:text-white">₹{pendingTx.amount}</span>
-                <span className={`text-[7px] font-bold uppercase ${pendingTx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-red'}`}>{pendingTx.type}</span>
+                <span className="text-[17px] font-black text-brand-blue dark:text-white">₹{pendingTx.amount}</span>
+                <span className={`text-[7px] font-black uppercase ${pendingTx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-red'}`}>{pendingTx.type}</span>
               </div>
               <div className="bg-[#F7F7F7] dark:bg-white/5 p-2 rounded-2xl flex items-center gap-2">
-                <div className="text-lg">{CATEGORY_ICONS[pendingTx.category] || '📦'}</div>
+                <div className="text-xl">{CATEGORY_ICONS[pendingTx.category] || '📦'}</div>
                 <div className="flex flex-col"><span className="text-[8px] font-black text-neutral-400 uppercase leading-none">Category</span><span className="text-[10px] font-bold text-brand-blue dark:text-white truncate">{pendingTx.category}</span></div>
               </div>
             </div>
 
-            <div className="space-y-1.5 mb-3 px-1 bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-2xl">
-              <div className="flex items-center justify-between text-[9px]"><span className="text-neutral-400 font-bold flex items-center gap-1.5"><Landmark className="w-2.5 h-2.5" /> Logged In</span><span className="text-brand-blue dark:text-white font-bold">{accounts.find(a=>a.id === pendingTx.selectedAccountId)?.bankName || '-'}</span></div>
-              <div className="flex items-center justify-between text-[9px]"><span className="text-neutral-400 font-bold flex items-center gap-1.5"><Hash className="w-2.5 h-2.5" /> Class</span><span className="text-brand-blue dark:text-white font-bold">#{pendingTx.expenseType}</span></div>
-              <div className="flex items-center justify-between text-[9px]"><span className="text-neutral-400 font-bold flex items-center gap-1.5"><Lightbulb className="w-2.5 h-2.5" /> Remark</span><span className="text-brand-blue dark:text-white font-bold truncate max-w-[150px] text-right italic">{pendingTx.note}</span></div>
+            <div className="grid grid-cols-2 gap-2 mb-3 px-0.5">
+               <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
+                 <Landmark className="w-3 h-3 text-neutral-400" />
+                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Account</span><span className="text-[9px] font-bold text-brand-blue dark:text-white truncate">{accounts.find(a=>a.id === pendingTx.selectedAccountId)?.bankName || '-'}</span></div>
+               </div>
+               <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
+                 <AppWindow className="w-3 h-3 text-neutral-400" />
+                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Method</span><span className="text-[9px] font-bold text-brand-blue dark:text-white truncate">{pendingTx.upiApp || pendingTx.paymentMethod || '-'}</span></div>
+               </div>
+               <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
+                 <Hash className="w-3 h-3 text-neutral-400" />
+                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Classification</span><span className="text-[9px] font-bold text-brand-blue dark:text-white truncate">#{pendingTx.expenseType}</span></div>
+               </div>
+               <div className="bg-[#F7F7F7] dark:bg-white/2 p-2 rounded-xl flex items-center gap-2">
+                 <Lightbulb className="w-3 h-3 text-neutral-400" />
+                 <div className="flex flex-col overflow-hidden"><span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Remark</span><span className="text-[9px] font-bold text-brand-blue dark:text-white truncate italic">{pendingTx.note}</span></div>
+               </div>
             </div>
 
-            <button onClick={() => onSave(pendingTx)} className="w-full py-3 bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-transform"><CheckCircle2 className="w-4 h-4" /> Save Entry</button>
+            <button onClick={() => onSave(pendingTx)} className="w-full py-3.5 bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all"><CheckCircle2 className="w-4 h-4" /> Save Entry</button>
           </div>
         )}
         <div className="flex items-center gap-2 bg-white dark:bg-[#111111] p-1.5 rounded-2xl border border-[#EBEBEB] dark:border-white/5 shadow-xl">
