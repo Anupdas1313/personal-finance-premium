@@ -20,7 +20,6 @@ export default function Accounts() {
   const [startingBalanceDate, setStartingBalanceDate] = useState(new Date().toISOString().split('T')[0]);
   const [accountType, setAccountType] = useState<'BANK' | 'CASH' | 'CREDIT_CARD'>('BANK');
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
-  const [selectedSectionType, setSelectedSectionType] = useState<string | null>(null);
   
   const allTransactions = useLiveQuery(() => db.transactions.toArray()) || [];
   const allClosings = useLiveQuery(() => db.accountClosings.toArray()) || [];
@@ -304,14 +303,6 @@ export default function Accounts() {
                     <h2 className="text-[10px] font-heading font-black text-white dark:text-[#00A86B] uppercase tracking-[0.25em] leading-none mb-0.5 whitespace-nowrap">{title}</h2>
                     <span className="text-[7px] font-bold text-white/60 dark:text-[#00A86B]/60 uppercase tracking-widest">{accList.length} Connected</span>
                   </div>
-                  <div className="w-px h-6 bg-white/20 dark:bg-[#00A86B]/20 mx-1" />
-                  <button 
-                    onClick={() => setSelectedSectionType(type)}
-                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 dark:bg-[#00A86B]/5 dark:hover:bg-[#00A86B]/10 transition-colors text-white dark:text-[#00A86B]"
-                    title="View Consolidated Ledger"
-                  >
-                    <History className="w-4 h-4" />
-                  </button>
                 </div>
                 
                 <div className="flex-1 h-[2px] bg-gradient-to-r from-[#00A86B]/20 via-[#00A86B]/5 to-transparent dark:from-white/20 dark:via-white/5 dark:to-transparent" />
@@ -380,14 +371,10 @@ export default function Accounts() {
         })}
       </div>
 
-      {(selectedAccountId || selectedSectionType) && (
+      {selectedAccountId && (
          <AccountStatementDetail 
-            accountId={selectedAccountId || undefined} 
-            sectionType={selectedSectionType || undefined}
-            onClose={() => {
-              setSelectedAccountId(null);
-              setSelectedSectionType(null);
-            }} 
+            accountId={selectedAccountId} 
+            onClose={() => setSelectedAccountId(null)} 
          />
       )}
     </div>
@@ -409,25 +396,16 @@ function PartitionRow({ partition }: { partition: any }) {
   );
 }
 
-function AccountStatementDetail({ accountId, sectionType, onClose }: { accountId?: number, sectionType?: string, onClose: () => void }) {
+function AccountStatementDetail({ accountId, onClose }: { accountId: number, onClose: () => void }) {
   const navigate = useNavigate();
-  
-  // Multi-account logic
-  const accountsToQuery = useLiveQuery(async () => {
-    if (accountId) return [await db.accounts.get(accountId)];
-    if (sectionType) return await db.accounts.where('type').equals(sectionType).toArray();
-    return [];
-  }, [accountId, sectionType]) || [];
-
-  const accountIds = accountsToQuery.map(a => a?.id).filter(Boolean) as number[];
-
+  const account = useLiveQuery(() => db.accounts.get(accountId));
   const transactions = useLiveQuery(() => 
-    db.transactions.where('accountId').anyOf(accountIds).sortBy('dateTime')
-  , [accountIds]) || [];
+    db.transactions.where('accountId').equals(accountId).sortBy('dateTime')
+  ) || [];
   
   const closings = useLiveQuery(() => 
-    db.accountClosings.where('accountId').anyOf(accountIds).sortBy('closingDate')
-  , [accountIds]) || [];
+    db.accountClosings.where('accountId').equals(accountId).sortBy('closingDate')
+  ) || [];
 
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [granularity, setGranularity] = useState<'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'ALL' | 'CUSTOM'>('MONTH');
@@ -437,6 +415,9 @@ function AccountStatementDetail({ accountId, sectionType, onClose }: { accountId
     end: format(endOfMonth(new Date()), 'yyyy-MM-dd')
   });
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+
+
+
 
   const { startDateLimit, endDateLimit } = useMemo(() => {
     let start = 0;
@@ -463,31 +444,17 @@ function AccountStatementDetail({ accountId, sectionType, onClose }: { accountId
     return { startDateLimit: start, endDateLimit: end };
   }, [granularity, referenceDate, customRange]);
 
-  const consolidatedAccount = useMemo(() => {
-    if (accountsToQuery.length === 0) return null;
-    if (accountId && accountsToQuery.length === 1) return accountsToQuery[0];
-    
-    // Create a virtual consolidated account for section view
-    const first = accountsToQuery[0];
-    const totalStart = accountsToQuery.reduce((sum, a) => sum + (Number(a.startingBalance) || 0), 0);
-    
-    return {
-      id: 0, // Virtual ID
-      bankName: `CONSOLIDATED ${sectionType?.replace('_', ' ')}`,
-      accountLast4: `${accountsToQuery.length} ACCOUNTS`,
-      startingBalance: totalStart,
-      startingBalanceDate: first.startingBalanceDate,
-      type: sectionType
-    };
-  }, [accountsToQuery, accountId, sectionType]);
-
   const statementData = useMemo(() => {
-    if (!consolidatedAccount) return [];
+    if (!account) return [];
     
-    let baseBalance = Number(consolidatedAccount.startingBalance) || 0;
+    let baseBalance = Number(account.startingBalance) || 0;
+
+    // Calculate initial running balance for transactions before the start date limit
+    // to ensure the running balance in the visible list is correct relative to starting balance.
     let runningBalance = baseBalance;
     const allSortedTxs = [...transactions].sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
     
+    // Split transactions into "before current view" and "in current view"
     const txsBefore = allSortedTxs.filter(tx => new Date(tx.dateTime).getTime() < startDateLimit);
     const txsInView = allSortedTxs.filter(tx => {
       const txTime = new Date(tx.dateTime).getTime();
@@ -506,21 +473,23 @@ function AccountStatementDetail({ accountId, sectionType, onClose }: { accountId
       else if (tx.type === 'DEBIT') runningBalance -= amount;
       return { ...tx, amount, runningBalance } as Transaction & { runningBalance: number };
     });
-  }, [consolidatedAccount, transactions, granularity, referenceDate, customRange]) as (Transaction & { runningBalance: number })[];
+  }, [account, transactions, granularity, referenceDate, customRange]) as (Transaction & { runningBalance: number })[];
     
 
   const totalCredit = statementData.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
   const totalDebit = statementData.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
 
   const actualTotalBalance = useMemo(() => {
-    let bal = Number(consolidatedAccount?.startingBalance) || 0;
+    let bal = Number(account?.startingBalance) || 0;
+    // We must use the full account history for the header balance
     transactions.forEach(tx => {
        if (tx.type === 'CREDIT') bal += (Number(tx.amount) || 0);
        else if (tx.type === 'DEBIT') bal -= (Number(tx.amount) || 0);
     });
     return bal;
-  }, [consolidatedAccount?.startingBalance, transactions]);
+  }, [account?.startingBalance, transactions]);
 
+  // Current balance shown in statement summary should be the running balance of the NEWEST transaction in view
   const currentViewStateBalance = statementData.length > 0 
     ? statementData[statementData.length - 1].runningBalance 
     : actualTotalBalance;
@@ -529,7 +498,7 @@ function AccountStatementDetail({ accountId, sectionType, onClose }: { accountId
 
 
   const downloadCSV = () => {
-    if (!consolidatedAccount) return;
+    if (!account) return;
     const headers = ['Date', 'Particulars', 'Debit', 'Credit', 'Balance'];
     const rows = statementData.map(tx => [
       format(new Date(tx.dateTime), 'yyyy-MM-dd HH:mm'),
@@ -547,7 +516,7 @@ function AccountStatementDetail({ accountId, sectionType, onClose }: { accountId
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', `${consolidatedAccount.bankName}_Statement_${format(new Date(), 'dd_MMM_yyyy')}.csv`);
+    link.setAttribute('download', `${account.bankName}_Statement_${format(new Date(), 'dd_MMM_yyyy')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -555,15 +524,15 @@ function AccountStatementDetail({ accountId, sectionType, onClose }: { accountId
   };
 
   const downloadPDF = () => {
-    if (!consolidatedAccount) return;
+    if (!account) return;
     const doc = new jsPDF();
     
     doc.setFontSize(20);
     doc.text('Account Statement', 14, 22);
     
     doc.setFontSize(10);
-    doc.text(`Bank: ${consolidatedAccount.bankName}`, 14, 30);
-    doc.text(`Account (Consolidated): ${consolidatedAccount.accountLast4}`, 14, 35);
+    doc.text(`Bank: ${account.bankName}`, 14, 30);
+    doc.text(`Account: **** ${account.accountLast4}`, 14, 35);
     doc.text(`Closing Balance: INR ${currentViewStateBalance.toLocaleString()}`, 14, 45);
 
     autoTable(doc, {
@@ -580,70 +549,57 @@ function AccountStatementDetail({ accountId, sectionType, onClose }: { accountId
       headStyles: { fillColor: [26, 35, 126] }
     });
 
-    doc.save(`${consolidatedAccount.bankName}_Statement_${format(new Date(), 'dd_MMM_yyyy')}.pdf`);
+    doc.save(`${account.bankName}_Statement_${format(new Date(), 'dd_MMM_yyyy')}.pdf`);
     setShowExportMenu(false);
   };
 
   const handleStartNewBalance = async () => {
-    if (!consolidatedAccount) return;
-    
-    if (sectionType) {
-      alert("Note: Starting a new balance for a consolidated section will simultaneously create closures for ALL accounts within this section.");
-    }
-    
-    const confirmReset = window.confirm(`Start a new balance period? This will create partition(s) in history and show final totals for the current period.`);
+    if (!account) return;
+    const confirmReset = window.confirm(`Start a new balance period? This will create a partition in your history and show the final totals for the current period.`);
     if (!confirmReset) return;
 
-    for (const acc of accountsToQuery) {
-        if (!acc.id) continue;
-        const accTxs = transactions.filter(t => Number(t.accountId) === Number(acc.id));
-        const accClosings = closings.filter(c => Number(c.accountId) === Number(acc.id));
-        
-        const lastClosing = accClosings.length > 0 ? accClosings[accClosings.length - 1] : null;
-        const startLimit = lastClosing ? new Date(lastClosing.closingDate).getTime() : (acc.startingBalanceDate ? new Date(acc.startingBalanceDate).getTime() : 0);
-        
-        const liveTxs = accTxs.filter(tx => new Date(tx.dateTime).getTime() > startLimit);
-        const inflow = liveTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
-        const outflow = liveTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
-        const opening = lastClosing ? lastClosing.closingBalance : acc.startingBalance;
-        
-        // Calculate true current balance for this specific account
-        let actualBal = Number(acc.startingBalance) || 0;
-        accTxs.forEach(tx => {
-           if (tx.type === 'CREDIT') actualBal += (Number(tx.amount) || 0);
-           else if (tx.type === 'DEBIT') actualBal -= (Number(tx.amount) || 0);
-        });
-
-        await db.accountClosings.add({
-          accountId: acc.id,
-          closingDate: new Date(),
-          closingBalance: actualBal,
-          periodName: format(new Date(), 'dd MMM yyyy'),
-          openingBalance: opening,
-          totalInflow: inflow,
-          totalOutflow: outflow
-        });
-    }
+    // Calculate current period totals for the partition
+    const lastClosing = closings.length > 0 ? closings[closings.length - 1] : null;
+    const startLimit = lastClosing ? new Date(lastClosing.closingDate).getTime() : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
     
-    alert(`Success! Consolidated period closed.`);
+    // We get ALL transactions to calculate current live period totals correctly
+    const liveTxs = transactions.filter(tx => {
+      const txTime = new Date(tx.dateTime).getTime();
+      // Use a 1ms grace period to ensure we catch everything since the last closure
+      return txTime > startLimit;
+    });
+    const inflow = liveTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
+    const outflow = liveTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
+    const opening = lastClosing ? lastClosing.closingBalance : account.startingBalance;
+
+    await db.accountClosings.add({
+      accountId: account.id!,
+      closingDate: new Date(),
+      closingBalance: actualTotalBalance,
+      periodName: format(new Date(), 'dd MMM yyyy'),
+      openingBalance: opening,
+      totalInflow: inflow,
+      totalOutflow: outflow
+    });
+    
+    alert(`Period closed! Balance of ₹${actualTotalBalance.toLocaleString()} is now your new starting point.`);
   };
 
   const handleCreatePartitionAt = async (targetTx: Transaction & { runningBalance: number }) => {
-    if (!consolidatedAccount || sectionType) {
-       if (sectionType) alert("History partitioning is currently only available for individual accounts.");
-       return;
-    }
+    if (!account) return;
     const confirmReset = window.confirm(`Start a new balance period from this transaction? Current balance here is ₹${targetTx.runningBalance.toLocaleString()}.`);
     if (!confirmReset) return;
 
+    // We set the partition time precisely at the transaction time + 1ms to include it
     const partitionTime = new Date(targetTx.dateTime).getTime() + 1;
     const prevClosing = [...closings]
         .filter(c => new Date(c.closingDate).getTime() < partitionTime)
         .sort((a,b) => new Date(b.closingDate).getTime() - new Date(a.closingDate).getTime())[0];
 
+    // If it's the first partition ever, we look back to the start of time
     const startLimit = prevClosing 
       ? new Date(prevClosing.closingDate).getTime() 
-      : (consolidatedAccount.startingBalanceDate ? new Date(consolidatedAccount.startingBalanceDate).setHours(0,0,0,0) - 1 : 0);
+      : (account.startingBalanceDate ? new Date(account.startingBalanceDate).setHours(0,0,0,0) - 1 : 0);
     
     const periodTxs = transactions.filter(tx => {
         const time = new Date(tx.dateTime).getTime();
@@ -652,10 +608,10 @@ function AccountStatementDetail({ accountId, sectionType, onClose }: { accountId
 
     const inflow = periodTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
     const outflow = periodTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
-    const opening = prevClosing ? prevClosing.closingBalance : consolidatedAccount.startingBalance;
+    const opening = prevClosing ? prevClosing.closingBalance : account.startingBalance;
 
     await db.accountClosings.add({
-      accountId: consolidatedAccount.id!,
+      accountId: account.id!,
       closingDate: new Date(partitionTime),
       closingBalance: targetTx.runningBalance,
       periodName: format(new Date(partitionTime), 'dd MMM yyyy HH:mm'),
@@ -667,7 +623,7 @@ function AccountStatementDetail({ accountId, sectionType, onClose }: { accountId
     alert(`Success! History partitioned at ₹${targetTx.runningBalance.toLocaleString()}.`);
   };
 
-  if (!consolidatedAccount) return null;
+  if (!account) return null;
 
   return (
     <div className="fixed inset-0 bg-white dark:bg-[#060608] z-[100] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -676,12 +632,12 @@ function AccountStatementDetail({ accountId, sectionType, onClose }: { accountId
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <div className="w-6 h-6 bg-white dark:bg-[#1A1A1A] rounded-lg flex items-center justify-center p-0.5 border border-neutral-100 dark:border-[#333333]">
-              <BankLogo bankName={consolidatedAccount.bankName} type={consolidatedAccount.type} className="w-full h-full object-contain" />
+              <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
             </div>
             <div>
-              <h2 className="text-[11px] font-semibold text-brand-blue dark:text-[#F7F7F7] uppercase tracking-widest leading-none mb-0.5">{consolidatedAccount.bankName}</h2>
+              <h2 className="text-[11px] font-semibold text-brand-blue dark:text-[#F7F7F7] uppercase tracking-widest leading-none mb-0.5">{account.bankName}</h2>
               <div className="flex items-center gap-1">
-                <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest leading-none">{consolidatedAccount.accountLast4}</p>
+                <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest leading-none">{account.accountLast4}</p>
                 <div className="w-0.5 h-0.5 rounded-full bg-neutral-300" />
                 <p className="text-[8px] font-semibold text-brand-blue/60 dark:text-white/60 uppercase">₹{actualTotalBalance.toLocaleString()}</p>
               </div>
@@ -846,7 +802,7 @@ function AccountStatementDetail({ accountId, sectionType, onClose }: { accountId
           <tbody className="bg-white dark:bg-[#0C0C0F]">
             {/* ABSOLUTE START: Initial Opening Balance Row */}
             {/* Only show if we are looking at the 'ALL' view OR if the start of current period is before/at the first transaction */}
-            {(granularity === 'ALL' || startDateLimit <= (consolidatedAccount.startingBalanceDate ? new Date(consolidatedAccount.startingBalanceDate).getTime() : Date.now())) && (
+            {(granularity === 'ALL' || startDateLimit <= (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : Date.now())) && (
               <tr className="bg-neutral-50/40 dark:bg-white/[0.02] border-b border-dotted border-neutral-200 dark:border-white/10">
                 <td className="px-2 py-2 text-center border-r border-neutral-100 dark:border-white/5">
                   <span className="text-[8px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-tighter">INIT</span>
@@ -854,13 +810,13 @@ function AccountStatementDetail({ accountId, sectionType, onClose }: { accountId
                 <td className="px-2 py-2">
                   <div className="flex flex-col">
                     <p className="text-[10px] font-black text-brand-blue/50 dark:text-white/40 uppercase tracking-wider leading-none">Opening Balance</p>
-                    <p className="text-[8px] text-neutral-500 font-bold mt-1 uppercase tracking-tight">{sectionType ? 'Consolidated Section Start' : 'Account System Start'}</p>
+                    <p className="text-[8px] text-neutral-500 font-bold mt-1 uppercase tracking-tight">Account System Start</p>
                   </div>
                 </td>
                 <td className="px-2 py-2 text-right"></td>
                 <td className="px-2 py-2 text-right"></td>
                 <td className="px-2 py-2 text-right font-black text-brand-blue dark:text-white text-[10.5px]">
-                  ₹{consolidatedAccount.startingBalance.toLocaleString()}
+                  ₹{account.startingBalance.toLocaleString()}
                 </td>
               </tr>
             )}
