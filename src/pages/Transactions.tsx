@@ -40,7 +40,7 @@ export default function Transactions() {
   const navigate = useNavigate();
   
   // --- View Controls ---
-  const [granularity, setGranularity] = useState<'MONTH' | 'YEAR' | 'ALL' | 'CUSTOM'>('MONTH');
+  const [granularity, setGranularity] = useState<'MONTH' | 'YEAR' | 'ALL' | 'CUSTOM'>('ALL'); // Changed default to ALL to prevent "not found" on empty months
   const [referenceDate, setReferenceDate] = useState(new Date());
   const [customRange, setCustomRange] = useState({
     start: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
@@ -185,65 +185,57 @@ export default function Transactions() {
     <motion.div 
       initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }} 
-      className="max-w-4xl mx-auto space-y-8 pb-32"
+      className="max-w-4xl mx-auto space-y-6 pb-32 px-2 md:px-0"
     >
       {/* --- Page Header --- */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-heading font-black text-brand-blue dark:text-white tracking-tight">Transactions</h1>
-          <p className="text-sm font-bold text-neutral-400 uppercase tracking-[0.2em] mt-1">Audit your financial history</p>
+          <h1 className="text-3xl font-heading font-black text-brand-blue dark:text-white tracking-tight">Transactions</h1>
+          <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-[0.2em]">Live History Activity</p>
         </div>
         <div className="flex gap-2">
            <button 
              onClick={handleExportPDF}
-             className="flex items-center gap-2 px-5 py-3 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-[1.02] transition-all shadow-lg shadow-brand-blue/20 active:scale-95"
+             className="p-3 bg-brand-blue/5 dark:bg-white/5 text-brand-blue dark:text-white rounded-xl hover:bg-brand-blue/10 transition-all active:scale-95"
+             title="Export Report"
            >
-             <Download className="w-4 h-4" /> Export Report
+             <Download className="w-5 h-5" />
            </button>
         </div>
       </div>
 
-      {/* --- Visual Summary Chips --- */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-[#0C0C0F] p-6 rounded-[32px] border border-neutral-100 dark:border-white/5 shadow-sm flex items-center gap-5">
-           <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600">
-             <ArrowDownLeft className="w-6 h-6" />
-           </div>
-           <div>
-             <p className="text-[10px] font-black text-neutral-400 dark:text-white/40 uppercase tracking-widest">Total Inflow</p>
-             <h3 className="text-2xl font-heading font-black text-emerald-600 tracking-tighter">₹{totals.income.toLocaleString()}</h3>
-           </div>
-        </div>
-        <div className="bg-white dark:bg-[#0C0C0F] p-6 rounded-[32px] border border-neutral-100 dark:border-white/5 shadow-sm flex items-center gap-5">
-           <div className="w-12 h-12 bg-rose-50 dark:bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-600">
-             <ArrowUpRight className="w-6 h-6" />
-           </div>
-           <div>
-             <p className="text-[10px] font-black text-neutral-400 dark:text-white/40 uppercase tracking-widest">Total Outflow</p>
-             <h3 className="text-2xl font-heading font-black text-rose-600 tracking-tighter">₹{totals.expense.toLocaleString()}</h3>
-           </div>
-        </div>
-        <div className="bg-brand-blue dark:bg-white p-6 rounded-[32px] shadow-xl shadow-brand-blue/10 dark:shadow-none flex items-center gap-5">
-           <div className="w-12 h-12 bg-white/20 dark:bg-black/10 rounded-2xl flex items-center justify-center text-white dark:text-black">
-             <BarChart3 className="w-6 h-6" />
-           </div>
-           <div className="text-white dark:text-black">
-             <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Net Profit/Loss</p>
-             <h3 className="text-2xl font-heading font-black tracking-tighter">₹{(totals.income - totals.expense).toLocaleString()}</h3>
-           </div>
-        </div>
+      {/* --- Condensed Summary Card (Merged Inflow/Outflow) --- */}
+      <div className="bg-white dark:bg-[#0C0C0F] p-4 md:p-6 rounded-[32px] border border-neutral-100 dark:border-white/5 shadow-sm flex items-center justify-between">
+         <div className="flex flex-1 items-center gap-4 border-r border-neutral-100 dark:border-white/5 pr-6">
+            <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-600">
+              <ArrowDownLeft className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[8px] font-black text-neutral-400 dark:text-white/40 uppercase tracking-[0.2em] mb-0.5">Inflow</p>
+              <h3 className="text-xl font-heading font-black text-emerald-600 tracking-tighter">₹{totals.income.toLocaleString()}</h3>
+            </div>
+         </div>
+         <div className="flex flex-1 items-center gap-4 pl-6">
+            <div className="w-10 h-10 bg-rose-50 dark:bg-rose-500/10 rounded-xl flex items-center justify-center text-rose-600">
+              <ArrowUpRight className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[8px] font-black text-neutral-400 dark:text-white/40 uppercase tracking-[0.2em] mb-0.5">Outflow</p>
+              <h3 className="text-xl font-heading font-black text-rose-600 tracking-tighter">₹{totals.expense.toLocaleString()}</h3>
+            </div>
+         </div>
       </div>
 
       {/* --- Filter & Navigation Bar --- */}
       <div className="sticky top-4 z-40 space-y-3 pointer-events-none">
-        <div className="pointer-events-auto bg-white/80 dark:bg-[#060608]/80 backdrop-blur-xl p-3 rounded-[28px] border border-neutral-200 dark:border-white/10 shadow-xl flex flex-col md:flex-row gap-3">
+        <div className="pointer-events-auto bg-white/80 dark:bg-[#060608]/80 backdrop-blur-xl p-2 rounded-[24px] border border-neutral-200 dark:border-white/10 shadow-xl flex flex-col md:flex-row gap-2">
           
-          <div className="flex bg-neutral-100 dark:bg-white/5 p-1 rounded-2xl overflow-hidden min-w-fit">
+          <div className="flex bg-neutral-100 dark:bg-white/5 p-1 rounded-xl overflow-x-auto scrollbar-hide">
             {(['MONTH', 'YEAR', 'ALL', 'CUSTOM'] as const).map(g => (
               <button
                 key={g}
                 onClick={() => setGranularity(g)}
-                className={`px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                   granularity === g 
                     ? 'bg-white dark:bg-[#333333] text-brand-blue dark:text-white shadow-sm' 
                     : 'text-neutral-400 hover:text-neutral-500'
@@ -256,18 +248,17 @@ export default function Transactions() {
 
           <div className="flex-1 flex gap-2">
             <div className="relative flex-1 group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 transition-colors group-focus-within:text-brand-blue" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input 
-                type="text" placeholder="Search by party, note or category..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-full bg-neutral-50 dark:bg-white/5 border border-transparent focus:border-neutral-200 dark:focus:border-white/10 pl-11 pr-4 rounded-xl text-xs font-bold text-brand-blue dark:text-white outline-none transition-all"
+                type="text" placeholder="Search parameters..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full h-10 bg-neutral-50 dark:bg-white/5 border border-transparent focus:border-neutral-200 dark:focus:border-white/10 pl-10 pr-4 rounded-xl text-xs font-bold text-brand-blue dark:text-white outline-none transition-all"
               />
             </div>
             <button 
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className={`px-5 rounded-xl flex items-center justify-center gap-2 border-2 transition-all ${isFilterOpen ? 'bg-brand-blue text-white border-brand-blue' : 'bg-white dark:bg-white/5 border-neutral-100 dark:border-white/5 text-neutral-500'}`}
+              className={`px-4 rounded-xl flex items-center justify-center gap-2 border-2 transition-all ${isFilterOpen ? 'bg-brand-blue text-white border-brand-blue' : 'bg-white dark:bg-white/5 border-neutral-100 dark:border-white/5 text-neutral-400'}`}
             >
               <Filter className="w-4 h-4" />
-              <span className="text-[9px] font-black uppercase hidden sm:block">Filters</span>
             </button>
           </div>
         </div>
@@ -275,32 +266,34 @@ export default function Transactions() {
         {/* --- Contextual Overlays --- */}
         <AnimatePresence>
           {granularity === 'MONTH' && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="pointer-events-auto max-w-xs ml-auto">
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="pointer-events-auto max-w-xs mx-auto">
               <MonthNavigator />
             </motion.div>
           )}
 
           {isFilterOpen && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="pointer-events-auto bg-white dark:bg-[#111111] p-6 rounded-[32px] border border-neutral-200 dark:border-white/10 shadow-2xl grid grid-cols-1 sm:grid-cols-3 gap-6">
-               <div className="space-y-2">
-                  <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1"><Layers className="w-3 h-3 inline mr-1 opacity-40"/> Flow Type</label>
-                  <div className="flex bg-neutral-50 dark:bg-black/20 p-1.5 rounded-xl border border-neutral-100 dark:border-white/5">
-                    {(['ALL', 'DEBIT', 'CREDIT'] as const).map(t => (
-                      <button key={t} onClick={() => setTypeFilter(t)} className={`flex-1 py-2 rounded-lg text-[9px] font-black tracking-widest transition-all ${typeFilter === t ? 'bg-white dark:bg-white/10 shadow-sm text-brand-blue dark:text-white' : 'text-neutral-400'}`}>{t}</button>
-                    ))}
-                  </div>
+            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} className="pointer-events-auto bg-white dark:bg-[#111111] p-5 rounded-[28px] border border-neutral-200 dark:border-white/10 shadow-2xl space-y-4">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                    <label className="text-[8px] font-black text-neutral-400 uppercase tracking-widest ml-1">Flow Direction</label>
+                    <div className="flex bg-neutral-50 dark:bg-black/20 p-1 rounded-xl">
+                      {(['ALL', 'DEBIT', 'CREDIT'] as const).map(t => (
+                        <button key={t} onClick={() => setTypeFilter(t)} className={`flex-1 py-1.5 rounded-lg text-[9px] font-black tracking-widest transition-all ${typeFilter === t ? 'bg-white dark:bg-white/10 shadow-sm text-brand-blue dark:text-white' : 'text-neutral-400'}`}>{t}</button>
+                      ))}
+                    </div>
+                 </div>
+                 <div className="space-y-2">
+                    <label className="text-[8px] font-black text-neutral-400 uppercase tracking-widest ml-1">Category Domain</label>
+                    <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-full bg-neutral-50 dark:bg-black/20 border-neutral-100 dark:border-white/5 border px-3 py-2 rounded-xl text-xs font-bold text-brand-blue dark:text-white outline-none appearance-none">
+                      <option value="ALL">All Categories</option>
+                      {Object.keys(CATEGORY_ICONS).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    </select>
+                 </div>
                </div>
                <div className="space-y-2">
-                  <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1"><TagIcon className="w-3 h-3 inline mr-1 opacity-40"/> Category</label>
-                  <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-full bg-neutral-50 dark:bg-black/20 border-neutral-100 dark:border-white/5 border px-4 py-3 rounded-xl text-xs font-bold text-brand-blue dark:text-white outline-none">
-                    <option value="ALL">All Categories</option>
-                    {Object.keys(CATEGORY_ICONS).map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                  </select>
-               </div>
-               <div className="space-y-2">
-                  <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1"><BarChart3 className="w-3 h-3 inline mr-1 opacity-40"/> Entity Account</label>
-                  <select value={accountFilter} onChange={(e) => setAccountFilter(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))} className="w-full bg-neutral-50 dark:bg-black/20 border-neutral-100 dark:border-white/5 border px-4 py-3 rounded-xl text-xs font-bold text-brand-blue dark:text-white outline-none">
-                    <option value="ALL">All Records</option>
+                  <label className="text-[8px] font-black text-neutral-400 uppercase tracking-widest ml-1">Select Account Scope</label>
+                  <select value={accountFilter} onChange={(e) => setAccountFilter(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))} className="w-full bg-neutral-50 dark:bg-black/20 border-neutral-100 dark:border-white/5 border px-3 py-2 rounded-xl text-xs font-bold text-brand-blue dark:text-white outline-none appearance-none">
+                    <option value="ALL">Everything Combined</option>
                     {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.bankName} (..{acc.accountLast4})</option>)}
                   </select>
                </div>
@@ -310,13 +303,14 @@ export default function Transactions() {
       </div>
 
       {/* --- Transactions List --- */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {filteredTxs.length === 0 ? (
-          <div className="py-32 flex flex-col items-center justify-center opacity-30">
-            <div className="w-24 h-24 bg-neutral-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-6">
-              <ListOrdered className="w-10 h-10 text-neutral-300" />
+          <div className="py-24 flex flex-col items-center justify-center opacity-40">
+            <div className="w-20 h-20 bg-neutral-100 dark:bg-white/5 rounded-[24px] flex items-center justify-center mb-6">
+              <ListOrdered className="w-8 h-8 text-neutral-300" />
             </div>
-            <p className="text-xs font-black uppercase tracking-[0.4em]">Zero Parameters Found</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em]">No Transactions Found</p>
+            <p className="text-[8px] font-bold text-neutral-400 uppercase mt-2">Adjust filters or select 'ALL' view</p>
           </div>
         ) : (
           filteredTxs.map((tx, idx) => {
@@ -324,49 +318,41 @@ export default function Transactions() {
             const showDateHeader = idx === 0 || !isSameDay(date, new Date(filteredTxs[idx-1].dateTime));
             
             return (
-              <div key={tx.id || idx} className="space-y-3">
+              <div key={tx.id || idx} className="space-y-2">
                 {showDateHeader && (
-                  <div className="pt-4 flex items-center gap-4">
-                     <span className="text-[10px] font-black text-neutral-400 dark:text-white/40 uppercase tracking-[0.3em] whitespace-nowrap">
+                  <div className="pt-6 flex items-center gap-3">
+                     <span className="text-[9px] font-black text-neutral-400 dark:text-white/30 uppercase tracking-[0.2em] whitespace-nowrap">
                        {format(date, 'EEEE, dd MMM yyyy')}
                      </span>
-                     <div className="h-px w-full bg-neutral-100 dark:bg-white/5" />
+                     <div className="h-px flex-1 bg-neutral-100 dark:bg-white/5" />
                   </div>
                 )}
                 
                 <motion.div 
-                  initial={{ opacity: 0, x: -10 }} 
-                  animate={{ opacity: 1, x: 0 }}
+                  initial={{ opacity: 0, y: 5 }} 
+                  animate={{ opacity: 1, y: 0 }}
                   onClick={() => setSelectedTx(tx)}
-                  className="bg-white dark:bg-[#0C0C0F] group hover:bg-neutral-50 dark:hover:bg-white/5 border border-neutral-100 dark:border-white/5 p-4 rounded-[28px] shadow-sm flex items-center gap-5 transition-all cursor-pointer active:scale-[0.99] hover:shadow-lg hover:shadow-black/5"
+                  className="bg-white dark:bg-[#0C0C0F] group hover:bg-neutral-50 dark:hover:bg-white/5 border border-neutral-100 dark:border-white/5 p-4 rounded-[24px] shadow-sm flex items-center gap-4 transition-all cursor-pointer active:scale-[0.99]"
                 >
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl border ${CATEGORY_COLORS[tx.category || 'Other'] || 'bg-neutral-50'} transition-transform group-hover:scale-110 duration-500`}>
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl border ${CATEGORY_COLORS[tx.category || 'Other'] || 'bg-neutral-50'} shrink-0`}>
                     {CATEGORY_ICONS[tx.category || 'Other'] || '📝'}
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                     <div className="flex items-center gap-2 mb-1">
-                        <h4 className="text-base font-black text-brand-blue dark:text-white truncate uppercase tracking-tight leading-tight">
-                          {tx.party || tx.category || 'Untitled'}
-                        </h4>
-                        {tx.isPersonalExpense && <span className="w-1.5 h-1.5 rounded-full bg-brand-blue animate-pulse" />}
-                     </div>
-                     <div className="flex items-center gap-3">
-                        <span className="text-[9px] font-bold text-neutral-400 tracking-widest uppercase">{format(date, 'hh:mm a')}</span>
+                     <h4 className="text-sm font-black text-brand-blue dark:text-white truncate uppercase tracking-tight leading-tight mb-1">
+                       {tx.party || tx.category || 'Untitled'}
+                     </h4>
+                     <div className="flex items-center gap-2">
+                        <span className="text-[8px] font-bold text-neutral-400 tracking-widest uppercase">{format(date, 'hh:mm a')}</span>
                         <div className="w-1 h-1 rounded-full bg-neutral-200" />
-                        <span className="text-[9px] font-black text-brand-blue/40 dark:text-white/30 tracking-widest uppercase">{tx.category}</span>
+                        <span className="text-[8px] font-black text-brand-blue/30 dark:text-white/20 tracking-widest uppercase">{tx.category}</span>
                      </div>
                   </div>
 
                   <div className="text-right">
-                     <p className={`text-xl font-heading font-black tracking-tighter ${tx.type === 'DEBIT' ? 'text-rose-500' : 'text-emerald-500'}`}>
+                     <p className={`text-lg font-heading font-black tracking-tighter ${tx.type === 'DEBIT' ? 'text-rose-500' : 'text-emerald-500'}`}>
                        {tx.type === 'DEBIT' ? '-' : '+'}₹{Number(tx.amount).toLocaleString()}
                      </p>
-                     {tx.note && <p className="text-[8px] font-bold text-neutral-400 truncate max-w-[100px] uppercase mt-0.5 ml-auto">"{tx.note}"</p>}
-                  </div>
-                  
-                  <div className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                     <MoreVertical className="w-4 h-4 text-neutral-300" />
                   </div>
                 </motion.div>
               </div>
@@ -387,57 +373,53 @@ export default function Transactions() {
             <motion.div 
                initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-               className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0C0C0F] z-[101] rounded-t-[40px] p-10 max-w-2xl mx-auto shadow-2xl border-t border-white/10"
+               className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0C0C0F] z-[101] rounded-t-[40px] p-8 max-w-lg mx-auto shadow-2xl border-t border-white/10"
             >
-               <div className="w-16 h-1.5 bg-neutral-100 dark:bg-white/10 rounded-full mx-auto mb-10" />
+               <div className="w-12 h-1 bg-neutral-100 dark:bg-white/10 rounded-full mx-auto mb-8" />
                
-               <div className="flex items-start justify-between mb-8">
-                  <div className="flex items-center gap-6">
-                    <div className="w-20 h-20 bg-neutral-50 dark:bg-white/5 rounded-[32px] flex items-center justify-center text-4xl shadow-inner border border-neutral-100 dark:border-white/10">
+               <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-neutral-50 dark:bg-white/5 rounded-[24px] flex items-center justify-center text-3xl border border-neutral-100 dark:border-white/10">
                        {CATEGORY_ICONS[selectedTx.category || 'Other'] || '📝'}
                     </div>
                     <div>
-                       <span className="text-[10px] font-black text-brand-blue/40 dark:text-white/30 uppercase tracking-[0.4em] block mb-2">{selectedTx.category} Ledger</span>
-                       <h2 className="text-3xl font-heading font-black text-brand-blue dark:text-white uppercase tracking-tight">{selectedTx.party || 'Unspecified Transaction'}</h2>
-                       <p className="text-xs font-bold text-neutral-400 mt-1 uppercase tracking-widest">{format(new Date(selectedTx.dateTime), 'EEEE, dd MMMM yyyy, hh:mm a')}</p>
+                       <span className="text-[8px] font-black text-brand-blue/40 dark:text-white/30 uppercase tracking-widest block mb-1">{selectedTx.category} Ledger</span>
+                       <h2 className="text-2xl font-heading font-black text-brand-blue dark:text-white uppercase tracking-tight">{selectedTx.party || 'Detail View'}</h2>
+                       <p className="text-[9px] font-bold text-neutral-400 mt-0.5 uppercase tracking-widest">{format(new Date(selectedTx.dateTime), 'dd MMM yyyy, hh:mm a')}</p>
                     </div>
                   </div>
-                  <button onClick={() => setSelectedTx(null)} className="p-3 bg-neutral-50 dark:bg-white/5 rounded-full text-neutral-400 hover:text-rose-500 transition-colors">
-                    <X className="w-6 h-6" />
+                  <button onClick={() => setSelectedTx(null)} className="p-2.5 bg-neutral-50 dark:bg-white/5 rounded-full text-neutral-400">
+                    <X className="w-5 h-5" />
                   </button>
                </div>
 
-               <div className="bg-neutral-50 dark:bg-white/5 p-8 rounded-[40px] border border-neutral-200/50 dark:border-white/5 mb-10 text-center relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-brand-blue/5 rounded-full blur-3xl pointer-events-none" />
-                  <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3">Transaction Value</p>
-                  <h3 className={`text-6xl font-heading font-black tracking-tighter ${selectedTx.type === 'DEBIT' ? 'text-rose-600' : 'text-emerald-600'}`}>
+               <div className="bg-neutral-50 dark:bg-white/5 p-6 rounded-[32px] border border-neutral-200/50 dark:border-white/5 mb-8 text-center">
+                  <p className="text-[8px] font-black text-neutral-400 uppercase tracking-widest mb-2">Value</p>
+                  <h3 className={`text-5xl font-heading font-black tracking-tighter ${selectedTx.type === 'DEBIT' ? 'text-rose-600' : 'text-emerald-600'}`}>
                     {selectedTx.type === 'DEBIT' ? '-' : '+'}₹{Number(selectedTx.amount).toLocaleString()}
                   </h3>
                </div>
 
                {selectedTx.note && (
-                 <div className="mb-10 px-4">
-                   <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                     <Edit3 className="w-3.5 h-3.5" /> Additional Notes
-                   </p>
-                   <p className="text-lg font-bold text-brand-blue/80 dark:text-white/80 italic leading-relaxed pl-6 border-l-4 border-brand-blue/20">
+                 <div className="mb-8 px-2">
+                   <p className="text-sm font-bold text-brand-blue dark:text-white opacity-80 italic leading-relaxed pl-4 border-l-4 border-brand-blue/10">
                      "{selectedTx.note}"
                    </p>
                  </div>
                )}
 
-               <div className="grid grid-cols-2 gap-4">
+               <div className="grid grid-cols-2 gap-3">
                  <button 
                    onClick={() => { navigate(`/?edit=${selectedTx.id}`); setSelectedTx(null); }}
-                   className="py-5 bg-brand-blue text-white rounded-3xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:opacity-90 transition-opacity shadow-xl shadow-brand-blue/20"
+                   className="py-4 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
                  >
-                   <Edit3 className="w-5 h-5" /> Edit Record
+                   <Edit3 className="w-4 h-4" /> Edit
                  </button>
                  <button 
                    onClick={() => deleteTransaction(selectedTx.id!)}
-                   className="py-5 bg-rose-50 text-rose-600 rounded-3xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-rose-100 transition-colors"
+                   className="py-4 bg-rose-50 text-rose-600 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
                  >
-                   <Trash2 className="w-5 h-5" /> Delete File
+                   <Trash2 className="w-4 h-4" /> Delete
                  </button>
                </div>
             </motion.div>
