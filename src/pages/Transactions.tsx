@@ -107,13 +107,13 @@ export default function Transactions() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Transactions_${granularity}_${format(new Date(), 'dd_MMM_yy')}.csv`;
+    a.download = `Analysis_${granularity}_${format(new Date(), 'dd_MMM_yy')}.csv`;
     a.click();
   };
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
-    doc.text('Transactions History Report', 14, 15);
+    doc.text('Analysis History Report', 14, 15);
     doc.setFontSize(10);
     doc.text(`Period: ${granularity} (${format(new Date(), 'dd MMM yyyy')})`, 14, 22);
     
@@ -129,7 +129,7 @@ export default function Transactions() {
       theme: 'grid',
       headStyles: { fillColor: [26, 35, 126] } // brand-blue
     });
-    doc.save(`Transactions_${format(new Date(), 'yyyy_MM_dd')}.pdf`);
+    doc.save(`Analysis_${format(new Date(), 'yyyy_MM_dd')}.pdf`);
   };
 
   const deleteTransaction = async (id: number) => {
@@ -178,7 +178,7 @@ export default function Transactions() {
             <BarChart3 className="w-6 h-6 text-brand-blue dark:text-brand-cyan" />
           </div>
           <div>
-            <h1 className="text-3xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tight">Transactions</h1>
+            <h1 className="text-3xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tight">Analysis</h1>
             <p className="text-[#1A237E]/60 dark:text-[#A0A0A0] font-semibold text-xs tracking-widest uppercase mt-0.5">Explore your data</p>
           </div>
         </div>
