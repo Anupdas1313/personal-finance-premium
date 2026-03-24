@@ -11,7 +11,7 @@ export default function Layout() {
 
   const mainNavItems = [
     { name: 'Home', path: '/', icon: LayoutDashboard },
-    { name: 'Analysis', path: '/transactions', icon: BarChart3 },
+    { name: 'Transactions', path: '/transactions', icon: BarChart3 },
     { name: 'Accounts', path: '/accounts', icon: Landmark },
   ];
 
@@ -24,7 +24,7 @@ export default function Layout() {
     { name: 'Parse SMS', path: '/parse', icon: MessageSquareText },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
-
+e repository
 
   const allNavItems = [...mainNavItems, ...moreNavItems];
 
@@ -58,7 +58,7 @@ export default function Layout() {
               </Link>
             );
           })}
-          
+
           <Link
             to="/?add=true"
             className="mt-6 flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium bg-brand-green text-white shadow-lg shadow-brand-green/20 hover:bg-brand-green/90 hover:ring-2 hover:ring-brand-cyan transition-all transform active:scale-95"
@@ -136,14 +136,14 @@ export default function Layout() {
               </Link>
             );
           })}
-          
+
           {/* More Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className={cn(
               'flex flex-col items-center justify-center flex-1 h-full space-y-1',
               isMobileMenuOpen || moreNavItems.some(item => location.pathname === item.path)
-                ? 'text-brand-blue dark:text-[#F7F7F7]' 
+                ? 'text-brand-blue dark:text-[#F7F7F7]'
                 : 'text-brand-blue/50 dark:text-[#A0A0A0]'
             )}
           >
@@ -157,7 +157,7 @@ export default function Layout() {
       {/* Mobile More Menu Overlay */}
       {isMobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setIsMobileMenuOpen(false)}>
-          <div 
+          <div
             className="absolute bottom-16 left-0 right-0 bg-white dark:bg-[#0C0C0F] rounded-t-[24px] p-4 shadow-xl transform transition-transform"
             onClick={e => e.stopPropagation()}
           >

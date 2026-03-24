@@ -1,11 +1,16 @@
+import React, { useState, useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction } from '../lib/db';
-import { format, startOfMonth, endOfMonth, isWithinInterval, isToday, isYesterday, parseISO, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
-import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, Trash2, ArrowDownLeft, ArrowUpRight, Wallet, Share2, Filter, Search, Edit3, Copy, ArrowDownUp, BarChart3, Download, ListOrdered } from 'lucide-react';
-import { useState, Fragment } from 'react';
+import { format, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subMonths, addMonths, startOfYear, endOfYear, subDays, addDays, startOfWeek, endOfWeek, subWeeks, addWeeks, subYears, addYears, isSameMonth } from 'date-fns';
+import { 
+  Plus, Calendar as CalendarIcon, X, Trash2, ArrowDownLeft, ArrowUpRight, 
+  Wallet, Share2, Filter, Search, Edit3, Copy, ArrowDownUp, Download, 
+  ChevronLeft, ChevronRight, FileText, Printer, MoreHorizontal, 
+  Banknote, History
+} from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useCategories } from '../hooks/useCategories';
-import { useTags } from '../hooks/useTags';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const CATEGORY_ICONS: Record<string, string> = {
   'Food': '🍔',
@@ -19,671 +24,418 @@ const CATEGORY_ICONS: Record<string, string> = {
   'Other': '📝'
 };
 
-const CATEGORY_COLORS: Record<string, string> = {
-  'Food': 'bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-500',
-  'Transport': 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-500',
-  'Rent': 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-500',
-  'Shopping': 'bg-pink-100 dark:bg-pink-900/40 text-pink-600 dark:text-pink-500',
-  'Bills': 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-600 dark:text-yellow-500',
-  'Entertainment': 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-500',
-  'Salary': 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-500',
-  'Transfer': 'bg-neutral-100 dark:bg-[#1A1A1A] text-neutral-600 dark:text-[#A0A0A0]',
-  'Other': 'bg-neutral-100 dark:bg-[#1A1A1A] text-neutral-600 dark:text-[#A0A0A0]'
-};
-
-
-type SortMode = 'date' | 'amount_high' | 'amount_low' | 'category';
-
-// Highlight matching text helper
-function HighlightText({ text, highlight }: { text: string; highlight: string }) {
-  if (!highlight.trim()) return <>{text}</>;
-  const parts = text.split(new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
-  return (
-    <>
-      {parts.map((part, i) =>
-        part.toLowerCase() === highlight.toLowerCase()
-          ? <mark key={i} className="bg-amber-200 dark:bg-amber-500/40 text-inherit rounded-sm px-0.5">{part}</mark>
-          : <Fragment key={i}>{part}</Fragment>
-      )}
-    </>
-  );
-}
-
 export default function Transactions() {
   const navigate = useNavigate();
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-  const [dateRange, setDateRange] = useState<{ start: Date; end: Date } | null>(null);
-  const [tempStartDate, setTempStartDate] = useState('');
-  const [tempEndDate, setTempEndDate] = useState('');
-  const [selectedTx, setSelectedTx] = useState<any | null>(null);
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const [entryTypeFilter, setEntryTypeFilter] = useState<'ALL' | 'CREDIT' | 'DEBIT'>('ALL');
-  const [datePreset, setDatePreset] = useState<'WEEK' | 'MONTH' | 'YEAR' | 'CUSTOM'>('MONTH');
-  const [sortTypeFilter, setSortTypeFilter] = useState<string>('ALL');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortMode, setSortMode] = useState<SortMode>('date');
-  const [isEditing, setIsEditing] = useState(false);
-  const [editAmount, setEditAmount] = useState('');
-  const [editNote, setEditNote] = useState('');
-  const [editParty, setEditParty] = useState('');
-  const [editCategory, setEditCategory] = useState('');
-  const [editExpenseType, setEditExpenseType] = useState('');
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [calendarMonth, setCalendarMonth] = useState(new Date());
-
-  const { categories: appCategories } = useCategories();
-  const { tags } = useTags();
-  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
-
-  const filterStart = dateRange ? dateRange.start : startOfMonth(currentMonth);
-  const filterEnd = dateRange ? dateRange.end : endOfMonth(currentMonth);
-
-  const allTransactions = useLiveQuery(() => 
-    db.transactions.where('dateTime').between(filterStart, filterEnd, true, true).reverse().toArray()
-  , [filterStart, filterEnd]) || [];
-  const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
   
-  let filteredTransactions = allTransactions.filter(tx => {
-    const matchesEntryType = entryTypeFilter === 'ALL' || tx.type === entryTypeFilter;
-    const matchesSortType = sortTypeFilter === 'ALL' || tx.expenseType === sortTypeFilter;
-    const matchesCategory = categoryFilter === 'ALL' || tx.category === categoryFilter;
-    
-    let matchesSearch = true;
-    if (searchTerm.trim()) {
-      const lowerSearch = searchTerm.toLowerCase();
-      const amountStr = tx.amount.toString();
-      matchesSearch = 
-        (tx.note && tx.note.toLowerCase().includes(lowerSearch)) ||
-        (tx.party && tx.party.toLowerCase().includes(lowerSearch)) ||
-        (tx.category && tx.category.toLowerCase().includes(lowerSearch)) ||
-        (tx.expenseType && tx.expenseType.toLowerCase().includes(lowerSearch)) ||
-        amountStr.includes(lowerSearch);
-    }
-
-    return matchesEntryType && matchesSortType && matchesCategory && matchesSearch;
+  // --- View Controls ---
+  const [granularity, setGranularity] = useState<'MONTH' | 'YEAR' | 'ALL' | 'CUSTOM'>('MONTH');
+  const [referenceDate, setReferenceDate] = useState(new Date());
+  const [customRange, setCustomRange] = useState({
+    start: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
+    end: format(endOfMonth(new Date()), 'yyyy-MM-dd')
   });
 
-  // Sort
-  if (sortMode === 'amount_high') {
-    filteredTransactions = [...filteredTransactions].sort((a, b) => b.amount - a.amount);
-  } else if (sortMode === 'amount_low') {
-    filteredTransactions = [...filteredTransactions].sort((a, b) => a.amount - b.amount);
-  } else if (sortMode === 'category') {
-    filteredTransactions = [...filteredTransactions].sort((a, b) => (a.category || '').localeCompare(b.category || ''));
-  }
+  // --- Filtering ---
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'CREDIT' | 'DEBIT'>('ALL');
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
+  const [accountFilter, setAccountFilter] = useState<number | 'ALL'>('ALL');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  const handlePrevMonth = () => {
-    if (dateRange) setDateRange(null);
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
-  };
-
-  const handleNextMonth = () => {
-    if (dateRange) setDateRange(null);
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
-  };
-
-  const handleDatePresetChange = (preset: 'WEEK' | 'MONTH' | 'YEAR' | 'CUSTOM') => {
-    setDatePreset(preset);
-    const today = new Date();
-    switch (preset) {
-      case 'WEEK':
-        setDateRange({ start: startOfDay(startOfWeek(today, { weekStartsOn: 1 })), end: endOfDay(endOfWeek(today, { weekStartsOn: 1 })) });
-        break;
-      case 'MONTH':
-        setDateRange(null); // Uses currentMonth state
-        break;
-      case 'YEAR':
-        setDateRange({ start: startOfMonth(new Date(today.getFullYear(), 0, 1)), end: endOfMonth(new Date(today.getFullYear(), 11, 31)) });
-        break;
-      case 'CUSTOM':
-        openDatePicker();
-        break;
+  // --- detail View ---
+  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+  
+  // --- Data ---
+  const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
+  
+  // Resolve Date Limits
+  const dateLimits = useMemo(() => {
+    let start = 0;
+    let end = Infinity;
+    
+    if (granularity === 'MONTH') {
+      start = startOfMonth(referenceDate).getTime();
+      end = endOfMonth(referenceDate).getTime();
+    } else if (granularity === 'YEAR') {
+      start = startOfYear(referenceDate).getTime();
+      end = endOfYear(referenceDate).getTime();
+    } else if (granularity === 'CUSTOM') {
+      start = startOfDay(new Date(customRange.start)).getTime();
+      end = endOfDay(new Date(customRange.end)).getTime();
     }
+    
+    return { start, end };
+  }, [granularity, referenceDate, customRange]);
+
+  // Main Query
+  const allTxs = useLiveQuery(() => 
+    db.transactions.where('dateTime').between(dateLimits.start, dateLimits.end, true, true).reverse().toArray()
+  , [dateLimits.start, dateLimits.end]) || [];
+
+  // Filter Logic
+  const filteredTxs = useMemo(() => {
+    return allTxs.filter(tx => {
+      const matchesType = typeFilter === 'ALL' || tx.type === typeFilter;
+      const matchesCategory = categoryFilter === 'ALL' || tx.category === categoryFilter;
+      const matchesAccount = accountFilter === 'ALL' || Number(tx.accountId) === Number(accountFilter);
+      const matchesSearch = !searchTerm || 
+        tx.note?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tx.party?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tx.category?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      return matchesType && matchesCategory && matchesAccount && matchesSearch;
+    });
+  }, [allTxs, typeFilter, categoryFilter, accountFilter, searchTerm]);
+
+  // Derived Values
+  const totals = useMemo(() => {
+    return filteredTxs.reduce((acc, tx) => {
+      const amt = Number(tx.amount) || 0;
+      if (tx.type === 'CREDIT') acc.income += amt;
+      else acc.expense += amt;
+      return acc;
+    }, { income: 0, expense: 0 });
+  }, [filteredTxs]);
+
+  // --- Handlers ---
+  const handleExportCSV = () => {
+    const headers = ['Date', 'Party', 'Category', 'Type', 'Amount', 'Note'];
+    const rows = filteredTxs.map(tx => [
+      format(new Date(tx.dateTime), 'yyyy-MM-dd HH:mm'),
+      tx.party || 'N/A',
+      tx.category || 'Other',
+      tx.type,
+      tx.amount,
+      tx.note || ''
+    ]);
+    const content = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([content], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Transactions_${granularity}_${format(new Date(), 'dd_MMM_yy')}.csv`;
+    a.click();
   };
 
-  const openDatePicker = () => {
-    setDatePreset('CUSTOM');
-    if (dateRange) {
-      setTempStartDate(format(dateRange.start, 'yyyy-MM-dd'));
-      setTempEndDate(format(dateRange.end, 'yyyy-MM-dd'));
-    } else {
-      setTempStartDate(format(filterStart, 'yyyy-MM-dd'));
-      setTempEndDate(format(filterEnd, 'yyyy-MM-dd'));
-    }
-    setIsDatePickerOpen(true);
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    doc.text('Transaction History Report', 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Period: ${granularity} (${format(new Date(), 'dd MMM yyyy')})`, 14, 22);
+    
+    autoTable(doc, {
+      startY: 30,
+      head: [['Date', 'Party', 'Category', 'Amount', 'Balance']],
+      body: filteredTxs.map(tx => [
+        format(new Date(tx.dateTime), 'dd MMM'),
+        tx.party?.toUpperCase() || 'N/A',
+        tx.category?.toUpperCase() || 'OTHER',
+        `${tx.type === 'DEBIT' ? '-' : '+'} ₹${tx.amount.toLocaleString()}`,
+        tx.amount
+      ]),
+      theme: 'striped',
+      headStyles: { fillColor: [0, 168, 107] }
+    });
+    doc.save(`Transactions_${format(new Date(), 'yyyy_MM_dd')}.pdf`);
   };
 
-  const applyDateFilter = () => {
-    if (tempStartDate && tempEndDate) {
-      setDateRange({ start: startOfDay(parseISO(tempStartDate)), end: endOfDay(parseISO(tempEndDate)) });
-    } else if (tempStartDate) {
-      setDateRange({ start: startOfDay(parseISO(tempStartDate)), end: endOfDay(parseISO(tempStartDate)) });
-    }
-    setIsDatePickerOpen(false);
-  };
-
-  const clearDateFilter = () => { setDateRange(null); setIsDatePickerOpen(false); };
-
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this transaction?')) {
+  const deleteTransaction = async (id: number) => {
+    if (window.confirm('Delete this transaction permanently?')) {
       await db.transactions.delete(id);
       setSelectedTx(null);
     }
   };
 
-  const startEditing = (tx: any) => {
-    setIsEditing(true);
-    setEditAmount(tx.amount.toString());
-    setEditNote(tx.note || '');
-    setEditParty(tx.party || '');
-    setEditCategory(tx.category || 'Other');
-    setEditExpenseType(tx.expenseType || '');
-  };
+  // --- UI Components ---
+  const MonthSwitcher = () => (
+    <div className="flex items-center gap-4 bg-[#F9FBFF] dark:bg-[#111111] p-3 rounded-2xl border border-brand-blue/5 dark:border-white/5">
+      <button 
+        onClick={() => setReferenceDate(subMonths(referenceDate, 1))}
+        className="p-2 hover:bg-brand-blue/5 rounded-xl transition-all active:scale-90"
+      >
+        <ChevronLeft className="w-5 h-5 text-brand-blue/60" />
+      </button>
+      
+      <div className="flex-1 text-center">
+        <h2 className="text-sm font-heading font-black text-brand-blue dark:text-white uppercase tracking-[0.2em]">
+          {format(referenceDate, 'MMMM yyyy')}
+        </h2>
+        <p className="text-[10px] font-bold text-neutral-400 capitalize opacity-60">Month Wise View</p>
+      </div>
 
-  const saveEdit = async () => {
-    if (!selectedTx?.id || !editAmount) return;
-    await db.transactions.update(selectedTx.id, {
-      amount: parseFloat(editAmount.toString().replace(/,/g, '')) || 0,
-      note: editNote,
-      party: editParty,
-      category: editCategory,
-      expenseType: editExpenseType
-    });
-    setIsEditing(false);
-    setSelectedTx(null);
-  };
-
-  const duplicateTransaction = async (tx: any) => {
-    const { id, ...rest } = tx;
-    await db.transactions.add({ ...rest, dateTime: new Date() });
-    setSelectedTx(null);
-  };
-
-  const groupedTransactions = filteredTransactions.reduce((groups, tx) => {
-    const dateKey = format(tx.dateTime, 'yyyy-MM-dd');
-    if (!groups[dateKey]) groups[dateKey] = [];
-    groups[dateKey].push(tx);
-    return groups;
-  }, {} as Record<string, typeof allTransactions>);
-
-  const getDailyTotals = (txs: typeof allTransactions) => {
-    const spent = txs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0);
-    const received = txs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0);
-    return { spent, received };
-  };
-
-  const formatDateHeader = (dateString: string) => {
-    const date = new Date(dateString);
-    if (isToday(date)) return `Today, ${format(date, 'MMMM d')}`;
-    if (isYesterday(date)) return `Yesterday, ${format(date, 'MMMM d')}`;
-    return format(date, 'EEEE, MMMM d');
-  };
-
-  const getHeaderText = () => {
-    if (dateRange) {
-      const startStr = format(dateRange.start, 'MMM d, yyyy');
-      const endStr = format(dateRange.end, 'MMM d, yyyy');
-      return startStr === endStr ? startStr : `${startStr} - ${endStr}`;
-    }
-    return format(currentMonth, 'MMMM yyyy');
-  };
-
-  const SORT_OPTIONS: { id: SortMode; label: string }[] = [
-    { id: 'date', label: 'Latest First' },
-    { id: 'amount_high', label: 'Highest Amount' },
-    { id: 'amount_low', label: 'Lowest Amount' },
-    { id: 'category', label: 'Category A-Z' },
-  ];
+      <button 
+        onClick={() => setReferenceDate(addMonths(referenceDate, 1))}
+        className="p-2 hover:bg-brand-blue/5 rounded-xl transition-all active:scale-90"
+      >
+        <ChevronRight className="w-5 h-5 text-brand-blue/60" />
+      </button>
+    </div>
+  );
 
   return (
-    <div className="relative min-h-[calc(100vh-8rem)] pb-20 max-w-2xl mx-auto px-4">
-      <header className="sticky top-0 bg-[#F7F7F7] dark:bg-[#060608] z-30 pt-4 pb-2">
-
-        <div className="flex items-center justify-between mb-6">
-          {!isSearchOpen ? (
-            <>
-              <h1 className="text-4xl font-heading font-semibold text-brand-blue dark:text-white tracking-tight">Timeline</h1>
-
-              <div className="flex items-center gap-1.5">
-                <button 
-                  onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                  className={`p-2.5 border rounded-full transition-all shadow-sm ${
-                    isFiltersOpen 
-                      ? "bg-brand-blue border-brand-blue text-white dark:bg-white dark:border-white dark:text-[#111111]" 
-                      : "bg-white border-brand-blue/5 text-brand-blue hover:text-brand-green dark:bg-[#111111] dark:border-[#222222] dark:text-[#A0A0A0] dark:hover:text-white"
-                  }`}
-
-
-
-                  title="Filters"
-                >
-                  <Filter className="w-5 h-5" />
-                </button>
-                <button 
-                  onClick={() => setIsCalendarOpen(true)}
-                  className={`p-2.5 border rounded-full transition-all shadow-sm ${
-                    isCalendarOpen 
-                      ? "bg-brand-blue border-brand-blue text-white dark:bg-white dark:border-white dark:text-[#111111]" 
-                      : "bg-white border-brand-blue/5 text-brand-blue/40 hover:text-brand-blue dark:bg-[#111111] dark:border-[#222222] dark:text-[#A0A0A0] dark:hover:text-white"
-                  }`}
-                  title="Calendar View"
-                >
-                  <CalendarIcon className="w-5 h-5" />
-                </button>
-
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center gap-3 animate-in slide-in-from-right-4 duration-300">
-              <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#666666]" />
-                <input
-                  autoFocus
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Analyze transactions..."
-                  className="w-full pl-10 pr-10 py-2.5 bg-white dark:bg-[#111111] border border-brand-blue/10 dark:border-[#222222] text-brand-blue dark:text-white rounded-2xl focus:outline-none focus:ring-1 focus:ring-brand-cyan font-semibold"
-                />
-
-                {searchTerm && (
-                  <button 
-                    onClick={() => setSearchTerm('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
-                  >
-                    <X className="w-4 h-4 text-[#A0A0A0]" />
-                  </button>
-                )}
-              </div>
+    <div className="space-y-6 animate-in fade-in duration-500">
+      {/* Header Area */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-4xl font-heading font-semibold text-brand-blue dark:text-[#F7F7F7] tracking-tight">Transactions</h1>
+          <p className="text-neutral-400 font-medium text-sm mt-1">Manage and audit your history</p>
+        </div>
+        <div className="flex gap-2">
+           <div className="relative group">
               <button 
-                onClick={() => { setIsSearchOpen(false); setSearchTerm(''); }}
-                className="text-sm font-bold text-[#A0A0A0] hover:text-white transition-colors px-1"
+                className="p-3 bg-white dark:bg-[#1A1A1A] rounded-xl border border-brand-blue/10 dark:border-white/5 shadow-sm hover:shadow-md transition-all text-brand-blue dark:text-[#F7F7F7]"
+                onClick={handleExportCSV}
               >
-                Cancel
+                <Download className="w-5 h-5" />
               </button>
-            </div>
-          )}
+              <div className="absolute top-full mt-2 right-0 bg-brand-blue text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap">Export CSV</div>
+           </div>
         </div>
+      </div>
 
-        {/* Month Navigation Card - Full Width */}
-        <div className="bg-white dark:bg-[#111111] p-1.5 rounded-2xl border border-brand-blue/5 dark:border-[#222222] flex items-center justify-between shadow-sm mb-4">
-
-
-
-          <button onClick={handlePrevMonth} className="p-2 text-brand-blue/40 hover:text-brand-blue transition-colors">
-            <ChevronLeft className="w-5 h-5" />
+      {/* View Switcher Bar */}
+      <div className="flex overflow-x-auto gap-2 p-1 bg-neutral-100 dark:bg-[#111111] rounded-2xl scrollbar-hide">
+        {(['MONTH', 'YEAR', 'ALL', 'CUSTOM'] as const).map(g => (
+          <button
+            key={g}
+            onClick={() => setGranularity(g)}
+            className={`flex-1 min-w-[100px] py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all ${
+              granularity === g 
+                ? 'bg-white dark:bg-[#333333] text-brand-blue dark:text-white shadow-sm' 
+                : 'text-neutral-400 hover:text-neutral-500'
+            }`}
+          >
+            {g === 'CUSTOM' ? 'Custom Range' : g}
           </button>
-          <div className="text-center">
-            <h2 className="text-[11px] font-heading font-semibold text-brand-blue dark:text-[#F7F7F7] leading-tight uppercase tracking-[0.2em]">{getHeaderText()}</h2>
+        ))}
+      </div>
 
-
-            <p className="text-[10px] font-semibold text-brand-green tracking-[0.1em] uppercase mt-0.5">
-              {filteredTransactions.length} Checkpoints
-            </p>
-
-          </div>
-          <button onClick={handleNextMonth} className="p-2 text-brand-blue/40 hover:text-brand-blue transition-colors">
-            <ChevronRight className="w-5 h-5" />
-          </button>
-
-
+      {/* Contextual Controls */}
+      {granularity === 'MONTH' && <MonthSwitcher />}
+      {granularity === 'CUSTOM' && (
+        <div className="bg-[#F9FBFF] dark:bg-[#111111] p-4 rounded-2xl border border-brand-blue/5 dark:border-white/10 flex items-center justify-between gap-4">
+           <div className="flex-1 flex flex-col gap-1">
+             <label className="text-[8px] font-black uppercase text-neutral-400 tracking-widest pl-1">From</label>
+             <input 
+              type="date" 
+              value={customRange.start} 
+              onChange={(e) => setCustomRange(p => ({...p, start: e.target.value}))}
+              className="bg-white dark:bg-[#1A1A1A] px-3 py-2 rounded-xl text-xs font-black text-brand-blue dark:text-white outline-none border border-transparent focus:border-brand-green/30"
+             />
+           </div>
+           <div className="w-px h-10 bg-neutral-200 dark:bg-white/5 mt-3" />
+           <div className="flex-1 flex flex-col gap-1">
+             <label className="text-[8px] font-black uppercase text-neutral-400 tracking-widest pl-1">To</label>
+             <input 
+              type="date" 
+              value={customRange.end} 
+              onChange={(e) => setCustomRange(p => ({...p, end: e.target.value}))}
+              className="bg-white dark:bg-[#1A1A1A] px-3 py-2 rounded-xl text-xs font-black text-brand-blue dark:text-white outline-none border border-transparent focus:border-brand-green/30"
+             />
+           </div>
         </div>
+      )}
 
-        {/* Date Presets Selector */}
-        <div className="bg-neutral-100 dark:bg-[#0C0C0F] p-1 rounded-2xl flex items-center mb-4">
-
-          {(['WEEK', 'MONTH', 'YEAR', 'CUSTOM'] as const).map((p) => (
-            <button
-              key={p}
-              onClick={() => handleDatePresetChange(p)}
-              className={`flex-1 py-2 text-[10px] font-semibold rounded-xl transition-all uppercase tracking-[0.2em] ${
-                datePreset === p ? 'bg-brand-blue text-white shadow-lg scale-105' : 'text-brand-blue/40 hover:text-brand-blue'
-              }`}
-
-
-
-            >
-              {p.charAt(0) + p.slice(1).toLowerCase()}
-            </button>
-          ))}
+      {/* Summary Chips */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-[#E7F7F0] dark:bg-[#00A86B]/10 p-3 rounded-2xl border border-[#00A86B]/10">
+           <p className="text-[8px] font-black text-[#00A86B]/60 uppercase tracking-widest">Inflow</p>
+           <h3 className="text-lg font-black text-[#00A86B] tracking-tight">₹{totals.income.toLocaleString()}</h3>
         </div>
+        <div className="bg-[#FFF1F1] dark:bg-rose-500/10 p-3 rounded-2xl border border-rose-500/10">
+           <p className="text-[8px] font-black text-rose-500/60 uppercase tracking-widest">Outflow</p>
+           <h3 className="text-lg font-black text-rose-500 tracking-tight">₹{totals.expense.toLocaleString()}</h3>
+        </div>
+        <div className="bg-brand-blue/5 dark:bg-white/5 p-3 rounded-2xl border border-brand-blue/5">
+           <p className="text-[8px] font-black text-brand-blue/40 dark:text-white/30 uppercase tracking-widest">Net Flow</p>
+           <h3 className={`text-lg font-black tracking-tight ${totals.income - totals.expense >= 0 ? 'text-brand-blue dark:text-white' : 'text-rose-500'}`}>
+             ₹{(totals.income - totals.expense).toLocaleString()}
+           </h3>
+        </div>
+      </div>
 
-        {/* Report Button - Full Width */}
-        <Link 
-          to={`/transactions/table?start=${filterStart.toISOString()}&end=${filterEnd.toISOString()}`}
-          className="w-full py-4 flex items-center justify-center gap-2 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] hover:bg-brand-green/90 hover:ring-2 hover:ring-brand-cyan rounded-2xl font-semibold transition-all shadow-lg text-[10px] uppercase tracking-[0.2em] active:scale-95 mb-6"
-        >
-          <ListOrdered className="w-4 h-4" />
-          Detailed Manifest
-        </Link>
+      {/* Advanced Filter Chips */}
+      <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-hide">
+         <button 
+           onClick={() => setIsFilterOpen(!isFilterOpen)}
+           className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-full border transition-all text-[11px] font-bold ${isFilterOpen ? 'bg-brand-blue text-white border-brand-blue' : 'bg-white dark:bg-[#1A1A1A] text-neutral-500 dark:text-white/60 border-neutral-200 dark:border-white/5 hover:border-brand-blue/40'}`}
+         >
+           <Filter className="w-3.5 h-3.5" /> Filters
+         </button>
 
+         <div className="w-px h-6 bg-neutral-200 dark:bg-white/5 self-center" />
 
-        {isFiltersOpen && (
-          <div className="mt-4 bg-white dark:bg-[#111111] rounded-[24px] border border-[#EBEBEB] dark:border-[#222222] shadow-xl p-5 space-y-5 animate-in slide-in-from-top-2 duration-300">
+         {(['ALL', 'DEBIT', 'CREDIT'] as const).map(t => (
+           <button 
+            key={t}
+            onClick={() => setTypeFilter(t)}
+            className={`shrink-0 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${typeFilter === t ? 'bg-brand-green text-white' : 'bg-white dark:bg-[#1A1A1A] text-neutral-400 dark:text-white/40 border border-neutral-100 dark:border-white/5'}`}
+           >
+             {t}
+           </button>
+         ))}
 
-            <div>
-              <label className="block text-[10px] font-bold text-[#666666] uppercase tracking-[0.1em] mb-3">Transaction Type</label>
-              <div className="flex flex-wrap gap-2">
-                {[{ id: 'ALL', label: 'All' }, { id: 'CREDIT', label: 'Inflow' }, { id: 'DEBIT', label: 'Outflow' }].map(type => (
-                  <button key={type.id} onClick={() => setEntryTypeFilter(type.id as any)}
-                    className={`px-4 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-[0.2em] transition-all ${entryTypeFilter === type.id ? 'bg-brand-blue text-white shadow-md' : 'bg-brand-blue/5 text-brand-blue/40'}`}
-                  >
-                    {type.label}
-                  </button>
-                )) }
-              </div>
+         <div className="w-px h-6 bg-neutral-200 dark:bg-white/5 self-center" />
 
-            </div>
-            <div>
-              <label className="block text-[10px] font-semibold text-[#666666] uppercase tracking-[0.2em] mb-3">Sort Order</label>
-              <div className="flex flex-wrap gap-2">
-                {SORT_OPTIONS.map(opt => (
-                  <button key={opt.id} onClick={() => setSortMode(opt.id)}
-                    className={`px-4 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-[0.2em] transition-all ${sortMode === opt.id ? 'bg-brand-blue text-white shadow-md' : 'bg-brand-blue/5 text-brand-blue/40'}`}
-                  >
-                    {opt.label}
-                  </button>
-                )) }
-              </div>
+         <div className="relative flex-1 min-w-[150px]">
+           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+           <input 
+            type="text"
+            placeholder="Search party or note..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-white dark:bg-[#1A1A1A] pl-9 pr-4 py-2 rounded-full border border-neutral-100 dark:border-white/5 text-[11px] font-bold text-brand-blue dark:text-white outline-none focus:border-brand-blue/30"
+           />
+         </div>
+      </div>
 
-            </div>
-            <div>
-              <label className="block text-[10px] font-semibold text-[#666666] uppercase tracking-[0.2em] mb-3">Classification</label>
-              <div className="flex flex-wrap gap-2">
-                {['ALL', ...tags].map(tag => (
-                  <button key={tag} onClick={() => setSortTypeFilter(tag)}
-                    className={`px-4 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-[0.2em] transition-all ${sortTypeFilter === tag ? 'bg-brand-blue text-white shadow-md' : 'bg-brand-blue/5 text-brand-blue/40'}`}
-                  >
-                    {tag === 'ALL' ? 'All' : tag}
-                  </button>
-                )) }
-              </div>
-            </div>
-            <div>
-              <label className="block text-[10px] font-semibold text-[#666666] uppercase tracking-[0.2em] mb-3">Categories</label>
-              <div className="flex flex-wrap gap-2">
-                {['ALL', ...appCategories].map(cat => (
-                  <button key={cat} onClick={() => setCategoryFilter(cat)}
-                    className={`px-4 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-[0.2em] transition-all ${categoryFilter === cat ? 'bg-brand-blue text-white shadow-md' : 'bg-brand-blue/5 text-brand-blue/40'}`}
-                  >
-                    {cat === 'ALL' ? 'All' : cat}
-                  </button>
-                )) }
-              </div>
-            </div>
-          </div>
-        )}
+      {/* Expanded Filters Drawer */}
+      {isFilterOpen && (
+        <div className="bg-neutral-50 dark:bg-[#111111] p-5 rounded-[24px] border border-brand-blue/5 grid grid-cols-2 gap-6 animate-in slide-in-from-top-4 duration-300">
+           <div className="space-y-2">
+              <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest block ml-1">Filter by account</label>
+              <select 
+                value={accountFilter}
+                onChange={(e) => setAccountFilter(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
+                className="w-full bg-white dark:bg-[#1A1A1A] px-4 py-2.5 rounded-xl text-xs font-bold text-brand-blue dark:text-white border border-transparent focus:border-brand-green/30 outline-none"
+              >
+                <option value="ALL">All Accounts</option>
+                {accounts.map(acc => (
+                  <option key={acc.id} value={acc.id}>{acc.bankName} - {acc.accountLast4}</option>
+                ))}
+              </select>
+           </div>
+           <div className="space-y-2">
+              <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest block ml-1">Filter by category</label>
+              <select 
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="w-full bg-white dark:bg-[#1A1A1A] px-4 py-2.5 rounded-xl text-xs font-bold text-brand-blue dark:text-white border border-transparent focus:border-brand-green/30 outline-none"
+              >
+                <option value="ALL">All Categories</option>
+                {Object.keys(CATEGORY_ICONS).map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+           </div>
+        </div>
+      )}
 
-        {isCalendarOpen && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-            <div className="bg-[#111111] border border-[#222222] rounded-[32px] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
-              <div className="p-5 border-b border-[#222222] flex justify-between items-center bg-[#16161A]">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-xl font-semibold text-white tracking-tight">{format(calendarMonth, 'MMMM yyyy')}</h3>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => setCalendarMonth(subMonths(calendarMonth, 1))} className="p-2 text-[#717171] hover:text-white hover:bg-[#222222] rounded-full transition-all">
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <button onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))} className="p-2 text-[#717171] hover:text-white hover:bg-[#222222] rounded-full transition-all">
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                  <button onClick={() => setIsCalendarOpen(false)} className="p-2 ml-2 text-[#717171] hover:text-white hover:bg-rose-500/10 hover:text-rose-500 rounded-full transition-all">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-              
-              <div className="p-5">
-                <div className="grid grid-cols-7 mb-2">
-                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-                    <div key={day} className="text-center text-[10px] font-semibold text-[#444444] uppercase tracking-[0.2em] py-2">{day}</div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-7 gap-1">
-                  {eachDayOfInterval({
-                    start: startOfWeek(startOfMonth(calendarMonth), { weekStartsOn: 1 }),
-                    end: endOfWeek(endOfMonth(calendarMonth), { weekStartsOn: 1 })
-                  }).map((day, i) => {
-                    const isSelected = dateRange && isSameDay(day, dateRange.start) && isSameDay(day, dateRange.end);
-                    const hasTransactions = allTransactions.some(tx => isSameDay(tx.dateTime, day));
-                    const isCurrentMonth = isSameMonth(day, calendarMonth);
-                    
-                    return (
-                      <button
-                        key={i}
-                        onClick={() => {
-                          setDateRange({ start: startOfDay(day), end: endOfDay(day) });
-                          setDatePreset('CUSTOM');
-                          setIsCalendarOpen(false);
-                        }}
-                        className={`
-                          relative h-12 flex flex-col items-center justify-center rounded-2xl transition-all group
-                          ${!isCurrentMonth ? 'opacity-20' : 'opacity-100'}
-                          ${isSelected ? 'bg-white text-[#111111]' : 'hover:bg-[#1A1A1A] text-[#A0A0A0]'}
-                        `}
-                      >
-                        <span className={`text-sm font-semibold ${isSelected ? 'text-[#111111]' : 'group-hover:text-white'}`}>
-                          {format(day, 'd')}
-                        </span>
-                        {hasTransactions && !isSelected && (
-                          <div className="absolute bottom-2 w-1 h-1 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
-                        )}
-                        {isToday(day) && !isSelected && (
-                          <div className="absolute top-2 right-2 w-1 h-1 rounded-full bg-blue-500" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              
-              <div className="p-4 bg-[#16161A] border-t border-[#222222]">
-                <button 
-                  onClick={() => {
-                    setDateRange(null);
-                    setCalendarMonth(new Date());
-                    setDatePreset('MONTH');
-                    setIsCalendarOpen(false);
-                  }}
-                  className="w-full py-3 bg-[#222222] text-[#A0A0A0] hover:text-white rounded-2xl text-xs font-semibold transition-all"
-                >
-                  Reset to Current Month
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </header>
-
-      <main className="space-y-6 mt-2">
-        {Object.keys(groupedTransactions).length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in zoom-in duration-300">
-            <div className="relative w-40 h-40 mb-8 opacity-90">
-              <div className="absolute inset-0 bg-amber-200/5 blur-3xl rounded-full"></div>
-              <img src="https://cdn-icons-png.flaticon.com/512/6190/6190113.png" alt="Empty Transactions" className="w-full h-full object-contain relative z-10" />
-            </div>
-            <p className="text-xl font-semibold text-[#A0A0A0] mb-2">No transactions</p>
-            {!searchTerm && (
-            <Link to="/?add=true" className="mt-4 px-6 py-2.5 bg-brand-green text-white rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-brand-green/90 transition-all active:scale-95 shadow-lg shadow-brand-green/20">
-                Deploy Transaction
-              </Link>
-
-            )}
+      {/* Transactions List */}
+      <div className="space-y-3 pb-8">
+        {filteredTxs.length === 0 ? (
+          <div className="py-20 flex flex-col items-center justify-center opacity-40">
+             <div className="w-16 h-16 bg-neutral-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-4">
+                <ListOrdered className="w-8 h-8 text-brand-blue/30" />
+             </div>
+             <p className="text-[10px] font-black text-brand-blue dark:text-white uppercase tracking-[0.2em]">No Transactions Found</p>
           </div>
         ) : (
-          Object.entries(groupedTransactions).map(([date, txs]) => {
-            const daily = getDailyTotals(txs);
+          filteredTxs.map((tx, idx) => {
+            const date = new Date(tx.dateTime);
+            const showDateHeader = idx === 0 || !isSameDay(date, new Date(filteredTxs[idx-1].dateTime));
+            
             return (
-              <div key={date} className="mb-6">
-                <div className="flex items-center justify-between mb-3 px-2">
-                  <h3 className="text-[10px] font-semibold text-brand-blue/40 dark:text-[#A0A0A0] uppercase tracking-[0.2em] flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-brand-blue/20 dark:bg-white/20"></div>
-                    {formatDateHeader(date)}
-                  </h3>
-
-                  <div className="flex items-center gap-3 text-[10px] font-heading font-semibold uppercase tracking-[0.1em]">
-                    {daily.spent > 0 && <span className="text-brand-red">-₹{daily.spent.toLocaleString('en-IN')}</span>}
-                    {daily.received > 0 && <span className="text-brand-green">+₹{daily.received.toLocaleString('en-IN')}</span>}
+              <div key={tx.id}>
+                {showDateHeader && (
+                  <div className="sticky top-0 z-10 py-3 bg-white/80 dark:bg-[#060608]/80 backdrop-blur-md">
+                     <div className="inline-flex items-center gap-2 bg-brand-green/10 px-3 py-1 rounded-full border border-brand-green/20">
+                        <span className="text-[9px] font-black text-brand-green uppercase tracking-widest">
+                          {format(date, 'EEEE, dd MMM yyyy')}
+                        </span>
+                     </div>
                   </div>
-                </div>
-
-
-                <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_40px_rgba(26,35,126,0.05)] overflow-hidden">
-
-
-                  <div className="divide-y divide-[#EBEBEB] dark:divide-[#222222]">
-                    {txs.map(tx => (
-                      <div key={tx.id} onClick={() => { setSelectedTx(tx); setIsEditing(false); }} className="flex items-center gap-3 p-3 hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] transition-colors cursor-pointer group">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0 ${CATEGORY_COLORS[tx.category] || CATEGORY_COLORS['Other']} group-hover:scale-105 transition-transform`}>
-                          {CATEGORY_ICONS[tx.category] || '📝'}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] truncate">
-                              <HighlightText text={tx.party || tx.category} highlight={searchTerm} />
-                            </h4>
-
-                            {tx.expenseType && (<span className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-brand-blue/5 dark:bg-[#222222] text-brand-blue/40 dark:text-[#A0A0A0] whitespace-nowrap uppercase tracking-[0.1em] shadow-sm border border-brand-blue/5">{tx.expenseType}</span>)}
-                          </div>
-                          {tx.note && (<p className="text-[10px] text-brand-blue/40 dark:text-[#A0A0A0] font-medium truncate mt-0.5 uppercase tracking-[0.1em]"><HighlightText text={tx.note} highlight={searchTerm} /></p>)}
-
-
-                          <p className="text-[10px] font-medium text-[#B0B0B0] dark:text-[#666666] truncate mt-0.5 flex items-center gap-1">
-                            {tx.paymentMethod === 'UPI' ? `UPI${tx.upiApp ? ` • ${tx.upiApp}` : ''}` : tx.paymentMethod === 'Bank' ? 'Bank' : 'Cash'}
-                            <span className="w-1 h-1 rounded-full bg-[#EBEBEB] dark:bg-[#333333] mx-1"></span>
-                            {format(tx.dateTime, 'h:mm a')}
-                          </p>
-                        </div>
-                        <div className={`text-base font-heading font-semibold shrink-0 tracking-tight ${tx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-blue dark:text-[#F7F7F7]'}`}>
-                          {tx.type === 'CREDIT' ? '+' : '-'} ₹{tx.amount.toLocaleString('en-IN')}
-                        </div>
-
-
-                      </div>
-                    ))}
+                )}
+                <div 
+                  onClick={() => setSelectedTx(tx)}
+                  className="bg-white dark:bg-[#0C0C0F] p-4 rounded-2xl border border-neutral-100 dark:border-white/5 flex items-center justify-between hover:border-brand-green/30 transition-all cursor-pointer group active:scale-[0.98]"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl bg-neutral-50 dark:bg-white/5 shadow-sm border border-neutral-100 dark:border-white/5`}>
+                      {CATEGORY_ICONS[tx.category || 'Other'] || '📝'}
+                    </div>
+                    <div>
+                      <h4 className="font-heading font-bold text-brand-blue dark:text-white text-[13px] leading-tight uppercase tracking-tight">
+                        {tx.party || tx.category || 'N/A'}
+                      </h4>
+                      <p className="text-[10px] font-bold text-neutral-400 mt-0.5 uppercase tracking-tighter">
+                        {format(date, 'hh:mm a')} • {tx.category}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className={`font-heading font-black text-lg tracking-tighter ${tx.type === 'DEBIT' ? 'text-rose-500' : 'text-brand-green'}`}>
+                      {tx.type === 'DEBIT' ? '-' : '+'}₹{Number(tx.amount).toLocaleString()}
+                    </p>
+                    {tx.note && (
+                      <p className="text-[9px] font-bold text-neutral-400 truncate max-w-[120px] uppercase">{tx.note}</p>
+                    )}
                   </div>
                 </div>
               </div>
             );
           })
         )}
-      </main>
+      </div>
 
-      <Link to="/" className="fixed bottom-20 md:bottom-6 right-6 w-16 h-16 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-full shadow-2xl flex items-center justify-center hover:bg-brand-green/90 hover:ring-4 hover:ring-brand-cyan/30 transition-all active:scale-95 z-40 transform hover:-rotate-12">
-        <Plus className="w-8 h-8" />
-      </Link>
-
-
-
-      {isDatePickerOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#111111] rounded-[24px] w-full max-w-md overflow-hidden shadow-xl">
-            <div className="p-5 border-b border-[#EBEBEB] dark:border-[#222222] flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-[#222222] dark:text-[#F7F7F7]">Select Date Range</h3>
-              <button onClick={() => setIsDatePickerOpen(false)} className="text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7] p-2 hover:bg-neutral-100 dark:hover:bg-[#222222] rounded-full transition-colors"><X className="w-5 h-5" /></button>
-            </div>
-            <div className="p-6 space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Start Date</label>
-                <input type="date" value={tempStartDate} onChange={(e) => setTempStartDate(e.target.value)} className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none transition-shadow bg-white dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]" />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">End Date (Optional)</label>
-                <input type="date" value={tempEndDate} onChange={(e) => setTempEndDate(e.target.value)} min={tempStartDate} className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none transition-shadow bg-white dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]" />
-                <p className="text-xs text-[#717171] dark:text-[#A0A0A0] font-medium mt-1.5">Leave empty for a single day</p>
-              </div>
-            </div>
-            <div className="p-5 border-t border-[#EBEBEB] dark:border-[#222222] flex flex-col sm:flex-row gap-3 justify-end">
-              {dateRange && (<button onClick={clearDateFilter} className="px-5 py-2.5 text-[#222222] dark:text-[#F7F7F7] hover:bg-neutral-100 dark:hover:bg-[#222222] rounded-xl font-semibold transition-colors sm:mr-auto">Clear Filter</button>)}
-              <button onClick={() => setIsDatePickerOpen(false)} className="px-5 py-2.5 text-[#222222] dark:text-[#F7F7F7] hover:bg-neutral-100 dark:hover:bg-[#222222] rounded-xl font-semibold transition-colors">Cancel</button>
-              <button onClick={applyDateFilter} disabled={!tempStartDate} className="px-5 py-2.5 bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl font-semibold hover:bg-black dark:hover:bg-neutral-200 transition-colors disabled:opacity-50">Apply</button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* Transaction Detail Modal */}
       {selectedTx && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#111111] rounded-[24px] w-full max-w-md overflow-hidden shadow-xl max-h-[90vh] overflow-y-auto">
-            <div className="p-5 border-b border-[#EBEBEB] dark:border-[#222222] flex justify-between items-center sticky top-0 bg-white dark:bg-[#111111] z-10">
-              <h3 className="text-lg font-semibold text-[#222222] dark:text-[#F7F7F7]">{isEditing ? 'Edit Transaction' : 'Transaction Details'}</h3>
-              <button onClick={() => { setSelectedTx(null); setIsEditing(false); }} className="text-[#717171] dark:text-[#A0A0A0] hover:text-[#222222] dark:hover:text-[#F7F7F7] p-2 hover:bg-neutral-100 dark:hover:bg-[#222222] rounded-full transition-colors"><X className="w-5 h-5" /></button>
-            </div>
-            
-            <div className="p-6">
-              {isEditing ? (
-                <div className="space-y-4">
-                  <div><label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Amount *</label><input type="number" value={editAmount} onChange={e => setEditAmount(e.target.value.toString().replace(/,/g, ''))} step="0.01" className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]" /></div>
-                  <div><label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Party</label><input type="text" value={editParty} onChange={e => setEditParty(e.target.value)} className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]" /></div>
-                  <div><label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Note</label><input type="text" value={editNote} onChange={e => setEditNote(e.target.value)} className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]" /></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Category</label>
-                      <select value={editCategory} onChange={e => setEditCategory(e.target.value)} className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]">
-                        {['Food', 'Transport', 'Rent', 'Shopping', 'Bills', 'Entertainment', 'Salary', 'Transfer', 'Other'].map(c => (<option key={c} value={c}>{c}</option>))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-[#222222] dark:text-[#F7F7F7] mb-1.5">Classification</label>
-                      <select value={editExpenseType} onChange={e => setEditExpenseType(e.target.value)} className="w-full px-4 py-3 border border-[#B0B0B0] dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-[#222222] dark:focus:ring-[#F7F7F7] outline-none bg-white dark:bg-[#1A1A1A] text-[#222222] dark:text-[#F7F7F7]">
-                        <option value="">No Tax</option>
-                        {tags.map(tag => (<option key={tag} value={tag}>{tag}</option>))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="text-center mb-6">
-                    <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center text-3xl mb-4 ${CATEGORY_COLORS[selectedTx.category] || CATEGORY_COLORS['Other']}`}>{CATEGORY_ICONS[selectedTx.category] || '📝'}</div>
-                    <h2 className={`text-4xl font-heading font-semibold tracking-tight ${selectedTx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-red'}`}>{selectedTx.type === 'CREDIT' ? '+' : '-'} ₹{selectedTx.amount.toLocaleString('en-IN')}</h2>
-                    <p className="text-[#A0A0A0] mt-1 font-semibold uppercase tracking-[0.2em] text-[10px]">{selectedTx.party || selectedTx.category}</p>
-                  </div>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-end md:items-center justify-center p-0 md:p-6 animate-in fade-in duration-300">
+           <div className="bg-white dark:bg-[#0C0C0F] w-full max-w-lg rounded-t-[32px] md:rounded-[32px] p-8 shadow-2xl relative animate-in slide-in-from-bottom-8 duration-500">
+              <button 
+                onClick={() => setSelectedTx(null)}
+                className="absolute top-6 right-6 w-8 h-8 rounded-full bg-neutral-100 dark:bg-white/5 flex items-center justify-center text-neutral-500"
+              >
+                <X className="w-4 h-4" />
+              </button>
 
-                  <div className="bg-neutral-50 dark:bg-[#1A1A1A] rounded-[20px] p-5 border border-[#EBEBEB] dark:border-[#222222]">
-                    <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-sm">
-                      <div><p className="text-[#525252] dark:text-[#A0A0A0] text-xs font-semibold uppercase tracking-[0.2em] mb-1.5">Date & Time</p><p className="font-semibold text-[#111111] dark:text-[#F7F7F7]">{format(selectedTx.dateTime, 'MMM d, yyyy')}</p><p className="text-[#525252] dark:text-[#A0A0A0] font-medium text-xs mt-0.5">{format(selectedTx.dateTime, 'h:mm a')}</p></div>
-                      <div><p className="text-[#525252] dark:text-[#A0A0A0] text-xs font-semibold uppercase tracking-[0.2em] mb-1.5">Category</p><span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-neutral-200 dark:bg-[#222222] text-[#111111] dark:text-[#F7F7F7]">{selectedTx.category}</span></div>
+              <div className="flex flex-col items-center text-center">
+                 <div className="w-20 h-20 bg-brand-green/10 rounded-[28px] flex items-center justify-center text-4xl mb-4">
+                    {CATEGORY_ICONS[selectedTx.category || 'Other'] || '📝'}
+                 </div>
+                 <h2 className="text-2xl font-heading font-black text-brand-blue dark:text-white uppercase tracking-tight mb-1">
+                   {selectedTx.party || 'No Name'}
+                 </h2>
+                 <p className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] mb-6">
+                   {selectedTx.category} • {format(new Date(selectedTx.dateTime), 'dd MMMM yyyy')}
+                 </p>
 
-                      {selectedTx.expenseType && (<div><p className="text-[#717171] dark:text-[#A0A0A0] text-xs font-semibold uppercase tracking-[0.2em] mb-1.5">Type</p><span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-neutral-200 dark:bg-[#222222] text-[#222222] dark:text-[#F7F7F7]">{selectedTx.expenseType}</span></div>)}
-                      <div><p className="text-[#717171] dark:text-[#A0A0A0] text-xs font-semibold uppercase tracking-[0.2em] mb-1.5">Payment Method</p><p className="font-semibold text-[#222222] dark:text-[#F7F7F7]">{selectedTx.paymentMethod === 'UPI' ? `UPI${selectedTx.upiApp ? ` (${selectedTx.upiApp})` : ''}` : selectedTx.paymentMethod === 'Bank' ? 'Bank Transfer' : 'Cash'}</p></div>
-                      <div>
-                        <p className="text-[#717171] dark:text-[#A0A0A0] text-xs font-bold uppercase tracking-wider mb-1.5">Account</p>
-                        <p className="font-bold text-[#222222] dark:text-[#F7F7F7]">
-                          {accounts.find(a => a.id === selectedTx.accountId)?.bankName || 'Unknown'} 
-                          {accounts.find(a => a.id === selectedTx.accountId)?.accountLast4 ? (
-                            (accounts.find(a => a.id === selectedTx.accountId) as any)?.type === 'CASH' 
-                              ? ` (${accounts.find(a => a.id === selectedTx.accountId)?.accountLast4})`
-                              : ` ••••${accounts.find(a => a.id === selectedTx.accountId)?.accountLast4}`
-                          ) : ''}
-                        </p>
-                      </div>
-                      <div className="col-span-2 pt-4 border-t border-[#EBEBEB] dark:border-[#222222]"><p className="text-[#525252] dark:text-[#A0A0A0] text-xs font-semibold uppercase tracking-[0.2em] mb-1.5">Note / Reason</p><p className="font-semibold text-[#111111] dark:text-[#F7F7F7] whitespace-pre-wrap">{selectedTx.note || '—'}</p></div>
+                 <div className="w-full bg-neutral-50 dark:bg-white/5 p-6 rounded-[24px] border border-brand-blue/5 mb-8">
+                    <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1">Amount</p>
+                    <h3 className={`text-4xl font-heading font-black tracking-tighter ${selectedTx.type === 'DEBIT' ? 'text-rose-500' : 'text-brand-green'}`}>
+                      {selectedTx.type === 'DEBIT' ? '-' : '+'}₹{Number(selectedTx.amount).toLocaleString()}
+                    </h3>
+                 </div>
 
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-            <div className="p-5 border-t border-[#EBEBEB] dark:border-[#222222] bg-white dark:bg-[#111111] flex flex-wrap gap-2 sticky bottom-0">
-              {isEditing ? (
-                <>
-                  <button onClick={() => setIsEditing(false)} className="px-5 py-2.5 text-[#222222] dark:text-[#F7F7F7] hover:bg-neutral-100 dark:hover:bg-[#222222] rounded-xl font-bold transition-colors mr-auto">Cancel</button>
-                  <button onClick={saveEdit} disabled={!editAmount} className="px-5 py-2.5 bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl font-bold hover:bg-black dark:hover:bg-neutral-200 transition-colors disabled:opacity-50">Save Changes</button>
-                </>
-              ) : (
-                <>
-                  <button onClick={() => handleDelete(selectedTx.id!)} className="px-4 py-2.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl font-bold transition-colors flex items-center gap-2"><Trash2 className="w-4 h-4" /> Delete</button>
-                  <div className="flex-1" />
-                  <button onClick={() => duplicateTransaction(selectedTx)} className="px-4 py-2.5 text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-100 dark:hover:bg-[#222222] rounded-xl font-bold transition-colors flex items-center gap-2 text-sm"><Copy className="w-4 h-4" /> Repeat</button>
-                  <button onClick={() => startEditing(selectedTx)} className="px-4 py-2.5 bg-[#222222] dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl font-bold hover:bg-black dark:hover:bg-neutral-200 transition-colors flex items-center gap-2 text-sm"><Edit3 className="w-4 h-4" /> Edit</button>
-                </>
-              )}
-            </div>
-          </div>
+                 {selectedTx.note && (
+                   <div className="w-full text-left mb-8 px-2">
+                      <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-2">Note / Description</p>
+                      <p className="text-sm font-bold text-brand-blue/80 dark:text-white/80 leading-relaxed italic border-l-4 border-brand-green/30 pl-4">
+                        "{selectedTx.note}"
+                      </p>
+                   </div>
+                 )}
+
+                 <div className="w-full grid grid-cols-2 gap-3">
+                    <button 
+                      onClick={() => {
+                        navigate(`/?edit=${selectedTx.id}`);
+                        setSelectedTx(null);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 py-4 bg-brand-blue text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-brand-blue/90 transition-all"
+                    >
+                      <Edit3 className="w-4 h-4" /> Edit Record
+                    </button>
+                    <button 
+                      onClick={() => deleteTransaction(selectedTx.id!)}
+                      className="flex-1 flex items-center justify-center gap-2 py-4 bg-rose-500/10 text-rose-500 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all overflow-hidden"
+                    >
+                      <Trash2 className="w-4 h-4" /> Delete
+                    </button>
+                 </div>
+              </div>
+           </div>
         </div>
       )}
     </div>
