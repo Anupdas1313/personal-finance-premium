@@ -254,6 +254,20 @@ export default function Dashboard() {
   const monthDelta = totalIncome - totalSpending;
   const totalBalance = balances.reduce((sum, acc) => sum + acc.currentBalance, 0);
 
+  const groupedAccounts = useMemo(() => {
+    const groups: Record<string, typeof balances> = {
+      'BANK': [],
+      'CASH': [],
+      'CREDIT_CARD': []
+    };
+    balances.forEach(acc => {
+      const type = (acc as any).type || 'BANK';
+      if (!groups[type]) groups[type] = [];
+      groups[type].push(acc);
+    });
+    return groups;
+  }, [balances]);
+
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
@@ -261,121 +275,147 @@ export default function Dashboard() {
     return 'Good Evening';
   }, []);
 
+  const renderAccountItem = (acc: any) => (
+    <div 
+      key={acc.id} 
+      className="p-3 mx-2 my-1 rounded-2xl flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-[#15151A] transition-colors group cursor-pointer border border-transparent hover:border-brand-blue/5 dark:hover:border-white/5" 
+      onClick={() => navigate('/accounts')}
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center overflow-hidden p-1 shadow-sm border border-[#EBEBEB] dark:border-white/10 shrink-0">
+          <BankLogo bankName={acc.bankName} type={acc.type} className="w-full h-full" />
+        </div>
+        <div className="min-w-0">
+          <p className="font-bold text-sm text-[#111111] dark:text-[#F7F7F7] truncate tracking-tight">{acc.bankName}</p>
+          <p className="text-[10px] text-[#525252] dark:text-[#A0A0A0] font-medium tracking-wide">
+            {acc.type === 'CASH' ? acc.accountLast4 : `**** ${acc.accountLast4}`}
+          </p>
+        </div>
+      </div>
+      <p className={`font-heading font-bold text-sm tracking-tighter ${acc.currentBalance < 0 ? 'text-brand-red' : 'text-brand-green'} dark:text-brand-cyan`}>
+        ₹{acc.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
+      </p>
+    </div>
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Greeting Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-semibold text-[#1A237E]/60 dark:text-[#A0A0A0] tracking-[0.1em] uppercase">{greeting},</p>
-          <h1 className="text-3xl font-heading font-semibold text-[#1A237E] dark:text-[#F7F7F7] leading-tight tracking-tight">Guest User 👋</h1>
+          <p className="text-[10px] font-bold text-[#1A237E]/40 dark:text-[#777777] tracking-[0.2em] uppercase">{greeting},</p>
+          <h1 className="text-2xl font-heading font-black text-[#1A237E] dark:text-[#F7F7F7] leading-tight tracking-tight">Guest User 👋</h1>
         </div>
 
         <div className="flex items-center gap-3">
           <div
             title="Guest User"
-            className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1A237E] to-[#4A4ABF] flex items-center justify-center text-white select-none shadow-lg cursor-pointer border-2 border-white dark:border-[#1A1A1E]"
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#1A237E] to-[#4A4ABF] flex items-center justify-center text-white select-none shadow-lg cursor-pointer border-2 border-white dark:border-[#1A1A1E]"
           >
-            <User className="w-6 h-6" />
+            <User className="w-5 h-5" />
           </div>
 
         </div>
       </div>
 
-
-
-
-      {/* Cash Flow Hero Card */}
+      {/* Cash Flow Hero Card - REDUCED SIZE */}
       <div 
-        className="relative overflow-hidden rounded-[28px] bg-[#F0F4FF] dark:bg-[#111111] p-6 shadow-[0_20px_50px_rgba(26,35,126,0.04)] border border-brand-blue/5 dark:border-white/5 group"
+        className="relative overflow-hidden rounded-[24px] bg-[#F4F7FF] dark:bg-[#0C0C0F] p-4 shadow-sm border border-brand-blue/5 dark:border-white/5 group"
       >
-        <div className="absolute top-0 right-0 w-48 h-48 bg-brand-blue/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
-
-        <div className="relative z-10 flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <h2 className="text-[10px] font-semibold text-brand-blue/60 dark:text-[#A0A0A0] tracking-[0.2em] uppercase">Cash Flow</h2>
-          </div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-brand-blue/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+        
+        <div className="relative z-10 flex items-center justify-between mb-4">
+          <h2 className="text-[9px] font-black text-brand-blue/40 dark:text-white/30 tracking-[0.2em] uppercase">Cash Flow</h2>
           <div className="relative" onClick={(e) => e.stopPropagation()}>
             <select
               value={timeFilter}
               onChange={(e) => setTimeFilter(e.target.value as any)}
-              className="appearance-none bg-white dark:bg-[#1A1A1A] hover:bg-neutral-50 text-brand-blue/60 dark:text-white/90 text-[9px] font-semibold uppercase tracking-[0.1em] px-3 py-1 rounded-full pr-7 cursor-pointer outline-none transition-colors border border-brand-blue/10"
+              className="appearance-none bg-white dark:bg-[#1A1A1A] text-brand-blue/60 dark:text-white/70 text-[8px] font-black uppercase tracking-[0.1em] px-2.5 py-1 rounded-lg pr-6 cursor-pointer outline-none transition-colors border border-brand-blue/5"
             >
               <option value="This Month">This Month</option>
               <option value="This Year">This Year</option>
               <option value="All Time">All Time</option>
             </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-brand-blue/30 pointer-events-none" />
+            <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-brand-blue/20 pointer-events-none" />
           </div>
         </div>
 
-        <div className="relative z-10 flex justify-between items-stretch mb-8 gap-6">
-          <div className="flex-1 py-2">
-            <p className="text-[10px] font-semibold text-rose-500/80 tracking-[0.2em] uppercase mb-2">Spending</p>
-            <p className="text-3xl font-heading font-semibold text-brand-blue dark:text-white tracking-tight">
+        <div className="relative z-10 flex justify-between items-center mb-5 px-1">
+          <div className="flex-1">
+            <p className="text-[8px] font-black text-rose-400 uppercase tracking-widest mb-1">Outflow</p>
+            <p className="text-xl font-heading font-black text-brand-blue dark:text-white tracking-tighter">
               ₹{totalSpending.toLocaleString('en-IN')}
             </p>
           </div>
           
-          <div className="w-[1px] bg-brand-blue/10 dark:bg-white/10 self-stretch my-2"></div>
+          <div className="w-px h-8 bg-brand-blue/5 dark:bg-white/5 mx-4"></div>
 
-          <div className="flex-1 text-right py-2">
-            <p className="text-[10px] font-semibold text-emerald-500/80 tracking-[0.2em] uppercase mb-2">Income</p>
-            <p className="text-3xl font-heading font-semibold text-brand-blue dark:text-white tracking-tight">
+          <div className="flex-1">
+            <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-1">Inflow</p>
+            <p className="text-xl font-heading font-black text-brand-blue dark:text-white tracking-tighter">
               ₹{totalIncome.toLocaleString('en-IN')}
             </p>
           </div>
         </div>
 
-        <div className="relative z-10 bg-white/60 dark:bg-white/5 border border-brand-blue/5 dark:border-white/10 rounded-2xl p-4 flex justify-between items-center backdrop-blur-sm">
+        <div className="relative z-10 bg-white/40 dark:bg-white/5 border border-white dark:border-white/5 rounded-2xl p-3 flex justify-between items-center backdrop-blur-sm">
           <div className="flex flex-col">
-            <p className="text-[10px] font-semibold text-brand-blue/50 dark:text-white/40 uppercase tracking-widest leading-none mb-1.5">Total Wealth</p>
+            <p className="text-[8px] font-black text-brand-blue/30 dark:text-white/20 uppercase tracking-widest leading-none mb-1">Total Liquidity</p>
             {timeFilter !== 'All Time' && (
-              <p className={`text-[9px] font-semibold ${monthDelta >= 0 ? 'text-emerald-500' : 'text-rose-500'} uppercase tracking-[0.1em]`}>
-                {monthDelta >= 0 ? '+' : ''}₹{monthDelta.toLocaleString('en-IN')} this {timeFilter === 'This Month' ? 'month' : 'year'}
+              <p className={`text-[8px] font-bold ${monthDelta >= 0 ? 'text-emerald-500' : 'text-rose-500'} uppercase tracking-tight`}>
+                {monthDelta >= 0 ? '↑' : '↓'} ₹{Math.abs(monthDelta).toLocaleString('en-IN')}
               </p>
             )}
           </div>
-          <p className={`text-xl font-heading font-semibold tracking-tight text-brand-blue dark:text-brand-cyan`}>
+          <p className={`text-lg font-heading font-black tracking-tighter text-brand-blue dark:text-brand-cyan`}>
             ₹{totalWealth.toLocaleString('en-IN')}
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
-        {/* Accounts List */}
-        <div className="bg-[#F9FBFF] dark:bg-[#0C0C0F] rounded-[28px] shadow-[0_8px_40px_rgba(26,35,126,0.08)] dark:shadow-none border border-brand-blue/5 dark:border-[#1A1A1E] overflow-hidden">
-          <div className="p-6 border-b border-[#EBEBEB] dark:border-[#1A1A1E] flex justify-between items-center">
-            <h2 className="text-xl font-heading font-semibold text-[#1A237E] dark:text-[#F7F7F7] tracking-tight">Your Accounts</h2>
-            <Link to="/accounts" className="text-sm font-semibold text-[#00A86B] dark:text-emerald-500/70 hover:underline transition-colors uppercase tracking-[0.2em]">Manage</Link>
-          </div>
+      {/* Partitioned Accounts List */}
+      <div className="bg-white dark:bg-[#0C0C0F] rounded-[24px] border border-neutral-100 dark:border-white/5 shadow-sm overflow-hidden mb-6">
+        <div className="p-5 flex justify-between items-center border-b border-neutral-50 dark:border-white/5">
+          <h2 className="text-base font-heading font-black text-brand-blue dark:text-white uppercase tracking-tight">Your Portfolio</h2>
+          <Link to="/accounts" className="text-[9px] font-black text-brand-green uppercase tracking-[0.2em] hover:opacity-70 transition-opacity pr-1">Manage</Link>
+        </div>
 
-
-          <div className="divide-y divide-[#EBEBEB] dark:divide-[#1A1A1E]">
-            {balances.length === 0 ? (
-              <div className="p-6 text-center text-[#717171] dark:text-[#A0A0A0] text-sm">No accounts added yet.</div>
-            ) : (
-              balances.map(acc => (
-                <div key={acc.id} className="p-4 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-[#15151A] transition-colors group cursor-pointer" onClick={() => navigate('/accounts')}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden p-1.5 shadow-sm border border-[#EBEBEB] dark:border-[#1A1A1E]">
-                      <BankLogo bankName={acc.bankName} type={(acc as any).type} className="w-full h-full" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-[#111111] dark:text-[#F7F7F7]">{acc.bankName}</p>
-                      <p className="text-xs text-[#525252] dark:text-[#A0A0A0] font-medium mt-0.5">
-                        {(acc as any).type === 'CASH' ? acc.accountLast4 : `**** ${acc.accountLast4}`}
-                      </p>
-                    </div>
+        <div className="pb-3 max-h-[400px] overflow-y-auto no-scrollbar">
+          {balances.length === 0 ? (
+            <div className="p-8 text-center text-neutral-400 text-xs font-bold uppercase tracking-widest">No accounts discovered</div>
+          ) : (
+            <div className="space-y-4 pt-2">
+              {groupedAccounts['BANK'].length > 0 && (
+                <div>
+                  <div className="px-5 mb-1 flex items-center gap-2">
+                    <Landmark className="w-3 h-3 text-brand-blue/30 dark:text-white/20" />
+                    <span className="text-[8px] font-black text-brand-blue/30 dark:text-white/20 uppercase tracking-[0.3em]">Bank Accounts</span>
                   </div>
-                  <p className={`font-heading font-semibold tracking-tight ${acc.currentBalance < 0 ? 'text-brand-red' : 'text-brand-green'} dark:text-brand-cyan`}>
-                    ₹{acc.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </p>
-
+                  {groupedAccounts['BANK'].map(renderAccountItem)}
                 </div>
-              ))
-            )}
-          </div>
+              )}
+
+              {groupedAccounts['CREDIT_CARD'].length > 0 && (
+                <div>
+                  <div className="px-5 mb-1 flex items-center gap-2">
+                    <CreditCard className="w-3 h-3 text-brand-blue/30 dark:text-white/20" />
+                    <span className="text-[8px] font-black text-brand-blue/30 dark:text-white/20 uppercase tracking-[0.3em]">Credit Lines</span>
+                  </div>
+                  {groupedAccounts['CREDIT_CARD'].map(renderAccountItem)}
+                </div>
+              )}
+
+              {groupedAccounts['CASH'].length > 0 && (
+                <div>
+                  <div className="px-5 mb-1 flex items-center gap-2">
+                    <Coins className="w-3 h-3 text-brand-blue/30 dark:text-white/20" />
+                    <span className="text-[8px] font-black text-brand-blue/30 dark:text-white/20 uppercase tracking-[0.3em]">Cash Wallets</span>
+                  </div>
+                  {groupedAccounts['CASH'].map(renderAccountItem)}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
