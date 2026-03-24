@@ -24,7 +24,6 @@ export default function Layout() {
     { name: 'Parse SMS', path: '/parse', icon: MessageSquareText },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
-e repository
 
   const allNavItems = [...mainNavItems, ...moreNavItems];
 
