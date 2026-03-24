@@ -189,56 +189,56 @@ export default function Transactions() {
     <motion.div 
       initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }} 
-      className="max-w-4xl mx-auto space-y-4 pb-32 px-2 md:px-0"
+      className="max-w-4xl mx-auto space-y-3 pb-32 px-2 md:px-0"
     >
-      {/* --- Page Header (Condensed) --- */}
-      <div className="flex items-center justify-between gap-4 py-2">
+      {/* --- Page Header (Super Condensed) --- */}
+      <div className="flex items-center justify-between gap-4 pt-1 pb-1">
         <div>
-          <h1 className="text-2xl font-heading font-black text-brand-blue dark:text-white tracking-tight">Transactions</h1>
-          <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-[0.2em]">Activity Log</p>
+          <h1 className="text-xl font-heading font-black text-brand-blue dark:text-white tracking-tight leading-none">Transactions</h1>
+          <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-[0.2em] mt-0.5">Activity History</p>
         </div>
         <button 
           onClick={handleExportPDF}
-          className="p-2.5 bg-brand-blue/5 dark:bg-white/5 text-brand-blue dark:text-white rounded-xl hover:bg-brand-blue/10 transition-all active:scale-95 border border-brand-blue/10"
+          className="p-1.5 bg-brand-blue/5 dark:bg-white/5 text-brand-blue dark:text-white rounded-lg hover:bg-brand-blue/10 transition-all active:scale-95 border border-brand-blue/10"
           title="Export Report"
         >
-          <Download className="w-4 h-4" />
+          <Download className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {/* --- Tiny Summary Row (Super Condensed) --- */}
-      <div className="bg-white dark:bg-[#0C0C0F] p-3 rounded-[24px] border border-neutral-100 dark:border-white/5 shadow-sm flex items-center justify-center gap-8">
-         <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg flex items-center justify-center text-emerald-600">
-              <ArrowDownLeft className="w-3.5 h-3.5" />
+      {/* --- Nano Summary Row --- */}
+      <div className="bg-white dark:bg-[#0C0C0F] p-2 rounded-[18px] border border-neutral-100 dark:border-white/5 shadow-sm flex items-center justify-center gap-6">
+         <div className="flex items-center gap-1.5">
+            <div className="w-5 h-5 bg-emerald-50 dark:bg-emerald-500/10 rounded-md flex items-center justify-center text-emerald-600">
+              <ArrowDownLeft className="w-3 h-3" />
             </div>
             <div>
-              <p className="text-[7px] font-black text-neutral-400 dark:text-white/40 uppercase tracking-[0.1em]">Inflow</p>
-              <h3 className="text-sm font-heading font-black text-emerald-600 tracking-tight">₹{totals.income.toLocaleString()}</h3>
+              <p className="text-[6px] font-black text-neutral-400 dark:text-white/40 uppercase tracking-[0.1em] leading-none">Inflow</p>
+              <h3 className="text-xs font-heading font-black text-emerald-600 tracking-tight">₹{totals.income.toLocaleString()}</h3>
             </div>
          </div>
-         <div className="w-px h-6 bg-neutral-100 dark:bg-white/5" />
-         <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-rose-50 dark:bg-rose-500/10 rounded-lg flex items-center justify-center text-rose-600">
-              <ArrowUpRight className="w-3.5 h-3.5" />
+         <div className="w-px h-4 bg-neutral-100 dark:bg-white/5" />
+         <div className="flex items-center gap-1.5">
+            <div className="w-5 h-5 bg-rose-50 dark:bg-rose-500/10 rounded-md flex items-center justify-center text-rose-600">
+              <ArrowUpRight className="w-3 h-3" />
             </div>
             <div>
-              <p className="text-[7px] font-black text-neutral-400 dark:text-white/40 uppercase tracking-[0.1em]">Outflow</p>
-              <h3 className="text-sm font-heading font-black text-rose-600 tracking-tight">₹{totals.expense.toLocaleString()}</h3>
+              <p className="text-[6px] font-black text-neutral-400 dark:text-white/40 uppercase tracking-[0.1em] leading-none">Outflow</p>
+              <h3 className="text-xs font-heading font-black text-rose-600 tracking-tight">₹{totals.expense.toLocaleString()}</h3>
             </div>
          </div>
       </div>
 
-      {/* --- Filter & Navigation Bar --- */}
-      <div className="sticky top-4 z-40 space-y-2 pointer-events-none">
-        <div className="pointer-events-auto bg-white/80 dark:bg-[#060608]/80 backdrop-blur-xl p-1.5 rounded-[20px] border border-neutral-200 dark:border-white/10 shadow-lg flex flex-col md:flex-row gap-2">
+      {/* --- Navigation & Filter Bar (Ultra Slim) --- */}
+      <div className="sticky top-2 z-40 space-y-1.5 pointer-events-none pb-1">
+        <div className="pointer-events-auto bg-white/90 dark:bg-[#060608]/90 backdrop-blur-xl p-1 rounded-[16px] border border-neutral-200 dark:border-white/10 shadow-lg flex flex-col md:flex-row gap-1.5">
           
-          <div className="flex bg-neutral-100 dark:bg-white/5 p-1 rounded-xl overflow-x-auto scrollbar-hide">
+          <div className="flex bg-neutral-100 dark:bg-white/5 p-0.5 rounded-lg overflow-x-auto scrollbar-hide shrink-0">
             {(['MONTH', 'YEAR', 'ALL', 'CUSTOM'] as const).map(g => (
               <button
                 key={g}
                 onClick={() => setGranularity(g)}
-                className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                className={`px-2.5 py-1 rounded-md text-[7px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                   granularity === g 
                     ? 'bg-white dark:bg-[#333333] text-brand-blue dark:text-white shadow-sm' 
                     : 'text-neutral-400 hover:text-neutral-500'
@@ -249,19 +249,19 @@ export default function Transactions() {
             ))}
           </div>
 
-          <div className="flex-1 flex gap-1.5">
+          <div className="flex-1 flex gap-1">
             <div className="relative flex-1 group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-neutral-400" />
               <input 
                 type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-8 bg-neutral-50 dark:bg-white/5 border border-transparent focus:border-neutral-200 dark:focus:border-white/10 pl-9 pr-3 rounded-lg text-[10px] font-bold text-brand-blue dark:text-white outline-none transition-all"
+                className="w-full h-7 bg-transparent border border-transparent focus:border-neutral-100 dark:focus:border-white/5 pl-7 pr-2 rounded-lg text-[9px] font-bold text-brand-blue dark:text-white outline-none transition-all"
               />
             </div>
             <button 
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className={`px-3 h-8 rounded-lg flex items-center justify-center gap-2 border transition-all ${isFilterOpen ? 'bg-brand-blue text-white border-brand-blue' : 'bg-white dark:bg-white/5 border-neutral-100 dark:border-white/5 text-neutral-400'}`}
+              className={`px-2.5 h-7 rounded-lg flex items-center justify-center gap-1.5 border transition-all ${isFilterOpen ? 'bg-brand-blue text-white border-brand-blue' : 'bg-transparent border-transparent text-neutral-400 hover:bg-neutral-50 dark:hover:bg-white/5'}`}
             >
-              <Filter className="w-3.5 h-3.5" />
+              <Filter className="w-3 h-3" />
             </button>
           </div>
         </div>
