@@ -352,15 +352,27 @@ export default function Accounts() {
                       </div>
                       
                       <div className="mt-4 pt-3 border-t border-brand-blue/5 dark:border-white/5 flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-emerald-500">
-                          <ArrowDownLeft className="w-2.5 h-2.5" />
-                          <span className="text-[9px] font-heading font-black">₹{(accountBreakdown[account.id!]?.inflow || 0).toLocaleString('en-IN')}</span>
+                        <div className="flex gap-4">
+                          <div className="flex items-center gap-1 text-emerald-500">
+                            <ArrowDownLeft className="w-2.5 h-2.5" />
+                            <span className="text-[9px] font-heading font-black">₹{(accountBreakdown[account.id!]?.inflow || 0).toLocaleString('en-IN')}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-rose-500">
+                            <ArrowUpRight className="w-2.5 h-2.5" />
+                            <span className="text-[9px] font-heading font-black">₹{(accountBreakdown[account.id!]?.outflow || 0).toLocaleString('en-IN')}</span>
+                          </div>
                         </div>
-                        <div className="w-px h-3 bg-neutral-100 dark:bg-white/5" />
-                        <div className="flex items-center gap-1 text-rose-500">
-                          <ArrowUpRight className="w-2.5 h-2.5" />
-                          <span className="text-[9px] font-heading font-black">₹{(accountBreakdown[account.id!]?.outflow || 0).toLocaleString('en-IN')}</span>
-                        </div>
+
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedAccountId(account.id!);
+                          }}
+                          className="w-6 h-6 rounded-full bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-brand-blue hover:bg-brand-blue/5 transition-all shadow-sm"
+                          title="View Ledger"
+                        >
+                          <History className="w-3 h-3" />
+                        </button>
                       </div>
                     </div>
                   );
