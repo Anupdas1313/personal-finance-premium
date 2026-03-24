@@ -368,10 +368,10 @@ export default function Accounts() {
                             e.stopPropagation();
                             setSelectedAccountId(account.id!);
                           }}
-                          className="w-6 h-6 rounded-full bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-brand-blue hover:bg-brand-blue/5 transition-all shadow-sm"
+                          className="w-7 h-7 rounded-full bg-brand-green/10 border border-brand-green/20 flex items-center justify-center text-brand-green hover:bg-brand-green hover:text-white transition-all shadow-sm"
                           title="View Ledger"
                         >
-                          <History className="w-3 h-3" />
+                          <History className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
