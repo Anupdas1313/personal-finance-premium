@@ -11,7 +11,7 @@ export default function Layout() {
 
   const mainNavItems = [
     { name: 'Home', path: '/', icon: LayoutDashboard },
-    { name: 'Analysis', path: '/transactions', icon: BarChart3 },
+    { name: 'Transactions', path: '/transactions', icon: BarChart3 },
     { name: 'Accounts', path: '/accounts', icon: Landmark },
   ];
 

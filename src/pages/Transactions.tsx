@@ -4,7 +4,8 @@ import { db, Transaction } from '../lib/db';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, addMonths, startOfYear, endOfYear, isSameDay } from 'date-fns';
 import { 
   X, Trash2, Filter, Search, Edit3, Download, 
-  ChevronLeft, ChevronRight, ListOrdered, ArrowDownLeft, ArrowUpRight, BarChart3
+  ChevronLeft, ChevronRight, ListOrdered, ArrowDownLeft, ArrowUpRight, BarChart3,
+  Calendar, Layers, Tag as TagIcon, MoreVertical
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
@@ -21,6 +22,18 @@ const CATEGORY_ICONS: Record<string, string> = {
   'Salary': '💰',
   'Transfer': '💸',
   'Other': '📝'
+};
+
+const CATEGORY_COLORS: Record<string, string> = {
+  'Food': 'bg-orange-50 text-orange-600 border-orange-100',
+  'Transport': 'bg-blue-50 text-blue-600 border-blue-100',
+  'Rent': 'bg-purple-50 text-purple-600 border-purple-100',
+  'Shopping': 'bg-pink-50 text-pink-600 border-pink-100',
+  'Bills': 'bg-amber-50 text-amber-600 border-amber-100',
+  'Entertainment': 'bg-indigo-50 text-indigo-600 border-indigo-100',
+  'Salary': 'bg-emerald-50 text-emerald-600 border-emerald-100',
+  'Transfer': 'bg-cyan-50 text-cyan-600 border-cyan-100',
+  'Other': 'bg-neutral-50 text-neutral-600 border-neutral-100'
 };
 
 export default function Transactions() {
@@ -107,370 +120,328 @@ export default function Transactions() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Analysis_${granularity}_${format(new Date(), 'dd_MMM_yy')}.csv`;
+    a.download = `Transactions_${granularity}_${format(new Date(), 'dd_MMM_yy')}.csv`;
     a.click();
   };
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
-    doc.text('Analysis History Report', 14, 15);
+    doc.setFontSize(18);
+    doc.setTextColor(26, 35, 126);
+    doc.text('Transactions History', 14, 20);
+    
     doc.setFontSize(10);
-    doc.text(`Period: ${granularity} (${format(new Date(), 'dd MMM yyyy')})`, 14, 22);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Generated on: ${format(new Date(), 'dd MMM yyyy, hh:mm a')}`, 14, 28);
+    doc.text(`Period: ${granularity} View`, 14, 33);
     
     autoTable(doc, {
-      startY: 30,
-      head: [['Date', 'Party', 'Category', 'Amount']],
+      startY: 40,
+      head: [['Date', 'Particulars', 'Category', 'Type', 'Amount']],
       body: filteredTxs.map(tx => [
-        format(new Date(tx.dateTime), 'dd MMM'),
-        tx.party?.toUpperCase() || 'N/A',
-        tx.category?.toUpperCase() || 'OTHER',
-        `${tx.type === 'DEBIT' ? '-' : '+'} ₹${tx.amount.toLocaleString()}`,
+        format(new Date(tx.dateTime), 'dd MMM yy'),
+        (tx.party || tx.category || 'N/A').toUpperCase(),
+        (tx.category || 'OTHER').toUpperCase(),
+        tx.type,
+        `₹${tx.amount.toLocaleString()}`,
       ]),
-      theme: 'grid',
-      headStyles: { fillColor: [26, 35, 126] } // brand-blue
+      theme: 'striped',
+      headStyles: { fillColor: [26, 35, 126], fontSize: 9, fontStyle: 'bold' },
+      bodyStyles: { fontSize: 8 }
     });
-    doc.save(`Analysis_${format(new Date(), 'yyyy_MM_dd')}.pdf`);
+    doc.save(`Transactions_${format(new Date(), 'yyyy_MM_dd')}.pdf`);
   };
 
   const deleteTransaction = async (id: number) => {
-    if (window.confirm('Delete this transaction permanently?')) {
+    if (window.confirm('Are you sure you want to delete this transaction record?')) {
       await db.transactions.delete(id);
       setSelectedTx(null);
     }
   };
 
-  const MonthSwitcher = () => (
-    <div className="flex items-center gap-4 bg-white/60 dark:bg-[#111111]/80 backdrop-blur-md p-2 rounded-2xl border border-brand-blue/5 dark:border-white/5 shadow-sm">
+  const MonthNavigator = () => (
+    <div className="flex items-center gap-3 bg-white dark:bg-[#111111] p-1.5 rounded-2xl border border-neutral-200 dark:border-white/5 shadow-sm">
       <button 
         onClick={() => setReferenceDate(subMonths(referenceDate, 1))}
-        className="p-2.5 bg-brand-blue/5 dark:bg-white/5 hover:bg-brand-blue/10 dark:hover:bg-white/10 rounded-xl transition-all active:scale-95 text-brand-blue dark:text-white"
+        className="p-2 hover:bg-neutral-50 dark:hover:bg-white/5 rounded-xl transition-all"
       >
-        <ChevronLeft className="w-5 h-5" />
+        <ChevronLeft className="w-5 h-5 text-neutral-500" />
       </button>
       
-      <div className="flex-1 text-center flex flex-col items-center justify-center">
-        <h2 className="text-sm font-heading font-black text-brand-blue dark:text-white uppercase tracking-[0.2em]">
-          {format(referenceDate, 'MMMM yyyy')}
-        </h2>
-        <p className="text-[9px] font-bold text-neutral-400 capitalize bg-neutral-100 dark:bg-white/5 px-2 py-0.5 rounded-full mt-1">Periodical Review</p>
+      <div className="flex-1 text-center font-heading font-black text-brand-blue dark:text-white uppercase tracking-widest text-xs">
+        {format(referenceDate, 'MMMM yyyy')}
       </div>
 
       <button 
         onClick={() => setReferenceDate(addMonths(referenceDate, 1))}
-        className="p-2.5 bg-brand-blue/5 dark:bg-white/5 hover:bg-brand-blue/10 dark:hover:bg-white/10 rounded-xl transition-all active:scale-95 text-brand-blue dark:text-white"
+        className="p-2 hover:bg-neutral-50 dark:hover:bg-white/5 rounded-xl transition-all"
       >
-        <ChevronRight className="w-5 h-5" />
+        <ChevronRight className="w-5 h-5 text-neutral-500" />
       </button>
     </div>
   );
 
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 10 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      transition={{ duration: 0.4 }}
-      className="space-y-6 pb-20"
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      className="max-w-4xl mx-auto space-y-8 pb-32"
     >
-      {/* 1. Header Section */}
-      <div className="flex justify-between items-center bg-gradient-to-r from-brand-blue/5 to-transparent dark:from-white/5 p-6 rounded-[32px] border border-brand-blue/5 dark:border-white/5">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-white dark:bg-[#111111] rounded-2xl shadow-lg border border-brand-blue/10 dark:border-white/10 flex items-center justify-center -rotate-6">
-            <BarChart3 className="w-6 h-6 text-brand-blue dark:text-brand-cyan" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tight">Analysis</h1>
-            <p className="text-[#1A237E]/60 dark:text-[#A0A0A0] font-semibold text-xs tracking-widest uppercase mt-0.5">Explore your data</p>
-          </div>
+      {/* --- Page Header --- */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-heading font-black text-brand-blue dark:text-white tracking-tight">Transactions</h1>
+          <p className="text-sm font-bold text-neutral-400 uppercase tracking-[0.2em] mt-1">Audit your financial history</p>
         </div>
         <div className="flex gap-2">
-            <button 
-              onClick={handleExportPDF}
-              className="p-3 bg-brand-blue/5 dark:bg-white/5 hover:bg-brand-blue/10 dark:hover:bg-white/10 rounded-xl transition-all text-brand-blue dark:text-[#F7F7F7]"
-              title="Export PDF"
-            >
-              <Download className="w-5 h-5" />
-            </button>
+           <button 
+             onClick={handleExportPDF}
+             className="flex items-center gap-2 px-5 py-3 bg-brand-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-[1.02] transition-all shadow-lg shadow-brand-blue/20 active:scale-95"
+           >
+             <Download className="w-4 h-4" /> Export Report
+           </button>
         </div>
       </div>
 
-      {/* 2. Insight Dashboard */}
+      {/* --- Visual Summary Chips --- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <motion.div whileHover={{ y: -2 }} className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-[#00A86B]/20 dark:to-[#00A86B]/5 p-5 rounded-[28px] border border-emerald-500/10 shadow-sm relative overflow-hidden">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-           <div className="flex justify-between items-start mb-4 relative z-10">
-             <div className="p-2 bg-emerald-500/10 rounded-xl">
-               <ArrowDownLeft className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-             </div>
-             <p className="text-[9px] font-black text-emerald-600/60 dark:text-emerald-400/60 uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded-md">Inflow</p>
+        <div className="bg-white dark:bg-[#0C0C0F] p-6 rounded-[32px] border border-neutral-100 dark:border-white/5 shadow-sm flex items-center gap-5">
+           <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600">
+             <ArrowDownLeft className="w-6 h-6" />
            </div>
-           <h3 className="text-2xl lg:text-3xl font-heading font-black text-emerald-600 dark:text-emerald-400 tracking-tighter relative z-10 block">
-             ₹{totals.income.toLocaleString()}
-           </h3>
-        </motion.div>
-
-        <motion.div whileHover={{ y: -2 }} className="bg-gradient-to-br from-rose-50 to-rose-100/50 dark:from-rose-500/20 dark:to-rose-500/5 p-5 rounded-[28px] border border-rose-500/10 shadow-sm relative overflow-hidden">
-           <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-rose-500/10 rounded-full blur-2xl pointer-events-none" />
-           <div className="flex justify-between items-start mb-4 relative z-10">
-             <div className="p-2 bg-rose-500/10 rounded-xl">
-               <ArrowUpRight className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-             </div>
-             <p className="text-[9px] font-black text-rose-600/60 dark:text-rose-400/60 uppercase tracking-widest bg-rose-500/10 px-2 py-1 rounded-md">Outflow</p>
+           <div>
+             <p className="text-[10px] font-black text-neutral-400 dark:text-white/40 uppercase tracking-widest">Total Inflow</p>
+             <h3 className="text-2xl font-heading font-black text-emerald-600 tracking-tighter">₹{totals.income.toLocaleString()}</h3>
            </div>
-           <h3 className="text-2xl lg:text-3xl font-heading font-black text-rose-600 dark:text-rose-400 tracking-tighter relative z-10 block">
-             ₹{totals.expense.toLocaleString()}
-           </h3>
-        </motion.div>
-
-        <motion.div whileHover={{ y: -2 }} className="bg-gradient-to-br from-brand-blue/5 to-transparent dark:from-brand-cyan/10 dark:to-transparent p-5 rounded-[28px] border border-brand-blue/10 dark:border-brand-cyan/20 shadow-sm relative overflow-hidden flex flex-col justify-between">
-           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-brand-blue/5 dark:bg-brand-cyan/5 rounded-full blur-3xl pointer-events-none" />
-           <p className="text-[10px] font-black text-brand-blue dark:text-white uppercase tracking-widest mb-2 relative z-10 opacity-70">Net Delta</p>
-           <h3 className={`text-3xl lg:text-4xl font-heading font-black tracking-tighter relative z-10 ${totals.income >= totals.expense ? 'text-brand-blue dark:text-brand-cyan' : 'text-rose-500'}`}>
-             {totals.income >= totals.expense ? '+' : '-'}₹{Math.abs(totals.income - totals.expense).toLocaleString()}
-           </h3>
-        </motion.div>
+        </div>
+        <div className="bg-white dark:bg-[#0C0C0F] p-6 rounded-[32px] border border-neutral-100 dark:border-white/5 shadow-sm flex items-center gap-5">
+           <div className="w-12 h-12 bg-rose-50 dark:bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-600">
+             <ArrowUpRight className="w-6 h-6" />
+           </div>
+           <div>
+             <p className="text-[10px] font-black text-neutral-400 dark:text-white/40 uppercase tracking-widest">Total Outflow</p>
+             <h3 className="text-2xl font-heading font-black text-rose-600 tracking-tighter">₹{totals.expense.toLocaleString()}</h3>
+           </div>
+        </div>
+        <div className="bg-brand-blue dark:bg-white p-6 rounded-[32px] shadow-xl shadow-brand-blue/10 dark:shadow-none flex items-center gap-5">
+           <div className="w-12 h-12 bg-white/20 dark:bg-black/10 rounded-2xl flex items-center justify-center text-white dark:text-black">
+             <BarChart3 className="w-6 h-6" />
+           </div>
+           <div className="text-white dark:text-black">
+             <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Net Profit/Loss</p>
+             <h3 className="text-2xl font-heading font-black tracking-tighter">₹{(totals.income - totals.expense).toLocaleString()}</h3>
+           </div>
+        </div>
       </div>
 
-      {/* 3. Immersive Controls Wrapper */}
-      <div className="sticky top-0 z-20 pt-4 pb-2 bg-white/80 dark:bg-[#060608]/80 backdrop-blur-xl border-b border-brand-blue/5 dark:border-white/5 mx-[-1rem] px-[1rem] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-        <div className="flex flex-col gap-3">
-          {/* Sub-header Filter Tabs */}
-          <div className="flex overflow-x-auto gap-2 scrollbar-hide">
+      {/* --- Filter & Navigation Bar --- */}
+      <div className="sticky top-4 z-40 space-y-3 pointer-events-none">
+        <div className="pointer-events-auto bg-white/80 dark:bg-[#060608]/80 backdrop-blur-xl p-3 rounded-[28px] border border-neutral-200 dark:border-white/10 shadow-xl flex flex-col md:flex-row gap-3">
+          
+          <div className="flex bg-neutral-100 dark:bg-white/5 p-1 rounded-2xl overflow-hidden min-w-fit">
             {(['MONTH', 'YEAR', 'ALL', 'CUSTOM'] as const).map(g => (
               <button
                 key={g}
                 onClick={() => setGranularity(g)}
-                className={`flex-1 min-w-[100px] py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all relative overflow-hidden ${
+                className={`px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
                   granularity === g 
-                    ? 'bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue shadow-lg scale-[1.02]' 
-                    : 'bg-white dark:bg-[#111111] text-neutral-400 hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] border border-neutral-200 dark:border-white/5'
+                    ? 'bg-white dark:bg-[#333333] text-brand-blue dark:text-white shadow-sm' 
+                    : 'text-neutral-400 hover:text-neutral-500'
                 }`}
               >
-                {g === 'CUSTOM' ? 'Range' : g}
-                {granularity === g && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-white/30" />}
+                {g}
               </button>
             ))}
           </div>
 
-          {/* Conditional Time Pickers */}
-          <AnimatePresence mode="wait">
-            {granularity === 'MONTH' && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="pt-1">
-                <MonthSwitcher />
-              </motion.div>
-            )}
-            {granularity === 'CUSTOM' && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="pt-1">
-                <div className="bg-white/60 dark:bg-[#111111]/80 backdrop-blur-md p-3 rounded-2xl border border-brand-blue/5 dark:border-white/10 flex items-center justify-between gap-4">
-                  <div className="flex-1 flex flex-col gap-1">
-                    <label className="text-[8px] font-black uppercase text-brand-blue/60 dark:text-white/40 tracking-widest pl-1">Starts From</label>
-                    <input type="date" value={customRange.start} onChange={(e) => setCustomRange(p => ({...p, start: e.target.value}))} className="bg-neutral-50 dark:bg-[#1A1A1A] px-3 py-2.5 rounded-xl text-xs font-bold text-brand-blue dark:text-white outline-none focus:ring-2 focus:ring-brand-cyan/50 transition-all border border-transparent" />
-                  </div>
-                  <div className="w-8 flex items-center justify-center opacity-30 mt-4"><ChevronRight className="w-5 h-5"/></div>
-                  <div className="flex-1 flex flex-col gap-1">
-                    <label className="text-[8px] font-black uppercase text-brand-blue/60 dark:text-white/40 tracking-widest pl-1">Ends Before</label>
-                    <input type="date" value={customRange.end} onChange={(e) => setCustomRange(p => ({...p, end: e.target.value}))} className="bg-neutral-50 dark:bg-[#1A1A1A] px-3 py-2.5 rounded-xl text-xs font-bold text-brand-blue dark:text-white outline-none focus:ring-2 focus:ring-brand-cyan/50 transition-all border border-transparent" />
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Deep Filters Search Bar */}
-          <div className="flex items-center gap-2 pt-2">
-            <button 
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className={`shrink-0 flex items-center justify-center w-12 h-12 rounded-[20px] transition-all border-2 ${isFilterOpen ? 'bg-brand-blue text-white border-brand-blue dark:bg-brand-cyan dark:text-brand-blue dark:border-brand-cyan shadow-lg' : 'bg-white dark:bg-[#111111] text-brand-blue dark:text-white/60 border-neutral-100 dark:border-white/5 hover:border-brand-blue/30'}`}
-            >
-              <Filter className="w-5 h-5" />
-            </button>
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-blue/40 dark:text-white/40" />
+          <div className="flex-1 flex gap-2">
+            <div className="relative flex-1 group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 transition-colors group-focus-within:text-brand-blue" />
               <input 
-                type="text" placeholder="Search insights, parties or notes..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-12 bg-white dark:bg-[#111111] pl-11 pr-4 rounded-[20px] shadow-sm border border-neutral-100 dark:border-white/5 text-sm font-bold text-brand-blue dark:text-white outline-none focus:ring-2 focus:ring-brand-blue/20 dark:focus:ring-brand-cyan/30 transition-all"
+                type="text" placeholder="Search by party, note or category..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full h-full bg-neutral-50 dark:bg-white/5 border border-transparent focus:border-neutral-200 dark:focus:border-white/10 pl-11 pr-4 rounded-xl text-xs font-bold text-brand-blue dark:text-white outline-none transition-all"
               />
             </div>
+            <button 
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className={`px-5 rounded-xl flex items-center justify-center gap-2 border-2 transition-all ${isFilterOpen ? 'bg-brand-blue text-white border-brand-blue' : 'bg-white dark:bg-white/5 border-neutral-100 dark:border-white/5 text-neutral-500'}`}
+            >
+              <Filter className="w-4 h-4" />
+              <span className="text-[9px] font-black uppercase hidden sm:block">Filters</span>
+            </button>
           </div>
         </div>
+
+        {/* --- Contextual Overlays --- */}
+        <AnimatePresence>
+          {granularity === 'MONTH' && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="pointer-events-auto max-w-xs ml-auto">
+              <MonthNavigator />
+            </motion.div>
+          )}
+
+          {isFilterOpen && (
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="pointer-events-auto bg-white dark:bg-[#111111] p-6 rounded-[32px] border border-neutral-200 dark:border-white/10 shadow-2xl grid grid-cols-1 sm:grid-cols-3 gap-6">
+               <div className="space-y-2">
+                  <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1"><Layers className="w-3 h-3 inline mr-1 opacity-40"/> Flow Type</label>
+                  <div className="flex bg-neutral-50 dark:bg-black/20 p-1.5 rounded-xl border border-neutral-100 dark:border-white/5">
+                    {(['ALL', 'DEBIT', 'CREDIT'] as const).map(t => (
+                      <button key={t} onClick={() => setTypeFilter(t)} className={`flex-1 py-2 rounded-lg text-[9px] font-black tracking-widest transition-all ${typeFilter === t ? 'bg-white dark:bg-white/10 shadow-sm text-brand-blue dark:text-white' : 'text-neutral-400'}`}>{t}</button>
+                    ))}
+                  </div>
+               </div>
+               <div className="space-y-2">
+                  <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1"><TagIcon className="w-3 h-3 inline mr-1 opacity-40"/> Category</label>
+                  <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-full bg-neutral-50 dark:bg-black/20 border-neutral-100 dark:border-white/5 border px-4 py-3 rounded-xl text-xs font-bold text-brand-blue dark:text-white outline-none">
+                    <option value="ALL">All Categories</option>
+                    {Object.keys(CATEGORY_ICONS).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                  </select>
+               </div>
+               <div className="space-y-2">
+                  <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1"><BarChart3 className="w-3 h-3 inline mr-1 opacity-40"/> Entity Account</label>
+                  <select value={accountFilter} onChange={(e) => setAccountFilter(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))} className="w-full bg-neutral-50 dark:bg-black/20 border-neutral-100 dark:border-white/5 border px-4 py-3 rounded-xl text-xs font-bold text-brand-blue dark:text-white outline-none">
+                    <option value="ALL">All Records</option>
+                    {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.bankName} (..{acc.accountLast4})</option>)}
+                  </select>
+               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      <AnimatePresence>
-        {isFilterOpen && (
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="p-5 bg-white shadow-xl dark:bg-[#111111] rounded-[28px] border border-brand-blue/10 dark:border-white/10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 relative z-10">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-brand-blue/50 dark:text-white/50 uppercase tracking-widest pl-1">Flow Direction</label>
-              <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-1 rounded-2xl">
-                {(['ALL', 'DEBIT', 'CREDIT'] as const).map(t => (
-                  <button key={t} onClick={() => setTypeFilter(t)} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${typeFilter === t ? 'bg-white dark:bg-[#333333] text-brand-blue dark:text-white shadow-sm' : 'text-neutral-400 hover:text-neutral-500'}`}>{t}</button>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-brand-blue/50 dark:text-white/50 uppercase tracking-widest pl-1">Entity Account</label>
-              <select value={accountFilter} onChange={(e) => setAccountFilter(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))} className="w-full h-10 bg-neutral-100 dark:bg-[#1A1A1A] px-4 rounded-2xl text-xs font-bold text-brand-blue dark:text-white border-none outline-none focus:ring-2 focus:ring-brand-cyan/50 appearance-none">
-                <option value="ALL">All Accounts Scope</option>
-                {accounts.map(acc => (
-                  <option key={acc.id} value={acc.id}>{acc.bankName} (..{acc.accountLast4})</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-brand-blue/50 dark:text-white/50 uppercase tracking-widest pl-1">Category</label>
-              <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-full h-10 bg-neutral-100 dark:bg-[#1A1A1A] px-4 rounded-2xl text-xs font-bold text-brand-blue dark:text-white border-none outline-none focus:ring-2 focus:ring-brand-cyan/50 appearance-none">
-                <option value="ALL">All Taxonomies</option>
-                {Object.keys(CATEGORY_ICONS).map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 4. Transactions Deep List */}
-      <div className="space-y-4">
+      {/* --- Transactions List --- */}
+      <div className="space-y-6">
         {filteredTxs.length === 0 ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-24 flex flex-col items-center justify-center opacity-40">
-            <div className="w-24 h-24 bg-neutral-200 dark:bg-white/5 rounded-[40px] flex items-center justify-center mb-6 rotate-12 scale-110 shadow-inner">
-               <ListOrdered className="w-10 h-10 text-brand-blue/30 dark:text-white/30" />
+          <div className="py-32 flex flex-col items-center justify-center opacity-30">
+            <div className="w-24 h-24 bg-neutral-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-6">
+              <ListOrdered className="w-10 h-10 text-neutral-300" />
             </div>
-            <p className="text-[12px] font-black text-brand-blue dark:text-white uppercase tracking-[0.3em]">No Intelligence Found</p>
-          </motion.div>
+            <p className="text-xs font-black uppercase tracking-[0.4em]">Zero Parameters Found</p>
+          </div>
         ) : (
           filteredTxs.map((tx, idx) => {
             const date = new Date(tx.dateTime);
             const showDateHeader = idx === 0 || !isSameDay(date, new Date(filteredTxs[idx-1].dateTime));
             
             return (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }} 
-                animate={{ opacity: 1, y: 0 }} 
-                transition={{ duration: 0.3, delay: idx * 0.02 }}
-                key={tx.id}
-              >
+              <div key={tx.id || idx} className="space-y-3">
                 {showDateHeader && (
-                  <div className="py-4">
-                     <span className="text-[10px] font-black text-brand-blue/60 dark:text-brand-cyan/80 uppercase tracking-[0.2em] bg-brand-blue/5 dark:bg-brand-cyan/10 px-4 py-1.5 rounded-full border border-brand-blue/10 dark:border-brand-cyan/20">
-                       {format(date, 'EEEE, dd MMMM yyyy')}
+                  <div className="pt-4 flex items-center gap-4">
+                     <span className="text-[10px] font-black text-neutral-400 dark:text-white/40 uppercase tracking-[0.3em] whitespace-nowrap">
+                       {format(date, 'EEEE, dd MMM yyyy')}
                      </span>
+                     <div className="h-px w-full bg-neutral-100 dark:bg-white/5" />
                   </div>
                 )}
-                <div 
+                
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }} 
+                  animate={{ opacity: 1, x: 0 }}
                   onClick={() => setSelectedTx(tx)}
-                  className="bg-white dark:bg-[#0C0C0F] p-4 rounded-[24px] border border-neutral-200 dark:border-white/5 flex flex-col md:flex-row md:items-center justify-between hover:border-brand-blue/30 dark:hover:border-brand-cyan/40 hover:shadow-[0_10px_30px_rgba(26,35,126,0.06)] dark:hover:shadow-[0_10px_30px_rgba(0,168,107,0.04)] transition-all cursor-pointer group hover:scale-[1.01]"
+                  className="bg-white dark:bg-[#0C0C0F] group hover:bg-neutral-50 dark:hover:bg-white/5 border border-neutral-100 dark:border-white/5 p-4 rounded-[28px] shadow-sm flex items-center gap-5 transition-all cursor-pointer active:scale-[0.99] hover:shadow-lg hover:shadow-black/5"
                 >
-                  <div className="flex items-center gap-5">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-brand-blue/5 dark:bg-white/5 rounded-2xl blur-md group-hover:bg-brand-blue/20 dark:group-hover:bg-brand-cyan/20 transition-all opacity-0 group-hover:opacity-100" />
-                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl bg-neutral-50 dark:bg-[#1A1A1A] shadow-sm border border-neutral-100 dark:border-white/5 relative z-10 transition-transform group-hover:scale-105">
-                        {CATEGORY_ICONS[tx.category || 'Other'] || '📝'}
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="font-heading font-black text-brand-blue dark:text-white text-[15px] md:text-lg leading-tight tracking-tight mb-1 group-hover:text-brand-cyan transition-colors">
-                        {tx.party || tx.category || 'N/A'}
-                      </h4>
-                      <div className="flex items-center gap-2">
-                         <span className="bg-brand-blue/5 dark:bg-white/5 px-2 py-0.5 rounded-md text-[9px] font-bold text-brand-blue/70 dark:text-white/50 uppercase tracking-widest">{format(date, 'hh:mm a')}</span>
-                         <span className="bg-neutral-100 dark:bg-white/5 px-2 py-0.5 rounded-md text-[9px] font-black text-neutral-500 dark:text-white/40 uppercase tracking-widest">{tx.category}</span>
-                      </div>
-                    </div>
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl border ${CATEGORY_COLORS[tx.category || 'Other'] || 'bg-neutral-50'} transition-transform group-hover:scale-110 duration-500`}>
+                    {CATEGORY_ICONS[tx.category || 'Other'] || '📝'}
                   </div>
-                  <div className="mt-4 md:mt-0 text-right flex flex-row md:flex-col justify-between items-center md:items-end">
-                    <div className="flex items-center gap-2 md:hidden">
-                       <span className="px-2 py-1 rounded bg-neutral-100 dark:bg-white/5 text-[9px] font-black uppercase text-neutral-500">Amount</span>
-                    </div>
-                    <p className={`font-heading font-black text-xl lg:text-2xl tracking-tighter ${tx.type === 'DEBIT' ? 'text-rose-500' : 'text-brand-green'}`}>
-                      {tx.type === 'DEBIT' ? '-' : '+'}₹{Number(tx.amount).toLocaleString()}
-                    </p>
-                    {tx.note && (
-                      <p className="text-[10px] font-bold text-neutral-400 dark:text-white/30 truncate max-w-[150px] uppercase hidden md:block mt-1 group-hover:text-brand-blue/60 transition-colors">"{tx.note}"</p>
-                    )}
+                  
+                  <div className="flex-1 min-w-0">
+                     <div className="flex items-center gap-2 mb-1">
+                        <h4 className="text-base font-black text-brand-blue dark:text-white truncate uppercase tracking-tight leading-tight">
+                          {tx.party || tx.category || 'Untitled'}
+                        </h4>
+                        {tx.isPersonalExpense && <span className="w-1.5 h-1.5 rounded-full bg-brand-blue animate-pulse" />}
+                     </div>
+                     <div className="flex items-center gap-3">
+                        <span className="text-[9px] font-bold text-neutral-400 tracking-widest uppercase">{format(date, 'hh:mm a')}</span>
+                        <div className="w-1 h-1 rounded-full bg-neutral-200" />
+                        <span className="text-[9px] font-black text-brand-blue/40 dark:text-white/30 tracking-widest uppercase">{tx.category}</span>
+                     </div>
                   </div>
-                </div>
-              </motion.div>
+
+                  <div className="text-right">
+                     <p className={`text-xl font-heading font-black tracking-tighter ${tx.type === 'DEBIT' ? 'text-rose-500' : 'text-emerald-500'}`}>
+                       {tx.type === 'DEBIT' ? '-' : '+'}₹{Number(tx.amount).toLocaleString()}
+                     </p>
+                     {tx.note && <p className="text-[8px] font-bold text-neutral-400 truncate max-w-[100px] uppercase mt-0.5 ml-auto">"{tx.note}"</p>}
+                  </div>
+                  
+                  <div className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                     <MoreVertical className="w-4 h-4 text-neutral-300" />
+                  </div>
+                </motion.div>
+              </div>
             );
           })
         )}
       </div>
 
-      {/* 5. Deep Detail Modal */}
+      {/* --- Detail Backdrop Drawer --- */}
       <AnimatePresence>
         {selectedTx && (
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-brand-blue/30 dark:bg-black/60 backdrop-blur-md z-[100] flex items-end md:items-center justify-center p-0 md:p-6"
-          >
-             <motion.div 
-                initial={{ y: "100%", opacity: 0, scale: 0.95 }}
-                animate={{ y: 0, opacity: 1, scale: 1 }}
-                exit={{ y: "100%", opacity: 0, transition: { ease: "easeInOut", duration: 0.2 } }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="bg-white dark:bg-[#0C0C0F] w-full max-w-md rounded-t-[40px] md:rounded-[40px] p-8 shadow-2xl relative border-t md:border border-white/20"
-             >
-                <button 
-                  onClick={() => setSelectedTx(null)}
-                  className="absolute top-6 right-6 w-10 h-10 rounded-full bg-neutral-100 dark:bg-[#1A1A1A] hover:bg-neutral-200 dark:hover:bg-white/10 flex items-center justify-center text-neutral-500 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+          <>
+            <motion.div 
+               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+               onClick={() => setSelectedTx(null)}
+               className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100]"
+            />
+            <motion.div 
+               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+               className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0C0C0F] z-[101] rounded-t-[40px] p-10 max-w-2xl mx-auto shadow-2xl border-t border-white/10"
+            >
+               <div className="w-16 h-1.5 bg-neutral-100 dark:bg-white/10 rounded-full mx-auto mb-10" />
+               
+               <div className="flex items-start justify-between mb-8">
+                  <div className="flex items-center gap-6">
+                    <div className="w-20 h-20 bg-neutral-50 dark:bg-white/5 rounded-[32px] flex items-center justify-center text-4xl shadow-inner border border-neutral-100 dark:border-white/10">
+                       {CATEGORY_ICONS[selectedTx.category || 'Other'] || '📝'}
+                    </div>
+                    <div>
+                       <span className="text-[10px] font-black text-brand-blue/40 dark:text-white/30 uppercase tracking-[0.4em] block mb-2">{selectedTx.category} Ledger</span>
+                       <h2 className="text-3xl font-heading font-black text-brand-blue dark:text-white uppercase tracking-tight">{selectedTx.party || 'Unspecified Transaction'}</h2>
+                       <p className="text-xs font-bold text-neutral-400 mt-1 uppercase tracking-widest">{format(new Date(selectedTx.dateTime), 'EEEE, dd MMMM yyyy, hh:mm a')}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setSelectedTx(null)} className="p-3 bg-neutral-50 dark:bg-white/5 rounded-full text-neutral-400 hover:text-rose-500 transition-colors">
+                    <X className="w-6 h-6" />
+                  </button>
+               </div>
 
-                <div className="flex flex-col items-center text-center mt-4">
-                   <div className="relative">
-                      <div className={`absolute inset-0 rounded-[32px] blur-xl opacity-50 ${selectedTx.type === 'DEBIT' ? 'bg-rose-500/20' : 'bg-brand-green/20'}`} />
-                      <div className={`w-24 h-24 rounded-[32px] flex items-center justify-center text-5xl mb-6 relative z-10 border shadow-lg ${selectedTx.type === 'DEBIT' ? 'bg-rose-50 dark:bg-rose-500/10 border-rose-500/20' : 'bg-brand-green/10 dark:bg-brand-green/10 border-brand-green/20'}`}>
-                        {CATEGORY_ICONS[selectedTx.category || 'Other'] || '📝'}
-                      </div>
-                   </div>
-                   <h2 className="text-3xl font-heading font-black text-brand-blue dark:text-white uppercase tracking-tight mb-2">
-                     {selectedTx.party || selectedTx.category || 'Detail View'}
-                   </h2>
-                   <div className="flex items-center gap-2 mb-8">
-                      <span className="bg-neutral-100 dark:bg-white/5 text-neutral-500 dark:text-white/60 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full">{selectedTx.category}</span>
-                      <span className="bg-neutral-100 dark:bg-white/5 text-neutral-500 dark:text-white/60 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full">{format(new Date(selectedTx.dateTime), 'dd MMM yy')}</span>
-                   </div>
+               <div className="bg-neutral-50 dark:bg-white/5 p-8 rounded-[40px] border border-neutral-200/50 dark:border-white/5 mb-10 text-center relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-brand-blue/5 rounded-full blur-3xl pointer-events-none" />
+                  <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3">Transaction Value</p>
+                  <h3 className={`text-6xl font-heading font-black tracking-tighter ${selectedTx.type === 'DEBIT' ? 'text-rose-600' : 'text-emerald-600'}`}>
+                    {selectedTx.type === 'DEBIT' ? '-' : '+'}₹{Number(selectedTx.amount).toLocaleString()}
+                  </h3>
+               </div>
 
-                   <div className="w-full bg-gradient-to-br from-neutral-50 to-neutral-100/50 dark:from-[#111111] dark:to-black p-6 rounded-[32px] border border-neutral-200 dark:border-white/10 mb-8 relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-brand-blue/5 dark:bg-white/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-                      <p className="text-[10px] font-black text-brand-blue/50 dark:text-white/40 uppercase tracking-widest mb-1">Assessed Value</p>
-                      <h3 className={`text-5xl font-heading font-black tracking-tighter ${selectedTx.type === 'DEBIT' ? 'text-rose-500' : 'text-brand-green'}`}>
-                        {selectedTx.type === 'DEBIT' ? '-' : '+'}₹{Number(selectedTx.amount).toLocaleString()}
-                      </h3>
-                   </div>
+               {selectedTx.note && (
+                 <div className="mb-10 px-4">
+                   <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                     <Edit3 className="w-3.5 h-3.5" /> Additional Notes
+                   </p>
+                   <p className="text-lg font-bold text-brand-blue/80 dark:text-white/80 italic leading-relaxed pl-6 border-l-4 border-brand-blue/20">
+                     "{selectedTx.note}"
+                   </p>
+                 </div>
+               )}
 
-                   {selectedTx.note && (
-                     <div className="w-full text-left mb-10 px-4">
-                        <p className="text-[9px] font-black text-brand-blue/40 dark:text-white/30 uppercase tracking-widest mb-2 flex items-center gap-2 border-b border-brand-blue/5 dark:border-white/5 pb-2">
-                          <Edit3 className="w-3 h-3"/> Description Node
-                        </p>
-                        <p className="text-base font-bold text-brand-blue/90 dark:text-white/90 leading-relaxed italic border-l-4 border-brand-blue/30 dark:border-brand-cyan/50 pl-4 mt-3">
-                          "{selectedTx.note}"
-                        </p>
-                     </div>
-                   )}
-
-                   <div className="w-full flex flex-col gap-3">
-                      <button 
-                        onClick={() => {
-                          navigate(`/?edit=${selectedTx.id}`);
-                          setSelectedTx(null);
-                        }}
-                        className="w-full flex items-center justify-center gap-2 py-4 bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:opacity-90 transition-all hover:scale-[1.02] shadow-xl shadow-brand-blue/20 dark:shadow-brand-cyan/20"
-                      >
-                        <Edit3 className="w-4 h-4" /> Edit Parameters
-                      </button>
-                      <button 
-                        onClick={() => deleteTransaction(selectedTx.id!)}
-                        className="w-full flex items-center justify-center gap-2 py-4 bg-rose-500/10 text-rose-500 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-rose-500 hover:text-white transition-all overflow-hidden"
-                      >
-                        <Trash2 className="w-4 h-4" /> Delete Record
-                      </button>
-                   </div>
-                </div>
-             </motion.div>
-          </motion.div>
+               <div className="grid grid-cols-2 gap-4">
+                 <button 
+                   onClick={() => { navigate(`/?edit=${selectedTx.id}`); setSelectedTx(null); }}
+                   className="py-5 bg-brand-blue text-white rounded-3xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:opacity-90 transition-opacity shadow-xl shadow-brand-blue/20"
+                 >
+                   <Edit3 className="w-5 h-5" /> Edit Record
+                 </button>
+                 <button 
+                   onClick={() => deleteTransaction(selectedTx.id!)}
+                   className="py-5 bg-rose-50 text-rose-600 rounded-3xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-rose-100 transition-colors"
+                 >
+                   <Trash2 className="w-5 h-5" /> Delete File
+                 </button>
+               </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </motion.div>
