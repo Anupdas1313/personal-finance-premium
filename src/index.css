@@ -64,14 +64,3 @@ select option {
   color: WindowText;
   background-color: Window;
 }
-
-/* Receipt scanning animation */
-@keyframes scan-line {
-  0% { top: 0; opacity: 1; }
-  50% { opacity: 0.6; }
-  100% { top: 100%; opacity: 1; }
-}
-
-.animate-scan-line {
-  animation: scan-line 1.5s ease-in-out infinite;
-}
