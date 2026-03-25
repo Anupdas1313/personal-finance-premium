@@ -278,23 +278,31 @@ export default function Dashboard() {
   const renderAccountItem = (acc: any) => (
     <div 
       key={acc.id} 
-      className="p-3 mx-2 my-1 rounded-2xl flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-[#15151A] transition-colors group cursor-pointer border border-transparent hover:border-brand-blue/5 dark:hover:border-white/5" 
+      className="p-3 mb-1.5 rounded-2xl flex items-center justify-between bg-white/50 dark:bg-white/[0.04] hover:bg-white/80 dark:hover:bg-white/[0.08] transition-all group cursor-pointer border border-transparent hover:border-brand-blue/5 dark:hover:border-white/5 shadow-sm active:scale-[0.99]" 
       onClick={() => navigate('/accounts')}
     >
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center overflow-hidden p-1 shadow-sm border border-[#EBEBEB] dark:border-white/10 shrink-0">
+        <div className="w-9 h-9 bg-white dark:bg-neutral-800 rounded-xl flex items-center justify-center overflow-hidden p-1 shadow-sm border border-[#EBEBEB] dark:border-white/10 shrink-0 group-hover:scale-105 transition-transform">
           <BankLogo bankName={acc.bankName} type={acc.type} className="w-full h-full" />
         </div>
         <div className="min-w-0">
-          <p className="font-bold text-sm text-[#111111] dark:text-[#F7F7F7] truncate tracking-tight">{acc.bankName}</p>
-          <p className="text-[10px] text-[#525252] dark:text-[#A0A0A0] font-medium tracking-wide">
-            {acc.type === 'CASH' ? acc.accountLast4 : `**** ${acc.accountLast4}`}
-          </p>
+          <p className="font-bold text-xs text-[#111111] dark:text-[#F7F7F7] truncate tracking-tight">{acc.bankName}</p>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] text-neutral-400 dark:text-neutral-500 font-bold uppercase tracking-widest">
+              {acc.type === 'CASH' ? 'Liquid' : `**** ${acc.accountLast4}`}
+            </span>
+            {acc.currentBalance < 1000 && acc.type !== 'CREDIT_CARD' && (
+              <span className="w-1 h-1 rounded-full bg-brand-red animate-pulse"></span>
+            )}
+          </div>
         </div>
       </div>
-      <p className={`font-heading font-bold text-sm tracking-tighter ${acc.currentBalance < 0 ? 'text-brand-red' : 'text-brand-green'} dark:text-brand-cyan`}>
-        ₹{acc.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
-      </p>
+      <div className="text-right">
+        <p className={`font-heading font-black text-sm tracking-tighter ${acc.currentBalance < 0 ? 'text-brand-red' : 'text-brand-green'} dark:text-brand-cyan`}>
+          ₹{acc.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
+        </p>
+        <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest leading-none mt-0.5">Balance</p>
+      </div>
     </div>
   );
 
@@ -373,50 +381,80 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Partitioned Accounts List */}
-      <div className="bg-white dark:bg-[#0C0C0F] rounded-[24px] border border-neutral-100 dark:border-white/5 shadow-sm overflow-hidden mb-6">
-        <div className="p-5 flex justify-between items-center border-b border-neutral-50 dark:border-white/5">
-          <h2 className="text-base font-heading font-black text-brand-blue dark:text-white uppercase tracking-tight">Your Portfolio</h2>
-          <Link to="/accounts" className="text-[9px] font-black text-brand-green uppercase tracking-[0.2em] hover:opacity-70 transition-opacity pr-1">Manage</Link>
+      {/* Improved Partitioned Portfolio */}
+      <div className="space-y-4 mb-10">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-sm font-heading font-black text-brand-blue dark:text-white uppercase tracking-tight flex items-center gap-2">
+            Portfolio <span className="w-1.5 h-1.5 rounded-full bg-brand-green"></span>
+          </h2>
+          <Link to="/accounts" className="text-[10px] font-black text-brand-green bg-brand-green/5 px-2.5 py-1 rounded-lg uppercase tracking-widest hover:bg-brand-green/10 transition-all">Manage All</Link>
         </div>
 
-        <div className="pb-3 max-h-[400px] overflow-y-auto no-scrollbar">
-          {balances.length === 0 ? (
-            <div className="p-8 text-center text-neutral-400 text-xs font-bold uppercase tracking-widest">No accounts discovered</div>
-          ) : (
-            <div className="space-y-4 pt-2">
-              {groupedAccounts['BANK'].length > 0 && (
-                <div>
-                  <div className="px-5 mb-1 flex items-center gap-2">
-                    <Landmark className="w-3 h-3 text-brand-blue/30 dark:text-white/20" />
-                    <span className="text-[8px] font-black text-brand-blue/30 dark:text-white/20 uppercase tracking-[0.3em]">Bank Accounts</span>
-                  </div>
+        {balances.length === 0 ? (
+          <div className="bg-white dark:bg-[#0C0C0F] p-8 text-center text-neutral-400 text-xs font-bold uppercase tracking-widest rounded-3xl border border-dashed border-neutral-200 dark:border-white/5">No accounts discovered</div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3">
+            {/* Bank Category Card */}
+            {groupedAccounts['BANK'].length > 0 && (
+              <div className="bg-[#F8F9FF] dark:bg-[#0C0C0F] rounded-[28px] p-1 border border-brand-blue/5 dark:border-white/5 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 flex justify-between items-center bg-white/40 dark:bg-white/[0.02] rounded-[24px] mb-1">
+                   <div className="flex items-center gap-2.5">
+                     <div className="w-6 h-6 rounded-lg bg-brand-blue/5 dark:bg-brand-blue/10 flex items-center justify-center">
+                       <Landmark className="w-3.5 h-3.5 text-brand-blue dark:text-brand-cyan" />
+                     </div>
+                     <span className="text-[10px] font-black text-brand-blue/60 dark:text-white/40 uppercase tracking-[0.2em]">Checking & Savings</span>
+                   </div>
+                   <span className="text-xs font-heading font-black text-brand-blue dark:text-white tracking-tighter">
+                     ₹{groupedAccounts['BANK'].reduce((sum, a) => sum + (a.currentBalance || 0), 0).toLocaleString('en-IN')}
+                   </span>
+                </div>
+                <div className="px-1 pb-1">
                   {groupedAccounts['BANK'].map(renderAccountItem)}
                 </div>
-              )}
+              </div>
+            )}
 
-              {groupedAccounts['CREDIT_CARD'].length > 0 && (
-                <div>
-                  <div className="px-5 mb-1 flex items-center gap-2">
-                    <CreditCard className="w-3 h-3 text-brand-blue/30 dark:text-white/20" />
-                    <span className="text-[8px] font-black text-brand-blue/30 dark:text-white/20 uppercase tracking-[0.3em]">Credit Lines</span>
-                  </div>
+            {/* Credit Cards & Liabilites Card */}
+            {groupedAccounts['CREDIT_CARD'].length > 0 && (
+              <div className="bg-[#FFF8F8] dark:bg-[#0C0C0F] rounded-[28px] p-1 border border-brand-red/5 dark:border-white/5 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 flex justify-between items-center bg-white/40 dark:bg-white/[0.02] rounded-[24px] mb-1">
+                   <div className="flex items-center gap-2.5">
+                     <div className="w-6 h-6 rounded-lg bg-rose-500/5 dark:bg-rose-500/10 flex items-center justify-center">
+                       <CreditCard className="w-3.5 h-3.5 text-rose-500" />
+                     </div>
+                     <span className="text-[10px] font-black text-rose-500/60 dark:text-rose-500/40 uppercase tracking-[0.2em]">Credit Lines</span>
+                   </div>
+                   <span className="text-xs font-heading font-black text-rose-500 dark:text-rose-400 tracking-tighter">
+                     ₹{groupedAccounts['CREDIT_CARD'].reduce((sum, a) => sum + (a.currentBalance || 0), 0).toLocaleString('en-IN')}
+                   </span>
+                </div>
+                <div className="px-1 pb-1">
                   {groupedAccounts['CREDIT_CARD'].map(renderAccountItem)}
                 </div>
-              )}
+              </div>
+            )}
 
-              {groupedAccounts['CASH'].length > 0 && (
-                <div>
-                  <div className="px-5 mb-1 flex items-center gap-2">
-                    <Coins className="w-3 h-3 text-brand-blue/30 dark:text-white/20" />
-                    <span className="text-[8px] font-black text-brand-blue/30 dark:text-white/20 uppercase tracking-[0.3em]">Cash Wallets</span>
-                  </div>
+            {/* Cash Wallets Card */}
+            {groupedAccounts['CASH'].length > 0 && (
+              <div className="bg-[#F8FFF9] dark:bg-[#0C0C0F] rounded-[28px] p-1 border border-brand-green/5 dark:border-white/5 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 flex justify-between items-center bg-white/40 dark:bg-white/[0.02] rounded-[24px] mb-1">
+                   <div className="flex items-center gap-2.5">
+                     <div className="w-6 h-6 rounded-lg bg-brand-green/5 dark:bg-brand-green/10 flex items-center justify-center">
+                       <Coins className="w-3.5 h-3.5 text-brand-green" />
+                     </div>
+                     <span className="text-[10px] font-black text-brand-green/60 dark:text-brand-green/40 uppercase tracking-[0.2em]">Cash & Wallets</span>
+                   </div>
+                   <span className="text-xs font-heading font-black text-brand-green dark:text-brand-green tracking-tighter">
+                     ₹{groupedAccounts['CASH'].reduce((sum, a) => sum + (a.currentBalance || 0), 0).toLocaleString('en-IN')}
+                   </span>
+                </div>
+                <div className="px-1 pb-1">
                   {groupedAccounts['CASH'].map(renderAccountItem)}
                 </div>
-              )}
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Manual Entry Modal - Full Screen Restored */}

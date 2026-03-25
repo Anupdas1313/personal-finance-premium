@@ -138,9 +138,28 @@ export default function Accounts() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-4xl font-heading font-semibold text-brand-blue dark:text-[#F7F7F7] tracking-tight">Accounts</h1>
+    <div className="space-y-8 pb-10">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-1">
+        <div>
+          <h1 className="text-4xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter mb-1">Accounts</h1>
+          <div className="flex items-center gap-3">
+             <div className="flex flex-col">
+               <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest leading-none mb-1">Total Net Worth</span>
+               <p className="text-xl font-heading font-black text-brand-blue dark:text-brand-cyan tracking-tighter">
+                 ₹{Object.values(accountBreakdown).reduce((sum, b) => sum + (b.currentBalance || 0), 0).toLocaleString('en-IN')}
+               </p>
+             </div>
+             <div className="w-px h-8 bg-neutral-100 dark:bg-white/10 mx-1" />
+             <div className="flex flex-col">
+               <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest leading-none mb-1">Total Liquid</span>
+               <p className="text-xl font-heading font-black text-brand-green tracking-tighter">
+                 ₹{(Object.entries(accountBreakdown)
+                    .filter(([id]) => accounts.find(a => a.id === Number(id))?.type !== 'CREDIT_CARD')
+                    .reduce((sum, [, b]) => sum + (b.currentBalance || 0), 0)).toLocaleString('en-IN')}
+               </p>
+             </div>
+          </div>
+        </div>
 
         <button
           onClick={() => {
@@ -150,10 +169,10 @@ export default function Accounts() {
               setIsAdding(true);
             }
           }}
-          className="flex items-center gap-2 px-6 py-3 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl hover:bg-brand-green/90 hover:ring-2 hover:ring-brand-cyan transition-all font-semibold shadow-lg shadow-brand-green/10 active:scale-95"
+          className="flex items-center gap-2 px-6 py-3 bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue rounded-2xl hover:brightness-110 active:scale-95 transition-all font-black uppercase tracking-widest text-[11px] shadow-xl shadow-brand-green/20"
         >
-          <Plus className="w-5 h-5" />
-          {isAdding && !editingAccountId ? 'Cancel' : 'Add New'}
+          {isAdding && !editingAccountId ? <Plus className="w-4 h-4 rotate-45" /> : <Plus className="w-4 h-4" />}
+          {isAdding && !editingAccountId ? 'Close Form' : 'Add Account'}
         </button>
       </div>
 
@@ -295,23 +314,23 @@ export default function Accounts() {
           const total = getGroupTotal(accList);
           
           return (
-            <div key={type} className="pt-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <div className="flex items-center gap-4 px-1">
-                <div className={`flex items-center gap-3 px-6 py-3 rounded-full bg-[#00A86B] dark:bg-[#F7F7F7] shadow-[0_8px_30px_rgba(0,168,107,0.2)] dark:shadow-none`}>
-                  <div className="text-white dark:text-[#00A86B] shrink-0">{icon}</div>
-                  <div className="flex flex-col">
-                    <h2 className="text-[10px] font-heading font-black text-white dark:text-[#00A86B] uppercase tracking-[0.25em] leading-none mb-0.5 whitespace-nowrap">{title}</h2>
-                    <span className="text-[7px] font-bold text-white/60 dark:text-[#00A86B]/60 uppercase tracking-widest">{accList.length} Connected</span>
+            <div key={type} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-2xl bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 flex items-center justify-center shadow-sm ${color}`}>
+                    {icon}
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-heading font-black text-brand-blue dark:text-white uppercase tracking-tight leading-none mb-1">{title}</h2>
+                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em]">{accList.length} Accounts Connected</span>
                   </div>
                 </div>
                 
-                <div className="flex-1 h-[2px] bg-gradient-to-r from-[#00A86B]/20 via-[#00A86B]/5 to-transparent dark:from-white/20 dark:via-white/5 dark:to-transparent" />
-                
-                <div className="text-right pl-4">
-                  <p className="text-[8px] font-black text-neutral-400 uppercase tracking-widest mb-0.5">Section Balance</p>
-                  <p className={`text-xl font-heading font-black tracking-tighter ${total >= 0 ? 'text-[#00A86B] dark:text-white' : 'text-brand-red'}`}>
-                    ₹{total.toLocaleString('en-IN')}
-                  </p>
+                <div className="text-right">
+                   <p className="text-[8px] font-black text-neutral-400 uppercase tracking-widest mb-0.5">Category Total</p>
+                   <p className="text-lg font-heading font-black text-brand-blue dark:text-white tracking-tighter">
+                     ₹{total.toLocaleString('en-IN')}
+                   </p>
                 </div>
               </div>
 
@@ -323,43 +342,61 @@ export default function Accounts() {
                     <div 
                       key={account.id} 
                       onClick={() => setSelectedAccountId(account.id!)}
-                      className="bg-[#F9FBFF] dark:bg-[#111111] p-4 rounded-[24px] shadow-[0_8px_25px_rgba(26,35,126,0.04)] border border-brand-blue/10 dark:border-white/5 flex flex-col justify-between hover:shadow-[0_12px_35px_rgba(26,35,126,0.08)] transition-all transform hover:-translate-y-1 cursor-pointer group"
+                      className={`relative bg-gradient-to-br from-white to-neutral-50 dark:from-[#111111] dark:to-[#0A0A0A] p-5 rounded-[32px] shadow-sm border border-neutral-100 dark:border-white/5 flex flex-col justify-between hover:shadow-xl hover:border-brand-green/20 dark:hover:border-brand-cyan/20 transition-all transform hover:-translate-y-1 cursor-pointer group overflow-hidden`}
                     >
-                      <div className="space-y-3">
+                      {/* Decorative background circle */}
+                      <div className={`absolute -top-10 -right-10 w-32 h-32 blur-3xl rounded-full opacity-10 dark:opacity-20 group-hover:scale-150 transition-transform ${
+                        account.type === 'BANK' ? 'bg-blue-500' : account.type === 'CASH' ? 'bg-emerald-500' : 'bg-rose-500'
+                      }`} />
+
+                      <div className="relative z-10 space-y-5">
                         <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center p-1.5 shadow-sm border border-[#EBEBEB] shrink-0">
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-11 h-11 bg-white dark:bg-neutral-800 rounded-2xl flex items-center justify-center p-1.5 shadow-sm border border-neutral-100 dark:border-white/10 shrink-0 group-hover:scale-110 transition-transform">
                               <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
                             </div>
                             <div className="min-w-0">
-                               <h3 className="text-sm font-heading font-black text-brand-blue dark:text-white tracking-tight truncate leading-none uppercase">{account.bankName}</h3>
-                               <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mt-0.5">
-                                 {account.type === 'CASH' ? account.accountLast4 : `**** ${account.accountLast4}`}
-                               </p>
+                               <h3 className="text-sm font-heading font-black text-brand-blue dark:text-white tracking-tight truncate leading-none mb-1 uppercase">{account.bankName}</h3>
+                               <div className="flex items-center gap-1.5">
+                                 <span className="text-[8px] font-black text-neutral-400 dark:text-neutral-500 uppercase tracking-widest">
+                                   {account.type === 'CASH' ? 'Liquidity' : `· · · · ${account.accountLast4}`}
+                                 </span>
+                                 {currentBalance < 1000 && account.type !== 'CREDIT_CARD' && (
+                                   <div className="w-1.5 h-1.5 rounded-full bg-brand-red animate-pulse" />
+                                 )}
+                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                            <button onClick={() => handleEdit(account)} className="text-neutral-400 hover:text-brand-green p-1 transition-colors"><Pencil className="w-3 h-3" /></button>
-                            <button onClick={() => handleDelete(account.id!)} className="text-neutral-400 hover:text-brand-red p-1 transition-colors"><Trash2 className="w-3 h-3" /></button>
+                          
+                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                            <button onClick={() => handleEdit(account)} className="text-neutral-400 hover:text-brand-green p-1.5 transition-colors bg-white dark:bg-white/5 rounded-xl shadow-sm border border-neutral-100 dark:border-white/5"><Pencil className="w-3.5 h-3.5" /></button>
+                            <button onClick={() => handleDelete(account.id!)} className="text-neutral-400 hover:text-brand-red p-1.5 transition-colors bg-white dark:bg-white/5 rounded-xl shadow-sm border border-neutral-100 dark:border-white/5"><Trash2 className="w-3.5 h-3.5" /></button>
                           </div>
                         </div>
 
-                        <div className="pt-1">
-                          <p className={`text-xl font-heading font-black tracking-tighter ${currentBalance >= 0 ? color : 'text-brand-red'}`}>
+                        <div>
+                          <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.25em] mb-1">Available Funds</p>
+                          <p className={`text-2xl font-heading font-black tracking-tighter ${currentBalance >= 0 ? (account.type === 'CREDIT_CARD' ? 'text-brand-blue dark:text-white' : 'text-brand-green') : 'text-brand-red'} dark:text-brand-cyan`}>
                             ₹{currentBalance.toLocaleString('en-IN')}
                           </p>
                         </div>
                       </div>
                       
-                      <div className="mt-4 pt-3 border-t border-brand-blue/5 dark:border-white/5 flex items-center justify-between">
-                        <div className="flex gap-4">
-                          <div className="flex items-center gap-1 text-emerald-500">
-                            <ArrowDownLeft className="w-2.5 h-2.5" />
-                            <span className="text-[9px] font-heading font-black">₹{(accountBreakdown[account.id!]?.inflow || 0).toLocaleString('en-IN')}</span>
+                      <div className="relative z-10 mt-6 pt-4 border-t border-brand-blue/5 dark:border-white/5 flex items-center justify-between">
+                        <div className="flex items-center gap-5">
+                          <div>
+                            <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mb-1">Inflow</p>
+                            <div className="flex items-center gap-1 text-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10 px-2 py-0.5 rounded-lg">
+                              <ArrowDownLeft className="w-2.5 h-2.5" />
+                              <span className="text-[10px] font-heading font-black">₹{info?.inflow.toLocaleString('en-IN')}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1 text-rose-500">
-                            <ArrowUpRight className="w-2.5 h-2.5" />
-                            <span className="text-[9px] font-heading font-black">₹{(accountBreakdown[account.id!]?.outflow || 0).toLocaleString('en-IN')}</span>
+                          <div>
+                            <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mb-1">Outflow</p>
+                            <div className="flex items-center gap-1 text-rose-500 bg-rose-500/5 dark:bg-rose-500/10 px-2 py-0.5 rounded-lg">
+                              <ArrowUpRight className="w-2.5 h-2.5" />
+                              <span className="text-[10px] font-heading font-black">₹{info?.outflow.toLocaleString('en-IN')}</span>
+                            </div>
                           </div>
                         </div>
 
@@ -368,10 +405,10 @@ export default function Accounts() {
                             e.stopPropagation();
                             setSelectedAccountId(account.id!);
                           }}
-                          className="w-7 h-7 rounded-full bg-brand-green/10 border border-brand-green/20 flex items-center justify-center text-brand-green hover:bg-brand-green hover:text-white transition-all shadow-sm"
+                          className="w-9 h-9 rounded-2xl bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue border border-brand-green dark:border-brand-green flex items-center justify-center hover:scale-105 transition-all shadow-lg active:scale-95 group/btn"
                           title="View Ledger"
                         >
-                          <History className="w-3.5 h-3.5" />
+                          <History className="w-4 h-4 group-hover/btn:rotate-12 transition-transform" />
                         </button>
                       </div>
                     </div>
