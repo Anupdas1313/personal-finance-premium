@@ -24,13 +24,17 @@ export default function Accounts() {
   const allTransactions = useLiveQuery(() => db.transactions.toArray()) || [];
   const allClosings = useLiveQuery(() => db.accountClosings.toArray()) || [];
 
+  const [searchQuery, setSearchQuery] = useState('');
+
   const accountBreakdown = useMemo(() => {
     const now = new Date();
     const monthStart = startOfMonth(now).getTime();
     const monthEnd = endOfMonth(now).getTime();
 
     return accounts.reduce((acc, account) => {
-      const allAccountTxs = allTransactions.filter(tx => Number(tx.accountId) === Number(account.id));
+      const allAccountTxs = allTransactions
+        .filter(tx => Number(tx.accountId) === Number(account.id))
+        .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
       
       // 1. Calculate Actual Total Balance (Entire History)
       let totalBalance = Number(account.startingBalance) || 0;
@@ -48,9 +52,12 @@ export default function Accounts() {
       const inflow = currentMonthTxs.filter(tx => tx.type === 'CREDIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
       const outflow = currentMonthTxs.filter(tx => tx.type === 'DEBIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
       
-      acc[account.id!] = { inflow, outflow, currentBalance: totalBalance };
+      // 3. Get Recent Activity
+      const recentActivity = allAccountTxs.slice(0, 3);
+
+      acc[account.id!] = { inflow, outflow, currentBalance: totalBalance, recentActivity };
       return acc;
-    }, {} as Record<number, { inflow: number, outflow: number, currentBalance: number }>);
+    }, {} as Record<number, { inflow: number, outflow: number, currentBalance: number, recentActivity: Transaction[] }>);
   }, [accounts, allTransactions]); // Only depend on accounts and allTransactions
 
   const handleAddAccount = async (e: React.FormEvent) => {
@@ -138,42 +145,58 @@ export default function Accounts() {
   };
 
   return (
-    <div className="space-y-8 pb-10">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-1">
-        <div>
+    <div className="space-y-10 pb-20">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-1">
+        <div className="space-y-4">
           <h1 className="text-4xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter mb-1">Accounts</h1>
-          <div className="flex items-center gap-3">
-             <div className="flex flex-col">
-               <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest leading-none mb-1">Total Net Worth</span>
-               <p className="text-xl font-heading font-black text-brand-blue dark:text-brand-cyan tracking-tighter">
+          <div className="flex flex-wrap items-center gap-4">
+             <div className="bg-white/50 dark:bg-white/5 backdrop-blur-sm p-4 rounded-[24px] border border-brand-blue/5 dark:border-white/5 shadow-sm min-w-[140px]">
+               <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest leading-none block mb-1.5">Net Worth</span>
+               <p className="text-2xl font-heading font-black text-brand-blue dark:text-brand-cyan tracking-tighter">
                  ₹{Object.values(accountBreakdown).reduce((sum, b) => sum + (b.currentBalance || 0), 0).toLocaleString('en-IN')}
                </p>
              </div>
-             <div className="w-px h-8 bg-neutral-100 dark:bg-white/10 mx-1" />
-             <div className="flex flex-col">
-               <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest leading-none mb-1">Total Liquid</span>
-               <p className="text-xl font-heading font-black text-brand-green tracking-tighter">
+             <div className="bg-white/50 dark:bg-white/5 backdrop-blur-sm p-4 rounded-[24px] border border-brand-green/10 dark:border-white/5 shadow-sm min-w-[140px]">
+               <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest leading-none block mb-1.5">Total Liquid</span>
+               <p className="text-2xl font-heading font-black text-brand-green tracking-tighter">
                  ₹{(Object.entries(accountBreakdown)
                     .filter(([id]) => accounts.find(a => a.id === Number(id))?.type !== 'CREDIT_CARD')
+                    .reduce((sum, [, b]) => sum + (b.currentBalance || 0), 0)).toLocaleString('en-IN')}
+               </p>
+             </div>
+             <div className="bg-[#FFF8F8] dark:bg-rose-500/5 backdrop-blur-sm p-4 rounded-[24px] border border-rose-100 dark:border-white/5 shadow-sm min-w-[140px]">
+               <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest leading-none block mb-1.5">Liabilities</span>
+               <p className="text-2xl font-heading font-black text-rose-500 tracking-tighter">
+                 ₹{Math.abs(Object.entries(accountBreakdown)
+                    .filter(([id]) => accounts.find(a => a.id === Number(id))?.type === 'CREDIT_CARD')
                     .reduce((sum, [, b]) => sum + (b.currentBalance || 0), 0)).toLocaleString('en-IN')}
                </p>
              </div>
           </div>
         </div>
 
-        <button
-          onClick={() => {
-            if (isAdding) {
-              resetForm();
-            } else {
-              setIsAdding(true);
-            }
-          }}
-          className="flex items-center gap-2 px-6 py-3 bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue rounded-2xl hover:brightness-110 active:scale-95 transition-all font-black uppercase tracking-widest text-[11px] shadow-xl shadow-brand-green/20"
-        >
-          {isAdding && !editingAccountId ? <Plus className="w-4 h-4 rotate-45" /> : <Plus className="w-4 h-4" />}
-          {isAdding && !editingAccountId ? 'Close Form' : 'Add Account'}
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="relative group">
+            <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+            <input 
+              type="text" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search bank or account..."
+              className="pl-10 pr-4 py-3 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 rounded-2xl text-[12px] font-bold outline-none focus:ring-2 focus:ring-brand-blue/10 dark:focus:ring-white/5 transition-all w-full md:w-64"
+            />
+          </div>
+          <button
+            onClick={() => {
+              if (isAdding) resetForm();
+              else setIsAdding(true);
+            }}
+            className="flex items-center gap-2 px-6 py-3 bg-brand-green text-white dark:text-brand-blue rounded-2xl hover:brightness-110 active:scale-95 transition-all font-black uppercase tracking-widest text-[11px] shadow-xl shadow-brand-green/20"
+          >
+            {isAdding && !editingAccountId ? <Plus className="w-4 h-4 rotate-45" /> : <Plus className="w-4 h-4" />}
+            {isAdding && !editingAccountId ? 'Close' : 'Add'}
+          </button>
+        </div>
       </div>
 
       {isAdding && (
@@ -335,85 +358,110 @@ export default function Accounts() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {accList.map(account => {
-                  const info = accountBreakdown[account.id!];
-                  const currentBalance = info?.currentBalance || 0;
-                  return (
-                    <div 
-                      key={account.id} 
-                      onClick={() => setSelectedAccountId(account.id!)}
-                      className={`relative bg-gradient-to-br from-white to-neutral-50 dark:from-[#111111] dark:to-[#0A0A0A] p-5 rounded-[32px] shadow-sm border border-neutral-100 dark:border-white/5 flex flex-col justify-between hover:shadow-xl hover:border-brand-green/20 dark:hover:border-brand-cyan/20 transition-all transform hover:-translate-y-1 cursor-pointer group overflow-hidden`}
-                    >
-                      {/* Decorative background circle */}
-                      <div className={`absolute -top-10 -right-10 w-32 h-32 blur-3xl rounded-full opacity-10 dark:opacity-20 group-hover:scale-150 transition-transform ${
-                        account.type === 'BANK' ? 'bg-blue-500' : account.type === 'CASH' ? 'bg-emerald-500' : 'bg-rose-500'
-                      }`} />
+                {accList
+                  .filter(a => searchQuery === '' || a.bankName.toLowerCase().includes(searchQuery.toLowerCase()) || a.accountLast4.includes(searchQuery))
+                  .map(account => {
+                    const info = accountBreakdown[account.id!];
+                    const currentBalance = info?.currentBalance || 0;
+                    const incomeToExpenseRatio = info ? (info.inflow > 0 ? Math.min((info.outflow / info.inflow) * 100, 100) : (info.outflow > 0 ? 100 : 0)) : 0;
+                    
+                    return (
+                      <div 
+                        key={account.id} 
+                        onClick={() => setSelectedAccountId(account.id!)}
+                        className="group relative bg-white dark:bg-[#111111] rounded-[32px] border border-neutral-100 dark:border-white/5 shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col"
+                      >
+                        {/* Status bar top */}
+                        <div className={`h-1.5 w-full ${
+                          account.type === 'BANK' ? 'bg-brand-blue' : account.type === 'CASH' ? 'bg-brand-green' : 'bg-rose-500'
+                        } opacity-40 group-hover:opacity-100 transition-opacity`} />
 
-                      <div className="relative z-10 space-y-5">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-3.5">
-                            <div className="w-11 h-11 bg-white dark:bg-neutral-800 rounded-2xl flex items-center justify-center p-1.5 shadow-sm border border-neutral-100 dark:border-white/10 shrink-0 group-hover:scale-110 transition-transform">
-                              <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
+                        <div className="p-6 flex flex-col flex-1">
+                          <div className="flex justify-between items-start mb-6">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-neutral-100 dark:bg-white/5 rounded-[20px] flex items-center justify-center p-2.5 shadow-sm border border-neutral-200/50 dark:border-white/10 group-hover:scale-110 group-hover:bg-white dark:group-hover:bg-[#1A1A1A] transition-all">
+                                <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
+                              </div>
+                              <div className="min-w-0">
+                                 <h3 className="text-[13px] font-heading font-black text-neutral-800 dark:text-white tracking-tight uppercase truncate">{account.bankName}</h3>
+                                 <div className="flex items-center gap-1.5">
+                                   <span className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest">
+                                     {account.type === 'CASH' ? 'Liquid Cash' : `**** ${account.accountLast4}`}
+                                   </span>
+                                   {currentBalance < 2000 && account.type !== 'CREDIT_CARD' && (
+                                     <div className="w-1.5 h-1.5 rounded-full bg-brand-red animate-pulse" />
+                                   )}
+                                 </div>
+                              </div>
                             </div>
-                            <div className="min-w-0">
-                               <h3 className="text-sm font-heading font-black text-brand-blue dark:text-white tracking-tight truncate leading-none mb-1 uppercase">{account.bankName}</h3>
-                               <div className="flex items-center gap-1.5">
-                                 <span className="text-[8px] font-black text-neutral-400 dark:text-neutral-500 uppercase tracking-widest">
-                                   {account.type === 'CASH' ? 'Liquidity' : `· · · · ${account.accountLast4}`}
-                                 </span>
-                                 {currentBalance < 1000 && account.type !== 'CREDIT_CARD' && (
-                                   <div className="w-1.5 h-1.5 rounded-full bg-brand-red animate-pulse" />
-                                 )}
+                            <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                               <button onClick={() => handleEdit(account)} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-brand-blue hover:bg-brand-blue/5 transition-all"><Pencil className="w-3.5 h-3.5" /></button>
+                               <button onClick={() => handleDelete(account.id!)} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-brand-red hover:bg-brand-red/5 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+                            </div>
+                          </div>
+
+                          <div className="mb-6">
+                            <div className="flex items-end justify-between mb-1">
+                               <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Account Balance</p>
+                               <p className={`text-[10px] font-bold ${incomeToExpenseRatio > 80 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                 {incomeToExpenseRatio.toFixed(0)}% Outflow
+                               </p>
+                            </div>
+                            <p className={`text-3xl font-heading font-black tracking-tighter ${currentBalance >= 0 ? (account.type === 'CREDIT_CARD' ? 'text-brand-blue dark:text-white' : 'text-brand-green') : 'text-brand-red'} dark:text-brand-cyan mb-2`}>
+                              ₹{currentBalance.toLocaleString('en-IN')}
+                            </p>
+                            <div className="h-1.5 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden">
+                               <div className={`h-full transition-all duration-1000 ${incomeToExpenseRatio > 80 ? 'bg-rose-500' : 'bg-brand-green'}`} style={{ width: `${incomeToExpenseRatio}%` }} />
+                            </div>
+                          </div>
+
+                          {/* Recent Activity Mini-Ledger */}
+                          <div className="space-y-2 mb-6">
+                             <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
+                               Recent Activity <div className="w-1 h-1 rounded-full bg-brand-green/30" />
+                             </p>
+                             {info?.recentActivity && info.recentActivity.length > 0 ? (
+                               <div className="space-y-1.5">
+                                 {info.recentActivity.map(tx => (
+                                   <div key={tx.id} className="flex items-center justify-between py-1 border-b border-neutral-50 dark:border-white/[0.02] last:border-0 hover:bg-neutral-50/50 dark:hover:bg-white/[0.02] transition-colors rounded">
+                                     <div className="flex flex-col min-w-0">
+                                       <span className="text-[10px] font-bold text-neutral-700 dark:text-neutral-300 truncate tracking-tight">{(tx.note || tx.category || 'Transaction').toUpperCase()}</span>
+                                       <span className="text-[7px] font-bold text-neutral-400 uppercase">{format(new Date(tx.dateTime), 'dd MMM')}</span>
+                                     </div>
+                                     <span className={`text-[10px] font-black tracking-tight ${tx.type === 'CREDIT' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                       {tx.type === 'CREDIT' ? '+' : '-'}₹{Number(tx.amount).toLocaleString()}
+                                     </span>
+                                   </div>
+                                 ))}
                                </div>
-                            </div>
+                             ) : (
+                               <p className="text-[9px] font-bold text-neutral-300 dark:text-neutral-600 py-2 italic text-center">No recent transactions</p>
+                             )}
                           </div>
-                          
-                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                            <button onClick={() => handleEdit(account)} className="text-neutral-400 hover:text-brand-green p-1.5 transition-colors bg-white dark:bg-white/5 rounded-xl shadow-sm border border-neutral-100 dark:border-white/5"><Pencil className="w-3.5 h-3.5" /></button>
-                            <button onClick={() => handleDelete(account.id!)} className="text-neutral-400 hover:text-brand-red p-1.5 transition-colors bg-white dark:bg-white/5 rounded-xl shadow-sm border border-neutral-100 dark:border-white/5"><Trash2 className="w-3.5 h-3.5" /></button>
-                          </div>
-                        </div>
 
-                        <div>
-                          <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.25em] mb-1">Available Funds</p>
-                          <p className={`text-2xl font-heading font-black tracking-tighter ${currentBalance >= 0 ? (account.type === 'CREDIT_CARD' ? 'text-brand-blue dark:text-white' : 'text-brand-green') : 'text-brand-red'} dark:text-brand-cyan`}>
-                            ₹{currentBalance.toLocaleString('en-IN')}
-                          </p>
+                          <div className="pt-4 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between mt-auto">
+                            <div className="flex items-center gap-4">
+                              <div className="flex flex-col">
+                                <span className="text-[7px] font-black text-neutral-400 uppercase">In</span>
+                                <span className="text-[10px] font-black text-emerald-500">₹{info?.inflow.toLocaleString()}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[7px] font-black text-neutral-400 uppercase">Out</span>
+                                <span className="text-[10px] font-black text-rose-500">₹{info?.outflow.toLocaleString()}</span>
+                              </div>
+                            </div>
+
+                            <button 
+                              onClick={e => { e.stopPropagation(); setSelectedAccountId(account.id!); }}
+                              className="w-9 h-9 rounded-2xl bg-brand-green text-white dark:text-brand-blue flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg shadow-brand-green/20"
+                            >
+                              <History className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                      
-                      <div className="relative z-10 mt-6 pt-4 border-t border-brand-blue/5 dark:border-white/5 flex items-center justify-between">
-                        <div className="flex items-center gap-5">
-                          <div>
-                            <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mb-1">Inflow</p>
-                            <div className="flex items-center gap-1 text-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10 px-2 py-0.5 rounded-lg">
-                              <ArrowDownLeft className="w-2.5 h-2.5" />
-                              <span className="text-[10px] font-heading font-black">₹{info?.inflow.toLocaleString('en-IN')}</span>
-                            </div>
-                          </div>
-                          <div>
-                            <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mb-1">Outflow</p>
-                            <div className="flex items-center gap-1 text-rose-500 bg-rose-500/5 dark:bg-rose-500/10 px-2 py-0.5 rounded-lg">
-                              <ArrowUpRight className="w-2.5 h-2.5" />
-                              <span className="text-[10px] font-heading font-black">₹{info?.outflow.toLocaleString('en-IN')}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedAccountId(account.id!);
-                          }}
-                          className="w-9 h-9 rounded-2xl bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue border border-brand-green dark:border-brand-green flex items-center justify-center hover:scale-105 transition-all shadow-lg active:scale-95 group/btn"
-                          title="View Ledger"
-                        >
-                          <History className="w-4 h-4 group-hover/btn:rotate-12 transition-transform" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             </div>
           );
