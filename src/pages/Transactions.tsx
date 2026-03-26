@@ -62,6 +62,7 @@ export default function Transactions() {
 
   // --- Detail View ---
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // --- Data ---
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
@@ -90,10 +91,13 @@ export default function Transactions() {
       return db.transactions.reverse().toArray();
     }
     return db.transactions.where('dateTime').between(dateLimits.start, dateLimits.end, true, true).reverse().toArray();
-  }, [granularity, dateLimits.start, dateLimits.end]) || [];
+  }, [granularity, dateLimits.start, dateLimits.end]);
+
+  const isLoading = allTxs === undefined;
+  const currentTxs = allTxs || [];
 
   const filteredTxs = useMemo(() => {
-    return allTxs.filter(tx => {
+    return currentTxs.filter(tx => {
       const matchesType = typeFilter === 'ALL' || tx.type === typeFilter;
       const matchesCategory = categoryFilter === 'ALL' || tx.category === categoryFilter;
       const matchesAccount = accountFilter === 'ALL' || Number(tx.accountId) === Number(accountFilter);
@@ -104,7 +108,7 @@ export default function Transactions() {
       
       return matchesType && matchesCategory && matchesAccount && matchesSearch;
     });
-  }, [allTxs, typeFilter, categoryFilter, accountFilter, searchTerm]);
+  }, [currentTxs, typeFilter, categoryFilter, accountFilter, searchTerm]);
 
   const totals = useMemo(() => {
     return filteredTxs.reduce((acc, tx) => {
@@ -163,9 +167,16 @@ export default function Transactions() {
   };
 
   const deleteTransaction = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this transaction record?')) {
-      await db.transactions.delete(id);
-      setSelectedTx(null);
+    if (window.confirm('Permanently remove this financial record?')) {
+      setIsDeleting(true);
+      try {
+        await db.transactions.delete(id);
+        setSelectedTx(null);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsDeleting(false);
+      }
     }
   };
 
@@ -313,18 +324,22 @@ export default function Transactions() {
 
       {/* --- Transactions List --- */}
       <div className="space-y-2.5">
-        {!allTxs || allTxs.length === 0 ? (
+        {isLoading ? (
+          <div className="py-24 flex flex-col items-center justify-center">
+            <div className="w-12 h-12 border-4 border-brand-blue/10 border-t-brand-blue rounded-full animate-spin mb-4" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-blue/40">Accessing Records...</p>
+          </div>
+        ) : currentTxs.length === 0 ? (
           <div className="py-24 flex flex-col items-center justify-center opacity-40">
             <div className="w-16 h-16 bg-neutral-100 dark:bg-white/5 rounded-[20px] flex items-center justify-center mb-6">
               <ListOrdered className="w-6 h-6 text-neutral-300" />
             </div>
             <p className="text-[10px] font-black uppercase tracking-[0.3em]">No Recorded Activity</p>
-            <p className="text-[8px] font-bold text-brand-blue/60 uppercase mt-2">Checking master database...</p>
           </div>
         ) : filteredTxs.length === 0 ? (
-             <div className="py-24 flex flex-col items-center justify-center opacity-40">
-                <p className="text-[9px] font-black uppercase tracking-widest">No Matches for Active Filters</p>
-             </div>
+          <div className="py-24 flex flex-col items-center justify-center opacity-40">
+            <p className="text-[9px] font-black uppercase tracking-widest text-brand-blue/60 mt-2 italic shadow-sm">No matches found in this timeline</p>
+          </div>
         ) : (
           filteredTxs.map((tx, idx) => {
             const date = new Date(tx.dateTime);
@@ -450,9 +465,13 @@ export default function Transactions() {
                   </button>
                   <button 
                     onClick={() => deleteTransaction(selectedTx.id!)}
-                    className="py-4 bg-rose-500/10 text-rose-500 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all"
+                    disabled={isDeleting}
+                    className="py-4 bg-rose-500/10 text-rose-500 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
                   >
-                    <Trash2 className="w-4 h-4" /> Remove
+                    {isDeleting ? (
+                       <div className="w-4 h-4 border-2 border-rose-500/30 border-t-rose-500 rounded-full animate-spin" />
+                    ) : <Trash2 className="w-4 h-4" />}
+                    {isDeleting ? 'Removing...' : 'Remove'}
                   </button>
                 </div>
             </motion.div>
