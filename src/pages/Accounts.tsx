@@ -497,6 +497,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     end: format(endOfMonth(new Date()), 'yyyy-MM-dd')
   });
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [isProcessingPartition, setIsProcessingPartition] = useState(false);
+  const [showPartitionSuccess, setShowPartitionSuccess] = useState(false);
 
   const { startDateLimit, endDateLimit } = useMemo(() => {
     let start = 0;
@@ -616,28 +618,40 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     const confirmReset = window.confirm(`Start a new balance period using the current balance?`);
     if (!confirmReset) return;
 
-    // Use current time or 1ms after last tx
-    const lastTxTime = transactions.length > 0 
-      ? new Date(transactions[transactions.length - 1].dateTime).getTime() 
-      : new Date(account.startingBalanceDate).getTime();
-    const partitionTime = Math.max(lastTxTime + 1, Date.now());
+    setIsProcessingPartition(true);
+    try {
+      // Use current time or 1ms after last tx
+      const lastTxTime = transactions.length > 0 
+        ? new Date(transactions[transactions.length - 1].dateTime).getTime() 
+        : new Date(account.startingBalanceDate).getTime();
+      const partitionTime = Math.max(lastTxTime + 1, Date.now());
 
-    const lastClosing = closings.length > 0 ? closings[closings.length - 1] : null;
-    const startLimit = lastClosing ? new Date(lastClosing.closingDate).getTime() : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
-    const liveTxs = transactions.filter(tx => new Date(tx.dateTime).getTime() > startLimit);
-    const inflow = liveTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
-    const outflow = liveTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
-    const opening = lastClosing ? lastClosing.closingBalance : account.startingBalance;
+      const lastClosing = closings.length > 0 ? closings[closings.length - 1] : null;
+      const startLimit = lastClosing ? new Date(lastClosing.closingDate).getTime() : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
+      const liveTxs = transactions.filter(tx => new Date(tx.dateTime).getTime() > startLimit);
+      const inflow = liveTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
+      const outflow = liveTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
+      const opening = lastClosing ? lastClosing.closingBalance : account.startingBalance;
 
-    await db.accountClosings.add({
-      accountId: account.id!,
-      closingDate: new Date(partitionTime),
-      closingBalance: actualTotalBalance,
-      periodName: format(new Date(partitionTime), 'dd MMM yyyy'),
-      openingBalance: opening,
-      totalInflow: inflow,
-      totalOutflow: outflow
-    });
+      await db.accountClosings.add({
+        accountId: account.id!,
+        closingDate: new Date(partitionTime),
+        closingBalance: actualTotalBalance,
+        periodName: format(new Date(partitionTime), 'dd MMM yyyy'),
+        openingBalance: opening,
+        totalInflow: inflow,
+        totalOutflow: outflow
+      });
+
+      setShowPartitionSuccess(true);
+      setTimeout(() => {
+        setShowPartitionSuccess(false);
+        setIsProcessingPartition(false);
+      }, 700);
+    } catch (err) {
+      console.error(err);
+      setIsProcessingPartition(false);
+    }
   };
 
   const handleCreatePartitionAt = async (targetTx: Transaction & { runningBalance: number }) => {
@@ -722,12 +736,34 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
           </div>
 
           <div className="grid grid-cols-2 gap-1.5">
-            <button onClick={handleStartNewBalance} className="flex items-center justify-center gap-1.5 bg-brand-green text-white py-1.5 rounded-lg font-semibold text-[8px] uppercase tracking-[0.1em] shadow-lg shadow-brand-green/10">
-              <CheckCircle2 className="w-3 h-3" />
-              New Start Balance
+            <button 
+              onClick={handleStartNewBalance} 
+              disabled={isProcessingPartition || showPartitionSuccess}
+              className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg font-black text-[8px] uppercase tracking-widest transition-all shadow-lg active:scale-95 ${
+                showPartitionSuccess 
+                  ? 'bg-emerald-500 text-white shadow-emerald-500/20' 
+                  : 'bg-brand-green text-white shadow-brand-green/20'
+              } disabled:opacity-70`}
+            >
+              {isProcessingPartition ? (
+                <>
+                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Calculating...</span>
+                </>
+              ) : showPartitionSuccess ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Settled!</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3 h-3" />
+                  <span>New Start Balance</span>
+                </>
+              )}
             </button>
             <div className="relative">
-              <button onClick={() => setShowExportMenu(!showExportMenu)} className="w-full flex items-center justify-center gap-1.5 bg-brand-blue text-white py-1.5 rounded-lg font-semibold text-[8px] uppercase tracking-[0.1em]">
+              <button onClick={() => setShowExportMenu(!showExportMenu)} className="w-full h-full flex items-center justify-center gap-1.5 bg-brand-blue dark:bg-white/10 text-white py-1.5 rounded-lg font-black text-[8px] uppercase tracking-widest active:scale-95 transition-all">
                 <Download className="w-3 h-3" />
                 Export
               </button>
@@ -753,17 +789,19 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         <table className="w-full border-collapse">
           <thead className="sticky top-0 bg-white dark:bg-[#0C0C0F] z-10 border-b border-neutral-100 dark:border-[#222222]">
             <tr>
-              <th className="px-2 py-1.5 text-left text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em]">Date</th>
-              <th className="px-2 py-1.5 text-left text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em]">Category</th>
-              <th className="px-2 py-1.5 text-right text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em]">Amount</th>
-              <th className="px-2 py-1.5 text-right text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em]">Balance</th>
+              <th className="px-2 py-1.5 text-left text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em] w-20">Date</th>
+              <th className="px-2 py-1.5 text-left text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em]">Particulars</th>
+              <th className="px-2 py-1.5 text-left text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em] md:w-48 whitespace-nowrap overflow-hidden">Remarks</th>
+              <th className="px-2 py-1.5 text-right text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em] w-20">Amount</th>
+              <th className="px-2 py-1.5 text-right text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em] w-20">Balance</th>
             </tr>
           </thead>
           <tbody>
             {/* System Start Balance - Always at the Peak */}
             <tr className="bg-brand-blue/[0.02] dark:bg-white/[0.01] border-b border-neutral-100/50 dark:border-[#222222]">
               <td className="px-2 py-2 whitespace-nowrap"><span className="text-[9px] font-black text-neutral-400 uppercase tracking-tighter">{format(new Date(account.startingBalanceDate), 'dd MMM yyyy')}</span></td>
-              <td className="px-2 py-2 truncate max-w-[120px]"><span className="text-[9px] font-black text-brand-blue/50 dark:text-white/40 uppercase tracking-widest">System Start Balance</span></td>
+              <td className="px-2 py-2"><span className="text-[9px] font-black text-brand-blue/50 dark:text-white/40 uppercase tracking-widest">System Start Balance</span></td>
+              <td className="px-2 py-2 opacity-50"><span className="text-[9px]">-</span></td>
               <td className="px-2 py-2 text-right whitespace-nowrap"><span className="text-[11px] font-black text-neutral-200">-</span></td>
               <td className="px-2 py-2 text-right whitespace-nowrap"><span className="text-[10px] font-black text-brand-blue/70 dark:text-white/60 tracking-tighter">₹{account.startingBalance.toLocaleString()}</span></td>
             </tr>
@@ -785,7 +823,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                   ))}
                   <tr onDoubleClick={() => handleCreatePartitionAt(tx)} className="border-b border-neutral-50 dark:border-white/[0.02] hover:bg-neutral-50/50 dark:hover:bg-white/[0.01] transition-colors">
                     <td className="px-2 py-2 whitespace-nowrap"><span className="text-[9px] font-bold text-neutral-400 uppercase tracking-tighter">{format(new Date(tx.dateTime), 'dd MMM HH:mm')}</span></td>
-                    <td className="px-2 py-2 truncate max-w-[120px]"><span className="text-[10px] font-black text-neutral-700 dark:text-neutral-300 uppercase truncate">{(tx.note || tx.category || '').toUpperCase()}</span></td>
+                    <td className="px-2 py-2"><span className="text-[10px] font-black text-neutral-700 dark:text-neutral-300 uppercase truncate max-w-[120px] block">{tx.party || '-'}</span></td>
+                    <td className="px-2 py-2"><span className="text-[8px] font-bold text-neutral-400 dark:text-neutral-500 italic truncate max-w-[150px] block">{tx.note || '-'}</span></td>
                     <td className="px-2 py-2 text-right whitespace-nowrap"><span className={`text-[11px] font-black tracking-tighter ${tx.type === 'CREDIT' ? 'text-emerald-500' : 'text-rose-500'}`}>{tx.type === 'CREDIT' ? '+' : '-'}₹{tx.amount.toLocaleString()}</span></td>
                     <td className="px-2 py-2 text-right whitespace-nowrap"><span className="text-[10px] font-black text-brand-blue/70 dark:text-white/60 tracking-tighter">₹{tx.runningBalance.toLocaleString()}</span></td>
                   </tr>
