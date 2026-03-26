@@ -8,6 +8,8 @@ interface AIChatEntryProps {
   onSave: (transaction: any) => void;
   accounts: any[];
   tags: string[];
+  isSaving?: boolean;
+  showSuccess?: boolean;
 }
 
 type ChatStage = 'IDLE' | 'ASK_AMOUNT' | 'ASK_TYPE' | 'ASK_BANK' | 'ASK_PAYMENT_METHOD' | 'ASK_UPI_APP' | 'ASK_CATEGORY' | 'ASK_TAG' | 'ASK_PAYEE' | 'ASK_NOTE' | 'ASK_DATE' | 'PREVIEW';
@@ -33,7 +35,7 @@ const MERCHANT_KNOWLEDGE: Record<string, { category: string, tag: string }> = {
   'spotify': { category: 'Entertainment', tag: 'Personal' },
 };
 
-export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags }) => {
+export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags, isSaving, showSuccess }) => {
   const [messages, setMessages] = useState<any[]>([
     { role: 'ai', content: "Hi! I've cleared the confusion. I'll now show you the **Real Account Names** exactly as you added them!" }
   ]);
@@ -377,7 +379,32 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
                </div>
             </div>
 
-            <button onClick={() => onSave(pendingTx)} className="w-full py-3.5 bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all"><CheckCircle2 className="w-4 h-4" /> Save Entry</button>
+            <button 
+              onClick={() => onSave(pendingTx)} 
+              disabled={isSaving || showSuccess}
+              className={`w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all ${
+                showSuccess 
+                  ? 'bg-emerald-500 text-white shadow-emerald-500/20' 
+                  : 'bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue shadow-brand-green/30'
+              } disabled:opacity-70 disabled:grayscale-[0.5]`}
+            >
+              {isSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : showSuccess ? (
+                <>
+                  <CheckCircle2 className="w-5 h-5" />
+                  <span>Saved!</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Save Entry</span>
+                </>
+              )}
+            </button>
           </div>
         )}
         <div className="flex items-center gap-2 bg-[#F9FBFF] dark:bg-[#111111] p-1.5 rounded-2xl border border-brand-blue/5 dark:border-white/5 shadow-xl">

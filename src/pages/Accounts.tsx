@@ -14,6 +14,8 @@ export default function Accounts() {
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
   const [isAdding, setIsAdding] = useState(false);
   const [editingAccountId, setEditingAccountId] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [bankName, setBankName] = useState('');
   const [accountLast4, setAccountLast4] = useState('');
   const [startingBalance, setStartingBalance] = useState('');
@@ -80,25 +82,36 @@ export default function Accounts() {
     e.preventDefault();
     if (!bankName || !accountLast4 || !startingBalance) return;
 
-    if (editingAccountId) {
-      await db.accounts.update(editingAccountId, {
-        bankName,
-        accountLast4,
-        startingBalance: parseFloat(startingBalance.toString().replace(/,/g, '')) || 0,
-        startingBalanceDate: new Date(startingBalanceDate),
-        type: accountType
-      });
-    } else {
-      await db.accounts.add({
-        bankName,
-        accountLast4,
-        startingBalance: parseFloat(startingBalance.toString().replace(/,/g, '')) || 0,
-        startingBalanceDate: new Date(startingBalanceDate),
-        type: accountType
-      });
-    }
+    setIsSaving(true);
+    try {
+      if (editingAccountId) {
+        await db.accounts.update(editingAccountId, {
+          bankName,
+          accountLast4,
+          startingBalance: parseFloat(startingBalance.toString().replace(/,/g, '')) || 0,
+          startingBalanceDate: new Date(startingBalanceDate),
+          type: accountType
+        });
+      } else {
+        await db.accounts.add({
+          bankName,
+          accountLast4,
+          startingBalance: parseFloat(startingBalance.toString().replace(/,/g, '')) || 0,
+          startingBalanceDate: new Date(startingBalanceDate),
+          type: accountType
+        });
+      }
 
-    resetForm();
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setIsSaving(false);
+        resetForm();
+      }, 700);
+    } catch (err) {
+      console.error(err);
+      setIsSaving(false);
+    }
   };
 
   const resetForm = () => {
@@ -328,9 +341,38 @@ export default function Accounts() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-[#EBEBEB] dark:border-[#222222]">
-              <button type="button" onClick={resetForm} className="px-6 py-3 text-brand-blue dark:text-[#F7F7F7] font-semibold">Cancel</button>
-              <button type="submit" className="px-6 py-3 bg-brand-green text-white font-semibold rounded-xl">Save</button>
+            <div className="flex justify-end gap-3 pt-6 border-t border-[#EBEBEB] dark:border-[#222222]">
+              <button 
+                type="button" 
+                onClick={resetForm} 
+                disabled={isSaving}
+                className="px-6 py-3 text-brand-blue dark:text-[#F7F7F7] font-semibold text-sm disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                disabled={isSaving || showSuccess}
+                className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold text-sm transition-all shadow-lg active:scale-95 ${
+                  showSuccess 
+                    ? 'bg-emerald-500 text-white shadow-emerald-500/20' 
+                    : 'bg-brand-green text-white shadow-brand-green/10'
+                } disabled:opacity-70 disabled:grayscale-[0.5]`}
+              >
+                {isSaving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : showSuccess ? (
+                  <>
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span>Saved!</span>
+                  </>
+                ) : (
+                  <span>{editingAccountId ? 'Update Account' : 'Save Account'}</span>
+                )}
+              </button>
             </div>
           </form>
         </div>

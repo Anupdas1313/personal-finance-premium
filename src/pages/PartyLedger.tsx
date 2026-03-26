@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, LedgerTransaction } from '../lib/db';
-import { ArrowLeft, Plus, TrendingUp, TrendingDown, Clock, Search, Trash2, Calendar, FileText, Download } from 'lucide-react';
+import { ArrowLeft, Plus, TrendingUp, TrendingDown, Clock, Search, Trash2, Calendar, FileText, Download, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function PartyLedger() {
@@ -21,6 +21,8 @@ export default function PartyLedger() {
   const [remarks, setRemarks] = useState('');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const runningBalances = useMemo(() => {
     let current = 0;
@@ -36,17 +38,28 @@ export default function PartyLedger() {
   const handleAddTransaction = async () => {
     if (!amount || isNaN(parseFloat(amount.toString().replace(/,/g, '')))) return;
     
-    await db.ledgerTransactions.add({
-      partyId,
-      amount: parseFloat(amount.toString().replace(/,/g, '')) || 0,
-      type: txType,
-      dateTime: new Date(date),
-      remarks,
-    });
+    setIsSaving(true);
+    try {
+      await db.ledgerTransactions.add({
+        partyId,
+        amount: parseFloat(amount.toString().replace(/,/g, '')) || 0,
+        type: txType,
+        dateTime: new Date(date),
+        remarks,
+      });
 
-    setAmount('');
-    setRemarks('');
-    setIsModalOpen(false);
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setIsSaving(false);
+        setAmount('');
+        setRemarks('');
+        setIsModalOpen(false);
+      }, 700);
+    } catch (err) {
+      console.error(err);
+      setIsSaving(false);
+    }
   };
 
   const handleDelete = async (txId: number) => {
@@ -259,9 +272,26 @@ export default function PartyLedger() {
                 </button>
                 <button 
                     onClick={handleAddTransaction} 
-                    className={`flex-1 py-4 rounded-2xl font-semibold text-[10px] uppercase tracking-[0.2em] shadow-lg transition-all active:scale-95 ${txType === 'CASH_OUT' ? 'bg-brand-red shadow-brand-red/20' : 'bg-brand-green shadow-brand-green/20'} text-white`}
+                    disabled={isSaving || showSuccess}
+                    className={`flex-1 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${
+                      showSuccess 
+                        ? 'bg-emerald-500 shadow-emerald-500/20' 
+                        : (txType === 'CASH_OUT' ? 'bg-brand-red shadow-brand-red/20' : 'bg-brand-green shadow-brand-green/20')
+                    } text-white disabled:opacity-70`}
                 >
-                    Log Entry
+                    {isSaving ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Logging...</span>
+                      </>
+                    ) : showSuccess ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Logged!</span>
+                      </>
+                    ) : (
+                      <span>Log Entry</span>
+                    )}
                 </button>
               </div>
             </div>

@@ -30,7 +30,26 @@ export default function Dashboard() {
 
   // Sync state with URL and ensure fresh current time on open
   useEffect(() => {
-    if (searchParams.get('add') === 'true') {
+    const editId = searchParams.get('edit');
+    if (editId) {
+      db.transactions.get(Number(editId)).then(tx => {
+        if (tx) {
+          setAmount(tx.amount.toString());
+          setType(tx.type);
+          setCategory(tx.category || 'Other');
+          setNote(tx.note || '');
+          setPartyName(tx.party || '');
+          setSelectedAccountId(tx.accountId);
+          setTransactionDate(format(new Date(tx.dateTime), "yyyy-MM-dd'T'HH:mm"));
+          setPaymentMethod(tx.paymentMethod as any || 'UPI');
+          setUpiApp((tx as any).upiApp || 'GPay');
+          setExpenseType(tx.expenseType || '');
+          setEntryMode('MANUAL');
+          setIsAddingManual(true);
+          setEditingTransactionId(Number(editId));
+        }
+      });
+    } else if (searchParams.get('add') === 'true') {
       setIsAddingManual(true);
       setTransactionDate(new Date().toISOString().slice(0, 16));
     }
@@ -44,7 +63,8 @@ export default function Dashboard() {
 
   const closeMenu = () => {
     setIsAddingManual(false);
-    if (searchParams.get('add')) {
+    setEditingTransactionId(null);
+    if (searchParams.get('add') || searchParams.get('edit')) {
       navigate('/', { replace: true });
     }
   };
@@ -64,6 +84,7 @@ export default function Dashboard() {
   const { tags } = useTags();
   const [expenseType, setExpenseType] = useState<string>('');
   const [entryMode, setEntryMode] = useState<'MANUAL' | 'CHAT'>('CHAT');
+  const [editingTransactionId, setEditingTransactionId] = useState<number | null>(null);
 
   // Set default expense type once tags load
   useEffect(() => {
@@ -83,6 +104,7 @@ export default function Dashboard() {
   }, [accounts, selectedAccountId]);
 
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [timeFilter, setTimeFilter] = useState<'All Time' | 'This Month' | 'This Year'>('All Time');
   const [isAmountsHidden, setIsAmountsHidden] = useState(false);
@@ -102,12 +124,8 @@ export default function Dashboard() {
     const currentCategory = txData?.category || category;
     const currentTransactionDate = txData?.transactionDate || transactionDate;
 
-    if (!currentAmount || !currentType || !currentSelectedAccountId || (currentType !== 'TRANSFER' && !currentExpenseType)) {
-      setStatus('error');
-      setErrorMessage('Missing required fields.');
-      return;
-    }
-
+    setIsSaving(true);
+    setStatus('idle');
     try {
       if (currentType === 'TRANSFER') {
         if (!currentToAccountId) {
@@ -155,7 +173,7 @@ export default function Dashboard() {
         const isTodaySelected = format(new Date(currentTransactionDate), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
         const finalDateTime = isTodaySelected ? new Date() : new Date(currentTransactionDate);
 
-        await db.transactions.add({
+        const txPayload = {
           accountId: Number(currentSelectedAccountId),
           amount: parseFloat(currentAmount.toString().replace(/,/g, '')) || 0,
           type: currentType as 'CREDIT' | 'DEBIT',
@@ -166,9 +184,16 @@ export default function Dashboard() {
           upiApp: currentPaymentMethod === 'UPI' ? currentUpiApp : undefined,
           party: currentPartyName,
           expenseType: currentExpenseType,
-        });
+        };
+
+        if (editingTransactionId) {
+          await db.transactions.update(editingTransactionId, txPayload);
+        } else {
+          await db.transactions.add(txPayload);
+        }
       }
       
+      setIsSaving(false);
       setStatus('success');
       setTimeout(() => {
         closeMenu();
@@ -182,9 +207,10 @@ export default function Dashboard() {
         setPaymentMethod('UPI');
         setUpiApp('GPay');
         setExpenseType(tags[0] || '');
-        setToAccountId('');
+        setEditingTransactionId(null);
       }, 800);
     } catch (error) {
+      setIsSaving(false);
       setStatus('error');
       setErrorMessage('Failed to save transaction.');
       console.error(error);
@@ -502,6 +528,8 @@ export default function Dashboard() {
                <AIChatEntry 
                  accounts={accounts} 
                  tags={tags} 
+                 isSaving={isSaving}
+                 showSuccess={status === 'success'}
                  onSave={(tx) => {
                    handleSaveManual(tx);
                  }} 
@@ -677,14 +705,19 @@ export default function Dashboard() {
               <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-[#0A0A0A]/80 backdrop-blur-xl border-t border-[#EBEBEB] dark:border-white/5 z-50 flex justify-end items-center gap-3">
                 <button 
                   onClick={handleSaveManual}
-                  disabled={!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || status === 'success'}
+                  disabled={!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || isSaving || status === 'success'}
                   className={`px-8 py-2.5 rounded-2xl text-[10px] font-black transition-all active:scale-[0.98] shadow-2xl flex items-center justify-center gap-2 uppercase tracking-widest ${
                     (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
                     ? 'bg-neutral-100 dark:bg-[#1C1C22] text-neutral-300 dark:text-[#4A4A52] cursor-not-allowed border border-[#EBEBEB] dark:border-transparent opacity-50'
-                    : 'bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue shadow-brand-green/30 dark:shadow-brand-green/20'
-                  }`}
+                    : (status === 'success' ? 'bg-emerald-500 text-white shadow-emerald-500/20' : 'bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue shadow-brand-green/30 dark:shadow-brand-green/20')
+                  } disabled:opacity-70`}
                 >
-                  {status === 'success' ? (
+                  {isSaving ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>SAVING...</span>
+                    </>
+                  ) : status === 'success' ? (
                     <> <CheckCircle2 className="w-4 h-4" /> SAVED </>
                   ) : (
                     <> <Save className="w-4 h-4 text-current opacity-60" /> SAVE ENTRY </>

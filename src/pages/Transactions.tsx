@@ -5,7 +5,7 @@ import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, addM
 import { 
   X, Trash2, Filter, Search, Edit3, Download, 
   ChevronLeft, ChevronRight, ListOrdered, ArrowDownLeft, ArrowUpRight, BarChart3,
-  Calendar, Layers, Tag as TagIcon, MoreVertical
+  Calendar, Layers, Tag as TagIcon, MoreVertical, Landmark, Smartphone
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
@@ -400,35 +400,53 @@ export default function Transactions() {
                   </button>
                </div>
 
-               <div className="bg-neutral-50 dark:bg-white/5 p-5 rounded-[24px] border border-neutral-200/50 dark:border-white/5 mb-6 text-center">
-                  <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mb-1.5">Assessed Flow</p>
-                  <h3 className={`text-4xl font-heading font-black tracking-tighter ${selectedTx.type === 'DEBIT' ? 'text-rose-600' : 'text-emerald-600'}`}>
-                    {selectedTx.type === 'DEBIT' ? '-' : '+'}₹{Number(selectedTx.amount).toLocaleString()}
-                  </h3>
-               </div>
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                   <div className="bg-neutral-50 dark:bg-white/5 p-3 rounded-2xl border border-neutral-100 dark:border-white/5">
+                      <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Landmark className="w-2.5 h-2.5" /> Source Account</p>
+                      <p className="text-[10px] font-bold text-brand-blue dark:text-white truncate">
+                        {accounts.find(a => a.id === selectedTx.accountId)?.bankName || 'Unknown'}
+                      </p>
+                   </div>
+                   <div className="bg-neutral-50 dark:bg-white/5 p-3 rounded-2xl border border-neutral-100 dark:border-white/5">
+                      <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Smartphone className="w-2.5 h-2.5" /> Logistics</p>
+                      <p className="text-[10px] font-bold text-brand-blue dark:text-white truncate">
+                        {selectedTx.upiApp || selectedTx.paymentMethod || 'Manual'}
+                      </p>
+                   </div>
+                   <div className="bg-neutral-50 dark:bg-white/5 p-3 rounded-2xl border border-neutral-100 dark:border-white/5">
+                      <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><TagIcon className="w-2.5 h-2.5" /> Classification</p>
+                      <p className="text-[10px] font-bold text-brand-blue dark:text-white">
+                        #{selectedTx.expenseType || 'Unclassified'}
+                      </p>
+                   </div>
+                   <div className="bg-neutral-50 dark:bg-white/5 p-3 rounded-2xl border border-neutral-100 dark:border-white/5">
+                      <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Layers className="w-2.5 h-2.5" /> Status</p>
+                      <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-tighter">Verified Entry</p>
+                   </div>
+                </div>
 
-               {selectedTx.note && (
-                 <div className="mb-6 px-1">
-                   <p className="text-xs font-bold text-brand-blue dark:text-white opacity-80 italic leading-relaxed pl-3 border-l-2 border-brand-blue/10">
-                     "{selectedTx.note}"
-                   </p>
-                 </div>
-               )}
+                {selectedTx.note && (
+                  <div className="mb-6 bg-neutral-50/50 dark:bg-white/[0.02] p-4 rounded-2xl border border-dashed border-neutral-200 dark:border-white/10">
+                    <p className="text-[11px] font-bold text-brand-blue dark:text-white opacity-80 italic leading-relaxed text-center">
+                      "{selectedTx.note}"
+                    </p>
+                  </div>
+                )}
 
-               <div className="grid grid-cols-2 gap-2">
-                 <button 
-                   onClick={() => { navigate(`/?edit=${selectedTx.id}`); setSelectedTx(null); }}
-                   className="py-3 bg-brand-blue text-white rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2"
-                 >
-                   <Edit3 className="w-3.5 h-3.5" /> Edit
-                 </button>
-                 <button 
-                   onClick={() => deleteTransaction(selectedTx.id!)}
-                   className="py-3 bg-rose-50 text-rose-600 rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2"
-                 >
-                   <Trash2 className="w-3.5 h-3.5" /> Remove
-                 </button>
-               </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <button 
+                    onClick={() => { navigate(`/?edit=${selectedTx.id}`); setSelectedTx(null); }}
+                    className="py-4 bg-brand-blue dark:bg-white/10 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-brand-blue/20"
+                  >
+                    <Edit3 className="w-4 h-4" /> Edit Record
+                  </button>
+                  <button 
+                    onClick={() => deleteTransaction(selectedTx.id!)}
+                    className="py-4 bg-rose-500/10 text-rose-500 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all"
+                  >
+                    <Trash2 className="w-4 h-4" /> Remove
+                  </button>
+                </div>
             </motion.div>
           </>
         )}
