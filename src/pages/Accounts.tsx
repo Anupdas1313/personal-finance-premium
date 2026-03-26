@@ -161,71 +161,73 @@ export default function Accounts() {
 
   return (
     <div className="space-y-10 pb-20">
-      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-8 px-1">
-        <div className="flex-1 space-y-6">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-5xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">Accounts</h1>
-            <p className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.3em]">Institutional Wealth Overview</p>
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-12 px-1">
+        <div className="flex flex-col shrink-0">
+          <h1 className="text-4xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">Accounts</h1>
+          <p className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Institutional Wealth</p>
+        </div>
+
+        <div className="flex-1 flex flex-wrap items-center gap-x-8 gap-y-4">
+          <div className="flex items-center gap-3 group">
+            <div className="w-9 h-9 rounded-xl bg-brand-blue/5 dark:bg-brand-blue/20 flex items-center justify-center text-brand-blue dark:text-brand-cyan shadow-sm group-hover:scale-110 transition-transform shrink-0">
+              <Landmark className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest block leading-none mb-1">Portfolio</span>
+              <div className="flex items-baseline gap-0.5">
+                <span className="text-[10px] font-black text-brand-blue/30 dark:text-brand-cyan/30">₹</span>
+                <p className="text-lg font-heading font-black text-brand-blue dark:text-white tracking-tighter leading-none">
+                  {totalNetWorth.toLocaleString('en-IN')}
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/5 rounded-[32px] shadow-sm flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-neutral-100 dark:divide-white/5 overflow-hidden">
-            <div className="flex-1 px-8 py-6 flex items-center gap-5 group hover:bg-neutral-50/50 dark:hover:bg-white/[0.02] transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-brand-blue/5 dark:bg-brand-blue/20 flex items-center justify-center text-brand-blue dark:text-brand-cyan shadow-sm group-hover:scale-110 transition-transform">
-                <Landmark className="w-6 h-6" />
-              </div>
-              <div>
-                <span className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] block mb-0.5">Global Net Worth</span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-xl font-black text-brand-blue/30 dark:text-brand-cyan/30">₹</span>
-                  <p className="text-3xl font-heading font-black text-brand-blue dark:text-white tracking-tighter leading-none">
-                    {totalNetWorth.toLocaleString('en-IN')}
-                  </p>
-                </div>
-              </div>
-            </div>
+          <div className="w-px h-6 bg-neutral-100 dark:bg-white/5 hidden md:block" />
 
-            <div className="flex-1 px-8 py-6 flex items-center gap-5 group hover:bg-neutral-50/50 dark:hover:bg-white/[0.02] transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-brand-green/5 dark:bg-brand-green/20 flex items-center justify-center text-brand-green shadow-sm group-hover:scale-110 transition-transform">
-                <Wallet className="w-6 h-6" />
-              </div>
-              <div>
-                <span className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] block mb-0.5">Liquid Assets</span>
-                <p className="text-2xl font-heading font-black text-brand-green tracking-tighter leading-none">
-                  ₹{totalLiquid.toLocaleString('en-IN')}
-                </p>
-              </div>
+          <div className="flex items-center gap-3 group">
+            <div className="w-9 h-9 rounded-xl bg-brand-green/5 dark:bg-brand-green/20 flex items-center justify-center text-brand-green shadow-sm group-hover:scale-110 transition-transform shrink-0">
+              <Wallet className="w-4 h-4" />
             </div>
+            <div>
+              <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest block leading-none mb-1">Liquid</span>
+              <p className="text-lg font-heading font-black text-brand-green tracking-tighter leading-none">
+                ₹{totalLiquid.toLocaleString('en-IN')}
+              </p>
+            </div>
+          </div>
 
-            <div className="flex-1 px-8 py-6 flex items-center gap-5 group hover:bg-neutral-50/50 dark:hover:bg-white/[0.02] transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/5 dark:bg-rose-500/20 flex items-center justify-center text-rose-500 shadow-sm group-hover:scale-110 transition-transform">
-                <CreditCard className="w-6 h-6" />
-              </div>
-              <div>
-                <span className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] block mb-0.5">Total Liabilities</span>
-                <p className="text-2xl font-heading font-black text-rose-500 tracking-tighter leading-none">
-                  ₹{totalLiabilities.toLocaleString('en-IN')}
-                </p>
-              </div>
+          <div className="w-px h-6 bg-neutral-100 dark:bg-white/5 hidden md:block" />
+
+          <div className="flex items-center gap-3 group">
+            <div className="w-9 h-9 rounded-xl bg-rose-500/5 dark:bg-rose-500/20 flex items-center justify-center text-rose-500 shadow-sm group-hover:scale-110 transition-transform shrink-0">
+              <CreditCard className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest block leading-none mb-1">Liabilities</span>
+              <p className="text-lg font-heading font-black text-rose-500 tracking-tighter leading-none">
+                ₹{totalLiabilities.toLocaleString('en-IN')}
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <div className="relative group">
-            <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+            <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
             <input 
               type="text" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search bank..."
-              className="pl-10 pr-4 py-3 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 rounded-2xl text-[12px] font-bold outline-none focus:ring-2 focus:ring-brand-blue/10 dark:focus:ring-white/5 transition-all w-full md:w-64"
+              placeholder="Filter list..."
+              className="pl-9 pr-4 py-2.5 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 rounded-2xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-brand-blue/10 dark:focus:ring-white/5 transition-all w-full md:w-52"
             />
           </div>
           <button
             onClick={() => setIsAdding(!isAdding)}
-            className="flex items-center gap-2 px-6 py-3 bg-brand-green text-white dark:text-brand-blue rounded-2xl hover:brightness-110 active:scale-95 transition-all font-black uppercase tracking-widest text-[11px] shadow-xl shadow-brand-green/20"
+            className="flex items-center gap-2 px-6 py-2.5 bg-brand-green text-white dark:text-brand-blue rounded-2xl hover:brightness-110 active:scale-95 transition-all font-black uppercase tracking-widest text-[10px] shadow-xl shadow-brand-green/20"
           >
-            {isAdding && !editingAccountId ? <Plus className="w-4 h-4 rotate-45" /> : <Plus className="w-4 h-4" />}
+            {isAdding && !editingAccountId ? <Plus className="w-4 h-4 rotate-45" /> : <Plus className="w-3.5 h-3.5" />}
             {isAdding && !editingAccountId ? 'Close' : 'Add'}
           </button>
         </div>
