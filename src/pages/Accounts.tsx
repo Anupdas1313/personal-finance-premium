@@ -613,19 +613,27 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
 
   const handleStartNewBalance = async () => {
     if (!account) return;
-    const confirmReset = window.confirm(`Start a new balance period?`);
+    const confirmReset = window.confirm(`Start a new balance period using the current balance?`);
     if (!confirmReset) return;
+
+    // Use current time or 1ms after last tx
+    const lastTxTime = transactions.length > 0 
+      ? new Date(transactions[transactions.length - 1].dateTime).getTime() 
+      : new Date(account.startingBalanceDate).getTime();
+    const partitionTime = Math.max(lastTxTime + 1, Date.now());
+
     const lastClosing = closings.length > 0 ? closings[closings.length - 1] : null;
     const startLimit = lastClosing ? new Date(lastClosing.closingDate).getTime() : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
     const liveTxs = transactions.filter(tx => new Date(tx.dateTime).getTime() > startLimit);
     const inflow = liveTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
     const outflow = liveTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
     const opening = lastClosing ? lastClosing.closingBalance : account.startingBalance;
+
     await db.accountClosings.add({
       accountId: account.id!,
-      closingDate: new Date(),
+      closingDate: new Date(partitionTime),
       closingBalance: actualTotalBalance,
-      periodName: format(new Date(), 'dd MMM yyyy'),
+      periodName: format(new Date(partitionTime), 'dd MMM yyyy'),
       openingBalance: opening,
       totalInflow: inflow,
       totalOutflow: outflow
@@ -784,6 +792,22 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                 </React.Fragment>
               );
             })}
+
+            {/* Handle Partitions that happened AFTER the last transaction in the current view */}
+            {(() => {
+                const lastTxTimeInView = statementData.length > 0 
+                    ? new Date(statementData[statementData.length - 1].dateTime).getTime() 
+                    : new Date(account.startingBalanceDate).getTime();
+                
+                const trailingClosings = closings.filter(c => {
+                    const cTime = new Date(c.closingDate).getTime();
+                    return cTime > lastTxTimeInView && cTime <= endDateLimit;
+                });
+
+                return trailingClosings.map(c => (
+                    <PartitionRow key={c.id} partition={c} />
+                ));
+            })()}
           </tbody>
         </table>
       </div>
