@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction } from '../lib/db';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, addMonths, startOfYear, endOfYear, isSameDay } from 'date-fns';
@@ -370,17 +371,17 @@ export default function Transactions() {
 
       {/* --- Detail Backdrop Drawer --- */}
       <AnimatePresence>
-        {selectedTx && (
+        {selectedTx && createPortal(
           <>
             <motion.div 
                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                onClick={() => setSelectedTx(null)}
-               className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100]"
+               className="fixed inset-0 bg-black/60 backdrop-blur-md z-[9999]"
             />
             <motion.div 
                initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-               className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0C0C0F] z-[101] rounded-t-[32px] p-6 max-w-lg mx-auto shadow-2xl border-t border-white/10"
+               className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0C0C0F] z-[10000] rounded-t-[32px] p-6 pb-20 md:pb-6 max-w-lg mx-auto shadow-2xl border-t border-white/10"
             >
                <div className="w-10 h-1 bg-neutral-100 dark:bg-white/10 rounded-full mx-auto mb-6" />
                
@@ -448,7 +449,8 @@ export default function Transactions() {
                   </button>
                 </div>
             </motion.div>
-          </>
+          </>,
+          document.body
         )}
       </AnimatePresence>
     </motion.div>
