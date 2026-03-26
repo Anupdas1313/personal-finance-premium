@@ -270,6 +270,28 @@ export default function Accounts() {
                   className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan focus:border-brand-blue outline-none transition-shadow mb-3 text-brand-blue font-bold"
                   required
                 />
+
+                {accountType === 'BANK' && (
+                  <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 pt-1 -mx-2 px-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+                    {INDIAN_BANKS.map((bank) => (
+                      <button
+                        key={bank.id}
+                        type="button"
+                        onClick={() => setBankName(bank.name)}
+                        className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${
+                          bankName === bank.name
+                            ? 'bg-brand-blue text-white border-transparent shadow-md scale-105'
+                            : 'bg-white dark:bg-[#1A1A1A] text-brand-blue/60 border-neutral-100 dark:border-[#333333] hover:bg-neutral-50 dark:hover:bg-[#222222]'
+                        }`}
+                      >
+                        <div className="w-5 h-5 bg-white rounded-md flex items-center justify-center p-0.5 shadow-sm">
+                          <bank.logo className="w-full h-full object-contain" />
+                        </div>
+                        <span className="text-[9px] font-black uppercase tracking-wider">{bank.id}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-[0.2em]">Reference/Last 4</label>
@@ -596,8 +618,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
   if (!account) return null;
 
   return (
-    <div className="fixed inset-0 bg-white dark:bg-[#060608] z-[100] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className="bg-neutral-50 dark:bg-[#0C0C0F] border-b border-neutral-200 dark:border-[#222222] px-4 py-2">
+    <div className="fixed inset-0 bg-white dark:bg-[#060608] z-[100] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300 touch-pan-y overscroll-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="bg-neutral-50 dark:bg-[#0C0C0F] border-b border-neutral-200 dark:border-[#222222] px-4 py-3 shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <div className="w-6 h-6 bg-white dark:bg-[#1A1A1A] rounded-lg flex items-center justify-center p-0.5 border border-neutral-100 dark:border-[#333333]">
@@ -677,7 +699,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar">
+      <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
         <table className="w-full border-collapse">
           <thead className="sticky top-0 bg-white dark:bg-[#0C0C0F] z-10 border-b border-neutral-100 dark:border-[#222222]">
             <tr>
