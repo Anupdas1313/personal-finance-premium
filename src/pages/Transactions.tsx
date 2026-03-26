@@ -37,6 +37,11 @@ const CATEGORY_COLORS: Record<string, string> = {
   'Other': 'bg-neutral-50 text-neutral-600 border-neutral-100'
 };
 
+// Helper for Portals
+const Portal: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return createPortal(children, document.body);
+};
+
 export default function Transactions() {
   const navigate = useNavigate();
   
@@ -339,8 +344,9 @@ export default function Transactions() {
                 <motion.div 
                   initial={{ opacity: 0, y: 5 }} 
                   animate={{ opacity: 1, y: 0 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => setSelectedTx(tx)}
-                  className="bg-white dark:bg-[#0C0C0F] group hover:bg-neutral-50 dark:hover:bg-white/5 border border-neutral-100 dark:border-white/5 p-3 rounded-[20px] shadow-sm flex items-center gap-3 transition-all cursor-pointer active:scale-[0.99]"
+                  className="bg-white dark:bg-[#0C0C0F] group hover:bg-neutral-50 dark:hover:bg-white/5 border border-neutral-100 dark:border-white/5 p-3 rounded-[20px] shadow-sm flex items-center gap-3 transition-all cursor-pointer active:shadow-inner pointer-events-auto"
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg border ${CATEGORY_COLORS[tx.category || 'Other'] || 'bg-neutral-50'} shrink-0`}>
                     {CATEGORY_ICONS[tx.category || 'Other'] || '📝'}
@@ -370,9 +376,10 @@ export default function Transactions() {
       </div>
 
       {/* --- Detail Backdrop Drawer --- */}
+      {/* --- Detail Backdrop Drawer --- */}
       <AnimatePresence>
-        {selectedTx && createPortal(
-          <>
+        {selectedTx && (
+          <Portal>
             <motion.div 
                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                onClick={() => setSelectedTx(null)}
@@ -387,7 +394,7 @@ export default function Transactions() {
                
                <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-neutral-50 dark:bg-white/5 rounded-xl flex items-center justify-center text-2xl border border-neutral-100 dark:border-white/10">
+                    <div className="w-12 h-12 bg-neutral-100 dark:bg-white/5 rounded-xl flex items-center justify-center text-2xl border border-neutral-100 dark:border-white/10">
                        {CATEGORY_ICONS[selectedTx.category || 'Other'] || '📝'}
                     </div>
                     <div>
@@ -449,8 +456,7 @@ export default function Transactions() {
                   </button>
                 </div>
             </motion.div>
-          </>,
-          document.body
+          </Portal>
         )}
       </AnimatePresence>
     </motion.div>
