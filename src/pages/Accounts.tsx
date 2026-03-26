@@ -168,47 +168,43 @@ export default function Accounts() {
             <p className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.3em]">Institutional Wealth Overview</p>
           </div>
 
-          <div className="flex flex-col lg:flex-row items-stretch gap-4">
-            <div className="relative flex-1 min-w-[300px] bg-white dark:bg-[#111111] p-7 rounded-[40px] border border-neutral-100 dark:border-white/5 shadow-[0_20px_50px_rgba(26,35,126,0.05)] overflow-hidden group">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-brand-blue/5 dark:bg-brand-cyan/5 rounded-full -mr-20 -mt-20 blur-3xl group-hover:bg-brand-blue/10 transition-all duration-700" />
-              <div className="relative z-10 flex flex-col h-full justify-between">
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-10 h-10 rounded-2xl bg-brand-blue/5 dark:bg-brand-blue/20 flex items-center justify-center text-brand-blue dark:text-brand-cyan shadow-inner">
-                    <Landmark className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-black text-neutral-400 dark:text-neutral-500 uppercase tracking-[0.2em] block leading-none mb-1">Portfolio</span>
-                    <span className="text-[11px] font-black text-brand-blue dark:text-brand-cyan uppercase tracking-wider leading-none">Net Worth</span>
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-2xl font-black text-brand-blue dark:text-brand-cyan opacity-30">₹</span>
-                  <p className="text-5xl font-heading font-black text-brand-blue dark:text-white tracking-tighter leading-none">
+          <div className="bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/5 rounded-[32px] shadow-sm flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-neutral-100 dark:divide-white/5 overflow-hidden">
+            <div className="flex-1 px-8 py-6 flex items-center gap-5 group hover:bg-neutral-50/50 dark:hover:bg-white/[0.02] transition-all">
+              <div className="w-12 h-12 rounded-2xl bg-brand-blue/5 dark:bg-brand-blue/20 flex items-center justify-center text-brand-blue dark:text-brand-cyan shadow-sm group-hover:scale-110 transition-transform">
+                <Landmark className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] block mb-0.5">Global Net Worth</span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xl font-black text-brand-blue/30 dark:text-brand-cyan/30">₹</span>
+                  <p className="text-3xl font-heading font-black text-brand-blue dark:text-white tracking-tighter leading-none">
                     {totalNetWorth.toLocaleString('en-IN')}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-4">
-              <div className="flex-1 bg-white/50 dark:bg-[#111111]/50 backdrop-blur-xl p-7 px-8 rounded-[40px] border border-neutral-100 dark:border-white/5 shadow-sm flex flex-col justify-center min-w-[220px] group hover:bg-white dark:hover:bg-[#111111] transition-all">
-                <span className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em] leading-none block mb-3">Total Liquid</span>
-                <div className="flex items-center gap-3">
-                  <div className="w-1.5 h-8 bg-brand-green rounded-full opacity-40 group-hover:opacity-100 transition-opacity" />
-                  <p className="text-3xl font-heading font-black text-brand-green tracking-tighter leading-none">
-                    ₹{totalLiquid.toLocaleString('en-IN')}
-                  </p>
-                </div>
+            <div className="flex-1 px-8 py-6 flex items-center gap-5 group hover:bg-neutral-50/50 dark:hover:bg-white/[0.02] transition-all">
+              <div className="w-12 h-12 rounded-2xl bg-brand-green/5 dark:bg-brand-green/20 flex items-center justify-center text-brand-green shadow-sm group-hover:scale-110 transition-transform">
+                <Wallet className="w-6 h-6" />
               </div>
+              <div>
+                <span className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] block mb-0.5">Liquid Assets</span>
+                <p className="text-2xl font-heading font-black text-brand-green tracking-tighter leading-none">
+                  ₹{totalLiquid.toLocaleString('en-IN')}
+                </p>
+              </div>
+            </div>
 
-              <div className="flex-1 bg-white/50 dark:bg-[#111111]/50 backdrop-blur-xl p-7 px-8 rounded-[40px] border border-neutral-100 dark:border-white/5 shadow-sm flex flex-col justify-center min-w-[220px] group hover:bg-white dark:hover:bg-[#111111] transition-all">
-                <span className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em] leading-none block mb-3">Liabilities</span>
-                <div className="flex items-center gap-3">
-                  <div className="w-1.5 h-8 bg-rose-500 rounded-full opacity-40 group-hover:opacity-100 transition-opacity" />
-                  <p className="text-3xl font-heading font-black text-rose-500 tracking-tighter leading-none">
-                    ₹{totalLiabilities.toLocaleString('en-IN')}
-                  </p>
-                </div>
+            <div className="flex-1 px-8 py-6 flex items-center gap-5 group hover:bg-neutral-50/50 dark:hover:bg-white/[0.02] transition-all">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/5 dark:bg-rose-500/20 flex items-center justify-center text-rose-500 shadow-sm group-hover:scale-110 transition-transform">
+                <CreditCard className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] block mb-0.5">Total Liabilities</span>
+                <p className="text-2xl font-heading font-black text-rose-500 tracking-tighter leading-none">
+                  ₹{totalLiabilities.toLocaleString('en-IN')}
+                </p>
               </div>
             </div>
           </div>
