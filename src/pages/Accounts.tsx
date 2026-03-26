@@ -407,7 +407,7 @@ export default function Accounts() {
 function PartitionRow({ partition }: { partition: any }) {
   return (
     <tr className="bg-brand-blue/[0.05] dark:bg-brand-blue/[0.15] border-y border-brand-blue/10 dark:border-brand-blue/30">
-      <td colSpan={5} className="px-2 py-2">
+      <td colSpan={4} className="px-2 py-2">
         <div className="flex items-center justify-end">
           <div className="flex items-center gap-2.5">
             <span className="text-[8px] font-semibold text-brand-blue/60 dark:text-white/50 uppercase tracking-[0.2em]">New Start Balance</span>
@@ -650,9 +650,15 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
           </div>
 
           <div className="grid grid-cols-2 gap-1.5">
-            <button onClick={handleStartNewBalance} className="flex items-center justify-center gap-1.5 bg-brand-green text-white py-1.5 rounded-lg font-semibold text-[8px] uppercase tracking-[0.1em]">Close Period</button>
+            <button onClick={handleStartNewBalance} className="flex items-center justify-center gap-1.5 bg-brand-green text-white py-1.5 rounded-lg font-semibold text-[8px] uppercase tracking-[0.1em] shadow-lg shadow-brand-green/10">
+              <CheckCircle2 className="w-3 h-3" />
+              New Start Balance
+            </button>
             <div className="relative">
-              <button onClick={() => setShowExportMenu(!showExportMenu)} className="w-full flex items-center justify-center gap-1.5 bg-brand-blue text-white py-1.5 rounded-lg font-semibold text-[8px] uppercase tracking-[0.1em]">Export</button>
+              <button onClick={() => setShowExportMenu(!showExportMenu)} className="w-full flex items-center justify-center gap-1.5 bg-brand-blue text-white py-1.5 rounded-lg font-semibold text-[8px] uppercase tracking-[0.1em]">
+                <Download className="w-3 h-3" />
+                Export
+              </button>
               {showExportMenu && (
                 <div className="absolute top-full right-0 mt-1 bg-white dark:bg-[#1A1A1A] border border-neutral-200 dark:border-[#333333] rounded-lg shadow-xl py-1 w-24 z-10">
                   <button onClick={downloadPDF} className="w-full px-3 py-1.5 text-left text-[8px] font-semibold hover:bg-neutral-50 dark:hover:bg-[#222222]">PDF</button>
