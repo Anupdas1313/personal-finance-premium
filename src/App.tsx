@@ -4,8 +4,6 @@ import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Accounts from './pages/Accounts';
 import Summary from './pages/Summary';
-import SMSParser from './pages/SMSParser';
-import Accounting from './pages/Accounting';
 import TransactionTable from './pages/TransactionTable';
 import Settings from './pages/Settings';
 import Budgets from './pages/Budgets';
@@ -26,11 +24,9 @@ export default function App() {
           <Route path="accounts" element={<Accounts />} />
           <Route path="summary" element={<Summary />} />
           <Route path="budgets" element={<Budgets />} />
-          <Route path="accounting" element={<Accounting />} />
           <Route path="reports" element={<Reports />} />
           <Route path="ledger" element={<Ledger />} />
           <Route path="ledger/:id" element={<PartyLedger />} />
-          <Route path="parse" element={<SMSParser />} />
           <Route path="settings" element={<Settings />} />
         </Route>
 
