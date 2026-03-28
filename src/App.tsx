@@ -1,21 +1,21 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import Transactions from './pages/Transactions';
-import Accounts from './pages/Accounts';
-import Summary from './pages/Summary';
-import TransactionTable from './pages/TransactionTable';
-import Settings from './pages/Settings';
-import Budgets from './pages/Budgets';
-import Ledger from './pages/Ledger';
-import PartyLedger from './pages/PartyLedger';
-import Reports from './pages/Reports';
-import Login from './pages/Login';
-import VerifyEmail from './pages/VerifyEmail';
+import Dashboard from './screens/Dashboard';
+import Transactions from './screens/Transactions';
+import Accounts from './screens/Accounts';
+import Summary from './screens/Summary';
+import TransactionTable from './screens/TransactionTable';
+import Settings from './screens/Settings';
+import Budgets from './screens/Budgets';
+import Ledger from './screens/Ledger';
+import PartyLedger from './screens/PartyLedger';
+import Reports from './screens/Reports';
+import Login from './screens/Login';
+import VerifyEmail from './screens/VerifyEmail';
 
 import { ThemeProvider } from './components/ThemeProvider';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import './lib/sync';
+import './logic/sync';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();

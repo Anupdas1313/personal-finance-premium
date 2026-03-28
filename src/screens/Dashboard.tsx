@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../lib/db';
+import { db } from '../models/db';
 import { ArrowUpRight, ArrowDownRight, Wallet, Plus, X, AlertCircle, CheckCircle2, Search, ChevronDown, Landmark, Smartphone, ArrowLeft, Calendar, Clock, Calculator, MoreHorizontal, User, AlignLeft, Hash, Paperclip, Save, ChevronRight, CreditCard, Coins, PlaneTakeoff, Eye, EyeOff, Wand2 } from 'lucide-react';
 
 import { format, startOfMonth, startOfYear, isToday, isYesterday, startOfDay } from 'date-fns';
@@ -18,7 +18,7 @@ import { IndusIndLogo } from '../components/IndusIndLogo';
 import { UnionBankLogo } from '../components/UnionBankLogo';
 import { BankLogo } from '../components/BankLogo';
 import { SyncStatusIcon } from '../components/SyncStatusIcon';
-import { syncAllPending } from '../lib/sync';
+import { syncAllPending } from '../logic/sync';
 
 export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();

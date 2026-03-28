@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, Transaction } from '../lib/db';
+import { db, Transaction } from '../models/db';
 import { format, startOfMonth, endOfMonth, subMonths, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { Download, FileText, Printer, ChevronDown, Calendar, Filter, User, Smartphone, Landmark, CreditCard, Coins, Tag, MoreHorizontal } from 'lucide-react';
 import { jsPDF } from 'jspdf';

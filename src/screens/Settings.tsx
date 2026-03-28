@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
-import { cn } from '../lib/utils';
+import { cn } from '../logic/utils';
 
-import { db } from '../lib/db';
+import { db } from '../models/db';
 import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as SettingsIcon, X, Moon, Sun, Monitor, Palette, Tag, ShieldAlert } from 'lucide-react';
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';

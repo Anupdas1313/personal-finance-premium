@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, LedgerTransaction } from '../lib/db';
+import { db, LedgerTransaction } from '../models/db';
 import { ArrowLeft, Plus, TrendingUp, TrendingDown, Clock, Search, Trash2, Calendar, FileText, Download, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 

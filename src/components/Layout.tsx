@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation, Link, Outlet } from 'react-router-dom';
 import { LayoutDashboard, BarChart3, Landmark, PieChart, Target, Settings, Plus, MoreHorizontal, BookOpen, FileText } from 'lucide-react';
 
-import { cn } from '../lib/utils';
+import { cn } from '../logic/utils';
 import { useAuth } from '../context/AuthContext';
 import { LogOut } from 'lucide-react';
 

@@ -1,4 +1,4 @@
-import { db, Transaction, Account } from './db';
+import { db, Transaction, Account } from '../models/db';
 import { db_cloud, auth } from './firebase';
 import { 
   collection, 

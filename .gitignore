@@ -7,3 +7,13 @@ coverage/
 .env*
 !.env.example
 .vercel
+
+Stable_Pre_Cleanup/
+node_modules/
+.parcel-cache/
+dist/
+build/
+android/app/build/
+android/build/
+capacitor.config.ts.bak
+

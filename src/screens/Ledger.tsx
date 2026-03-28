@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, Party } from '../lib/db';
+import { db, Party } from '../models/db';
 import { Plus, Search, UserPlus, Phone, ChevronRight, TrendingUp, TrendingDown, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 

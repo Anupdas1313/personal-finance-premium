@@ -7,7 +7,7 @@ import {
   createUserWithEmailAndPassword,
   sendEmailVerification
 } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { auth } from '../logic/firebase';
 
 interface AuthContextType {
   user: User | null;
