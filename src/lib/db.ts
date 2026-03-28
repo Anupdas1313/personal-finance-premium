@@ -7,6 +7,8 @@ export interface Account {
   startingBalance: number;
   startingBalanceDate?: Date;
   type?: 'BANK' | 'CASH' | 'CREDIT_CARD';
+  syncStatus?: 'synced' | 'pending' | 'error';
+  lastUpdated?: Date;
 }
 
 export interface Transaction {
@@ -23,6 +25,8 @@ export interface Transaction {
   party?: string;
   isPersonalExpense?: boolean;
   expenseType?: string;
+  syncStatus?: 'synced' | 'pending' | 'error';
+  lastUpdated?: Date;
 }
 
 export interface Budget {
@@ -117,6 +121,10 @@ export class FinanceDatabase extends Dexie {
     });
     this.version(8).stores({
       accountClosings: '++id, accountId, closingDate'
+    });
+    this.version(9).stores({
+      accounts: '++id, bankName, accountLast4, syncStatus',
+      transactions: '++id, accountId, type, dateTime, category, syncStatus'
     });
   }
 }

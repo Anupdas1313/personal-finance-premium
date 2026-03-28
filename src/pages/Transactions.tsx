@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SyncStatusIcon } from '../components/SyncStatusIcon';
 
 const CATEGORY_ICONS: Record<string, string> = {
   'Food': '🍔',
@@ -378,10 +379,11 @@ export default function Transactions() {
                      </div>
                   </div>
 
-                  <div className="text-right">
+                  <div className="text-right flex flex-col items-end gap-1">
                      <p className={`text-base font-heading font-black tracking-tighter ${tx.type === 'DEBIT' ? 'text-rose-500' : 'text-emerald-500'}`}>
                        {tx.type === 'DEBIT' ? '-' : '+'}₹{Number(tx.amount).toLocaleString()}
                      </p>
+                     <SyncStatusIcon status={tx.syncStatus} />
                   </div>
                 </motion.div>
               </div>

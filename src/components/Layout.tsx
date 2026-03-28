@@ -3,11 +3,14 @@ import { useLocation, Link, Outlet } from 'react-router-dom';
 import { LayoutDashboard, BarChart3, Landmark, PieChart, Target, Settings, Plus, MoreHorizontal, BookOpen, FileText } from 'lucide-react';
 
 import { cn } from '../lib/utils';
+import { useAuth } from '../context/AuthContext';
+import { LogOut } from 'lucide-react';
 
 
 export default function Layout() {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { logout } = useAuth();
 
   const mainNavItems = [
     { name: 'Home', path: '/', icon: LayoutDashboard },
@@ -64,6 +67,15 @@ export default function Layout() {
             <Plus className="w-5 h-5" />
             Add Transaction
           </Link>
+
+
+          <button
+            onClick={logout}
+            className="mt-auto flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-rose-500 hover:bg-rose-500/10 transition-all active:scale-95"
+          >
+            <LogOut className="w-5 h-5" />
+            Sign Out
+          </button>
 
         </nav>
       </aside>
@@ -184,6 +196,14 @@ export default function Layout() {
                   </Link>
                 );
               })}
+
+              <button
+                onClick={logout}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-rose-500 hover:bg-rose-500/10 transition-colors"
+              >
+                <LogOut className="w-5 h-5" />
+                Sign Out
+              </button>
             </div>
           </div>
         </div>

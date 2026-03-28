@@ -17,6 +17,8 @@ import { AIChatEntry } from '../components/AIChatEntry';
 import { IndusIndLogo } from '../components/IndusIndLogo';
 import { UnionBankLogo } from '../components/UnionBankLogo';
 import { BankLogo } from '../components/BankLogo';
+import { SyncStatusIcon } from '../components/SyncStatusIcon';
+import { syncAllPending } from '../lib/sync';
 
 export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -24,6 +26,10 @@ export default function Dashboard() {
 
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
   const transactions = useLiveQuery(() => db.transactions.orderBy('dateTime').reverse().limit(5).toArray()) || [];
+
+  useEffect(() => {
+    syncAllPending();
+  }, []);
 
 
   const [isAddingManual, setIsAddingManual] = useState(searchParams.get('add') === 'true');
@@ -154,6 +160,8 @@ export default function Dashboard() {
           upiApp: currentPaymentMethod === 'UPI' ? currentUpiApp : undefined,
           party: accounts.find(a => a.id === currentToAccountId)?.bankName || 'Other Account',
           expenseType: currentExpenseType,
+          syncStatus: 'pending',
+          lastUpdated: new Date()
         });
 
         // Add CREDIT transaction for destination account
@@ -168,6 +176,8 @@ export default function Dashboard() {
           upiApp: currentPaymentMethod === 'UPI' ? currentUpiApp : undefined,
           party: accounts.find(a => a.id === currentSelectedAccountId)?.bankName || 'Other Account',
           expenseType: currentExpenseType,
+          syncStatus: 'pending',
+          lastUpdated: new Date()
         });
       } else {
         const isTodaySelected = format(new Date(currentTransactionDate), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
@@ -184,13 +194,18 @@ export default function Dashboard() {
           upiApp: currentPaymentMethod === 'UPI' ? currentUpiApp : undefined,
           party: currentPartyName,
           expenseType: currentExpenseType,
+          syncStatus: 'pending' as const,
+          lastUpdated: new Date()
         };
 
         if (editingTransactionId) {
           await db.transactions.update(editingTransactionId, txPayload);
         } else {
-          await db.transactions.add(txPayload);
+          await db.transactions.add(txPayload as any);
         }
+        
+        // Trigger background sync
+        syncAllPending();
       }
       
       setIsSaving(false);
@@ -320,6 +335,7 @@ export default function Dashboard() {
             {acc.currentBalance < 1000 && acc.type !== 'CREDIT_CARD' && (
               <span className="w-1 h-1 rounded-full bg-brand-red animate-pulse"></span>
             )}
+            <SyncStatusIcon status={acc.syncStatus} />
           </div>
         </div>
       </div>
