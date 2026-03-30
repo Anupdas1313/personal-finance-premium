@@ -11,7 +11,7 @@ import Ledger from './screens/Ledger';
 import PartyLedger from './screens/PartyLedger';
 import Reports from './screens/Reports';
 import Login from './screens/Login';
-import VerifyEmail from './screens/VerifyEmail';
+import Profile from './screens/Profile';
 
 import { ThemeProvider } from './components/ThemeProvider';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -32,10 +32,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (!user.emailVerified && localStorage.getItem('app_bypass_verification') !== 'true') {
-    return <Navigate to="/verify" replace />;
-  }
-  
   return <>{children}</>;
 }
 
@@ -46,7 +42,6 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/verify" element={<VerifyEmail />} />
             
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
@@ -58,6 +53,7 @@ export default function App() {
               <Route path="ledger" element={<Ledger />} />
               <Route path="ledger/:id" element={<PartyLedger />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="profile" element={<Profile />} />
             </Route>
 
             <Route path="/transactions/table" element={<ProtectedRoute><TransactionTable /></ProtectedRoute>} />

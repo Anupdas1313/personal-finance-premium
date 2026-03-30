@@ -26,7 +26,7 @@ export function useTags() {
   const addTag = (tag: string) => {
     const trimmed = tag.trim();
     if (!trimmed || tags.includes(trimmed)) return false;
-    
+
     const newTags = [...tags, trimmed];
     setTags(newTags);
     localStorage.setItem('app_tags', JSON.stringify(newTags));
@@ -46,5 +46,5 @@ export function useTags() {
     localStorage.setItem('app_tags', JSON.stringify(DEFAULT_TAGS));
   };
 
-  return { tags, addTag, removeTag, resetTags };
+  return { tags, addTag, removeTag, resetTags }
 }

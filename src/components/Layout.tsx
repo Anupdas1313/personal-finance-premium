@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, Link, Outlet } from 'react-router-dom';
-import { LayoutDashboard, BarChart3, Landmark, PieChart, Target, Settings, Plus, MoreHorizontal, BookOpen, FileText } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Landmark, PieChart, Target, Settings, Plus, MoreHorizontal, BookOpen, FileText, User } from 'lucide-react';
 
 import { cn } from '../logic/utils';
 import { useAuth } from '../context/AuthContext';
@@ -24,6 +24,7 @@ export default function Layout() {
     { name: 'Reports', path: '/reports', icon: FileText },
     { name: 'Ledger', path: '/ledger', icon: BookOpen },
     { name: 'Settings', path: '/settings', icon: Settings },
+    { name: 'Profile', path: '/profile', icon: User },
   ];
 
   const allNavItems = [...mainNavItems, ...moreNavItems];

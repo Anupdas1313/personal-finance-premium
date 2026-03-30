@@ -5,17 +5,20 @@ import {
   signOut, 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  sendEmailVerification
+  updateProfile,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { auth } from '../logic/firebase';
+import { initializeDB } from '../models/db';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   logout: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
-  resendVerification: () => Promise<void>;
+  signUp: (email: string, password: string, name?: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updateProfileName: (name: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,6 +29,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      // Initialize dynamic database name based on user UID
+      initializeDB(user ? user.uid : null);
       setUser(user);
       setLoading(false);
     });
@@ -38,29 +43,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await signInWithEmailAndPassword(auth, email, password);
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, name?: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    if (userCredential.user) {
-      const actionCodeSettings = {
-        url: window.location.origin + '/login',
-        handleCodeInApp: true,
-      };
-      await sendEmailVerification(userCredential.user, actionCodeSettings);
+    if (name) {
+      await updateProfile(userCredential.user, { displayName: name });
+      // Force user state refresh
+      setUser({ ...userCredential.user, displayName: name });
     }
   };
 
-  const resendVerification = async () => {
+  const resetPassword = async (email: string) => {
+    await sendPasswordResetEmail(auth, email);
+  };
+
+  const updateProfileName = async (name: string) => {
     if (auth.currentUser) {
-      const actionCodeSettings = {
-        url: window.location.origin + '/login',
-        handleCodeInApp: true,
-      };
-      await sendEmailVerification(auth.currentUser, actionCodeSettings);
+      await updateProfile(auth.currentUser, { displayName: name });
+      setUser({ ...auth.currentUser, displayName: name });
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, logout, signIn, signUp, resendVerification }}>
+    <AuthContext.Provider value={{ user, loading, logout, signIn, signUp, resetPassword, updateProfileName }}>
       {children}
     </AuthContext.Provider>
   );

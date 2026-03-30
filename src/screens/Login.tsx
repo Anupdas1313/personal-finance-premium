@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Wallet, LogIn, Sparkles, Mail, Lock, UserPlus, AlertCircle } from 'lucide-react';
+import { Wallet, LogIn, Sparkles, Mail, Lock, UserPlus, AlertCircle, User, CheckCircle2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
 export default function Login() {
-  const { user, signIn, signUp, loading } = useAuth();
+  const { user, signIn, signUp, resetPassword, loading } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (loading) {
@@ -20,21 +22,19 @@ export default function Login() {
   }
 
   if (user) {
-    if (!user.emailVerified) {
-      return <Navigate to="/verify" replace />;
-    }
     return <Navigate to="/" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setIsSubmitting(true);
 
     try {
       if (isSignUp) {
         try {
-          await signUp(email, password);
+          await signUp(email, password, name);
         } catch (err: any) {
           if (err.code === 'auth/email-already-in-use') {
             setError('User already exists. Please sign in');
@@ -55,6 +55,24 @@ export default function Login() {
       }
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError('Please enter your email address first');
+      return;
+    }
+    setError('');
+    setSuccess('');
+    setIsSubmitting(true);
+    try {
+      await resetPassword(email);
+      setSuccess('Password reset link sent to your email!');
+    } catch (err: any) {
+      setError(err.message || 'Failed to send reset email');
     } finally {
       setIsSubmitting(false);
     }
@@ -89,6 +107,19 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-4">
+              {isSignUp && (
+                <div className="relative group">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 group-focus-within:text-brand-blue transition-colors" />
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Full Name"
+                    className="w-full pl-12 pr-4 py-4 bg-white dark:bg-[#1A1A1E] border border-[#EBEBEB] dark:border-white/10 rounded-2xl text-sm font-bold outline-none focus:ring-2 ring-brand-blue/20 dark:ring-brand-cyan/20 transition-all text-brand-blue dark:text-white"
+                  />
+                </div>
+              )}
               <div className="relative group">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 group-focus-within:text-brand-blue transition-colors" />
                 <input
@@ -120,6 +151,13 @@ export default function Login() {
               </div>
             )}
 
+            {success && (
+              <div className="flex items-center gap-2 p-4 bg-brand-green/10 text-brand-green text-xs font-bold rounded-2xl animate-in fade-in duration-500">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                {success}
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={isSubmitting}
@@ -135,9 +173,18 @@ export default function Login() {
             </button>
           </form>
           
-          <div className="text-center pt-2">
+          <div className="flex flex-col items-center gap-4 pt-2">
+            {!isSignUp && (
+              <button
+                onClick={handleForgotPassword}
+                disabled={isSubmitting}
+                className="text-[10px] font-black uppercase tracking-widest text-brand-blue/40 dark:text-brand-cyan/40 hover:text-brand-blue dark:hover:text-brand-cyan transition-colors"
+              >
+                Forgot Password?
+              </button>
+            )}
             <button
-              onClick={() => { setIsSignUp(!isSignUp); setError(''); }}
+              onClick={() => { setIsSignUp(!isSignUp); setError(''); setSuccess(''); }}
               className="text-[10px] font-black uppercase tracking-widest text-brand-blue/60 dark:text-brand-cyan/60 hover:text-brand-blue dark:hover:text-brand-cyan transition-colors"
             >
               {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}

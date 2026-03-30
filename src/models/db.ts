@@ -85,8 +85,8 @@ export class FinanceDatabase extends Dexie {
   ledgerTransactions!: Table<LedgerTransaction, number>;
   accountClosings!: Table<AccountClosing, number>;
 
-  constructor() {
-    super('FinanceDatabase');
+  constructor(dbName: string = 'FinanceDatabase_default') {
+    super(dbName);
     this.version(1).stores({
       accounts: '++id, bankName, accountLast4',
       transactions: '++id, accountId, type, dateTime, category'
@@ -129,6 +129,33 @@ export class FinanceDatabase extends Dexie {
   }
 }
 
+// Global db instance management
+let currentUID: string | null = null;
+let activeDB: FinanceDatabase = new FinanceDatabase('FinanceDatabase_default');
 
+export const initializeDB = (uid: string | null) => {
+  if (uid === currentUID) return activeDB;
+  
+  // Close previous if necessary
+  if (activeDB.isOpen()) {
+    activeDB.close();
+  }
 
-export const db = new FinanceDatabase();
+  currentUID = uid;
+  const dbName = uid ? `FinanceDatabase_${uid}` : 'FinanceDatabase_default';
+  activeDB = new FinanceDatabase(dbName);
+  return activeDB;
+};
+
+// Proxy to allow existing code to use 'db' export without changes
+export const db = new Proxy({} as FinanceDatabase, {
+  get(_, prop) {
+    const target = activeDB as any;
+    const value = target[prop];
+    if (typeof value === 'function') {
+      return value.bind(target);
+    }
+    return value;
+  }
+});
+
