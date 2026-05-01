@@ -7,8 +7,16 @@ export interface Account {
   startingBalance: number;
   startingBalanceDate?: Date;
   type?: 'BANK' | 'CASH' | 'CREDIT_CARD';
-  syncStatus?: 'synced' | 'pending' | 'error';
-  lastUpdated?: Date;
+}
+
+export interface Category {
+  id?: number;
+  name: string;
+}
+
+export interface Tag {
+  id?: number;
+  name: string;
 }
 
 export interface Transaction {
@@ -25,8 +33,6 @@ export interface Transaction {
   party?: string;
   isPersonalExpense?: boolean;
   expenseType?: string;
-  syncStatus?: 'synced' | 'pending' | 'error';
-  lastUpdated?: Date;
 }
 
 export interface Budget {
@@ -84,8 +90,10 @@ export class FinanceDatabase extends Dexie {
   parties!: Table<Party, number>;
   ledgerTransactions!: Table<LedgerTransaction, number>;
   accountClosings!: Table<AccountClosing, number>;
+  categories!: Table<Category, number>;
+  tags!: Table<Tag, number>;
 
-  constructor(dbName: string = 'FinanceDatabase_default') {
+  constructor(dbName: string = 'FinanceDatabase_Local') {
     super(dbName);
     this.version(1).stores({
       accounts: '++id, bankName, accountLast4',
@@ -123,27 +131,22 @@ export class FinanceDatabase extends Dexie {
       accountClosings: '++id, accountId, closingDate'
     });
     this.version(9).stores({
-      accounts: '++id, bankName, accountLast4, syncStatus',
-      transactions: '++id, accountId, type, dateTime, category, syncStatus'
+      accounts: '++id, bankName, accountLast4',
+      transactions: '++id, accountId, type, dateTime, category'
+    });
+    this.version(10).stores({
+      categories: '++id, &name',
+      tags: '++id, &name'
     });
   }
 }
 
 // Global db instance management
-let currentUID: string | null = null;
-let activeDB: FinanceDatabase = new FinanceDatabase('FinanceDatabase_default');
+let activeDB: FinanceDatabase = new FinanceDatabase('FinanceDatabase_Local');
 
 export const initializeDB = (uid: string | null) => {
-  if (uid === currentUID) return activeDB;
-  
-  // Close previous if necessary
-  if (activeDB.isOpen()) {
-    activeDB.close();
-  }
-
-  currentUID = uid;
-  const dbName = uid ? `FinanceDatabase_${uid}` : 'FinanceDatabase_default';
-  activeDB = new FinanceDatabase(dbName);
+  // In local mode, we always use the same database name
+  // The uid parameter is kept for backward compatibility with existing calls
   return activeDB;
 };
 

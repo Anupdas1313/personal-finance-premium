@@ -1,44 +1,64 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
+import { db } from '../models/db';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { useAuth } from '../context/AuthContext';
 
 const DEFAULT_CATEGORIES = ['Personal', 'Home', 'Miscellaneous', 'Tenant / Customer'];
 
+let categoriesInitialized = false;
+
 export function useCategories() {
-  const [categories, setCategories] = useState<string[]>([]);
+  const { user } = useAuth();
+  
+  // Use useLiveQuery to subscribe to the categories table for the current user's DB
+  const dbCategories = useLiveQuery(
+    async () => {
+      const cats = await db.categories.toArray();
+      return cats.map(c => c.name);
+    },
+    [user?.uid]
+  ) || [];
 
-  useEffect(() => {
-    const stored = localStorage.getItem('app_categories');
-    if (stored) {
+  React.useEffect(() => {
+    async function initCategories() {
+      if (categoriesInitialized) return;
+      categoriesInitialized = true;
       try {
-        setCategories(JSON.parse(stored));
+        const count = await db.categories.count();
+        if (count === 0) {
+          const initial = DEFAULT_CATEGORIES.map(name => ({ name }));
+          await db.categories.bulkPut(initial);
+        }
       } catch (e) {
-        setCategories(DEFAULT_CATEGORIES);
+        categoriesInitialized = false;
+        console.error('Failed to init categories:', e);
       }
-    } else {
-      setCategories(DEFAULT_CATEGORIES);
-      localStorage.setItem('app_categories', JSON.stringify(DEFAULT_CATEGORIES));
     }
-  }, []);
+    if (dbCategories.length === 0) {
+      initCategories();
+    }
+  }, [dbCategories.length]);
 
-  const addCategory = (category: string) => {
+  const addCategory = async (category: string) => {
     const trimmed = category.trim();
-    if (!trimmed || categories.includes(trimmed)) return false;
+    if (!trimmed || dbCategories.includes(trimmed)) return false;
     
-    const newCategories = [...categories, trimmed];
-    setCategories(newCategories);
-    localStorage.setItem('app_categories', JSON.stringify(newCategories));
+    await db.categories.add({ name: trimmed });
     return true;
   };
 
-  const removeCategory = (category: string) => {
-    const newCategories = categories.filter(c => c !== category);
-    setCategories(newCategories);
-    localStorage.setItem('app_categories', JSON.stringify(newCategories));
+  const removeCategory = async (category: string) => {
+    const cat = await db.categories.where('name').equals(category).first();
+    if (cat?.id) {
+      await db.categories.delete(cat.id);
+    }
   };
 
-  const resetCategories = () => {
-    setCategories(DEFAULT_CATEGORIES);
-    localStorage.setItem('app_categories', JSON.stringify(DEFAULT_CATEGORIES));
+  const resetCategories = async () => {
+    await db.categories.clear();
+    const initial = DEFAULT_CATEGORIES.map(name => ({ name }));
+    await db.categories.bulkAdd(initial);
   };
 
-  return { categories, addCategory, removeCategory, resetCategories };
+  return { categories: dbCategories, addCategory, removeCategory, resetCategories };
 }

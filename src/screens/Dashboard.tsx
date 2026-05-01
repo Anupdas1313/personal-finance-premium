@@ -13,23 +13,21 @@ import { CATEGORIES, CATEGORY_ICONS, CATEGORY_COLORS } from '../constants';
 
 
 
+import { useAuth } from '../context/AuthContext';
 import { AIChatEntry } from '../components/AIChatEntry';
 import { IndusIndLogo } from '../components/IndusIndLogo';
 import { UnionBankLogo } from '../components/UnionBankLogo';
 import { BankLogo } from '../components/BankLogo';
-import { SyncStatusIcon } from '../components/SyncStatusIcon';
-import { syncAllPending } from '../logic/sync';
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
-  const transactions = useLiveQuery(() => db.transactions.orderBy('dateTime').reverse().limit(5).toArray()) || [];
+  const accounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
+  const transactions = useLiveQuery(() => db.transactions.orderBy('dateTime').reverse().limit(5).toArray(), [user?.uid]) || [];
 
-  useEffect(() => {
-    syncAllPending();
-  }, []);
+
 
 
   const [isAddingManual, setIsAddingManual] = useState(searchParams.get('add') === 'true');
@@ -159,9 +157,7 @@ export default function Dashboard() {
           paymentMethod: currentPaymentMethod,
           upiApp: currentPaymentMethod === 'UPI' ? currentUpiApp : undefined,
           party: accounts.find(a => a.id === currentToAccountId)?.bankName || 'Other Account',
-          expenseType: currentExpenseType,
-          syncStatus: 'pending',
-          lastUpdated: new Date()
+          expenseType: currentExpenseType
         });
 
         // Add CREDIT transaction for destination account
@@ -175,9 +171,7 @@ export default function Dashboard() {
           paymentMethod: currentPaymentMethod,
           upiApp: currentPaymentMethod === 'UPI' ? currentUpiApp : undefined,
           party: accounts.find(a => a.id === currentSelectedAccountId)?.bankName || 'Other Account',
-          expenseType: currentExpenseType,
-          syncStatus: 'pending',
-          lastUpdated: new Date()
+          expenseType: currentExpenseType
         });
       } else {
         const isTodaySelected = format(new Date(currentTransactionDate), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
@@ -193,9 +187,7 @@ export default function Dashboard() {
           paymentMethod: currentPaymentMethod,
           upiApp: currentPaymentMethod === 'UPI' ? currentUpiApp : undefined,
           party: currentPartyName,
-          expenseType: currentExpenseType,
-          syncStatus: 'pending' as const,
-          lastUpdated: new Date()
+          expenseType: currentExpenseType
         };
 
         if (editingTransactionId) {
@@ -204,8 +196,7 @@ export default function Dashboard() {
           await db.transactions.add(txPayload as any);
         }
         
-        // Trigger background sync
-        syncAllPending();
+
       }
       
       setIsSaving(false);
@@ -232,8 +223,8 @@ export default function Dashboard() {
     }
   };
 
-  const monthlyClosings = useLiveQuery(() => db.monthlyClosings.orderBy('month').reverse().toArray()) || [];
-  const allClosings = useLiveQuery(() => db.accountClosings.toArray()) || [];
+  const monthlyClosings = useLiveQuery(() => db.monthlyClosings.orderBy('month').reverse().toArray(), [user?.uid]) || [];
+  const allClosings = useLiveQuery(() => db.accountClosings.toArray(), [user?.uid]) || [];
 
   // Optimized balance and metrics calculation
   const { balances, totalIncome, totalSpending, totalWealth } = useLiveQuery(async () => {
@@ -290,7 +281,7 @@ export default function Dashboard() {
       totalSpending: spending,
       totalWealth
     };
-  }, [timeFilter]) || { balances: [], totalIncome: 0, totalSpending: 0, totalWealth: 0 };
+  }, [timeFilter, user?.uid]) || { balances: [], totalIncome: 0, totalSpending: 0, totalWealth: 0 };
   
   const monthDelta = totalIncome - totalSpending;
   const totalBalance = balances.reduce((sum, acc) => sum + acc.currentBalance, 0);
@@ -335,7 +326,7 @@ export default function Dashboard() {
             {acc.currentBalance < 1000 && acc.type !== 'CREDIT_CARD' && (
               <span className="w-1 h-1 rounded-full bg-brand-red animate-pulse"></span>
             )}
-            <SyncStatusIcon status={acc.syncStatus} />
+
           </div>
         </div>
       </div>
@@ -354,17 +345,20 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-[10px] font-bold text-[#1A237E]/40 dark:text-[#777777] tracking-[0.2em] uppercase">{greeting},</p>
-          <h1 className="text-2xl font-heading font-black text-[#1A237E] dark:text-[#F7F7F7] leading-tight tracking-tight">Guest User 👋</h1>
+          <h1 className="text-2xl font-heading font-black text-[#1A237E] dark:text-[#F7F7F7] leading-tight tracking-tight">{user?.displayName || 'Guest User'} 👋</h1>
         </div>
 
         <div className="flex items-center gap-3">
           <div
-            title="Guest User"
+            title={user?.displayName || 'Guest User'}
             className="w-10 h-10 rounded-full bg-gradient-to-br from-[#1A237E] to-[#4A4ABF] flex items-center justify-center text-white select-none shadow-lg cursor-pointer border-2 border-white dark:border-[#1A1A1E]"
           >
-            <User className="w-5 h-5" />
+            {user?.displayName ? (
+              <span className="font-black text-sm">{user.displayName[0].toUpperCase()}</span>
+            ) : (
+              <User className="w-5 h-5" />
+            )}
           </div>
-
         </div>
       </div>
 

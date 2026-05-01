@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction } from '../models/db';
+import { useAuth } from '../context/AuthContext';
 import { format, startOfMonth, endOfMonth, subMonths, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { Download, FileText, Printer, ChevronDown, Calendar, Filter, User, Smartphone, Landmark, CreditCard, Coins, Tag, MoreHorizontal } from 'lucide-react';
 import { jsPDF } from 'jspdf';
@@ -10,9 +11,10 @@ import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
 
 export default function Reports() {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const accountIdParam = searchParams.get('accountId');
-  const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
+  const accounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
   const { categories } = useCategories();
   const { tags } = useTags();
 
@@ -70,7 +72,7 @@ export default function Reports() {
     }
 
     return txs.sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
-  }, [selectedAccountId, dateRange, selectedCategory, selectedMethod, selectedTag, transactionType]) || [];
+  }, [selectedAccountId, dateRange, selectedCategory, selectedMethod, selectedTag, transactionType, user?.uid]) || [];
 
   const totals = useMemo(() => {
     return filteredTransactions.reduce((acc, tx) => {

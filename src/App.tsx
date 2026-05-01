@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './screens/Dashboard';
 import Transactions from './screens/Transactions';
@@ -10,15 +10,13 @@ import Budgets from './screens/Budgets';
 import Ledger from './screens/Ledger';
 import PartyLedger from './screens/PartyLedger';
 import Reports from './screens/Reports';
-import Login from './screens/Login';
 import Profile from './screens/Profile';
 
 import { ThemeProvider } from './components/ThemeProvider';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import './logic/sync';
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+function LoadingWrapper({ children }: { children: React.ReactNode }) {
+  const { loading } = useAuth();
   
   if (loading) {
     return (
@@ -27,12 +25,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
 
-  return <>{children}</>;
+  return <div className="contents">{children}</div>;
 }
 
 export default function App() {
@@ -40,24 +34,24 @@ export default function App() {
     <ThemeProvider defaultTheme="dark" storageKey="app-theme">
       <AuthProvider>
         <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            
-            <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route index element={<Dashboard />} />
-              <Route path="transactions" element={<Transactions />} />
-              <Route path="accounts" element={<Accounts />} />
-              <Route path="summary" element={<Summary />} />
-              <Route path="budgets" element={<Budgets />} />
-              <Route path="reports" element={<Reports />} />
-              <Route path="ledger" element={<Ledger />} />
-              <Route path="ledger/:id" element={<PartyLedger />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="profile" element={<Profile />} />
-            </Route>
+          <LoadingWrapper>
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="transactions" element={<Transactions />} />
+                <Route path="accounts" element={<Accounts />} />
+                <Route path="summary" element={<Summary />} />
+                <Route path="budgets" element={<Budgets />} />
+                <Route path="reports" element={<Reports />} />
+                <Route path="ledger" element={<Ledger />} />
+                <Route path="ledger/:id" element={<PartyLedger />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="profile" element={<Profile />} />
+              </Route>
 
-            <Route path="/transactions/table" element={<ProtectedRoute><TransactionTable /></ProtectedRoute>} />
-          </Routes>
+              <Route path="/transactions/table" element={<TransactionTable />} />
+            </Routes>
+          </LoadingWrapper>
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>

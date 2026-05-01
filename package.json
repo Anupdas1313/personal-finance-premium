@@ -1,5 +1,5 @@
 {
-  "name": "proshanjit-finance",
+  "name": "anup-finance",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -21,7 +21,6 @@
     "date-fns": "^4.1.0",
     "dexie": "^4.3.0",
     "dexie-react-hooks": "^4.2.0",
-    "firebase": "^12.10.0",
     "framer-motion": "^12.35.1",
     "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",

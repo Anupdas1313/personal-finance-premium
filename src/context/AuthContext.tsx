@@ -1,15 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  User, 
-  onAuthStateChanged, 
-  signOut, 
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  updateProfile,
-  sendPasswordResetEmail
-} from 'firebase/auth';
-import { auth } from '../logic/firebase';
 import { initializeDB } from '../models/db';
+
+interface User {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -23,43 +20,63 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const LOCAL_USER_KEY = 'expense_tracker_local_user';
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      // Initialize dynamic database name based on user UID
-      initializeDB(user ? user.uid : null);
-      setUser(user);
-      setLoading(false);
-    });
-    return unsubscribe;
+    const storedUser = localStorage.getItem(LOCAL_USER_KEY);
+    const initialUser = storedUser ? JSON.parse(storedUser) : {
+      uid: 'LOCAL_USER',
+      email: 'guest@local.app',
+      displayName: 'Guest User',
+      photoURL: null
+    };
+    
+    setUser(initialUser);
+    initializeDB(initialUser.uid);
+    setLoading(false);
   }, []);
 
-  const logout = () => signOut(auth);
-
-  const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+  const logout = async () => {
+    // No-op since we're removing login page
   };
 
-  const signUp = async (email: string, password: string, name?: string) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    if (name) {
-      await updateProfile(userCredential.user, { displayName: name });
-      // Force user state refresh
-      setUser({ ...userCredential.user, displayName: name });
-    }
+  const signIn = async (email: string) => {
+    const newUser = {
+      uid: 'LOCAL_USER',
+      email: email,
+      displayName: email.split('@')[0],
+      photoURL: null
+    };
+    localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(newUser));
+    setUser(newUser);
+    initializeDB(newUser.uid);
   };
 
-  const resetPassword = async (email: string) => {
-    await sendPasswordResetEmail(auth, email);
+  const signUp = async (email: string, _password: string, name?: string) => {
+    const newUser = {
+      uid: 'LOCAL_USER',
+      email: email,
+      displayName: name || email.split('@')[0],
+      photoURL: null
+    };
+    localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(newUser));
+    setUser(newUser);
+    initializeDB(newUser.uid);
+  };
+
+  const resetPassword = async (_email: string) => {
+    console.log('Reset password requested in local mode.');
   };
 
   const updateProfileName = async (name: string) => {
-    if (auth.currentUser) {
-      await updateProfile(auth.currentUser, { displayName: name });
-      setUser({ ...auth.currentUser, displayName: name });
+    if (user) {
+      const updated = { ...user, displayName: name };
+      localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(updated));
+      setUser(updated);
     }
   };
 

@@ -1,50 +1,65 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
+import { db } from '../models/db';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { useAuth } from '../context/AuthContext';
 
 const DEFAULT_TAGS = ['Personal', 'Home'];
 
-export function useTags() {
-  const [tags, setTags] = useState<string[]>(DEFAULT_TAGS);
+let tagsInitialized = false;
 
-  useEffect(() => {
-    const stored = localStorage.getItem('app_tags');
-    if (stored) {
+export function useTags() {
+  const { user } = useAuth();
+
+  const dbTags = useLiveQuery(
+    async () => {
+      const tags = await db.tags.toArray();
+      return tags.map(t => t.name);
+    },
+    [user?.uid]
+  ) || [];
+
+  React.useEffect(() => {
+    async function initTags() {
+      if (tagsInitialized) return;
+      tagsInitialized = true;
       try {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setTags(parsed);
-        } else {
-          setTags(DEFAULT_TAGS);
+        const count = await db.tags.count();
+        if (count === 0) {
+          const initial = DEFAULT_TAGS.map(name => ({ name }));
+          await db.tags.bulkPut(initial);
         }
       } catch (e) {
-        setTags(DEFAULT_TAGS);
+        tagsInitialized = false;
+        console.error('Failed to init tags:', e);
       }
-    } else {
-      localStorage.setItem('app_tags', JSON.stringify(DEFAULT_TAGS));
     }
-  }, []);
+    if (dbTags.length === 0) {
+      initTags();
+    }
+  }, [dbTags.length]);
 
-  const addTag = (tag: string) => {
+  const addTag = async (tag: string) => {
     const trimmed = tag.trim();
-    if (!trimmed || tags.includes(trimmed)) return false;
+    if (!trimmed || dbTags.includes(trimmed)) return false;
 
-    const newTags = [...tags, trimmed];
-    setTags(newTags);
-    localStorage.setItem('app_tags', JSON.stringify(newTags));
+    await db.tags.add({ name: trimmed });
     return true;
   };
 
-  const removeTag = (tag: string) => {
-    if (tags.length <= 1) return false; // Keep at least one tag
-    const newTags = tags.filter(t => t !== tag);
-    setTags(newTags);
-    localStorage.setItem('app_tags', JSON.stringify(newTags));
+  const removeTag = async (tag: string) => {
+    if (dbTags.length <= 1) return false;
+    const t = await db.tags.where('name').equals(tag).first();
+    if (t?.id) {
+      await db.tags.delete(t.id);
+    }
     return true;
   };
 
-  const resetTags = () => {
-    setTags(DEFAULT_TAGS);
-    localStorage.setItem('app_tags', JSON.stringify(DEFAULT_TAGS));
+  const resetTags = async () => {
+    await db.tags.clear();
+    const initial = DEFAULT_TAGS.map(name => ({ name }));
+    await db.tags.bulkAdd(initial);
   };
 
-  return { tags, addTag, removeTag, resetTags }
+  return { tags: dbTags, addTag, removeTag, resetTags }
 }

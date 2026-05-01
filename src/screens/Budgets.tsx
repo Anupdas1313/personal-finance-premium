@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../models/db';
+import { useAuth } from '../context/AuthContext';
 import { Target, Plus, X, AlertCircle, Edit2, Trash2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { useCategories } from '../hooks/useCategories';
 
 export default function Budgets() {
+  const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const monthStr = format(currentMonth, 'yyyy-MM');
   const { categories } = useCategories();
   
-  const budgets = useLiveQuery(() => db.budgets.where('month').equals(monthStr).toArray(), [monthStr]) || [];
-  const transactions = useLiveQuery(() => db.transactions.toArray()) || [];
+  const budgets = useLiveQuery(() => db.budgets.where('month').equals(monthStr).toArray(), [monthStr, user?.uid]) || [];
+  const transactions = useLiveQuery(() => db.transactions.toArray(), [user?.uid]) || [];
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(categories[0] || 'Other');

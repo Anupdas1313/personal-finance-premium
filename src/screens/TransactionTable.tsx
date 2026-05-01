@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../models/db';
+import { useAuth } from '../context/AuthContext';
 import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Download, ZoomIn, ZoomOut, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Calendar, FileText, Share2, ArrowUpRight, ArrowDownLeft, Wallet, Landmark, Filter } from 'lucide-react';
@@ -36,6 +37,7 @@ const safeFormatDate = (dateVal: any, formatStr: string) => {
 };
 
 export default function TransactionTable() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const startParam = searchParams.get('start');
@@ -112,8 +114,8 @@ export default function TransactionTable() {
       return db.transactions.where('dateTime').between(start, end, true, true).toArray();
     }
     return db.transactions.toArray();
-  }, [startDate, endDate]) || [];
-  const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
+  }, [startDate, endDate, user?.uid]) || [];
+  const accounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
 
   const uniqueCategories = useMemo(() => {
     const cats = new Set(allTransactionsRaw.map(tx => tx.category).filter(Boolean));

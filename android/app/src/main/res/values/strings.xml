@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Proshanjit\'s Finance</string>
-    <string name="title_activity_main">Proshanjit\'s Finance</string>
-    <string name="package_name">com.proshanjit.finance</string>
-    <string name="custom_url_scheme">com.proshanjit.finance</string>
+    <string name="app_name">Anup Finance</string>
+    <string name="title_activity_main">Anup Finance</string>
+    <string name="package_name">com.anup.finance</string>
+    <string name="custom_url_scheme">com.anup.finance</string>
 </resources>

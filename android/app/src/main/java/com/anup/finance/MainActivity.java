@@ -1,4 +1,4 @@
-package com.proshanjit.finance;
+package com.anup.finance;
 
 import com.getcapacitor.BridgeActivity;
 

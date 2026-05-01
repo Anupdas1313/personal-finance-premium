@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SyncStatusIcon } from '../components/SyncStatusIcon';
+import { useAuth } from '../context/AuthContext';
 
 const CATEGORY_ICONS: Record<string, string> = {
   'Food': '🍔',
@@ -44,6 +44,7 @@ const Portal: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 export default function Transactions() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   
   // --- View Controls ---
@@ -66,7 +67,7 @@ export default function Transactions() {
   const [isDeleting, setIsDeleting] = useState(false);
   
   // --- Data ---
-  const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
+  const accounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
   
   const dateLimits = useMemo(() => {
     let start: Date | number = 0;
@@ -92,7 +93,7 @@ export default function Transactions() {
       return db.transactions.reverse().toArray();
     }
     return db.transactions.where('dateTime').between(dateLimits.start, dateLimits.end, true, true).reverse().toArray();
-  }, [granularity, dateLimits.start, dateLimits.end]);
+  }, [granularity, dateLimits.start, dateLimits.end, user?.uid]);
 
   const isLoading = allTxs === undefined;
   const currentTxs = allTxs || [];
@@ -383,7 +384,7 @@ export default function Transactions() {
                      <p className={`text-base font-heading font-black tracking-tighter ${tx.type === 'DEBIT' ? 'text-rose-500' : 'text-emerald-500'}`}>
                        {tx.type === 'DEBIT' ? '-' : '+'}₹{Number(tx.amount).toLocaleString()}
                      </p>
-                     <SyncStatusIcon status={tx.syncStatus} />
+
                   </div>
                 </motion.div>
               </div>
@@ -445,7 +446,7 @@ export default function Transactions() {
                       </p>
                    </div>
                    <div className="bg-neutral-50 dark:bg-white/5 p-3 rounded-2xl border border-neutral-100 dark:border-white/5">
-                      <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Layers className="w-2.5 h-2.5" /> Status</p>
+                      <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Layers className="w-2.5 h-2.5" /> Source</p>
                       <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-tighter">Verified Entry</p>
                    </div>
                 </div>

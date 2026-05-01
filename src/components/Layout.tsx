@@ -3,14 +3,11 @@ import { useLocation, Link, Outlet } from 'react-router-dom';
 import { LayoutDashboard, BarChart3, Landmark, PieChart, Target, Settings, Plus, MoreHorizontal, BookOpen, FileText, User } from 'lucide-react';
 
 import { cn } from '../logic/utils';
-import { useAuth } from '../context/AuthContext';
-import { LogOut } from 'lucide-react';
 
 
 export default function Layout() {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { logout } = useAuth();
 
   const mainNavItems = [
     { name: 'Home', path: '/', icon: LayoutDashboard },
@@ -69,14 +66,6 @@ export default function Layout() {
             Add Transaction
           </Link>
 
-
-          <button
-            onClick={logout}
-            className="mt-auto flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-rose-500 hover:bg-rose-500/10 transition-all active:scale-95"
-          >
-            <LogOut className="w-5 h-5" />
-            Sign Out
-          </button>
 
         </nav>
       </aside>
@@ -168,7 +157,8 @@ export default function Layout() {
       {isMobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setIsMobileMenuOpen(false)}>
           <div
-            className="absolute bottom-16 left-0 right-0 bg-white dark:bg-[#0C0C0F] rounded-t-[24px] p-4 shadow-xl transform transition-transform"
+            className="absolute left-0 right-0 bg-white dark:bg-[#0C0C0F] rounded-t-[24px] p-4 shadow-xl transform transition-transform"
+            style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}
             onClick={e => e.stopPropagation()}
           >
             <div className="w-12 h-1.5 bg-neutral-200 dark:bg-white/10 rounded-full mx-auto mb-4" />
@@ -197,14 +187,6 @@ export default function Layout() {
                   </Link>
                 );
               })}
-
-              <button
-                onClick={logout}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-rose-500 hover:bg-rose-500/10 transition-colors"
-              >
-                <LogOut className="w-5 h-5" />
-                Sign Out
-              </button>
             </div>
           </div>
         </div>

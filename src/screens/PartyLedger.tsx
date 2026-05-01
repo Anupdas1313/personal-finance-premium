@@ -2,17 +2,20 @@ import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, LedgerTransaction } from '../models/db';
+import { useAuth } from '../context/AuthContext';
 import { ArrowLeft, Plus, TrendingUp, TrendingDown, Clock, Search, Trash2, Calendar, FileText, Download, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function PartyLedger() {
+  const { user } = useAuth();
   const { id } = useParams();
   const partyId = Number(id);
   const navigate = useNavigate();
 
-  const party = useLiveQuery(() => db.parties.get(partyId));
+  const party = useLiveQuery(() => db.parties.get(partyId), [partyId, user?.uid]);
   const transactions = useLiveQuery(() => 
-    db.ledgerTransactions.where('partyId').equals(partyId).sortBy('dateTime')
+    db.ledgerTransactions.where('partyId').equals(partyId).sortBy('dateTime'),
+    [partyId, user?.uid]
   ) || [];
 
   const [isModalOpen, setIsModalOpen] = useState(false);

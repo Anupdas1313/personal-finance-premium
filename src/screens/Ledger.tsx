@@ -1,18 +1,20 @@
 import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Party } from '../models/db';
+import { useAuth } from '../context/AuthContext';
 import { Plus, Search, UserPlus, Phone, ChevronRight, TrendingUp, TrendingDown, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Ledger() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
   const [newPartyName, setNewPartyName] = useState('');
   const [newPartyPhone, setNewPartyPhone] = useState('');
   const [newPartyType, setNewPartyType] = useState<'CUSTOMER' | 'SUPPLIER' | 'FRIEND'>('CUSTOMER');
 
-  const parties = useLiveQuery(() => db.parties.toArray()) || [];
-  const transactions = useLiveQuery(() => db.ledgerTransactions.toArray()) || [];
+  const parties = useLiveQuery(() => db.parties.toArray(), [user?.uid]) || [];
+  const transactions = useLiveQuery(() => db.ledgerTransactions.toArray(), [user?.uid]) || [];
 
   const partyBalances = useMemo(() => {
     const balances: Record<number, number> = {};

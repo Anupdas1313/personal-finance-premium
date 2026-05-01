@@ -8,10 +8,12 @@ import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
 import { format, startOfDay, parseISO, endOfMonth, startOfMonth, subMonths, endOfDay, startOfWeek, endOfWeek, startOfYear, endOfYear, addMonths, subWeeks, addWeeks, subDays, addDays, subYears, addYears } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useAuth } from '../context/AuthContext';
 
 export default function Accounts() {
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
+  const accounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
   const [isAdding, setIsAdding] = useState(false);
   const [editingAccountId, setEditingAccountId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -23,8 +25,8 @@ export default function Accounts() {
   const [accountType, setAccountType] = useState<'BANK' | 'CASH' | 'CREDIT_CARD'>('BANK');
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
   
-  const allTransactions = useLiveQuery(() => db.transactions.toArray()) || [];
-  const allClosings = useLiveQuery(() => db.accountClosings.toArray()) || [];
+  const allTransactions = useLiveQuery(() => db.transactions.toArray(), [user?.uid]) || [];
+  const allClosings = useLiveQuery(() => db.accountClosings.toArray(), [user?.uid]) || [];
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -484,10 +486,11 @@ function PartitionRow({ partition }: { partition: any }) {
 }
 
 function AccountStatementDetail({ accountId, onClose }: { accountId: number, onClose: () => void }) {
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const account = useLiveQuery(() => db.accounts.get(accountId));
-  const transactions = useLiveQuery(() => db.transactions.where('accountId').equals(accountId).sortBy('dateTime')) || [];
-  const closings = useLiveQuery(() => db.accountClosings.where('accountId').equals(accountId).sortBy('closingDate')) || [];
+  const account = useLiveQuery(() => db.accounts.get(accountId), [accountId, user?.uid]);
+  const transactions = useLiveQuery(() => db.transactions.where('accountId').equals(accountId).sortBy('dateTime'), [accountId, user?.uid]) || [];
+  const closings = useLiveQuery(() => db.accountClosings.where('accountId').equals(accountId).sortBy('closingDate'), [accountId, user?.uid]) || [];
 
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [granularity, setGranularity] = useState<'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'ALL' | 'CUSTOM'>('MONTH');

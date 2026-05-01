@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, ShieldCheck, LogOut, CheckCircle2, AlertTriangle, KeyRound, Save } from 'lucide-react';
+import { User, Mail, ShieldCheck, CheckCircle2, AlertTriangle, Save } from 'lucide-react';
 import { cn } from '../logic/utils';
 
 export default function Profile() {
-  const { user, updateProfileName, resetPassword, logout } = useAuth();
+  const { user, updateProfileName } = useAuth();
   const [name, setName] = useState(user?.displayName || '');
   const [isUpdating, setIsUpdating] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -23,19 +23,6 @@ export default function Profile() {
       showMessage('success', 'Profile name updated successfully');
     } catch (error: any) {
       showMessage('error', error.message || 'Failed to update name');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleResetPassword = async () => {
-    if (!user?.email) return;
-    setIsUpdating(true);
-    try {
-      await resetPassword(user.email);
-      showMessage('success', 'Password reset email sent!');
-    } catch (error: any) {
-      showMessage('error', error.message || 'Failed to send reset email');
     } finally {
       setIsUpdating(false);
     }
@@ -80,16 +67,6 @@ export default function Profile() {
             <p className="text-xs font-semibold text-brand-blue/40 dark:text-[#A0A0A0] mt-1 text-center truncate w-full">
               {user?.email}
             </p>
-            
-            <div className="w-full h-px bg-brand-blue/5 dark:bg-[#222222] my-6" />
-            
-            <button
-              onClick={logout}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-rose-500 hover:bg-rose-500/10 font-bold transition-all text-xs uppercase tracking-widest"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign Out
-            </button>
           </div>
 
           <div className="bg-brand-blue/5 dark:bg-brand-cyan/5 rounded-3xl border border-brand-blue/10 dark:border-brand-cyan/10 p-6">
@@ -153,30 +130,6 @@ export default function Profile() {
                   </button>
                 </div>
               </form>
-            </div>
-          </section>
-
-          <section>
-            <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Security Cluster</h2>
-            <div className="bg-white dark:bg-[#111111] rounded-[32px] border border-brand-blue/5 dark:border-[#222222] shadow-sm overflow-hidden p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
-                    <KeyRound className="w-5 h-5 text-brand-blue dark:text-brand-cyan" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-brand-blue dark:text-white text-sm">Update Password</p>
-                    <p className="text-xs font-medium text-brand-blue/30 dark:text-[#A0A0A0] mt-0.5 uppercase tracking-widest">Receive a secure reset link</p>
-                  </div>
-                </div>
-                <button
-                  onClick={handleResetPassword}
-                  disabled={isUpdating}
-                  className="px-5 py-3 bg-white dark:bg-[#1A1A1E] border border-brand-blue/10 dark:border-white/10 text-brand-blue dark:text-white rounded-xl font-bold hover:bg-neutral-50 dark:hover:bg-[#222222] transition-all text-[10px] uppercase tracking-widest"
-                >
-                  Send Reset Link
-                </button>
-              </div>
             </div>
           </section>
         </div>

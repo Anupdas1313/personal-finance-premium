@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../models/db';
+import { useAuth } from '../context/AuthContext';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { useState } from 'react';
@@ -8,9 +9,10 @@ const COLORS = ['#1A237E', '#00A86B', '#D4AF37', '#82EEFD', '#E53935', '#3B3B98'
 
 
 export default function Summary() {
+  const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
-  const transactions = useLiveQuery(() => db.transactions.toArray()) || [];
+  const transactions = useLiveQuery(() => db.transactions.toArray(), [user?.uid]) || [];
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);

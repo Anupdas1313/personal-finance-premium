@@ -1,19 +1,28 @@
-node_modules/
-build/
-dist/
-coverage/
-.DS_Store
-*.log
-.env*
-!.env.example
-.vercel
-
-Stable_Pre_Cleanup/
+# Dependencies
 node_modules/
 .parcel-cache/
+
+# Build outputs
 dist/
 build/
 android/app/build/
 android/build/
+*.apk
+*.aar
+
+# Backup/Cleanup Folders
+Stable_Pre_Cleanup/
 capacitor.config.ts.bak
 
+# Environment variables
+.env*
+!.env.example
+
+# Tools/IDEs
+.DS_Store
+*.log
+.vercel
+coverage/
+
+# Capacitor specific
+capacitor.config.ts.bak
