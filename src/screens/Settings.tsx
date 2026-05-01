@@ -2,10 +2,11 @@ import { useState, useRef } from 'react';
 import { cn } from '../logic/utils';
 
 import { db } from '../models/db';
-import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as SettingsIcon, X, Moon, Sun, Monitor, Palette, Tag, ShieldAlert } from 'lucide-react';
+import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as SettingsIcon, X, Moon, Sun, Monitor, Palette, Tag, ShieldAlert, Bell, Clock, LayoutTemplate } from 'lucide-react';
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
 import { useTheme } from '../components/ThemeProvider';
+import { useReminders } from '../context/ReminderContext';
 
 export default function Settings() {
   const [isExporting, setIsExporting] = useState(false);
@@ -17,6 +18,7 @@ export default function Settings() {
   const { categories, addCategory, removeCategory, resetCategories } = useCategories();
   const { tags, addTag, removeTag, resetTags } = useTags();
   const { theme, setTheme } = useTheme();
+  const { settings: reminderSettings, updateSettings: updateReminderSettings } = useReminders();
   
   const [newTag, setNewTag] = useState('');
   
@@ -373,6 +375,94 @@ export default function Settings() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION: REMINDERS */}
+      <section>
+        <h2 className="text-xs font-semibold text-[#1A237E] dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2 opacity-70">Reminders & Notifications</h2>
+        <div className="bg-white dark:bg-[#111111] rounded-[32px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_20px_50px_rgba(26,35,126,0.05)] dark:shadow-none overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222]">
+          
+          <div className="p-5 flex flex-col gap-5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
+                <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
+                  <Bell className="w-5 h-5 text-brand-blue dark:text-inherit" />
+                </div>
+                <div>
+                  <p className="font-semibold text-brand-blue dark:text-[#F7F7F7]">Daily Prompt</p>
+                  <p className="text-xs font-medium text-brand-blue/30 dark:text-[#A0A0A0] mt-0.5 uppercase tracking-[0.1em]">Trigger data entry reminder</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  const newStatus = !reminderSettings.enabled;
+                  updateReminderSettings({ enabled: newStatus });
+                  if (newStatus && 'Notification' in window && Notification.permission !== 'granted') {
+                    Notification.requestPermission();
+                  }
+                }}
+                className={cn(
+                  "w-12 h-6 rounded-full transition-colors relative",
+                  reminderSettings.enabled ? "bg-brand-green" : "bg-neutral-200 dark:bg-[#333333]"
+                )}
+              >
+                <div className={cn(
+                  "absolute top-1 w-4 h-4 rounded-full bg-white transition-all",
+                  reminderSettings.enabled ? "left-7" : "left-1"
+                )} />
+              </button>
+            </div>
+
+            {reminderSettings.enabled && (
+              <div className="pl-0 sm:pl-[3.25rem] space-y-4 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-brand-blue/40 dark:text-[#A0A0A0] uppercase tracking-widest flex items-center gap-1.5"><Clock className="w-3 h-3" /> Frequency</label>
+                    <select 
+                      value={reminderSettings.frequency}
+                      onChange={(e) => updateReminderSettings({ frequency: e.target.value as any })}
+                      className="w-full bg-neutral-50 dark:bg-[#1A1A1A] border border-brand-blue/5 dark:border-[#333333] rounded-xl px-4 py-3 outline-none text-sm font-semibold text-brand-blue dark:text-white"
+                    >
+                      <option value="daily">Once Daily</option>
+                      <option value="twice_daily">Twice a Day</option>
+                      <option value="hourly">Every Hour</option>
+                      <option value="test">Test Mode (Every Min)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-brand-blue/40 dark:text-[#A0A0A0] uppercase tracking-widest flex items-center gap-1.5"><Clock className="w-3 h-3" /> Target Time</label>
+                    <input 
+                      type="time" 
+                      value={reminderSettings.time}
+                      onChange={(e) => updateReminderSettings({ time: e.target.value })}
+                      className="w-full bg-neutral-50 dark:bg-[#1A1A1A] border border-brand-blue/5 dark:border-[#333333] rounded-xl px-4 py-2.5 outline-none text-sm font-semibold text-brand-blue dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-2">
+                  <label className="text-[10px] font-bold text-brand-blue/40 dark:text-[#A0A0A0] uppercase tracking-widest flex items-center gap-1.5"><LayoutTemplate className="w-3 h-3" /> Banner Position</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['top', 'center', 'bottom'] as const).map(pos => (
+                      <button
+                        key={pos}
+                        onClick={() => updateReminderSettings({ position: pos })}
+                        className={cn(
+                          "px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
+                          reminderSettings.position === pos 
+                            ? "bg-brand-blue text-white dark:bg-white dark:text-brand-blue" 
+                            : "bg-neutral-50 dark:bg-[#1A1A1A] text-brand-blue/40 dark:text-[#A0A0A0] hover:bg-brand-blue/5"
+                        )}
+                      >
+                        {pos}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>

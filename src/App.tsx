@@ -14,6 +14,8 @@ import Profile from './screens/Profile';
 
 import { ThemeProvider } from './components/ThemeProvider';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ReminderProvider } from './context/ReminderContext';
+import { ReminderBanner } from './components/ReminderBanner';
 
 function LoadingWrapper({ children }: { children: React.ReactNode }) {
   const { loading } = useAuth();
@@ -33,26 +35,29 @@ export default function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="app-theme">
       <AuthProvider>
-        <BrowserRouter>
-          <LoadingWrapper>
-            <Routes>
-              <Route path="/" element={<Layout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="transactions" element={<Transactions />} />
-                <Route path="accounts" element={<Accounts />} />
-                <Route path="summary" element={<Summary />} />
-                <Route path="budgets" element={<Budgets />} />
-                <Route path="reports" element={<Reports />} />
-                <Route path="ledger" element={<Ledger />} />
-                <Route path="ledger/:id" element={<PartyLedger />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="profile" element={<Profile />} />
-              </Route>
+        <ReminderProvider>
+          <BrowserRouter>
+            <LoadingWrapper>
+              <ReminderBanner />
+              <Routes>
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<Dashboard />} />
+                  <Route path="transactions" element={<Transactions />} />
+                  <Route path="accounts" element={<Accounts />} />
+                  <Route path="summary" element={<Summary />} />
+                  <Route path="budgets" element={<Budgets />} />
+                  <Route path="reports" element={<Reports />} />
+                  <Route path="ledger" element={<Ledger />} />
+                  <Route path="ledger/:id" element={<PartyLedger />} />
+                  <Route path="settings" element={<Settings />} />
+                  <Route path="profile" element={<Profile />} />
+                </Route>
 
-              <Route path="/transactions/table" element={<TransactionTable />} />
-            </Routes>
-          </LoadingWrapper>
-        </BrowserRouter>
+                <Route path="/transactions/table" element={<TransactionTable />} />
+              </Routes>
+            </LoadingWrapper>
+          </BrowserRouter>
+        </ReminderProvider>
       </AuthProvider>
     </ThemeProvider>
   );
