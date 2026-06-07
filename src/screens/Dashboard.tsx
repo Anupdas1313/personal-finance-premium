@@ -275,13 +275,34 @@ export default function Dashboard() {
 
     const totalWealth = calculatedBalances.reduce((sum, b) => sum + b, 0);
 
+    // 3. Monthly Insights calculation (comparing this month up to today vs last month up to same day)
+    let thisMonthSpendingToDate = 0;
+    let lastMonthSpendingToDate = 0;
+    const currentDayOfMonth = now.getDate();
+    
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+    const lastMonthCurrentDay = new Date(now.getFullYear(), now.getMonth() - 1, currentDayOfMonth, 23, 59, 59).getTime();
+
+    allTxs.forEach(tx => {
+      if (tx.category !== 'Transfer' && tx.type === 'DEBIT') {
+        const txTime = new Date(tx.dateTime).getTime();
+        if (txTime >= monthStart && txTime <= now.getTime()) {
+          thisMonthSpendingToDate += (Number(tx.amount) || 0);
+        } else if (txTime >= lastMonthStart && txTime <= lastMonthCurrentDay) {
+          lastMonthSpendingToDate += (Number(tx.amount) || 0);
+        }
+      }
+    });
+
     return { 
       balances: accs.map((acc, i) => ({ ...acc, currentBalance: calculatedBalances[i] })), 
       totalIncome: income, 
       totalSpending: spending,
-      totalWealth
+      totalWealth,
+      thisMonthSpendingToDate,
+      lastMonthSpendingToDate
     };
-  }, [timeFilter, user?.uid]) || { balances: [], totalIncome: 0, totalSpending: 0, totalWealth: 0 };
+  }, [timeFilter, user?.uid]) || { balances: [], totalIncome: 0, totalSpending: 0, totalWealth: 0, thisMonthSpendingToDate: 0, lastMonthSpendingToDate: 0 };
   
   const monthDelta = totalIncome - totalSpending;
   const totalBalance = balances.reduce((sum, acc) => sum + acc.currentBalance, 0);
@@ -414,6 +435,36 @@ export default function Dashboard() {
           <p className={`text-lg font-heading font-black tracking-tighter text-brand-blue dark:text-brand-cyan`}>
             ₹{totalWealth.toLocaleString('en-IN')}
           </p>
+        </div>
+      </div>
+
+      {/* Monthly Insights Card */}
+      <div className="bg-gradient-to-br from-brand-blue/5 to-transparent dark:from-brand-blue/10 dark:to-transparent border border-brand-blue/10 dark:border-brand-blue/20 rounded-[24px] p-4 relative overflow-hidden group hover:border-brand-blue/30 transition-colors">
+        <div className="flex items-start justify-between mb-2">
+          <div>
+            <h3 className="text-[10px] font-black text-brand-blue/60 dark:text-brand-blue/80 uppercase tracking-[0.2em] mb-1">Monthly Insights</h3>
+            <p className="text-sm font-bold text-[#111111] dark:text-[#F7F7F7] leading-tight">
+              {thisMonthSpendingToDate > lastMonthSpendingToDate ? (
+                <>You've spent <span className="text-rose-500 font-black">₹{(thisMonthSpendingToDate - lastMonthSpendingToDate).toLocaleString('en-IN')} more</span> than last month at this time.</>
+              ) : (
+                <>You've spent <span className="text-emerald-500 font-black">₹{(lastMonthSpendingToDate - thisMonthSpendingToDate).toLocaleString('en-IN')} less</span> than last month at this time.</>
+              )}
+            </p>
+          </div>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${thisMonthSpendingToDate > lastMonthSpendingToDate ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+            <BarChart3 className="w-4 h-4" />
+          </div>
+        </div>
+        <div className="flex items-center gap-4 mt-3">
+          <div>
+            <p className="text-[9px] font-black text-brand-blue/40 dark:text-white/30 uppercase tracking-widest">This Month</p>
+            <p className="text-xs font-black text-brand-blue dark:text-white">₹{thisMonthSpendingToDate.toLocaleString('en-IN')}</p>
+          </div>
+          <div className="w-px h-6 bg-brand-blue/10 dark:bg-white/10"></div>
+          <div>
+            <p className="text-[9px] font-black text-brand-blue/40 dark:text-white/30 uppercase tracking-widest">Last Month</p>
+            <p className="text-xs font-black text-brand-blue dark:text-white">₹{lastMonthSpendingToDate.toLocaleString('en-IN')}</p>
+          </div>
         </div>
       </div>
 

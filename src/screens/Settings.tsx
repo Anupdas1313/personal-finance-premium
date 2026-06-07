@@ -6,6 +6,7 @@ import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as Sett
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
 import { useTheme } from '../components/ThemeProvider';
+import { RecurringBillsManager } from '../components/RecurringBillsManager';
 
 export default function Settings() {
   const [isExporting, setIsExporting] = useState(false);
@@ -173,6 +174,9 @@ export default function Settings() {
           <p className="font-bold">{message.text}</p>
         </div>
       )}
+
+      {/* SECTION: RECURRING BILLS */}
+      <RecurringBillsManager />
 
       {/* SECTION: THEME */}
       <section>

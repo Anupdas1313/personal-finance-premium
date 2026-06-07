@@ -15,9 +15,13 @@ import Profile from './screens/Profile';
 
 import { ThemeProvider } from './components/ThemeProvider';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { useRecurringEngine } from './logic/useRecurringEngine';
 
 function LoadingWrapper({ children }: { children: React.ReactNode }) {
-  const { loading } = useAuth();
+  const { user, loading } = useAuth();
+  
+  // Start the auto-logging engine for recurring transactions
+  useRecurringEngine(user?.uid);
   
   if (loading) {
     return (

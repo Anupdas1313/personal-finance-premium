@@ -42,6 +42,20 @@ export interface Budget {
   month: string; // 'YYYY-MM'
 }
 
+export interface RecurringTemplate {
+  id?: number;
+  amount: number;
+  type: 'DEBIT' | 'CREDIT' | 'TRANSFER';
+  accountId: number;
+  toAccountId?: number;
+  category: string;
+  note: string;
+  frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+  nextRunDate: Date;
+  isActive: boolean;
+  paymentMethod?: 'Bank' | 'UPI' | 'Credit Card' | 'Cash' | 'Bank Transfer';
+}
+
 export interface MonthlyClose {
   id?: number;
   month: string; // 'YYYY-MM'
@@ -92,6 +106,7 @@ export class FinanceDatabase extends Dexie {
   accountClosings!: Table<AccountClosing, number>;
   categories!: Table<Category, number>;
   tags!: Table<Tag, number>;
+  recurringTemplates!: Table<RecurringTemplate, number>;
 
   constructor(dbName: string = 'FinanceDatabase_Local') {
     super(dbName);
@@ -137,6 +152,9 @@ export class FinanceDatabase extends Dexie {
     this.version(10).stores({
       categories: '++id, &name',
       tags: '++id, &name'
+    });
+    this.version(11).stores({
+      recurringTemplates: '++id, nextRunDate, isActive'
     });
   }
 }
