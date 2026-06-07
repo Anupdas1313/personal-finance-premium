@@ -500,7 +500,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     }
     const foundTag = tags.find(t => q.includes(t.toLowerCase()));
 
-    if (q.match(/\b(how much|total|spent|spend)\b/)) {
+    if (q.match(/\b(how much|total|spent|spend)\b/) || foundCat || foundTag) {
       if (foundCat) {
         const sum = allTxs.filter(t => t.category === foundCat).reduce((s, t) => s + Number(t.amount), 0);
         answer = `You have spent ₹${sum.toLocaleString('en-IN')} on ${foundCat}.`;
@@ -557,9 +557,13 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
     // ── Special commands ──────────────────────────────────────────────────
     const t = userMsg.toLowerCase();
+    
+    // Check if the previous AI message was a Data Query for conversational follow-ups
+    const lastMsg = messages[messages.length - 1];
+    const isFollowUpQuery = lastMsg?.role === 'ai' && lastMsg.content.includes('Data Query:');
 
     // "Ask Your Data" Query Detection
-    if (t.match(/\b(how much|what is|when did|show me|total|query|balance|spent|spend)\b/i) || t.endsWith('?')) {
+    if (t.match(/\b(how much|what is|when did|show me|total|query|balance|spent|spend)\b/i) || t.endsWith('?') || (isFollowUpQuery && !t.match(/\d/))) {
       if (!t.match(/^(add|record|log|paid)/i)) { // Prevent 'paid 500' from being intercepted
         handleChatQuery(t);
         return;
