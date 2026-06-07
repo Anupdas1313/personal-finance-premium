@@ -331,7 +331,7 @@ export default function Dashboard() {
         </div>
       </div>
       <div className="text-right">
-        <p className={`font-heading font-black text-sm tracking-tighter ${acc.currentBalance < 0 ? 'text-brand-red' : 'text-brand-green'} dark:text-brand-cyan`}>
+        <p className={`font-heading font-black text-sm tracking-tighter ${acc.currentBalance < 0 ? 'text-brand-red' : 'text-brand-green'}`}>
           ₹{acc.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
         </p>
         <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest leading-none mt-0.5">Balance</p>
@@ -715,9 +715,9 @@ export default function Dashboard() {
               <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-[#0A0A0A]/80 backdrop-blur-xl border-t border-[#EBEBEB] dark:border-white/5 z-50 flex justify-end items-center gap-3">
                 <button 
                   onClick={handleSaveManual}
-                  disabled={!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || isSaving || status === 'success'}
+                  disabled={!amount || !type || !selectedAccountId || (tags.length > 0 && type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || isSaving || status === 'success'}
                   className={`px-8 py-2.5 rounded-2xl text-[10px] font-black transition-all active:scale-[0.98] shadow-2xl flex items-center justify-center gap-2 uppercase tracking-widest ${
-                    (!amount || !type || !selectedAccountId || (type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
+                    (!amount || !type || !selectedAccountId || (tags.length > 0 && type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
                     ? 'bg-neutral-100 dark:bg-[#1C1C22] text-neutral-300 dark:text-[#4A4A52] cursor-not-allowed border border-[#EBEBEB] dark:border-transparent opacity-50'
                     : (status === 'success' ? 'bg-emerald-500 text-white shadow-emerald-500/20' : 'bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue shadow-brand-green/30 dark:shadow-brand-green/20')
                   } disabled:opacity-70`}

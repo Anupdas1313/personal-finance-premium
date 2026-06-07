@@ -442,11 +442,11 @@ export default function Accounts() {
                             <div className="flex items-center gap-4">
                               <div className="flex flex-col">
                                 <span className="text-[7px] font-black text-neutral-400 uppercase">In</span>
-                                <span className="text-[10px] font-black text-emerald-500">₹{info?.inflow.toLocaleString()}</span>
+                                <span className="text-[10px] font-black text-emerald-500">₹{(info?.inflow || 0).toLocaleString()}</span>
                               </div>
                               <div className="flex flex-col">
                                 <span className="text-[7px] font-black text-neutral-400 uppercase">Out</span>
-                                <span className="text-[10px] font-black text-rose-500">₹{info?.outflow.toLocaleString()}</span>
+                                <span className="text-[10px] font-black text-rose-500">₹{(info?.outflow || 0).toLocaleString()}</span>
                               </div>
                             </div>
                             <button onClick={e => { e.stopPropagation(); setSelectedAccountId(account.id!); }} className="w-9 h-9 rounded-2xl bg-brand-green text-white flex items-center justify-center">

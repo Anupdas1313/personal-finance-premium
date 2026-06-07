@@ -24,7 +24,7 @@ export default function Budgets() {
   const monthEnd = endOfMonth(currentMonth);
 
   const monthExpenses = transactions.filter(tx => 
-    tx.type === 'DEBIT' && isWithinInterval(tx.dateTime, { start: monthStart, end: monthEnd })
+    tx.type === 'DEBIT' && isWithinInterval(new Date(tx.dateTime), { start: monthStart, end: monthEnd })
   );
 
   const handleSaveBudget = async () => {
@@ -68,9 +68,10 @@ export default function Budgets() {
     }
   };
 
+  // Track by category (not expenseType) so budgets match correctly
   const groupedExpenses = monthExpenses.reduce((acc, tx) => {
-    const cat = tx.expenseType || tx.category;
-    acc[cat] = (acc[cat] || 0) + tx.amount;
+    const cat = tx.category || 'Other';
+    acc[cat] = (acc[cat] || 0) + Number(tx.amount);
     return acc;
   }, {} as Record<string, number>);
 
