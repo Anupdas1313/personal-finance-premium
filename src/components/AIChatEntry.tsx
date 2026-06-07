@@ -669,7 +669,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       updated.transactionDate = date; updated._dateConfirmed = true;
       setPendingTx(updated); checkNextStep(updated);
     }
-  }, [input, pendingTx, stage, accounts, tags, recentTx, smartDefaults, payeeMemory, multiQueue]);
+  }, [input, pendingTx, stage, accounts, tags, recentTx, smartDefaults, payeeMemory, multiQueue, messages]);
 
   const applyParsed = (p: ReturnType<typeof parseUniversal>, updated: any) => {
     const newTx = {
