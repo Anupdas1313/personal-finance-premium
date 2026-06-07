@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../models/db';
-import { ArrowUpRight, ArrowDownRight, Wallet, Plus, X, AlertCircle, CheckCircle2, Search, ChevronDown, Landmark, Smartphone, ArrowLeft, Calendar, Clock, Calculator, MoreHorizontal, User, AlignLeft, Hash, Paperclip, Save, ChevronRight, CreditCard, Coins, PlaneTakeoff, Eye, EyeOff, Wand2 } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Wallet, Plus, X, AlertCircle, CheckCircle2, Search, ChevronDown, Landmark, Smartphone, ArrowLeft, Calendar, Clock, Calculator, MoreHorizontal, User, AlignLeft, Hash, Paperclip, Save, ChevronRight, CreditCard, Coins, PlaneTakeoff, Eye, EyeOff, Wand2, BarChart3 } from 'lucide-react';
 
 import { format, startOfMonth, startOfYear, isToday, isYesterday, startOfDay } from 'date-fns';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
@@ -227,7 +227,7 @@ export default function Dashboard() {
   const allClosings = useLiveQuery(() => db.accountClosings.toArray(), [user?.uid]) || [];
 
   // Optimized balance and metrics calculation
-  const { balances, totalIncome, totalSpending, totalWealth } = useLiveQuery(async () => {
+  const { balances, totalIncome, totalSpending, totalWealth, thisMonthSpendingToDate, lastMonthSpendingToDate } = useLiveQuery(async () => {
     const accs = await db.accounts.toArray();
     const closings = await db.accountClosings.toArray();
     const monthlyClosings = await db.monthlyClosings.orderBy('month').reverse().toArray();
