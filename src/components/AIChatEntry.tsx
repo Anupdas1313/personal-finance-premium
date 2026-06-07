@@ -5,8 +5,9 @@ import {
   RotateCcw, Clock, Zap, TrendingUp, Camera, Image as ImageIcon
 } from 'lucide-react';
 import { format, subDays, subWeeks } from 'date-fns';
-import { CATEGORIES, CATEGORY_ICONS } from '../constants';
+import { CATEGORY_ICONS } from '../constants';
 import { db } from '../models/db';
+import { useCategories } from '../hooks/useCategories';
 
 interface AIChatEntryProps {
   onSave: (transaction: any) => void;
@@ -253,7 +254,7 @@ const resolveBank = (snippet: string, accounts: any[]) => {
 };
 
 // ─── Universal Parser ────────────────────────────────────────────────────
-const parseUniversal = (text: string, accounts: any[]) => {
+const parseUniversal = (text: string, accounts: any[], appCategories: string[]) => {
   const t = text.toLowerCase();
 
   // Emoji shortcuts
@@ -286,7 +287,7 @@ const parseUniversal = (text: string, accounts: any[]) => {
   // Merchant matching with fuzzy
   let category = emojiCategory, tag = emojiTag, isPredicted = false;
   if (!category) {
-    for (const cat of CATEGORIES) { if (t.includes(cat.toLowerCase())) { category = cat; break; } }
+    for (const cat of appCategories) { if (t.includes(cat.toLowerCase())) { category = cat; break; } }
   }
   if (!category) {
     const merchantKeys = Object.keys(MERCHANT_KNOWLEDGE);
@@ -384,8 +385,9 @@ const usePersonalLearning = () => {
 };
 
 // ─── Main Component ───────────────────────────────────────────────────────
-export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags, isSaving, showSuccess }) => {
-  const [messages, setMessages] = useState<any[]>([
+export default function AIChatEntry({ onSave, accounts, tags, isSaving, showSuccess }: AIChatEntryProps) {
+  const { categories: appCategories } = useCategories();
+  const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'ai', content: "Hi! 👋 Describe your expense naturally — I'll fill everything in.\n\nTry: *\"paid 500 to Zomato via GPay from HDFC yesterday for dinner\"*\nOr say *\"same\"* to repeat your last entry." }
   ]);
   const [input, setInput] = useState('');
@@ -448,8 +450,9 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       setStage('ASK_PAYMENT_METHOD'); addAIMessage("How did you pay?", ['📱 UPI', '💳 Credit Card', '💵 Cash', '🏦 Bank Transfer']);
     } else if (tx.paymentMethod === 'UPI' && !tx.upiApp) {
       setStage('ASK_UPI_APP'); addAIMessage("Which UPI app?", ['GPay', 'PhonePe', 'Paytm', 'BHIM', 'CRED']);
-    } else if (!tx.category && tx.type !== 'TRANSFER') {
-      setStage('ASK_CATEGORY'); addAIMessage("Pick a category:", CATEGORIES);
+    } else if (!tx.category) {
+      setStage('ASK_CATEGORY'); addAIMessage("Pick a category:", appCategories);
+      setAutocomplete(appCategories);
     } else if (!tx.expenseType && tx.type !== 'TRANSFER') {
       setStage('ASK_TAG'); addAIMessage("Tag this as:", tags);
     } else if (!tx.note) {
@@ -472,9 +475,9 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       const newAmt = parseAmount(amtOverride[1]);
       if (newAmt) { updated.amount = newAmt; setPendingTx(updated); setStage('PREVIEW'); addAIMessage(`✏️ Amount updated to ₹${newAmt}. Tap Save!`); return true; }
     }
-    const catOverride = t.match(/(?:category|change category)\s+(?:to\s+)?(.+)/i);
-    if (catOverride) {
-      const cat = CATEGORIES.find(c => c.toLowerCase().includes(catOverride[1].toLowerCase()));
+    if (stage === 'ASK_CATEGORY') {
+      const catOverride = userMsg.match(/^\[(.*)\]$/);
+      const cat = appCategories.find(c => c.toLowerCase().includes(catOverride ? catOverride[1].toLowerCase() : userMsg.toLowerCase()));
       if (cat) { updated.category = cat; setPendingTx(updated); setStage('PREVIEW'); addAIMessage(`✏️ Category changed to ${cat}. Tap Save!`); return true; }
     }
     if (t.match(/\b(undo|revert|cancel|delete last)\b/) && lastSaved) {
@@ -667,7 +670,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         addAIMessage(`📋 Found ${parts.length} transactions! Processing one by one...`);
         setMultiQueue(parts.slice(1));
         // Process first one
-        const p = parseUniversal(parts[0], accounts);
+        const p = parseUniversal(parts[0], accounts, appCategories);
         applyParsed(p, updated);
         return;
       }
@@ -678,8 +681,8 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       if (handleCorrectionCommand(userMsg, updated)) return;
     }
 
-    if (stage === 'IDLE' || stage === 'PREVIEW') {
-      const p = parseUniversal(userMsg, accounts);
+    if (stage === 'IDLE' && !t.match(/^(edit|change|update)/)) {
+      const p = parseUniversal(userMsg, accounts, appCategories);
 
       // Apply personal learning: fill gaps from smart defaults & payee memory
       if (!p.accountId && smartDefaults.accountId) p.accountId = smartDefaults.accountId;
@@ -726,7 +729,9 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     } else if (stage === 'ASK_UPI_APP') {
       updated.upiApp = userMsg; setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_CATEGORY') {
-      updated.category = userMsg; setPendingTx(updated); checkNextStep(updated);
+      const cat = appCategories.find(c => c.toLowerCase().includes(userMsg.toLowerCase()));
+      if (cat) { updated.category = cat; setPendingTx(updated); checkNextStep(updated); }
+      else addAIMessage("Please pick from the options:", appCategories);
     } else if (stage === 'ASK_TAG') {
       updated.expenseType = userMsg; setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_NOTE') {
@@ -737,7 +742,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       updated.transactionDate = date; updated._dateConfirmed = true;
       setPendingTx(updated); checkNextStep(updated);
     }
-  }, [input, pendingTx, stage, accounts, tags, recentTx, smartDefaults, payeeMemory, multiQueue, messages]);
+  }, [input, pendingTx, stage, accounts, tags, recentTx, smartDefaults, payeeMemory, multiQueue, messages, appCategories]);
 
   const applyParsed = (p: ReturnType<typeof parseUniversal>, updated: any) => {
     const newTx = {
@@ -763,9 +768,9 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
   const handleEdit = (field: string) => {
     const updated = { ...pendingTx };
-    if (field === 'amount') { updated.amount = ''; setStage('ASK_AMOUNT'); addAIMessage("Correct Amount: How much was it?"); }
+    if (field === 'amount') { updated.amount = ''; setStage('ASK_AMOUNT'); addAIMessage("Correct Amount:"); }
     if (field === 'bank') { updated.selectedAccountId = ''; setStage('ASK_BANK'); addAIMessage("Correct Account:", getGroupedAccountOptions(updated)); }
-    if (field === 'category') { updated.category = ''; setStage('ASK_CATEGORY'); addAIMessage("Correct Category:", CATEGORIES); }
+    if (field === 'category') { updated.category = ''; setStage('ASK_CATEGORY'); addAIMessage("Correct Category:", appCategories); }
     if (field === 'tag') { updated.expenseType = ''; setStage('ASK_TAG'); addAIMessage("Correct Tag:", tags); }
     if (field === 'remark') { updated.note = ''; setStage('ASK_NOTE'); addAIMessage("Correct Remark:"); }
     if (field === 'date') { updated._dateConfirmed = false; setStage('ASK_DATE'); addAIMessage("When did this happen?", ['Today', 'Yesterday', '2 days ago', '3 days ago']); }

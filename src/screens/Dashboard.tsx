@@ -9,7 +9,7 @@ import { createPortal } from 'react-dom';
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
 
-import { CATEGORIES, CATEGORY_ICONS, CATEGORY_COLORS } from '../constants';
+import { CATEGORY_ICONS, CATEGORY_COLORS } from '../constants';
 
 
 
@@ -701,7 +701,7 @@ export default function Dashboard() {
                     <span className="text-[10px] font-bold text-brand-green dark:text-brand-green px-2 py-0.5 bg-brand-green/5 dark:bg-brand-green/5 rounded-full lowercase tracking-wider">{category}</span>
                   </div>
                   <div className="grid grid-cols-10 gap-1">
-                    {CATEGORIES.map(cat => (
+                    {appCategories.map(cat => (
                       <button key={cat} onClick={() => setCategory(cat)} title={cat} className={`aspect-square rounded-lg flex items-center justify-center text-[18px] transition-all ${category === cat ? 'bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue shadow-lg scale-110' : 'bg-[#F9FBFF] dark:bg-white/[0.02] text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/10 active:scale-95'}`}>{CATEGORY_ICONS[cat] || '📝'}</button>
                     ))}
                   </div>

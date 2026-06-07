@@ -8,6 +8,7 @@ import {
   ChevronLeft, ChevronRight, ListOrdered, ArrowDownLeft, ArrowUpRight, BarChart3,
   Calendar, Layers, Tag as TagIcon, MoreVertical, Landmark, Smartphone
 } from 'lucide-react';
+import { useCategories } from '../hooks/useCategories';
 import { useNavigate } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -45,6 +46,7 @@ const Portal: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 export default function Transactions() {
   const { user } = useAuth();
+  const { categories: appCategories } = useCategories();
   const navigate = useNavigate();
   
   // --- View Controls ---
@@ -308,7 +310,7 @@ export default function Transactions() {
                     <label className="text-[7px] font-black text-neutral-400 uppercase tracking-widest pl-1">Category</label>
                     <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-full h-8 bg-neutral-50 dark:bg-black/20 border-neutral-100 dark:border-white/5 border px-2 py-0 rounded-lg text-[10px] font-bold text-brand-blue dark:text-white outline-none appearance-none">
                       <option value="ALL">All Categories</option>
-                      {Object.keys(CATEGORY_ICONS).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                      {appCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                     </select>
                  </div>
                </div>
