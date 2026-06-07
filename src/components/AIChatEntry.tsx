@@ -385,7 +385,7 @@ const usePersonalLearning = () => {
 };
 
 // ─── Main Component ───────────────────────────────────────────────────────
-export default function AIChatEntry({ onSave, accounts, tags, isSaving, showSuccess }: AIChatEntryProps) {
+export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags, isSaving, showSuccess }) => {
   const { categories: appCategories } = useCategories();
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'ai', content: "Hi! 👋 Describe your expense naturally — I'll fill everything in.\n\nTry: *\"paid 500 to Zomato via GPay from HDFC yesterday for dinner\"*\nOr say *\"same\"* to repeat your last entry." }
