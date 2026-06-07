@@ -34,30 +34,27 @@ export default function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="app-theme">
       <AuthProvider>
-        <ReminderProvider>
-          <HashRouter>
-            <LoadingWrapper>
-              <ReminderBanner />
-              <Routes>
-                <Route path="/" element={<Layout />}>
-                  <Route index element={<Dashboard />} />
-                  <Route path="transactions" element={<Transactions />} />
-                  <Route path="accounts" element={<Accounts />} />
-                  <Route path="summary" element={<Summary />} />
-                  <Route path="budgets" element={<Budgets />} />
-                  <Route path="reports" element={<Reports />} />
-                  <Route path="ledger" element={<Ledger />} />
-                  <Route path="ledger/:id" element={<PartyLedger />} />
-                  <Route path="settings" element={<Settings />} />
-                  <Route path="profile" element={<Profile />} />
-                </Route>
+        <HashRouter>
+          <LoadingWrapper>
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="transactions" element={<Transactions />} />
+                <Route path="accounts" element={<Accounts />} />
+                <Route path="summary" element={<Summary />} />
+                <Route path="budgets" element={<Budgets />} />
+                <Route path="reports" element={<Reports />} />
+                <Route path="ledger" element={<Ledger />} />
+                <Route path="ledger/:id" element={<PartyLedger />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="profile" element={<Profile />} />
+              </Route>
 
-                <Route path="/transactions/table" element={<TransactionTable />} />
-                <Route path="*" element={<Dashboard />} />
-              </Routes>
-            </LoadingWrapper>
-          </HashRouter>
-        </ReminderProvider>
+              <Route path="/transactions/table" element={<TransactionTable />} />
+              <Route path="*" element={<Dashboard />} />
+            </Routes>
+          </LoadingWrapper>
+        </HashRouter>
       </AuthProvider>
     </ThemeProvider>
   );
