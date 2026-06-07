@@ -1,33 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 @import url('https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,400,300&display=swap');
 @import "tailwindcss";
 
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: "Satoshi", ui-sans-serif, system-ui, sans-serif;
-  --font-heading: "Satoshi", ui-sans-serif, system-ui, sans-serif;
-  --color-brand-green: #00A86B;  /* Mercury Green */
-  --color-brand-blue: #1A237E;   /* Rahu Blue */
-  --color-brand-cyan: #82EEFD;   /* Rahu Cyan */
-  --color-brand-gold: #D4AF37;   /* Venus Gold */
-  --color-brand-red: #E53935;    /* Sophisticated Brand Red for Expenses */
+  --font-sans: "Satoshi", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Satoshi", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-brand-green: #00A86B;
+  --color-brand-blue: #1A237E;
+  --color-brand-cyan: #82EEFD;
+  --color-brand-gold: #D4AF37;
+  --color-brand-red: #E53935;
 }
 
+/* ── Base ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* Prevent layout shift from scrollbar appearing */
+  scrollbar-gutter: stable;
+  /* Improve tap responsiveness on mobile */
+  touch-action: manipulation;
+}
 
 body {
   background-color: #060608;
   color: #F7F7F7;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Prevent text resize on orientation change on iOS */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Prevent overscroll bounce on iOS making body scroll */
+  overscroll-behavior: none;
 }
 
 .light body {
   background-color: #FFFFFF;
   color: #1A237E;
   --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-  --secondary-text: #1A237E; /* Using Rahu Blue for secondary as well but maybe with opacity later */
+  --secondary-text: #1A237E;
   --accent-gold: #D4AF37;
 }
 
+/* ── Scrollbars ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.2);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.08);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.15);
+}
 
 .light ::-webkit-scrollbar-track {
   background: #F7F7F7;
@@ -43,33 +87,124 @@ body {
   background: #D0D0D0;
 }
 
+/* Hide scrollbar but keep functionality */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* ── Dark Mode ──────────────────────────────────────────────────────────── */
 .dark {
   color-scheme: dark;
 }
 
-/* Base explicit selection styles to prevent blurred white text */
+/* ── Selection ──────────────────────────────────────────────────────────── */
 ::selection {
-  background-color: #222222;
+  background-color: #00A86B33;
   color: #F7F7F7;
 }
 
 .dark ::selection {
-  background-color: #F7F7F7;
-  color: #111111;
+  background-color: #00A86B55;
+  color: #F7F7F7;
 }
 
-/* Force native OS dropdown rendering */
+/* ── Native Dropdown ─────────────────────────────────────────────────────── */
 select option {
   color: WindowText;
   background-color: Window;
 }
 
-/* iOS Safe Area Utilities */
+/* ── iOS Safe Area Utilities ─────────────────────────────────────────────── */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 .mb-safe {
   margin-bottom: env(safe-area-inset-bottom, 0px);
 }
+.pt-safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
 
+/* ── Focus Rings ─────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #00A86B;
+  outline-offset: 2px;
+}
+
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.05) 25%,
+    rgba(255,255,255,0.1) 50%,
+    rgba(255,255,255,0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+.light .skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(0,0,0,0.04) 25%,
+    rgba(0,0,0,0.08) 50%,
+    rgba(0,0,0,0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out forwards;
+}
+
+/* Staggered list item animation */
+.stagger-item {
+  opacity: 0;
+  animation: fadeInUp 0.3s ease-out forwards;
+}
+.stagger-item:nth-child(1) { animation-delay: 0.05s; }
+.stagger-item:nth-child(2) { animation-delay: 0.10s; }
+.stagger-item:nth-child(3) { animation-delay: 0.15s; }
+.stagger-item:nth-child(4) { animation-delay: 0.20s; }
+.stagger-item:nth-child(5) { animation-delay: 0.25s; }
+.stagger-item:nth-child(6) { animation-delay: 0.30s; }
+
+/* ── Number input: hide spinners ─────────────────────────────────────────── */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] { -moz-appearance: textfield; }
+
+/* ── Tap highlight (Android) ─────────────────────────────────────────────── */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── GPU acceleration for heavy animated elements ────────────────────────── */
+.modal-overlay {
+  will-change: opacity;
+  transform: translateZ(0);
+}
+
+/* ── Bottom nav safe area ────────────────────────────────────────────────── */
+.bottom-nav {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+}

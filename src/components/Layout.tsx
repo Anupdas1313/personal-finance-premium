@@ -78,7 +78,7 @@ export default function Layout() {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0C0C0F] border-t border-[#EBEBEB] dark:border-[#1A1A1E] pb-safe z-50">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0C0C0F] border-t border-[#EBEBEB] dark:border-[#1A1A1E] bottom-nav z-50">
         <nav className="flex items-center justify-between px-2 h-16 relative">
           {mainNavItems.slice(0, 2).map((item) => {
             const isActive = location.pathname === item.path;
