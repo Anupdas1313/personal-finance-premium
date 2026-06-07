@@ -551,10 +551,20 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     let subject = q.replace(/\b(how much|did i|what is|show me|when did|last time|total|spent|spend|paid|pay|give|gave|to|on|at|for|about|this month|last month|today|yesterday|this year|and|the|a|my)\b/g, ' ').replace(/\s+/g, ' ').trim();
     
     // Category aliases mapper
-    const categoryAliases: Record<string, string> = { 'home': 'Housing', 'grocery': 'Groceries', 'cab': 'Transport', 'flight': 'Travel', 'movie': 'Entertainment' };
-    let aliasMapped = false;
-    for (const [alias, real] of Object.entries(categoryAliases)) {
-      if (subject.includes(alias) || q.includes(alias)) { subject = real.toLowerCase(); aliasMapped = true; break; }
+    const categoryAliases: Record<string, string[]> = { 
+      'home': ['rent', 'housing', 'house'], 
+      'house': ['rent', 'housing', 'home'], 
+      'grocery': ['shopping', 'food', 'groceries'], 
+      'cab': ['transport', 'taxi', 'uber', 'ola'], 
+      'flight': ['travel'], 
+      'movie': ['entertainment'] 
+    };
+    
+    let searchTerms = [subject];
+    for (const [alias, mapped] of Object.entries(categoryAliases)) {
+      if (subject.includes(alias) || q.includes(alias)) { 
+        searchTerms.push(...mapped);
+      }
     }
 
     // If query is totally empty after stripping, default to all DEBITs
@@ -567,15 +577,12 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
     // 3. Universal Deep Search
     const matches = timeFilteredTxs.filter(t => {
-      const s = subject.toLowerCase();
       const fields = [
         t.category, t.expenseType, t.partyName, t.note, t.paymentMethod, t.upiApp
       ].map(f => (f || '').toLowerCase());
       
-      if (aliasMapped && t.category?.toLowerCase() === s) return true;
-
-      // Exact substring match in any field
-      return fields.some(f => f.includes(s));
+      // Exact substring match in any field against ANY search term
+      return fields.some(f => searchTerms.some(term => term.length > 2 && f.includes(term)));
     });
 
     if (matches.length > 0) {
