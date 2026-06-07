@@ -5,7 +5,6 @@ import {
   RotateCcw, Clock, Zap, TrendingUp, Camera, Image as ImageIcon
 } from 'lucide-react';
 import { format, subDays, subWeeks } from 'date-fns';
-import Tesseract from 'tesseract.js';
 import { CATEGORIES, CATEGORY_ICONS } from '../constants';
 import { db } from '../models/db';
 
@@ -491,13 +490,34 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     const allTxs = await db.transactions.toArray();
     let answer = "I'm not sure how to answer that yet.";
 
-    if (q.includes('how much') && (q.includes('food') || q.includes('zomato') || q.includes('swiggy'))) {
-      const sum = allTxs.filter(t => t.category === 'Food' || (t.partyName && t.partyName.toLowerCase().match(/(zomato|swiggy)/))).reduce((s, t) => s + Number(t.amount), 0);
-      answer = `You have spent ₹${sum.toLocaleString('en-IN')} on Food & Delivery.`;
+    // Dynamic Category & Tag Matching
+    const categoryAliases: Record<string, string> = { 'home': 'Housing', 'grocery': 'Groceries', 'cab': 'Transport', 'flight': 'Travel', 'movie': 'Entertainment' };
+    let foundCat = CATEGORIES.find(c => q.includes(c.toLowerCase()));
+    if (!foundCat) {
+       for (const [alias, real] of Object.entries(categoryAliases)) {
+          if (q.includes(alias)) { foundCat = real; break; }
+       }
+    }
+    const foundTag = tags.find(t => q.includes(t.toLowerCase()));
+
+    if (q.match(/\b(how much|total|spent|spend)\b/)) {
+      if (foundCat) {
+        const sum = allTxs.filter(t => t.category === foundCat).reduce((s, t) => s + Number(t.amount), 0);
+        answer = `You have spent ₹${sum.toLocaleString('en-IN')} on ${foundCat}.`;
+      } else if (foundTag) {
+        const sum = allTxs.filter(t => t.expenseType === foundTag).reduce((s, t) => s + Number(t.amount), 0);
+        answer = `You have spent ₹${sum.toLocaleString('en-IN')} on ${foundTag} tags.`;
+      } else if (q.includes('food') || q.includes('zomato') || q.includes('swiggy')) {
+        const sum = allTxs.filter(t => t.category === 'Food' || t.partyName?.toLowerCase().match(/(zomato|swiggy)/)).reduce((s, t) => s + Number(t.amount), 0);
+        answer = `You have spent ₹${sum.toLocaleString('en-IN')} on Food & Delivery.`;
+      } else {
+        const sum = allTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + Number(t.amount), 0);
+        answer = `You have spent a total of ₹${sum.toLocaleString('en-IN')} overall. Specify a category (like 'Home' or 'Food') for details.`;
+      }
     } else if (q.includes('last time') || q.includes('when did')) {
       const merchantMatch = q.match(/last time i (?:paid|went to|bought from) (.+)\??/i) || q.match(/when did i (?:pay|go to|buy from) (.+)\??/i);
       const merchant = merchantMatch?.[1] || q.split(' ').pop()?.replace('?','');
-      if (merchant) {
+      if (merchant && merchant.length > 2) {
         const lastTx = allTxs.sort((a,b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()).find(t => t.partyName?.toLowerCase().includes(merchant.toLowerCase()) || t.note?.toLowerCase().includes(merchant.toLowerCase()));
         if (lastTx) {
           answer = `Your last transaction for ${merchant} was ₹${lastTx.amount} on ${format(new Date(lastTx.dateTime), 'dd MMM yyyy')}.`;
@@ -520,7 +540,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         }
       }
     } else {
-       answer = "You can ask things like 'how much did I spend on food?' or 'what is my HDFC balance?' or 'when did I last pay Swiggy?'";
+       answer = "You can ask things like 'how much did I spend on Home?' or 'what is my HDFC balance?' or 'when did I last pay Swiggy?'";
     }
     
     addAIMessage(`🔍 **Data Query:**\n${answer}`);
@@ -539,9 +559,11 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     const t = userMsg.toLowerCase();
 
     // "Ask Your Data" Query Detection
-    if (t.match(/^(how much|what is|when did|show me|total|query|balance)/i) || t.endsWith('?')) {
-      handleChatQuery(t);
-      return;
+    if (t.match(/\b(how much|what is|when did|show me|total|query|balance|spent|spend)\b/i) || t.endsWith('?')) {
+      if (!t.match(/^(add|record|log|paid)/i)) { // Prevent 'paid 500' from being intercepted
+        handleChatQuery(t);
+        return;
+      }
     }
 
     // "same" / "repeat" → copy last transaction
@@ -716,7 +738,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     setMessages(prev => [...prev, { role: 'user', content: '📸 Uploaded receipt. Scanning with AI...' }]);
     
     try {
-      // Local offline OCR using tesseract.js
+      const Tesseract = (await import('tesseract.js')).default;
       const { data: { text } } = await Tesseract.recognize(file, 'eng');
       const lines = text.split('\n');
       
