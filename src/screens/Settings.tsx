@@ -177,7 +177,7 @@ export default function Settings() {
       {/* SECTION: THEME */}
       <section>
         <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Appearance</h2>
-        <div className="bg-white dark:bg-[#111111] rounded-[32px] border border-brand-blue/5 dark:border-[#222222] shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-[#111111] rounded-[32px] border border-brand-blue/5 dark:border-[#222222] shadow-sm overflow-hidden transform-gpu [backface-visibility:hidden]">
           <div className="p-5">
             <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7] mb-6">
               <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
@@ -236,7 +236,7 @@ export default function Settings() {
       {/* SECTION: CATEGORIES */}
       <section>
         <h2 className="text-xs font-semibold text-[#1A237E] dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2 opacity-70">Categories</h2>
-        <div className="bg-white dark:bg-[#111111] rounded-[32px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_20px_50px_rgba(26,35,126,0.05)] dark:shadow-none overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222]">
+        <div className="bg-white dark:bg-[#111111] rounded-[32px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_20px_50px_rgba(26,35,126,0.05)] dark:shadow-none overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222] transform-gpu [backface-visibility:hidden]">
           <div className="p-5 flex flex-col gap-5">
             <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
               <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
@@ -353,7 +353,7 @@ export default function Settings() {
       {/* SECTION: DATA MANAGEMENT */}
       <section>
         <h2 className="text-xs font-semibold text-[#525252] dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-3 px-2">Data & Storage</h2>
-        <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-none overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222]">
+        <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-none overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222] transform-gpu [backface-visibility:hidden]">
           <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
               <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
@@ -401,7 +401,7 @@ export default function Settings() {
       {/* SECTION: DANGER ZONE */}
       <section>
         <h2 className="text-[10px] font-semibold text-brand-red uppercase tracking-[0.3em] mb-4 px-2">Terminal Phase</h2>
-        <div className="bg-brand-red/5 rounded-3xl border border-brand-red/10 overflow-hidden divide-y divide-brand-red/10">
+        <div className="bg-brand-red/5 rounded-3xl border border-brand-red/10 overflow-hidden divide-y divide-brand-red/10 transform-gpu [backface-visibility:hidden]">
           <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4 text-brand-red">
               <div className="p-2.5 bg-brand-red/10 rounded-xl flex-shrink-0">
