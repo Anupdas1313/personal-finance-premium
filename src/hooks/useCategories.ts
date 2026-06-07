@@ -3,7 +3,7 @@ import { db } from '../models/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useAuth } from '../context/AuthContext';
 
-const DEFAULT_CATEGORIES = ['Personal', 'Home', 'Miscellaneous', 'Tenant / Customer'];
+const DEFAULT_CATEGORIES = ['Food', 'Transport', 'Rent', 'Shopping', 'Bills', 'Entertainment', 'Salary', 'Transfer', 'Other'];
 
 let categoriesInitialized = false;
 
@@ -28,6 +28,15 @@ export function useCategories() {
         if (count === 0) {
           const initial = DEFAULT_CATEGORIES.map(name => ({ name }));
           await db.categories.bulkPut(initial);
+        } else {
+          // Migration: if the database accidentally got populated with Tags instead of Categories (due to a previous bug)
+          const cats = await db.categories.toArray();
+          const names = cats.map(c => c.name);
+          if (names.includes('Personal') && names.includes('Tenant / Customer') && !names.includes('Food')) {
+            await db.categories.clear();
+            const initial = DEFAULT_CATEGORIES.map(name => ({ name }));
+            await db.categories.bulkAdd(initial);
+          }
         }
       } catch (e) {
         categoriesInitialized = false;

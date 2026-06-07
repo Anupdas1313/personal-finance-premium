@@ -3,7 +3,7 @@ import { db } from '../models/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useAuth } from '../context/AuthContext';
 
-const DEFAULT_TAGS = ['Personal', 'Home'];
+const DEFAULT_TAGS = ['Personal', 'Household', 'Miscellaneous', 'Tenant / Customer'];
 
 let tagsInitialized = false;
 
