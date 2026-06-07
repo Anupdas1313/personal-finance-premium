@@ -484,48 +484,49 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     return false;
   };
 
-  // ─── Ask Your Data (Chatbot Queries) ────────────────────────────────
+  // ─── Ask Your Data (Universal Deep Search Engine) ────────────────────────────────
   const handleChatQuery = async (query: string) => {
-    const q = query.toLowerCase();
+    let q = query.toLowerCase().replace(/[^a-z0-9\s]/g, ''); // strip punctuation
     const allTxs = await db.transactions.toArray();
-    let answer = "I'm not sure how to answer that yet.";
+    let answer = "I couldn't find anything matching that query.";
 
-    // Dynamic Category & Tag Matching
-    const categoryAliases: Record<string, string> = { 'home': 'Housing', 'grocery': 'Groceries', 'cab': 'Transport', 'flight': 'Travel', 'movie': 'Entertainment' };
-    let foundCat = CATEGORIES.find(c => q.includes(c.toLowerCase()));
-    if (!foundCat) {
-       for (const [alias, real] of Object.entries(categoryAliases)) {
-          if (q.includes(alias)) { foundCat = real; break; }
-       }
+    // 1. Time Awareness
+    const now = new Date();
+    let startDate = new Date(0); // Epoch
+    let endDate = new Date('2100-01-01');
+    let timeRangeName = 'overall';
+
+    if (q.match(/\b(this month)\b/)) {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+      timeRangeName = 'this month';
+    } else if (q.match(/\b(last month)\b/)) {
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+      timeRangeName = 'last month';
+    } else if (q.match(/\b(today)\b/)) {
+      startDate = new Date(now.setHours(0, 0, 0, 0));
+      endDate = new Date(now.setHours(23, 59, 59, 999));
+      timeRangeName = 'today';
+    } else if (q.match(/\b(yesterday)\b/)) {
+      const y = new Date(now); y.setDate(y.getDate() - 1);
+      startDate = new Date(y.setHours(0, 0, 0, 0));
+      endDate = new Date(y.setHours(23, 59, 59, 999));
+      timeRangeName = 'yesterday';
+    } else if (q.match(/\b(this year)\b/)) {
+      startDate = new Date(now.getFullYear(), 0, 1);
+      endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+      timeRangeName = 'this year';
     }
-    const foundTag = tags.find(t => q.includes(t.toLowerCase()));
 
-    if (q.match(/\b(how much|total|spent|spend)\b/) || foundCat || foundTag) {
-      if (foundCat) {
-        const sum = allTxs.filter(t => t.category === foundCat).reduce((s, t) => s + Number(t.amount), 0);
-        answer = `You have spent ₹${sum.toLocaleString('en-IN')} on ${foundCat}.`;
-      } else if (foundTag) {
-        const sum = allTxs.filter(t => t.expenseType === foundTag).reduce((s, t) => s + Number(t.amount), 0);
-        answer = `You have spent ₹${sum.toLocaleString('en-IN')} on ${foundTag} tags.`;
-      } else if (q.includes('food') || q.includes('zomato') || q.includes('swiggy')) {
-        const sum = allTxs.filter(t => t.category === 'Food' || t.partyName?.toLowerCase().match(/(zomato|swiggy)/)).reduce((s, t) => s + Number(t.amount), 0);
-        answer = `You have spent ₹${sum.toLocaleString('en-IN')} on Food & Delivery.`;
-      } else {
-        const sum = allTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + Number(t.amount), 0);
-        answer = `You have spent a total of ₹${sum.toLocaleString('en-IN')} overall. Specify a category (like 'Home' or 'Food') for details.`;
-      }
-    } else if (q.includes('last time') || q.includes('when did')) {
-      const merchantMatch = q.match(/last time i (?:paid|went to|bought from) (.+)\??/i) || q.match(/when did i (?:pay|go to|buy from) (.+)\??/i);
-      const merchant = merchantMatch?.[1] || q.split(' ').pop()?.replace('?','');
-      if (merchant && merchant.length > 2) {
-        const lastTx = allTxs.sort((a,b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()).find(t => t.partyName?.toLowerCase().includes(merchant.toLowerCase()) || t.note?.toLowerCase().includes(merchant.toLowerCase()));
-        if (lastTx) {
-          answer = `Your last transaction for ${merchant} was ₹${lastTx.amount} on ${format(new Date(lastTx.dateTime), 'dd MMM yyyy')}.`;
-        } else {
-          answer = `I couldn't find any recent transactions for ${merchant}.`;
-        }
-      }
-    } else if (q.includes('balance') || q.includes('total in')) {
+    // Filter by time immediately
+    const timeFilteredTxs = allTxs.filter(t => {
+      const d = new Date(t.dateTime);
+      return d >= startDate && d <= endDate;
+    });
+
+    // Handle Balance Queries
+    if (q.includes('balance') || q.includes('total in')) {
       const bankNames = accounts.map(a => a.bankName.toLowerCase());
       const fuzzy = fuzzyMatch(q, bankNames);
       if (fuzzy) {
@@ -538,11 +539,71 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
           });
           answer = `Your current balance in ${acc.bankName} is ₹${bal.toLocaleString('en-IN')}.`;
         }
+      } else {
+        answer = "I couldn't identify the bank account. Try asking 'What is my HDFC balance?'";
+      }
+      addAIMessage(`🔍 **Data Query:**\n${answer}`);
+      return;
+    }
+
+    // 2. Extract Target Subject
+    // Remove filler words to isolate the core noun/subject
+    let subject = q.replace(/\b(how much|did i|what is|show me|when did|last time|total|spent|spend|paid|pay|give|gave|to|on|at|for|about|this month|last month|today|yesterday|this year|and|the|a|my)\b/g, ' ').replace(/\s+/g, ' ').trim();
+    
+    // Category aliases mapper
+    const categoryAliases: Record<string, string> = { 'home': 'Housing', 'grocery': 'Groceries', 'cab': 'Transport', 'flight': 'Travel', 'movie': 'Entertainment' };
+    let aliasMapped = false;
+    for (const [alias, real] of Object.entries(categoryAliases)) {
+      if (subject.includes(alias) || q.includes(alias)) { subject = real.toLowerCase(); aliasMapped = true; break; }
+    }
+
+    // If query is totally empty after stripping, default to all DEBITs
+    if (!subject || subject.length < 2) {
+       const sum = timeFilteredTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + Number(t.amount), 0);
+       answer = `You have spent a total of ₹${sum.toLocaleString('en-IN')} ${timeRangeName}. Specify a category or payee for details!`;
+       addAIMessage(`🔍 **Data Query:**\n${answer}`);
+       return;
+    }
+
+    // 3. Universal Deep Search
+    const matches = timeFilteredTxs.filter(t => {
+      const s = subject.toLowerCase();
+      const fields = [
+        t.category, t.expenseType, t.partyName, t.note, t.paymentMethod, t.upiApp
+      ].map(f => (f || '').toLowerCase());
+      
+      if (aliasMapped && t.category?.toLowerCase() === s) return true;
+
+      // Exact substring match in any field
+      return fields.some(f => f.includes(s));
+    });
+
+    if (matches.length > 0) {
+      // Distinguish between Credit and Debit if user asked about income vs expense
+      const isIncomeQuery = q.match(/\b(earned|income|received|salary|got)\b/);
+      const targetType = isIncomeQuery ? 'CREDIT' : 'DEBIT';
+      const filteredMatches = matches.filter(t => t.type === targetType);
+      
+      const txCount = filteredMatches.length;
+      const sum = filteredMatches.reduce((s, t) => s + Number(t.amount), 0);
+      
+      if (txCount === 0) {
+        answer = `You have ₹0 ${isIncomeQuery ? 'income' : 'expenses'} for '${subject}' ${timeRangeName}.`;
+      } else {
+        // Find best match property name to show user context
+        let matchedProperty = `'${subject}'`;
+        const sample = filteredMatches[0];
+        if (sample.category?.toLowerCase().includes(subject)) matchedProperty = `Category: ${sample.category}`;
+        else if (sample.partyName?.toLowerCase().includes(subject)) matchedProperty = `Payee: ${sample.partyName}`;
+        else if (sample.expenseType?.toLowerCase().includes(subject)) matchedProperty = `Tag: ${sample.expenseType}`;
+        else if (sample.note?.toLowerCase().includes(subject)) matchedProperty = `Remarks`;
+
+        answer = `You have ${isIncomeQuery ? 'received' : 'spent'} ₹${sum.toLocaleString('en-IN')} on **${matchedProperty}** ${timeRangeName} (across ${txCount} entries).`;
       }
     } else {
-       answer = "You can ask things like 'how much did I spend on Home?' or 'what is my HDFC balance?' or 'when did I last pay Swiggy?'";
+       answer = `I found 0 records for '${subject}' ${timeRangeName}.`;
     }
-    
+
     addAIMessage(`🔍 **Data Query:**\n${answer}`);
   };
 
