@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Send, Bot, CheckCircle2, Sparkles, Landmark, Lightbulb,
   ChevronRight, Hash, AppWindow, Pencil, Mic, MicOff, X,
-  RotateCcw, Clock, Zap, TrendingUp
+  RotateCcw, Clock, Zap, TrendingUp, Camera, Image as ImageIcon
 } from 'lucide-react';
 import { format, subDays, subWeeks } from 'date-fns';
+import Tesseract from 'tesseract.js';
 import { CATEGORIES, CATEGORY_ICONS } from '../constants';
 import { db } from '../models/db';
 
@@ -160,6 +161,7 @@ const parseDate = (text: string): { date: string; confirmed: boolean } => {
   const now = new Date();
   if (t.match(/\b(today|aaj|abhi)\b/)) return { date: format(now, "yyyy-MM-dd'T'HH:mm"), confirmed: true };
   if (t.match(/\b(yesterday|kal)\b/)) return { date: format(subDays(now, 1), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+  if (t.match(/\b(parso|day before yesterday)\b/)) return { date: format(subDays(now, 2), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
   const daysAgo = t.match(/(\d+)\s+days?\s+ago/);
   if (daysAgo) return { date: format(subDays(now, parseInt(daysAgo[1])), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
   if (t.includes('last week')) return { date: format(subWeeks(now, 1), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
@@ -189,6 +191,31 @@ const parseDate = (text: string): { date: string; confirmed: boolean } => {
 // ─── Amount Parser ────────────────────────────────────────────────────────
 const parseAmount = (text: string): string => {
   const t = text.toLowerCase().replace(/,/g, '');
+
+  // Math: "150 + 200" or "1200 / 3"
+  const mathMatch = t.match(/\b(\d+(?:\.\d+)?)\s*([+*/-])\s*(\d+(?:\.\d+)?)\b/);
+  if (mathMatch) {
+    const a = parseFloat(mathMatch[1]);
+    const op = mathMatch[2];
+    const b = parseFloat(mathMatch[3]);
+    let res = a;
+    if (op === '+') res = a + b;
+    else if (op === '-') res = a - b;
+    else if (op === '*') res = a * b;
+    else if (op === '/') res = a / b;
+    return String(res);
+  }
+
+  // Split: "split 1200 3 ways" or "split 1200 with rahul" (assumes / 2)
+  const splitWaysMatch = t.match(/split\s+(\d+(?:\.\d+)?)\s+(\d+)\s+ways?/i);
+  if (splitWaysMatch) {
+    return String(parseFloat(splitWaysMatch[1]) / parseFloat(splitWaysMatch[2]));
+  }
+  const splitWithMatch = t.match(/split\s+(\d+(?:\.\d+)?)\s+with\s+/i);
+  if (splitWithMatch) {
+    return String(parseFloat(splitWithMatch[1]) / 2);
+  }
+
   const kMatch = t.match(/(\d+(?:\.\d+)?)\s*k\b/i);
   if (kMatch) return String(parseFloat(kMatch[1]) * 1000);
   const lakhMatch = t.match(/(\d+(?:\.\d+)?)\s*(?:l(?:akh)?)\b/i);
@@ -238,9 +265,9 @@ const parseUniversal = (text: string, accounts: any[]) => {
   const amount = parseAmount(text);
 
   let type = '';
-  if (t.match(/\b(received|got|salary|income|credit|added|deposit|inflow|credited)\b/)) type = 'CREDIT';
-  else if (t.match(/\b(transfer(?:red)?|moved?|sent|send|shifted)\b/)) type = 'TRANSFER';
-  else if (t.match(/\b(paid|spent|bought|expense|debit|gave|withdrawn?|purchased?)\b/)) type = 'DEBIT';
+  if (t.match(/\b(received|got|salary|income|credit|added|deposit|inflow|credited|mila|aaya)\b/)) type = 'CREDIT';
+  else if (t.match(/\b(transfer(?:red)?|moved?|sent|send|shifted|bheja)\b/)) type = 'TRANSFER';
+  else if (t.match(/\b(paid|spent|bought|expense|debit|gave|withdrawn?|purchased?|kharcha|diya|de diya)\b/)) type = 'DEBIT';
 
   const acc = resolveBank(t, accounts);
   let accountId = acc?.id || '';
@@ -364,6 +391,8 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [stage, setStage] = useState<ChatStage>('IDLE');
   const [pendingTx, setPendingTx] = useState<any>({
     type: '', amount: '', category: '', selectedAccountId: '', toAccountId: '',
@@ -456,6 +485,47 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     return false;
   };
 
+  // ─── Ask Your Data (Chatbot Queries) ────────────────────────────────
+  const handleChatQuery = async (query: string) => {
+    const q = query.toLowerCase();
+    const allTxs = await db.transactions.toArray();
+    let answer = "I'm not sure how to answer that yet.";
+
+    if (q.includes('how much') && (q.includes('food') || q.includes('zomato') || q.includes('swiggy'))) {
+      const sum = allTxs.filter(t => t.category === 'Food' || (t.partyName && t.partyName.toLowerCase().match(/(zomato|swiggy)/))).reduce((s, t) => s + Number(t.amount), 0);
+      answer = `You have spent ₹${sum.toLocaleString('en-IN')} on Food & Delivery.`;
+    } else if (q.includes('last time') || q.includes('when did')) {
+      const merchantMatch = q.match(/last time i (?:paid|went to|bought from) (.+)\??/i) || q.match(/when did i (?:pay|go to|buy from) (.+)\??/i);
+      const merchant = merchantMatch?.[1] || q.split(' ').pop()?.replace('?','');
+      if (merchant) {
+        const lastTx = allTxs.sort((a,b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()).find(t => t.partyName?.toLowerCase().includes(merchant.toLowerCase()) || t.note?.toLowerCase().includes(merchant.toLowerCase()));
+        if (lastTx) {
+          answer = `Your last transaction for ${merchant} was ₹${lastTx.amount} on ${format(new Date(lastTx.dateTime), 'dd MMM yyyy')}.`;
+        } else {
+          answer = `I couldn't find any recent transactions for ${merchant}.`;
+        }
+      }
+    } else if (q.includes('balance') || q.includes('total in')) {
+      const bankNames = accounts.map(a => a.bankName.toLowerCase());
+      const fuzzy = fuzzyMatch(q, bankNames);
+      if (fuzzy) {
+        const acc = accounts.find(a => a.bankName.toLowerCase() === fuzzy);
+        if (acc) {
+          let bal = Number(acc.startingBalance) || 0;
+          allTxs.filter(t => Number(t.accountId) === Number(acc.id)).forEach(tx => {
+            if (tx.type === 'CREDIT') bal += Number(tx.amount);
+            else if (tx.type === 'DEBIT') bal -= Number(tx.amount);
+          });
+          answer = `Your current balance in ${acc.bankName} is ₹${bal.toLocaleString('en-IN')}.`;
+        }
+      }
+    } else {
+       answer = "You can ask things like 'how much did I spend on food?' or 'what is my HDFC balance?' or 'when did I last pay Swiggy?'";
+    }
+    
+    addAIMessage(`🔍 **Data Query:**\n${answer}`);
+  };
+
   const handleSend = useCallback((msgOverride?: string) => {
     const userMsg = (msgOverride || input).trim();
     if (!userMsg) return;
@@ -467,6 +537,12 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
     // ── Special commands ──────────────────────────────────────────────────
     const t = userMsg.toLowerCase();
+
+    // "Ask Your Data" Query Detection
+    if (t.match(/^(how much|what is|when did|show me|total|query|balance)/i) || t.endsWith('?')) {
+      handleChatQuery(t);
+      return;
+    }
 
     // "same" / "repeat" → copy last transaction
     if (t.match(/^(same|repeat|again|same as last)$/i)) {
@@ -631,6 +707,53 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       setMessages(prev => [...prev, { role: 'user', content: `🎤 ${text}` }]);
       setTimeout(() => handleSend(text), 100);
     });
+  };
+
+  const handleReceiptScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsScanning(true);
+    setMessages(prev => [...prev, { role: 'user', content: '📸 Uploaded receipt. Scanning with AI...' }]);
+    
+    try {
+      // Local offline OCR using tesseract.js
+      const { data: { text } } = await Tesseract.recognize(file, 'eng');
+      const lines = text.split('\n');
+      
+      let foundAmount = '';
+      let foundMerchant = '';
+      for (const line of lines) {
+        const l = line.toLowerCase();
+        // Look for typical total lines
+        if (l.includes('total') || l.includes('amount') || l.includes('paid')) {
+           const amtMatch = l.match(/\b\d+(?:\.\d{1,2})?\b/);
+           if (amtMatch && parseFloat(amtMatch[0]) > 0) foundAmount = amtMatch[0];
+        }
+        // Very basic merchant guess
+        if (!foundMerchant && line.trim().length > 3 && !l.includes('date') && !l.includes('time')) {
+           foundMerchant = line.trim();
+        }
+      }
+      
+      if (!foundAmount) {
+         // Fallback: just grab the largest number on the receipt
+         const allNumbers = text.match(/\b\d+(?:\.\d{1,2})?\b/g);
+         if (allNumbers) {
+             const sorted = allNumbers.map(n => parseFloat(n)).sort((a,b) => b-a);
+             if (sorted[0] > 0) foundAmount = String(sorted[0]);
+         }
+      }
+      
+      const scanResult = `${foundAmount ? foundAmount : '0'} at ${foundMerchant || 'merchant'} today`;
+      setMessages(prev => [...prev, { role: 'ai', content: `📄 OCR Extracted:\n"${scanResult}"\nParsing...` }]);
+      handleSend(scanResult);
+    } catch (err) {
+      console.error(err);
+      addAIMessage("Sorry, I couldn't read that receipt clearly. Please type the expense manually.");
+    } finally {
+      setIsScanning(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const repeatLastTx = (tx: any) => {
@@ -799,7 +922,17 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         )}
 
         {/* Input Bar */}
-        <div className="flex items-center gap-2 bg-[#F9FBFF] dark:bg-[#111111] p-1.5 rounded-2xl border border-brand-blue/5 dark:border-white/5 shadow-xl">
+        <div className="flex items-center gap-1.5 bg-[#F9FBFF] dark:bg-[#111111] p-1.5 rounded-2xl border border-brand-blue/5 dark:border-white/5 shadow-xl">
+          <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handleReceiptScan} className="hidden" />
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isScanning}
+            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all flex-shrink-0 bg-neutral-100 dark:bg-[#1A1A1A] text-neutral-400 hover:text-brand-green disabled:opacity-50`}
+            title="Scan Receipt"
+          >
+            {isScanning ? <div className="w-4 h-4 border-2 border-neutral-300 border-t-brand-green rounded-full animate-spin" /> : <Camera className="w-4 h-4" />}
+          </button>
+
           {speech.supported && (
             <button onClick={handleVoice}
               className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all flex-shrink-0 ${
@@ -812,7 +945,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSend()}
-            placeholder={speech.listening ? "Listening..." : "Describe expense or type 'same'..."}
+            placeholder={speech.listening ? "Listening..." : "Expense, question, or 'same'..."}
             className="flex-1 bg-transparent px-2 py-2 text-[12px] font-bold outline-none dark:text-white placeholder:text-neutral-400"
           />
           {input && <button onClick={() => setInput('')} className="text-neutral-300 hover:text-neutral-500"><X className="w-4 h-4" /></button>}
