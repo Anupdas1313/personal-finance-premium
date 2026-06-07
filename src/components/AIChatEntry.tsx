@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Send, Bot, CheckCircle2, Sparkles, Landmark, Lightbulb,
-  ChevronRight, Hash, AppWindow, Pencil, Mic, MicOff, X
+  ChevronRight, Hash, AppWindow, Pencil, Mic, MicOff, X,
+  RotateCcw, Clock, Zap, TrendingUp
 } from 'lucide-react';
-import { format, subDays, subWeeks, startOfWeek, parseISO } from 'date-fns';
+import { format, subDays, subWeeks } from 'date-fns';
 import { CATEGORIES, CATEGORY_ICONS } from '../constants';
+import { db } from '../models/db';
 
 interface AIChatEntryProps {
   onSave: (transaction: any) => void;
@@ -14,11 +16,28 @@ interface AIChatEntryProps {
   showSuccess?: boolean;
 }
 
-type ChatStage = 'IDLE' | 'ASK_AMOUNT' | 'ASK_TYPE' | 'ASK_BANK' | 'ASK_PAYMENT_METHOD' | 'ASK_UPI_APP' | 'ASK_CATEGORY' | 'ASK_TAG' | 'ASK_PAYEE' | 'ASK_NOTE' | 'ASK_DATE' | 'PREVIEW';
+type ChatStage = 'IDLE' | 'ASK_AMOUNT' | 'ASK_TYPE' | 'ASK_BANK' | 'ASK_PAYMENT_METHOD'
+  | 'ASK_UPI_APP' | 'ASK_CATEGORY' | 'ASK_TAG' | 'ASK_PAYEE' | 'ASK_NOTE' | 'ASK_DATE' | 'PREVIEW';
 
-// ─── Expanded Indian Merchant Knowledge Base ──────────────────────────────
+// ─── Emoji → Category Shortcuts ──────────────────────────────────────────
+const EMOJI_CATEGORY: Record<string, string> = {
+  '🍕': 'Food', '🍔': 'Food', '🍜': 'Food', '🥘': 'Food', '☕': 'Food', '🍩': 'Food',
+  '🚗': 'Transport', '🛵': 'Transport', '🚌': 'Transport', '✈️': 'Travel', '🚂': 'Travel',
+  '🛒': 'Groceries', '🛍️': 'Shopping', '👗': 'Shopping', '👟': 'Shopping',
+  '💊': 'Health', '🏥': 'Health', '🏋️': 'Health',
+  '📺': 'Bills', '📱': 'Bills', '💡': 'Bills',
+  '📚': 'Education', '🎓': 'Education',
+  '🎬': 'Entertainment', '🎮': 'Entertainment', '🎵': 'Entertainment',
+  '🏠': 'Housing', '🏡': 'Housing',
+  '💰': 'Investment', '📈': 'Investment',
+};
+
+const EMOJI_TAG: Record<string, string> = {
+  '💼': 'Work', '🏢': 'Work', '🏠': 'Household', '👤': 'Personal',
+};
+
+// ─── Merchant Knowledge Base ──────────────────────────────────────────────
 const MERCHANT_KNOWLEDGE: Record<string, { category: string; tag: string }> = {
-  // Food & Delivery
   zomato: { category: 'Food', tag: 'Personal' },
   swiggy: { category: 'Food', tag: 'Personal' },
   blinkit: { category: 'Groceries', tag: 'Personal' },
@@ -41,7 +60,6 @@ const MERCHANT_KNOWLEDGE: Record<string, { category: string; tag: string }> = {
   chai: { category: 'Food', tag: 'Personal' },
   coffee: { category: 'Food', tag: 'Personal' },
   cafe: { category: 'Food', tag: 'Personal' },
-  // Transport
   uber: { category: 'Transport', tag: 'Personal' },
   ola: { category: 'Transport', tag: 'Personal' },
   rapido: { category: 'Transport', tag: 'Personal' },
@@ -55,7 +73,6 @@ const MERCHANT_KNOWLEDGE: Record<string, { category: string; tag: string }> = {
   fuel: { category: 'Transport', tag: 'Personal' },
   diesel: { category: 'Transport', tag: 'Personal' },
   metro: { category: 'Transport', tag: 'Personal' },
-  // Shopping
   amazon: { category: 'Shopping', tag: 'Personal' },
   flipkart: { category: 'Shopping', tag: 'Personal' },
   myntra: { category: 'Shopping', tag: 'Personal' },
@@ -63,7 +80,6 @@ const MERCHANT_KNOWLEDGE: Record<string, { category: string; tag: string }> = {
   ajio: { category: 'Shopping', tag: 'Personal' },
   nykaa: { category: 'Shopping', tag: 'Personal' },
   snapdeal: { category: 'Shopping', tag: 'Personal' },
-  // Utilities & Bills
   netflix: { category: 'Bills', tag: 'Personal' },
   hotstar: { category: 'Bills', tag: 'Personal' },
   disney: { category: 'Bills', tag: 'Personal' },
@@ -76,7 +92,6 @@ const MERCHANT_KNOWLEDGE: Record<string, { category: string; tag: string }> = {
   electricity: { category: 'Bills', tag: 'Household' },
   water: { category: 'Bills', tag: 'Household' },
   gas: { category: 'Bills', tag: 'Household' },
-  // Health
   pharmeasy: { category: 'Health', tag: 'Personal' },
   netmeds: { category: 'Health', tag: 'Personal' },
   apollo: { category: 'Health', tag: 'Personal' },
@@ -86,8 +101,6 @@ const MERCHANT_KNOWLEDGE: Record<string, { category: string; tag: string }> = {
   hospital: { category: 'Health', tag: 'Personal' },
   doctor: { category: 'Health', tag: 'Personal' },
   gym: { category: 'Health', tag: 'Personal' },
-  // Finance
-  lenskart: { category: 'Shopping', tag: 'Personal' },
   insurance: { category: 'Bills', tag: 'Personal' },
   lic: { category: 'Bills', tag: 'Personal' },
   mutual: { category: 'Investment', tag: 'Personal' },
@@ -96,18 +109,15 @@ const MERCHANT_KNOWLEDGE: Record<string, { category: string; tag: string }> = {
   loan: { category: 'Loan', tag: 'Personal' },
   emi: { category: 'Loan', tag: 'Personal' },
   rent: { category: 'Housing', tag: 'Household' },
+  lenskart: { category: 'Shopping', tag: 'Personal' },
 };
 
-// ─── UPI App Detection ────────────────────────────────────────────────────
+// ─── UPI Apps ─────────────────────────────────────────────────────────────
 const UPI_APPS: Record<string, string> = {
   gpay: 'GPay', 'google pay': 'GPay', googlepay: 'GPay',
   phonepe: 'PhonePe', 'phone pe': 'PhonePe',
-  paytm: 'Paytm',
-  bhim: 'BHIM',
-  cred: 'CRED',
-  slice: 'Slice',
-  amazonpay: 'Amazon Pay', 'amazon pay': 'Amazon Pay',
-  airtel: 'Airtel Pay',
+  paytm: 'Paytm', bhim: 'BHIM', cred: 'CRED',
+  slice: 'Slice', amazonpay: 'Amazon Pay', 'amazon pay': 'Amazon Pay',
   mobikwik: 'MobiKwik',
 };
 
@@ -119,86 +129,111 @@ const BANK_NICKNAMES: Record<string, string> = {
   indusind: 'indusind bank', idfc: 'idfc', rbl: 'rbl bank',
 };
 
+// ─── Fuzzy Match (Levenshtein distance) ─────────────────────────────────
+const levenshtein = (a: string, b: string): number => {
+  const m = a.length, n = b.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, (_, i) =>
+    Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+  );
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1]
+        : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+  return dp[m][n];
+};
+
+const fuzzyMatch = (input: string, candidates: string[]): string | null => {
+  const t = input.toLowerCase().trim();
+  if (!t || t.length < 3) return null;
+  let best = { word: '', dist: Infinity };
+  for (const c of candidates) {
+    const dist = levenshtein(t, c);
+    const threshold = Math.max(1, Math.floor(c.length / 4));
+    if (dist < best.dist && dist <= threshold) best = { word: c, dist };
+  }
+  return best.word || null;
+};
+
 // ─── Date Parser ──────────────────────────────────────────────────────────
 const parseDate = (text: string): { date: string; confirmed: boolean } => {
   const t = text.toLowerCase();
   const now = new Date();
-
-  // "today"
-  if (t.includes('today') || t.includes('abhi') || t.includes('aaj'))
-    return { date: format(now, "yyyy-MM-dd'T'HH:mm"), confirmed: true };
-
-  // "yesterday"
-  if (t.includes('yesterday') || t.includes('kal'))
-    return { date: format(subDays(now, 1), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
-
-  // "X days ago"
+  if (t.match(/\b(today|aaj|abhi)\b/)) return { date: format(now, "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+  if (t.match(/\b(yesterday|kal)\b/)) return { date: format(subDays(now, 1), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
   const daysAgo = t.match(/(\d+)\s+days?\s+ago/);
-  if (daysAgo)
-    return { date: format(subDays(now, parseInt(daysAgo[1])), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
-
-  // "last week"
-  if (t.includes('last week'))
-    return { date: format(subWeeks(now, 1), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
-
-  // "last monday/tuesday..." etc
+  if (daysAgo) return { date: format(subDays(now, parseInt(daysAgo[1])), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+  if (t.includes('last week')) return { date: format(subWeeks(now, 1), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
   const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
   for (let i = 0; i < weekdays.length; i++) {
     if (t.includes(`last ${weekdays[i]}`)) {
-      const current = now.getDay();
-      const diff = (current - i + 7) % 7 || 7;
+      const diff = (now.getDay() - i + 7) % 7 || 7;
       return { date: format(subDays(now, diff), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
     }
   }
-
-  // "on 5th", "on 5 june", "5/6", "5-6"
-  const onDateMatch = text.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s*(?:of\s+)?(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)?\b/i);
-  if (onDateMatch) {
-    const day = parseInt(onDateMatch[1]);
+  const dayNum = text.match(/\b(\d{1,2})(?:st|nd|rd|th)?\b/);
+  if (dayNum) {
+    const day = parseInt(dayNum[1]);
     if (day >= 1 && day <= 31) {
       const d = new Date(now.getFullYear(), now.getMonth(), day);
-      if (d <= now)
-        return { date: format(d, "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+      if (d <= now) return { date: format(d, "yyyy-MM-dd'T'HH:mm"), confirmed: true };
     }
   }
-
-  // Slash/dash date: "5/6" or "5-6"
   const slashDate = text.match(/\b(\d{1,2})[\/\-](\d{1,2})\b/);
   if (slashDate) {
     const d = new Date(now.getFullYear(), parseInt(slashDate[2]) - 1, parseInt(slashDate[1]));
-    if (d <= now)
-      return { date: format(d, "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+    if (d <= now) return { date: format(d, "yyyy-MM-dd'T'HH:mm"), confirmed: true };
   }
-
   return { date: format(now, "yyyy-MM-dd'T'HH:mm"), confirmed: false };
 };
 
 // ─── Amount Parser ────────────────────────────────────────────────────────
 const parseAmount = (text: string): string => {
   const t = text.toLowerCase().replace(/,/g, '');
-  // "2.5k" or "2k" or "2.5 k"
   const kMatch = t.match(/(\d+(?:\.\d+)?)\s*k\b/i);
   if (kMatch) return String(parseFloat(kMatch[1]) * 1000);
-  // "2 lakh" or "2L"
   const lakhMatch = t.match(/(\d+(?:\.\d+)?)\s*(?:l(?:akh)?)\b/i);
   if (lakhMatch) return String(parseFloat(lakhMatch[1]) * 100000);
-  // "two hundred" etc — simple word-to-number
-  const hundreds: Record<string,number> = { hundred: 100, thousand: 1000, lakh: 100000 };
-  for (const [word, val] of Object.entries(hundreds)) {
-    const m = t.match(/(\d+)\s*(?:×\s*)?\s*${word}/);
-    if (m) return String(parseInt(m[1]) * val);
-  }
-  // ₹200 or Rs 200
   const rsMatch = t.match(/(?:₹|rs\.?|inr)\s*(\d+(?:\.\d+)?)/i);
   if (rsMatch) return rsMatch[1];
-  // plain number
   const numMatch = t.match(/\b(\d+(?:\.\d+)?)\b/);
   return numMatch ? numMatch[1] : '';
 };
 
-// ─── Universal One-shot Parser ────────────────────────────────────────────
+// ─── Multi-transaction split ──────────────────────────────────────────────
+const splitMultiTransaction = (text: string): string[] => {
+  // "200 zomato and 150 uber" → ["200 zomato", "150 uber"]
+  const parts = text.split(/\s+and\s+|\s*,\s*/i).filter(p => p.trim().length > 2 && /\d/.test(p));
+  return parts.length > 1 ? parts : [];
+};
+
+// ─── Resolve bank account ────────────────────────────────────────────────
+const resolveBank = (snippet: string, accounts: any[]) => {
+  const s = snippet.toLowerCase();
+  for (const acc of accounts) {
+    const name = acc.bankName.toLowerCase();
+    if (s.includes(name)) return acc;
+    const words = name.split(/[\s-]+/);
+    const acronym = words.filter((w: string) => w.length > 1).map((w: string) => w[0]).join('');
+    if (acronym.length > 1 && s.match(new RegExp(`\\b${acronym}\\b`, 'i'))) return acc;
+    for (const [nick, main] of Object.entries(BANK_NICKNAMES)) {
+      if (s.includes(nick) && name.includes(main)) return acc;
+    }
+  }
+  // Fuzzy match bank names
+  const bankNames = accounts.map(a => a.bankName.toLowerCase());
+  const fuzzy = fuzzyMatch(s, bankNames);
+  if (fuzzy) return accounts.find(a => a.bankName.toLowerCase() === fuzzy) || null;
+  return null;
+};
+
+// ─── Universal Parser ────────────────────────────────────────────────────
 const parseUniversal = (text: string, accounts: any[]) => {
   const t = text.toLowerCase();
+
+  // Emoji shortcuts
+  let emojiCategory = '', emojiTag = '';
+  for (const [em, cat] of Object.entries(EMOJI_CATEGORY)) { if (t.includes(em)) { emojiCategory = cat; break; } }
+  for (const [em, tag] of Object.entries(EMOJI_TAG)) { if (t.includes(em)) { emojiTag = tag; break; } }
 
   const amount = parseAmount(text);
 
@@ -207,73 +242,57 @@ const parseUniversal = (text: string, accounts: any[]) => {
   else if (t.match(/\b(transfer(?:red)?|moved?|sent|send|shifted)\b/)) type = 'TRANSFER';
   else if (t.match(/\b(paid|spent|bought|expense|debit|gave|withdrawn?|purchased?)\b/)) type = 'DEBIT';
 
-  // Bank resolution
-  let accountId = '', autoPaymentMethod = '';
-  const resolveBank = (snippet: string) => {
-    const s = snippet.toLowerCase();
-    for (const acc of accounts) {
-      const name = acc.bankName.toLowerCase();
-      if (s.includes(name)) return acc;
-      const words = name.split(/[\s-]+/);
-      const acronym = words.filter((w: string) => w.length > 1).map((w: string) => w[0]).join('');
-      if (acronym.length > 1 && s.match(new RegExp(`\\b${acronym}\\b`, 'i'))) return acc;
-      for (const [nick, main] of Object.entries(BANK_NICKNAMES)) {
-        if (s.includes(nick) && name.includes(main)) return acc;
-      }
-    }
-    return null;
-  };
-  const acc = resolveBank(t);
-  if (acc) {
-    accountId = acc.id!;
-    autoPaymentMethod = acc.type === 'CREDIT_CARD' ? 'Credit Card' : acc.type === 'CASH' ? 'Cash' : 'UPI';
-  }
+  const acc = resolveBank(t, accounts);
+  let accountId = acc?.id || '';
+  let autoPaymentMethod = acc ? (acc.type === 'CREDIT_CARD' ? 'Credit Card' : acc.type === 'CASH' ? 'Cash' : 'UPI') : '';
 
-  // UPI App detection
   let upiApp = '';
-  for (const [key, val] of Object.entries(UPI_APPS)) {
-    if (t.includes(key)) { upiApp = val; break; }
-  }
-  if (upiApp && !autoPaymentMethod) autoPaymentMethod = 'UPI';
+  for (const [key, val] of Object.entries(UPI_APPS)) { if (t.includes(key)) { upiApp = val; break; } }
 
-  // Payment method (non-UPI)
   let paymentMethod = autoPaymentMethod;
   if (!paymentMethod) {
     if (t.match(/\b(cash|nakit)\b/)) paymentMethod = 'Cash';
     else if (t.match(/\b(credit\s+card|cc)\b/)) paymentMethod = 'Credit Card';
-    else if (t.match(/\b(debit\s+card|dc)\b/)) paymentMethod = 'UPI';
     else if (t.match(/\b(neft|rtgs|imps|bank\s+transfer)\b/)) paymentMethod = 'Bank Transfer';
     else if (upiApp) paymentMethod = 'UPI';
   }
 
-  // Category & tag from merchants
-  let category = '', tag = '', isPredicted = false;
-  for (const cat of CATEGORIES) {
-    if (t.includes(cat.toLowerCase())) { category = cat; break; }
+  // Merchant matching with fuzzy
+  let category = emojiCategory, tag = emojiTag, isPredicted = false;
+  if (!category) {
+    for (const cat of CATEGORIES) { if (t.includes(cat.toLowerCase())) { category = cat; break; } }
   }
-  for (const [merchant, data] of Object.entries(MERCHANT_KNOWLEDGE)) {
-    if (t.includes(merchant)) {
-      category = category || data.category;
-      tag = tag || data.tag;
-      isPredicted = true;
-      break;
+  if (!category) {
+    const merchantKeys = Object.keys(MERCHANT_KNOWLEDGE);
+    for (const merchant of merchantKeys) {
+      if (t.includes(merchant)) { category = MERCHANT_KNOWLEDGE[merchant].category; tag = tag || MERCHANT_KNOWLEDGE[merchant].tag; isPredicted = true; break; }
+    }
+    if (!category) {
+      const fuzzyMerchant = fuzzyMatch(t, merchantKeys);
+      if (fuzzyMerchant) { category = MERCHANT_KNOWLEDGE[fuzzyMerchant].category; tag = tag || MERCHANT_KNOWLEDGE[fuzzyMerchant].tag; isPredicted = true; }
     }
   }
 
-  // Payee extraction: "to Rahul", "paid at Swiggy", "from Dad"
   let parsedPayee = '';
   const payeeMatch = text.match(/\b(?:to|paid\s+to|at|@|from|received\s+from)\s+([A-Za-z][A-Za-z0-9\s]{0,20}?)(?:\s+(?:via|using|on|for|from|today|yesterday|\d)|$)/i);
   if (payeeMatch && type !== 'TRANSFER') parsedPayee = payeeMatch[1].trim();
 
-  // Note / remark: "for lunch", "for dinner", "remark: xyz"
   let parsedNote = '';
   const forMatch = text.match(/\b(?:for|remark[:\s]+|note[:\s]+)(.+?)(?:\s+(?:via|using|from|to|today|yesterday|on \d|\d+\s*(?:days|week))\b|$)/i);
   if (forMatch) parsedNote = forMatch[1].trim();
 
-  // Date
   const { date, confirmed: dateConfirmed } = parseDate(text);
 
-  return { amount, type, accountId, autoPaymentMethod, upiApp, paymentMethod, category, tag, parsedPayee, parsedNote, date, dateConfirmed, isPredicted };
+  // Compute confidence score (0–100)
+  let confidence = 0;
+  if (amount) confidence += 25;
+  if (type) confidence += 15;
+  if (accountId) confidence += 20;
+  if (paymentMethod) confidence += 10;
+  if (category) confidence += 20;
+  if (parsedNote || parsedPayee) confidence += 10;
+
+  return { amount, type, accountId, autoPaymentMethod, upiApp, paymentMethod, category, tag, parsedPayee, parsedNote, date, dateConfirmed, isPredicted, confidence };
 };
 
 // ─── Voice Recognition Hook ───────────────────────────────────────────────
@@ -281,41 +300,67 @@ const useSpeechRecognition = () => {
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<any>(null);
   const supported = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
-
   const start = (onResult: (text: string) => void) => {
     if (!supported) return;
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const rec = new SpeechRecognition();
-    rec.lang = 'en-IN';
-    rec.interimResults = false;
-    rec.maxAlternatives = 1;
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const rec = new SR();
+    rec.lang = 'en-IN'; rec.interimResults = false; rec.maxAlternatives = 1;
     rec.onstart = () => setListening(true);
     rec.onend = () => setListening(false);
-    rec.onresult = (e: any) => {
-      const transcript = e.results[0][0].transcript;
-      onResult(transcript);
-    };
+    rec.onresult = (e: any) => onResult(e.results[0][0].transcript);
     rec.onerror = () => setListening(false);
-    recognitionRef.current = rec;
-    rec.start();
+    recognitionRef.current = rec; rec.start();
   };
-
-  const stop = () => {
-    recognitionRef.current?.stop();
-    setListening(false);
-  };
-
+  const stop = () => { recognitionRef.current?.stop(); setListening(false); };
   return { start, stop, listening, supported };
 };
 
+// ─── Personal Learning Hook ───────────────────────────────────────────────
+const usePersonalLearning = () => {
+  const [recentTx, setRecentTx] = useState<any[]>([]);
+  const [smartDefaults, setSmartDefaults] = useState<{ accountId: string; paymentMethod: string; upiApp: string }>({
+    accountId: '', paymentMethod: '', upiApp: ''
+  });
+  const [payeeMemory, setPayeeMemory] = useState<Record<string, { category: string; accountId: string; paymentMethod: string; upiApp: string }>>({});
 
-// ─── Component ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    db.transactions.orderBy('dateTime').reverse().limit(30).toArray().then(txs => {
+      setRecentTx(txs.slice(0, 5));
+
+      // Most used account
+      const accCount: Record<string, number> = {};
+      const methodCount: Record<string, number> = {};
+      const upiCount: Record<string, number> = {};
+      const payeeMap: Record<string, any> = {};
+
+      txs.forEach(tx => {
+        if (tx.accountId) accCount[tx.accountId] = (accCount[tx.accountId] || 0) + 1;
+        if (tx.paymentMethod) methodCount[tx.paymentMethod] = (methodCount[tx.paymentMethod] || 0) + 1;
+        if (tx.upiApp) upiCount[tx.upiApp] = (upiCount[tx.upiApp] || 0) + 1;
+        // Build payee → category/account memory
+        if (tx.partyName) {
+          const key = tx.partyName.toLowerCase().trim();
+          if (!payeeMap[key]) payeeMap[key] = { category: tx.category, accountId: tx.accountId, paymentMethod: tx.paymentMethod, upiApp: tx.upiApp, count: 0 };
+          payeeMap[key].count++;
+        }
+      });
+
+      const topAccount = Object.entries(accCount).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+      const topMethod = Object.entries(methodCount).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+      const topUpi = Object.entries(upiCount).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+
+      setSmartDefaults({ accountId: topAccount, paymentMethod: topMethod, upiApp: topUpi });
+      setPayeeMemory(payeeMap);
+    });
+  }, []);
+
+  return { recentTx, smartDefaults, payeeMemory };
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────
 export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags, isSaving, showSuccess }) => {
   const [messages, setMessages] = useState<any[]>([
-    {
-      role: 'ai',
-      content: "Hi! 👋 Describe your expense naturally and I'll fill everything in.\n\nTry: *\"paid 500 to Zomato via GPay from HDFC yesterday for dinner\"*"
-    }
+    { role: 'ai', content: "Hi! 👋 Describe your expense naturally — I'll fill everything in.\n\nTry: *\"paid 500 to Zomato via GPay from HDFC yesterday for dinner\"*\nOr say *\"same\"* to repeat your last entry." }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -323,14 +368,27 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
   const [pendingTx, setPendingTx] = useState<any>({
     type: '', amount: '', category: '', selectedAccountId: '', toAccountId: '',
     paymentMethod: '', upiApp: '', expenseType: '', partyName: '', note: '',
-    transactionDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"), _dateConfirmed: false, _isPredicted: false
+    transactionDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"), _dateConfirmed: false, _isPredicted: false, _confidence: 0
   });
+  const [multiQueue, setMultiQueue] = useState<string[]>([]);
+  const [autocomplete, setAutocomplete] = useState<any[]>([]);
+  const [lastSaved, setLastSaved] = useState<any>(null);
+
   const chatEndRef = useRef<HTMLDivElement>(null);
   const speech = useSpeechRecognition();
+  const { recentTx, smartDefaults, payeeMemory } = usePersonalLearning();
 
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isTyping]);
+
+  // Load autocomplete suggestions from past transactions
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+    if (input.trim().length < 2) { setAutocomplete([]); return; }
+    const q = input.toLowerCase();
+    db.transactions.filter(tx =>
+      (tx.note && tx.note.toLowerCase().includes(q)) ||
+      (tx.partyName && tx.partyName.toLowerCase().includes(q))
+    ).limit(3).toArray().then(setAutocomplete);
+  }, [input]);
 
   const addAIMessage = (content: string, options: string[] = []) => {
     setIsTyping(true);
@@ -342,167 +400,195 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
   const getGroupedAccountOptions = (tx: any) => {
     const available = tx.type === 'TRANSFER' && tx.selectedAccountId
-      ? accounts.filter(a => a.id !== tx.selectedAccountId)
-      : accounts;
+      ? accounts.filter(a => a.id !== tx.selectedAccountId) : accounts;
     return available.map(a => {
       const emoji = a.type === 'BANK' ? '🏦' : a.type === 'CASH' ? '💵' : '💳';
       return `${emoji} ${a.bankName}`;
     });
   };
 
-  const resolveBank = (snippet: string) => {
-    const s = snippet.toLowerCase();
-    for (const acc of accounts) {
-      const name = acc.bankName.toLowerCase();
-      if (s.includes(name)) return acc;
-      const words = name.split(/[\s-]+/);
-      const acronym = words.filter((w: string) => w.length > 1).map((w: string) => w[0]).join('');
-      if (acronym.length > 1 && s.match(new RegExp(`\\b${acronym}\\b`, 'i'))) return acc;
-      for (const [nick, main] of Object.entries(BANK_NICKNAMES)) {
-        if (s.includes(nick) && name.includes(main)) return acc;
-      }
-    }
-    return null;
-  };
-
   const checkNextStep = (tx: any) => {
-    if (!tx.amount) {
-      setStage('ASK_AMOUNT');
-      addAIMessage("How much was it? (e.g. 250 or 2.5k)");
-    } else if (!tx.type) {
-      setStage('ASK_TYPE');
-      addAIMessage("Was this an Expense, Income, or Transfer?", ['💸 Expense', '💰 Income', '🔄 Transfer']);
-    } else if (!tx.selectedAccountId) {
+    if (!tx.amount) { setStage('ASK_AMOUNT'); addAIMessage("How much was it? (e.g. 250, 2k, ₹500)"); }
+    else if (!tx.type) { setStage('ASK_TYPE'); addAIMessage("Was this an Expense, Income, or Transfer?", ['💸 Expense', '💰 Income', '🔄 Transfer']); }
+    else if (!tx.selectedAccountId) {
       setStage('ASK_BANK');
       const prompt = tx.type === 'CREDIT' ? "Which account received this?" : "Which account did you pay from?";
       addAIMessage(prompt, getGroupedAccountOptions(tx));
     } else if (tx.type === 'TRANSFER' && !tx.toAccountId) {
-      setStage('ASK_BANK');
-      addAIMessage("Transfer to which account?", getGroupedAccountOptions(tx));
+      setStage('ASK_BANK'); addAIMessage("Transfer to which account?", getGroupedAccountOptions(tx));
     } else if (!tx.paymentMethod) {
-      setStage('ASK_PAYMENT_METHOD');
-      addAIMessage("How did you pay?", ['📱 UPI', '💳 Credit Card', '💵 Cash', '🏦 Bank Transfer']);
+      setStage('ASK_PAYMENT_METHOD'); addAIMessage("How did you pay?", ['📱 UPI', '💳 Credit Card', '💵 Cash', '🏦 Bank Transfer']);
     } else if (tx.paymentMethod === 'UPI' && !tx.upiApp) {
-      setStage('ASK_UPI_APP');
-      addAIMessage("Which UPI app?", ['GPay', 'PhonePe', 'Paytm', 'BHIM', 'CRED']);
+      setStage('ASK_UPI_APP'); addAIMessage("Which UPI app?", ['GPay', 'PhonePe', 'Paytm', 'BHIM', 'CRED']);
     } else if (!tx.category && tx.type !== 'TRANSFER') {
-      setStage('ASK_CATEGORY');
-      addAIMessage("Pick a category:", CATEGORIES);
+      setStage('ASK_CATEGORY'); addAIMessage("Pick a category:", CATEGORIES);
     } else if (!tx.expenseType && tx.type !== 'TRANSFER') {
-      setStage('ASK_TAG');
-      addAIMessage("Tag it:", tags);
+      setStage('ASK_TAG'); addAIMessage("Tag this as:", tags);
     } else if (!tx.note) {
-      setStage('ASK_NOTE');
-      addAIMessage("Add a short remark (what was this for?):");
+      setStage('ASK_NOTE'); addAIMessage("Add a short remark (what was this for?):");
     } else if (!tx._dateConfirmed) {
-      setStage('ASK_DATE');
-      addAIMessage("When did this happen?", ['Today', 'Yesterday', '2 days ago', '3 days ago']);
+      setStage('ASK_DATE'); addAIMessage("When did this happen?", ['Today', 'Yesterday', '2 days ago', '3 days ago']);
     } else {
       setStage('PREVIEW');
-      const emoji = tx._isPredicted ? '🤖 Smart-filled' : '✅';
-      addAIMessage(`${emoji} Entry ready! Review below and tap Save.`);
+      const conf = tx._confidence;
+      const confLabel = conf >= 80 ? '🟢 High' : conf >= 50 ? '🟡 Medium' : '🔴 Low';
+      addAIMessage(`✅ Entry ready! Confidence: ${confLabel} (${conf}%)\n${tx._isPredicted ? '🤖 Smart-filled from your history' : ''}\nReview below and tap Save.`);
     }
   };
 
-  const handleSend = (msgOverride?: string) => {
+  // ─── Handle correction commands in PREVIEW ────────────────────────────
+  const handleCorrectionCommand = (userMsg: string, updated: any): boolean => {
+    const t = userMsg.toLowerCase();
+    const amtOverride = t.match(/(?:make it|change to|no,?\s*it'?s?|actually)\s*([\d.,k]+)/i);
+    if (amtOverride) {
+      const newAmt = parseAmount(amtOverride[1]);
+      if (newAmt) { updated.amount = newAmt; setPendingTx(updated); setStage('PREVIEW'); addAIMessage(`✏️ Amount updated to ₹${newAmt}. Tap Save!`); return true; }
+    }
+    const catOverride = t.match(/(?:category|change category)\s+(?:to\s+)?(.+)/i);
+    if (catOverride) {
+      const cat = CATEGORIES.find(c => c.toLowerCase().includes(catOverride[1].toLowerCase()));
+      if (cat) { updated.category = cat; setPendingTx(updated); setStage('PREVIEW'); addAIMessage(`✏️ Category changed to ${cat}. Tap Save!`); return true; }
+    }
+    if (t.match(/\b(undo|revert|cancel|delete last)\b/) && lastSaved) {
+      addAIMessage("⚠️ To undo, go to Transactions and delete the last entry.");
+      return true;
+    }
+    return false;
+  };
+
+  const handleSend = useCallback((msgOverride?: string) => {
     const userMsg = (msgOverride || input).trim();
     if (!userMsg) return;
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setInput('');
+    setAutocomplete([]);
 
     let updated = { ...pendingTx };
 
+    // ── Special commands ──────────────────────────────────────────────────
+    const t = userMsg.toLowerCase();
+
+    // "same" / "repeat" → copy last transaction
+    if (t.match(/^(same|repeat|again|same as last)$/i)) {
+      if (recentTx.length > 0) {
+        const last = recentTx[0];
+        const cloned = {
+          ...pendingTx,
+          amount: last.amount, type: last.type, selectedAccountId: last.accountId,
+          paymentMethod: last.paymentMethod, upiApp: last.upiApp || '',
+          category: last.category, expenseType: last.expenseType || '', partyName: last.partyName || '',
+          note: last.note, transactionDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+          _dateConfirmed: true, _isPredicted: false, _confidence: 90
+        };
+        setPendingTx(cloned);
+        setStage('PREVIEW');
+        addAIMessage(`♻️ Copied last entry: ₹${last.amount} — ${last.note || 'No note'}\nReview and save!`);
+        return;
+      } else {
+        addAIMessage("No previous transactions found yet. Tell me about your expense!");
+        return;
+      }
+    }
+
+    // Multi-transaction: "200 zomato and 150 uber"
+    if (stage === 'IDLE' || stage === 'PREVIEW') {
+      const parts = splitMultiTransaction(userMsg);
+      if (parts.length > 1) {
+        addAIMessage(`📋 Found ${parts.length} transactions! Processing one by one...`);
+        setMultiQueue(parts.slice(1));
+        // Process first one
+        const p = parseUniversal(parts[0], accounts);
+        applyParsed(p, updated);
+        return;
+      }
+    }
+
+    // Correction command in preview
+    if (stage === 'PREVIEW') {
+      if (handleCorrectionCommand(userMsg, updated)) return;
+    }
+
     if (stage === 'IDLE' || stage === 'PREVIEW') {
       const p = parseUniversal(userMsg, accounts);
-      updated = {
-        ...updated,
-        ...(p.amount && { amount: p.amount }),
-        ...(p.type && { type: p.type }),
-        ...(p.accountId && { selectedAccountId: p.accountId }),
-        ...(p.autoPaymentMethod && { paymentMethod: p.autoPaymentMethod }),
-        ...(p.upiApp && { upiApp: p.upiApp }),
-        ...(p.paymentMethod && !updated.paymentMethod && { paymentMethod: p.paymentMethod }),
-        ...(p.category && { category: p.category }),
-        ...(p.tag && { expenseType: p.tag }),
-        ...(p.parsedPayee && { partyName: p.parsedPayee }),
-        ...(p.parsedNote && { note: p.parsedNote }),
-        transactionDate: p.date || updated.transactionDate,
-        _dateConfirmed: p.dateConfirmed || updated._dateConfirmed,
-        _isPredicted: p.isPredicted,
-      };
-      setPendingTx(updated);
-      checkNextStep(updated);
+
+      // Apply personal learning: fill gaps from smart defaults & payee memory
+      if (!p.accountId && smartDefaults.accountId) p.accountId = smartDefaults.accountId;
+      if (!p.paymentMethod && smartDefaults.paymentMethod) p.paymentMethod = smartDefaults.paymentMethod;
+      if (!p.upiApp && smartDefaults.upiApp && p.paymentMethod === 'UPI') p.upiApp = smartDefaults.upiApp;
+
+      // Check payee memory
+      if (p.parsedPayee) {
+        const mem = payeeMemory[p.parsedPayee.toLowerCase()];
+        if (mem) {
+          if (!p.category) p.category = mem.category;
+          if (!p.accountId) p.accountId = mem.accountId;
+          if (!p.paymentMethod) p.paymentMethod = mem.paymentMethod;
+          if (!p.upiApp && mem.upiApp) p.upiApp = mem.upiApp;
+          p.isPredicted = true;
+        }
+      }
+
+      applyParsed(p, updated);
     } else if (stage === 'ASK_AMOUNT') {
       const amt = parseAmount(userMsg);
-      if (amt && !isNaN(parseFloat(amt))) {
-        updated.amount = parseFloat(amt);
-        setPendingTx(updated);
-        checkNextStep(updated);
-      } else {
-        addAIMessage("Hmm, I couldn't read that. Try: 500, 2k, ₹250");
-      }
+      if (amt && !isNaN(parseFloat(amt))) { updated.amount = parseFloat(amt); setPendingTx(updated); checkNextStep(updated); }
+      else addAIMessage("Hmm, try: 500, 2k, ₹250");
     } else if (stage === 'ASK_TYPE') {
-      const t = userMsg.toLowerCase();
       if (t.match(/\b(transfer|move|send|🔄)\b/)) updated.type = 'TRANSFER';
       else if (t.match(/\b(income|inflow|received|credit|salary|💰)\b/)) updated.type = 'CREDIT';
       else updated.type = 'DEBIT';
-      setPendingTx(updated);
-      checkNextStep(updated);
+      setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_BANK') {
       const cleanName = userMsg.replace(/^(🏦|💵|💳)\s*/, '').trim();
-      const acc = accounts.find(a => a.bankName === cleanName) || resolveBank(cleanName);
+      const acc = accounts.find(a => a.bankName === cleanName) || resolveBank(cleanName, accounts);
       if (acc) {
-        if (updated.type === 'TRANSFER' && updated.selectedAccountId && !updated.toAccountId) {
-          updated.toAccountId = acc.id;
-        } else {
-          updated.selectedAccountId = acc.id;
-          updated.paymentMethod = acc.type === 'CREDIT_CARD' ? 'Credit Card' : acc.type === 'CASH' ? 'Cash' : 'UPI';
-        }
-        setPendingTx(updated);
-        checkNextStep(updated);
-      } else {
-        addAIMessage("I couldn't find that account. Please select one:", getGroupedAccountOptions(updated));
-      }
+        if (updated.type === 'TRANSFER' && updated.selectedAccountId && !updated.toAccountId) updated.toAccountId = acc.id;
+        else { updated.selectedAccountId = acc.id; updated.paymentMethod = acc.type === 'CREDIT_CARD' ? 'Credit Card' : acc.type === 'CASH' ? 'Cash' : 'UPI'; }
+        setPendingTx(updated); checkNextStep(updated);
+      } else addAIMessage("Couldn't find that account. Pick one:", getGroupedAccountOptions(updated));
     } else if (stage === 'ASK_PAYMENT_METHOD') {
-      const t = userMsg.toLowerCase();
       if (t.includes('upi') || t.includes('📱')) updated.paymentMethod = 'UPI';
       else if (t.includes('credit') || t.includes('💳')) updated.paymentMethod = 'Credit Card';
       else if (t.includes('cash') || t.includes('💵')) updated.paymentMethod = 'Cash';
       else if (t.includes('bank') || t.includes('🏦')) updated.paymentMethod = 'Bank Transfer';
       else updated.paymentMethod = userMsg;
-      setPendingTx(updated);
-      checkNextStep(updated);
+      setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_UPI_APP') {
-      updated.upiApp = userMsg;
-      setPendingTx(updated);
-      checkNextStep(updated);
+      updated.upiApp = userMsg; setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_CATEGORY') {
-      updated.category = userMsg;
-      setPendingTx(updated);
-      checkNextStep(updated);
+      updated.category = userMsg; setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_TAG') {
-      updated.expenseType = userMsg;
-      setPendingTx(updated);
-      checkNextStep(updated);
-    } else if (stage === 'ASK_PAYEE') {
-      updated.partyName = userMsg.match(/(skip|none|no)/i) ? '' : userMsg;
-      setPendingTx(updated);
-      checkNextStep(updated);
+      updated.expenseType = userMsg; setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_NOTE') {
-      if (!userMsg.trim() || userMsg.match(/^(skip|no|na|-)$/i)) {
-        addAIMessage("Please add a short remark so you can remember this later!");
-      } else {
-        updated.note = userMsg;
-        setPendingTx(updated);
-        checkNextStep(updated);
-      }
+      if (!userMsg.trim() || userMsg.match(/^(skip|no|na|-)$/i)) addAIMessage("Please add a short remark!");
+      else { updated.note = userMsg; setPendingTx(updated); checkNextStep(updated); }
     } else if (stage === 'ASK_DATE') {
-      const { date, confirmed } = parseDate(userMsg);
-      updated.transactionDate = date;
-      updated._dateConfirmed = true;
-      setPendingTx(updated);
-      checkNextStep(updated);
+      const { date } = parseDate(userMsg);
+      updated.transactionDate = date; updated._dateConfirmed = true;
+      setPendingTx(updated); checkNextStep(updated);
     }
+  }, [input, pendingTx, stage, accounts, tags, recentTx, smartDefaults, payeeMemory, multiQueue]);
+
+  const applyParsed = (p: ReturnType<typeof parseUniversal>, updated: any) => {
+    const newTx = {
+      ...updated,
+      ...(p.amount && { amount: p.amount }),
+      ...(p.type && { type: p.type }),
+      ...(p.accountId && { selectedAccountId: p.accountId }),
+      ...(p.autoPaymentMethod && { paymentMethod: p.autoPaymentMethod }),
+      ...(p.upiApp && { upiApp: p.upiApp }),
+      ...(p.paymentMethod && !updated.paymentMethod && { paymentMethod: p.paymentMethod }),
+      ...(p.category && { category: p.category }),
+      ...(p.tag && { expenseType: p.tag }),
+      ...(p.parsedPayee && { partyName: p.parsedPayee }),
+      ...(p.parsedNote && { note: p.parsedNote }),
+      transactionDate: p.date || updated.transactionDate,
+      _dateConfirmed: p.dateConfirmed || updated._dateConfirmed,
+      _isPredicted: p.isPredicted,
+      _confidence: p.confidence,
+    };
+    setPendingTx(newTx);
+    checkNextStep(newTx);
   };
 
   const handleEdit = (field: string) => {
@@ -518,12 +604,24 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
   const handleReset = () => {
     setStage('IDLE');
-    setPendingTx({
-      type: '', amount: '', category: '', selectedAccountId: '', toAccountId: '',
-      paymentMethod: '', upiApp: '', expenseType: '', partyName: '', note: '',
-      transactionDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"), _dateConfirmed: false, _isPredicted: false
-    });
-    setMessages([{ role: 'ai', content: "Reset! Describe your next expense 👇" }]);
+    setPendingTx({ type: '', amount: '', category: '', selectedAccountId: '', toAccountId: '', paymentMethod: '', upiApp: '', expenseType: '', partyName: '', note: '', transactionDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"), _dateConfirmed: false, _isPredicted: false, _confidence: 0 });
+    setMultiQueue([]);
+    setMessages([{ role: 'ai', content: "Reset! Tell me about your next expense 👇" }]);
+  };
+
+  const handleSaveAndNext = (tx: any) => {
+    setLastSaved(tx);
+    onSave(tx);
+    // If multi-transaction queue has more, process next
+    if (multiQueue.length > 0) {
+      const next = multiQueue[0];
+      const remaining = multiQueue.slice(1);
+      setMultiQueue(remaining);
+      setTimeout(() => {
+        handleReset();
+        setTimeout(() => handleSend(next), 400);
+      }, 1500);
+    }
   };
 
   const handleVoice = () => {
@@ -535,14 +633,51 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     });
   };
 
+  const repeatLastTx = (tx: any) => {
+    const cloned = {
+      ...pendingTx,
+      amount: tx.amount, type: tx.type, selectedAccountId: tx.accountId,
+      paymentMethod: tx.paymentMethod, upiApp: tx.upiApp || '',
+      category: tx.category, expenseType: tx.expenseType || '', partyName: tx.partyName || '',
+      note: tx.note, transactionDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+      _dateConfirmed: true, _isPredicted: false, _confidence: 90
+    };
+    setPendingTx(cloned); setStage('PREVIEW');
+    setMessages(prev => [...prev, { role: 'ai', content: `♻️ Loaded: ₹${tx.amount} — ${tx.note || tx.category}\nReview and save!` }]);
+  };
+
+  const confidenceColor = pendingTx._confidence >= 80 ? 'text-brand-green' : pendingTx._confidence >= 50 ? 'text-yellow-500' : 'text-brand-red';
+
   return (
     <div className="flex flex-col h-full bg-[#F9FBFF] dark:bg-[#0A0A0A] relative">
+
+      {/* Recent shortcuts — shown only in IDLE stage */}
+      {stage === 'IDLE' && recentTx.length > 0 && (
+        <div className="px-3 pt-3 pb-1 shrink-0">
+          <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+            <Clock className="w-3 h-3" /> Quick Repeat
+          </p>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            {recentTx.slice(0, 4).map((tx, i) => (
+              <button
+                key={i}
+                onClick={() => repeatLastTx(tx)}
+                className="flex-shrink-0 bg-white dark:bg-[#111111] border border-brand-blue/5 dark:border-white/5 rounded-2xl px-3 py-2 text-left hover:border-brand-green/30 active:scale-95 transition-all shadow-sm"
+              >
+                <div className="text-[10px] font-black text-brand-green">₹{tx.amount}</div>
+                <div className="text-[8px] text-neutral-400 truncate max-w-[70px]">{tx.note || tx.category}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-64">
         {messages.map((msg, i) => (
           <div key={i} className={`flex flex-col ${msg.role === 'ai' ? 'items-start' : 'items-end'} gap-2 animate-in slide-in-from-bottom-2 duration-300`}>
-            <div className={`max-w-[88%] px-4 py-3 rounded-2xl text-[12px] font-medium shadow-sm flex items-start gap-2.5
-              ${msg.role === 'ai'
+            <div className={`max-w-[88%] px-4 py-3 rounded-2xl text-[12px] font-medium shadow-sm flex items-start gap-2.5 ${
+              msg.role === 'ai'
                 ? 'bg-white dark:bg-[#111111] text-neutral-800 dark:text-neutral-200 border border-brand-blue/5 dark:border-white/5'
                 : 'bg-brand-green text-white'}`}>
               {msg.role === 'ai' && <Bot className="w-3.5 h-3.5 mt-0.5 shrink-0 text-brand-green" />}
@@ -551,11 +686,8 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
             {msg.options && msg.options.length > 0 && (
               <div className="grid grid-cols-2 gap-1.5 w-full max-w-[88%]">
                 {msg.options.map((opt: string) => (
-                  <button
-                    key={opt}
-                    onClick={() => handleSend(opt)}
-                    className="px-3 py-2 bg-white dark:bg-[#111111] border border-brand-blue/5 dark:border-white/5 rounded-xl text-[10px] font-black uppercase text-brand-green hover:bg-brand-green/5 transition-all shadow-sm active:scale-95 flex items-center justify-between group"
-                  >
+                  <button key={opt} onClick={() => handleSend(opt)}
+                    className="px-3 py-2 bg-white dark:bg-[#111111] border border-brand-blue/5 dark:border-white/5 rounded-xl text-[10px] font-black uppercase text-brand-green hover:bg-brand-green/5 transition-all shadow-sm active:scale-95 flex items-center justify-between group">
                     <span className="truncate">{opt}</span>
                     <ChevronRight className="w-3 h-3 opacity-30 group-hover:opacity-100 shrink-0" />
                   </button>
@@ -577,7 +709,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       </div>
 
       {/* Bottom Panel */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-[#F7F7F7] via-[#F7F7F7]/95 dark:from-[#0A0A0A] dark:via-[#0A0A0A]/95 space-y-2.5 z-10">
+      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-[#F7F7F7] via-[#F7F7F7]/95 dark:from-[#0A0A0A] dark:via-[#0A0A0A]/95 space-y-2 z-10">
 
         {/* Preview Card */}
         {stage === 'PREVIEW' && (
@@ -585,10 +717,12 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
             <div className="flex items-center justify-between mb-3 px-1">
               <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 flex items-center gap-1.5">
                 <Sparkles className="w-3 h-3 text-brand-green" /> Preview
-                {pendingTx._isPredicted && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-brand-green/10 text-brand-green">AI Auto-filled</span>}
+                {pendingTx._confidence > 0 && (
+                  <span className={`text-[8px] font-black ${confidenceColor}`}>{pendingTx._confidence}% confident</span>
+                )}
               </span>
-              <button onClick={handleReset} className="text-[8px] font-black text-brand-green bg-brand-green/5 px-2 py-1 rounded-lg uppercase tracking-widest">
-                Reset
+              <button onClick={handleReset} className="text-[8px] font-black text-brand-green bg-brand-green/5 px-2 py-1 rounded-lg uppercase tracking-widest flex items-center gap-1">
+                <RotateCcw className="w-2.5 h-2.5" /> Reset
               </button>
             </div>
 
@@ -611,76 +745,65 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
             </div>
 
             <div className="grid grid-cols-2 gap-1.5 mb-2">
-              <div className="bg-white dark:bg-white/5 p-2 rounded-xl flex items-center gap-2 cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-brand-green/20" onClick={() => handleEdit('bank')}>
-                <Landmark className="w-3 h-3 text-neutral-400 shrink-0" />
-                <div className="flex flex-col overflow-hidden">
-                  <span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Account</span>
-                  <span className="text-[9px] font-bold text-brand-green dark:text-white truncate">{accounts.find(a => a.id === pendingTx.selectedAccountId)?.bankName || '—'}</span>
+              {[
+                { icon: <Landmark className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Account', value: accounts.find(a => a.id === pendingTx.selectedAccountId)?.bankName || '—', field: 'bank' },
+                { icon: <AppWindow className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Method', value: pendingTx.upiApp || pendingTx.paymentMethod || '—', field: null },
+                { icon: <Hash className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Tag', value: `#${pendingTx.expenseType || '—'}`, field: 'tag' },
+                { icon: <Lightbulb className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Note', value: pendingTx.note || '—', field: 'remark' },
+              ].map(({ icon, label, value, field }) => (
+                <div key={label} onClick={() => field && handleEdit(field)}
+                  className={`bg-white dark:bg-white/5 p-2 rounded-xl flex items-center gap-2 border border-transparent transition-colors ${field ? 'cursor-pointer hover:border-brand-green/20 hover:bg-neutral-50 dark:hover:bg-white/5' : ''}`}>
+                  {icon}
+                  <div className="flex flex-col overflow-hidden">
+                    <span className="text-[7px] font-black text-neutral-400 uppercase leading-none">{label}</span>
+                    <span className="text-[9px] font-bold text-brand-green dark:text-white truncate">{value}</span>
+                  </div>
                 </div>
-              </div>
-              <div className="bg-white dark:bg-white/5 p-2 rounded-xl flex items-center gap-2 border border-transparent">
-                <AppWindow className="w-3 h-3 text-neutral-400 shrink-0" />
-                <div className="flex flex-col overflow-hidden">
-                  <span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Method</span>
-                  <span className="text-[9px] font-bold text-brand-green dark:text-white truncate">{pendingTx.upiApp || pendingTx.paymentMethod || '—'}</span>
-                </div>
-              </div>
-              <div className="bg-white dark:bg-white/5 p-2 rounded-xl flex items-center gap-2 cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-brand-green/20" onClick={() => handleEdit('tag')}>
-                <Hash className="w-3 h-3 text-neutral-400 shrink-0" />
-                <div className="flex flex-col overflow-hidden">
-                  <span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Tag</span>
-                  <span className="text-[9px] font-bold text-brand-green dark:text-white truncate">#{pendingTx.expenseType || '—'}</span>
-                </div>
-              </div>
-              <div className="bg-white dark:bg-white/5 p-2 rounded-xl flex items-center gap-2 cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-brand-green/20" onClick={() => handleEdit('remark')}>
-                <Lightbulb className="w-3 h-3 text-neutral-400 shrink-0" />
-                <div className="flex flex-col overflow-hidden">
-                  <span className="text-[7px] font-black text-neutral-400 uppercase leading-none">Note</span>
-                  <span className="text-[9px] font-bold text-brand-green dark:text-white truncate">{pendingTx.note || '—'}</span>
-                </div>
-              </div>
+              ))}
             </div>
 
-            {/* Date chip */}
             <div className="flex items-center justify-between px-1 mb-2">
               <button onClick={() => handleEdit('date')} className="text-[10px] text-neutral-400 flex items-center gap-1 hover:text-brand-green transition-colors">
-                📅 {pendingTx.transactionDate ? format(new Date(pendingTx.transactionDate), 'dd MMM yyyy, h:mm a') : 'Set date'}
+                📅 {pendingTx.transactionDate ? format(new Date(pendingTx.transactionDate), 'dd MMM yyyy') : 'Set date'}
                 <Pencil className="w-2.5 h-2.5" />
               </button>
+              {pendingTx._isPredicted && (
+                <span className="text-[8px] text-brand-green flex items-center gap-1"><TrendingUp className="w-2.5 h-2.5" /> Auto-filled</span>
+              )}
             </div>
 
-            <button
-              onClick={() => onSave(pendingTx)}
-              disabled={isSaving || showSuccess}
+            <button onClick={() => handleSaveAndNext(pendingTx)} disabled={isSaving || showSuccess}
               className={`w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all ${
-                showSuccess
-                  ? 'bg-emerald-500 text-white'
-                  : 'bg-brand-green text-white shadow-brand-green/30'
-              } disabled:opacity-70`}
-            >
-              {isSaving ? (
-                <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /><span>Saving...</span></>
-              ) : showSuccess ? (
-                <><CheckCircle2 className="w-5 h-5" /><span>Saved!</span></>
-              ) : (
-                <><CheckCircle2 className="w-4 h-4" /><span>Save Entry</span></>
-              )}
+                showSuccess ? 'bg-emerald-500 text-white' : 'bg-brand-green text-white shadow-brand-green/30'} disabled:opacity-70`}>
+              {isSaving ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /><span>Saving...</span></>
+                : showSuccess ? <><CheckCircle2 className="w-5 h-5" /><span>Saved! {multiQueue.length > 0 ? `(${multiQueue.length} more...)` : ''}</span></>
+                  : <><CheckCircle2 className="w-4 h-4" /><span>Save Entry</span></>}
             </button>
+          </div>
+        )}
+
+        {/* Autocomplete suggestions */}
+        {autocomplete.length > 0 && stage === 'IDLE' && (
+          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+            {autocomplete.map((tx, i) => (
+              <button key={i} onClick={() => handleSend(`${tx.amount} ${tx.partyName || tx.note || tx.category} today`)}
+                className="flex-shrink-0 bg-white dark:bg-[#111111] border border-brand-green/20 rounded-xl px-3 py-1.5 text-left active:scale-95 transition-all shadow-sm flex items-center gap-2">
+                <Zap className="w-3 h-3 text-brand-green" />
+                <div>
+                  <div className="text-[9px] font-black text-brand-green">₹{tx.amount}</div>
+                  <div className="text-[8px] text-neutral-400 truncate max-w-[80px]">{tx.note || tx.category}</div>
+                </div>
+              </button>
+            ))}
           </div>
         )}
 
         {/* Input Bar */}
         <div className="flex items-center gap-2 bg-[#F9FBFF] dark:bg-[#111111] p-1.5 rounded-2xl border border-brand-blue/5 dark:border-white/5 shadow-xl">
-          {/* Voice button */}
           {speech.supported && (
-            <button
-              onClick={handleVoice}
+            <button onClick={handleVoice}
               className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all flex-shrink-0 ${
-                speech.listening
-                  ? 'bg-red-500 text-white animate-pulse'
-                  : 'bg-neutral-100 dark:bg-[#1A1A1A] text-neutral-400 hover:text-brand-green'
-              }`}
-            >
+                speech.listening ? 'bg-red-500 text-white animate-pulse' : 'bg-neutral-100 dark:bg-[#1A1A1A] text-neutral-400 hover:text-brand-green'}`}>
               {speech.listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </button>
           )}
@@ -689,18 +812,11 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSend()}
-            placeholder={speech.listening ? "Listening..." : "Describe your expense..."}
+            placeholder={speech.listening ? "Listening..." : "Describe expense or type 'same'..."}
             className="flex-1 bg-transparent px-2 py-2 text-[12px] font-bold outline-none dark:text-white placeholder:text-neutral-400"
           />
-          {input && (
-            <button onClick={() => setInput('')} className="text-neutral-300 hover:text-neutral-500 transition-colors">
-              <X className="w-4 h-4" />
-            </button>
-          )}
-          <button
-            onClick={() => handleSend()}
-            className="w-10 h-10 bg-brand-green text-white rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition-transform flex-shrink-0"
-          >
+          {input && <button onClick={() => setInput('')} className="text-neutral-300 hover:text-neutral-500"><X className="w-4 h-4" /></button>}
+          <button onClick={() => handleSend()} className="w-10 h-10 bg-brand-green text-white rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition-transform flex-shrink-0">
             <Send className="w-4 h-4" />
           </button>
         </div>
