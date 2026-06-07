@@ -2,11 +2,10 @@ import { useState, useRef } from 'react';
 import { cn } from '../logic/utils';
 
 import { db } from '../models/db';
-import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as SettingsIcon, X, Moon, Sun, Monitor, Palette, Tag, ShieldAlert, Bell, Clock, LayoutTemplate } from 'lucide-react';
+import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as SettingsIcon, X, Moon, Sun, Monitor, Palette, Tag, ShieldAlert } from 'lucide-react';
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
 import { useTheme } from '../components/ThemeProvider';
-import { useReminders } from '../context/ReminderContext';
 
 export default function Settings() {
   const [isExporting, setIsExporting] = useState(false);
@@ -18,7 +17,6 @@ export default function Settings() {
   const { categories, addCategory, removeCategory, resetCategories } = useCategories();
   const { tags, addTag, removeTag, resetTags } = useTags();
   const { theme, setTheme } = useTheme();
-  const { settings: reminderSettings, updateSettings: updateReminderSettings } = useReminders();
   
   const [newTag, setNewTag] = useState('');
   
@@ -165,14 +163,12 @@ export default function Settings() {
         </div>
       </div>
 
-
       {message && (
         <div className={`p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 shadow-sm ${
           message.type === 'success' 
             ? 'bg-brand-green/10 text-brand-green border border-brand-green/20' 
             : 'bg-brand-red/10 text-brand-red border border-brand-red/20'
         }`}>
-
           {message.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
           <p className="font-bold">{message.text}</p>
         </div>
@@ -182,9 +178,6 @@ export default function Settings() {
       <section>
         <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Appearance</h2>
         <div className="bg-white dark:bg-[#111111] rounded-[32px] border border-brand-blue/5 dark:border-[#222222] shadow-sm overflow-hidden">
-
-
-
           <div className="p-5">
             <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7] mb-6">
               <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
@@ -196,9 +189,6 @@ export default function Settings() {
               </div>
             </div>
 
-
-
-
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pl-0 sm:pl-[3.25rem]">
               <button
                 onClick={() => setTheme('light')}
@@ -208,8 +198,6 @@ export default function Settings() {
                     ? "border-brand-blue bg-brand-blue/5 dark:bg-[#1A1A1A]" 
                     : "border-transparent bg-neutral-100 dark:bg-[#222222] hover:bg-brand-blue/5 hover:border-brand-cyan"
                 )}
-
-
               >
                 <Sun className={cn("w-5 h-5", theme === 'light' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")} />
                 <span className={cn("font-bold text-sm", theme === 'light' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")}>Light Mode</span>
@@ -223,8 +211,6 @@ export default function Settings() {
                     ? "border-brand-blue dark:border-[#F7F7F7] bg-brand-blue/5 dark:bg-[#1A1A1A]" 
                     : "border-transparent bg-neutral-100 dark:bg-[#222222] hover:bg-brand-blue/5 hover:border-brand-cyan"
                 )}
-
-
               >
                 <Moon className={cn("w-5 h-5", theme === 'dark' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")} />
                 <span className={cn("font-bold text-sm", theme === 'dark' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")}>Dark Mode</span>
@@ -238,8 +224,6 @@ export default function Settings() {
                     ? "border-brand-blue dark:border-[#F7F7F7] bg-brand-blue/5 dark:bg-[#1A1A1A]" 
                     : "border-transparent bg-neutral-100 dark:bg-[#222222] hover:bg-brand-blue/5 hover:border-brand-cyan"
                 )}
-
-
               >
                 <Monitor className={cn("w-5 h-5", theme === 'system' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")} />
                 <span className={cn("font-bold text-sm", theme === 'system' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")}>System</span>
@@ -249,14 +233,10 @@ export default function Settings() {
         </div>
       </section>
 
-
       {/* SECTION: CATEGORIES */}
       <section>
         <h2 className="text-xs font-semibold text-[#1A237E] dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2 opacity-70">Categories</h2>
         <div className="bg-white dark:bg-[#111111] rounded-[32px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_20px_50px_rgba(26,35,126,0.05)] dark:shadow-none overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222]">
-
-
-          
           <div className="p-5 flex flex-col gap-5">
             <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
               <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
@@ -268,15 +248,11 @@ export default function Settings() {
               </div>
             </div>
 
-
-
-
             <div className="pl-0 sm:pl-[3.25rem] space-y-4">
               <div className="flex flex-wrap gap-2">
                 {categories.map((category) => (
                   <div key={category} className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] rounded-full text-xs font-semibold border border-brand-blue/10 dark:border-[#333333] shadow-sm">
                     {category}
-
                     <button onClick={() => removeCategory(category)} className="text-brand-blue/20 dark:text-[#666666] hover:text-brand-red transition-colors">
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -284,7 +260,6 @@ export default function Settings() {
                 ))}
               </div>
 
-              
               <div className="flex flex-col sm:flex-row gap-3">
                 <form onSubmit={handleAddCategory} className="flex flex-1 gap-2">
                   <input
@@ -301,12 +276,9 @@ export default function Settings() {
                   >
                     Deploy
                   </button>
-
-
-
                 </form>
 
-                  <button
+                <button
                   onClick={() => {
                     if (window.confirm('Are you sure you want to restore default categories?')) {
                       resetCategories();
@@ -317,7 +289,6 @@ export default function Settings() {
                 >
                   Restore Defaults
                 </button>
-
               </div>
             </div>
           </div>
@@ -379,100 +350,10 @@ export default function Settings() {
         </div>
       </section>
 
-      {/* SECTION: REMINDERS */}
-      <section>
-        <h2 className="text-xs font-semibold text-[#1A237E] dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2 opacity-70">Reminders & Notifications</h2>
-        <div className="bg-white dark:bg-[#111111] rounded-[32px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_20px_50px_rgba(26,35,126,0.05)] dark:shadow-none overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222]">
-          
-          <div className="p-5 flex flex-col gap-5">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
-                <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
-                  <Bell className="w-5 h-5 text-brand-blue dark:text-inherit" />
-                </div>
-                <div>
-                  <p className="font-semibold text-brand-blue dark:text-[#F7F7F7]">Daily Prompt</p>
-                  <p className="text-xs font-medium text-brand-blue/30 dark:text-[#A0A0A0] mt-0.5 uppercase tracking-[0.1em]">Trigger data entry reminder</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => {
-                  const newStatus = !reminderSettings.enabled;
-                  updateReminderSettings({ enabled: newStatus });
-                  if (newStatus && 'Notification' in window && Notification.permission !== 'granted') {
-                    Notification.requestPermission();
-                  }
-                }}
-                className={cn(
-                  "w-12 h-6 rounded-full transition-colors relative",
-                  reminderSettings.enabled ? "bg-brand-green" : "bg-neutral-200 dark:bg-[#333333]"
-                )}
-              >
-                <div className={cn(
-                  "absolute top-1 w-4 h-4 rounded-full bg-white transition-all",
-                  reminderSettings.enabled ? "left-7" : "left-1"
-                )} />
-              </button>
-            </div>
-
-            {reminderSettings.enabled && (
-              <div className="pl-0 sm:pl-[3.25rem] space-y-4 pt-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-brand-blue/40 dark:text-[#A0A0A0] uppercase tracking-widest flex items-center gap-1.5"><Clock className="w-3 h-3" /> Frequency</label>
-                    <select 
-                      value={reminderSettings.frequency}
-                      onChange={(e) => updateReminderSettings({ frequency: e.target.value as any })}
-                      className="w-full bg-neutral-50 dark:bg-[#1A1A1A] border border-brand-blue/5 dark:border-[#333333] rounded-xl px-4 py-3 outline-none text-sm font-semibold text-brand-blue dark:text-white"
-                    >
-                      <option value="daily">Once Daily</option>
-                      <option value="twice_daily">Twice a Day</option>
-                      <option value="hourly">Every Hour</option>
-                      <option value="test">Test Mode (Every Min)</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-brand-blue/40 dark:text-[#A0A0A0] uppercase tracking-widest flex items-center gap-1.5"><Clock className="w-3 h-3" /> Target Time</label>
-                    <input 
-                      type="time" 
-                      value={reminderSettings.time}
-                      onChange={(e) => updateReminderSettings({ time: e.target.value })}
-                      className="w-full bg-neutral-50 dark:bg-[#1A1A1A] border border-brand-blue/5 dark:border-[#333333] rounded-xl px-4 py-2.5 outline-none text-sm font-semibold text-brand-blue dark:text-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2 pt-2">
-                  <label className="text-[10px] font-bold text-brand-blue/40 dark:text-[#A0A0A0] uppercase tracking-widest flex items-center gap-1.5"><LayoutTemplate className="w-3 h-3" /> Banner Position</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(['top', 'center', 'bottom'] as const).map(pos => (
-                      <button
-                        key={pos}
-                        onClick={() => updateReminderSettings({ position: pos })}
-                        className={cn(
-                          "px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
-                          reminderSettings.position === pos 
-                            ? "bg-brand-blue text-white dark:bg-white dark:text-brand-blue" 
-                            : "bg-neutral-50 dark:bg-[#1A1A1A] text-brand-blue/40 dark:text-[#A0A0A0] hover:bg-brand-blue/5"
-                        )}
-                      >
-                        {pos}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
       {/* SECTION: DATA MANAGEMENT */}
       <section>
         <h2 className="text-xs font-semibold text-[#525252] dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-3 px-2">Data & Storage</h2>
         <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-none overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222]">
-
-          
           <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
               <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
@@ -484,17 +365,13 @@ export default function Settings() {
               </div>
             </div>
 
-
-
             <button
               onClick={handleExportData}
               disabled={isExporting}
               className="px-5 py-2.5 bg-white dark:bg-[#111111] border border-brand-blue/10 text-brand-blue dark:text-[#F7F7F7] rounded-xl font-semibold hover:bg-brand-blue/5 transition-all disabled:opacity-50 text-xs uppercase tracking-[0.2em] w-full sm:w-auto text-center shadow-sm"
             >
-
               {isExporting ? 'Exporting...' : 'Export JSON'}
             </button>
-
           </div>
 
           <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -508,21 +385,16 @@ export default function Settings() {
               </div>
             </div>
 
-
-
             <div className="w-full sm:w-auto">
               <input type="file" accept=".json" ref={fileInputRef} onChange={handleImportData} className="hidden" id="import-file" />
               <label
                 htmlFor="import-file"
                 className={`block w-full sm:w-auto px-5 py-2.5 bg-white dark:bg-[#111111] border border-brand-blue/10 text-brand-blue dark:text-[#F7F7F7] rounded-xl font-semibold hover:bg-brand-blue/5 transition-all cursor-pointer text-center text-xs uppercase tracking-[0.2em] shadow-sm ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}
               >
-
                 {isImporting ? 'Importing...' : 'Import JSON'}
               </label>
-
             </div>
           </div>
-
         </div>
       </section>
 
@@ -530,8 +402,6 @@ export default function Settings() {
       <section>
         <h2 className="text-[10px] font-semibold text-brand-red uppercase tracking-[0.3em] mb-4 px-2">Terminal Phase</h2>
         <div className="bg-brand-red/5 rounded-3xl border border-brand-red/10 overflow-hidden divide-y divide-brand-red/10">
-
-          
           <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4 text-brand-red">
               <div className="p-2.5 bg-brand-red/10 rounded-xl flex-shrink-0">
@@ -551,11 +421,8 @@ export default function Settings() {
               {isClearing ? 'Purging...' : 'Wipe System'}
             </button>
           </div>
-
-
         </div>
       </section>
-
     </div>
   );
 }

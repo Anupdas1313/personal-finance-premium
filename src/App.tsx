@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './screens/Dashboard';
 import Transactions from './screens/Transactions';
@@ -14,8 +15,6 @@ import Profile from './screens/Profile';
 
 import { ThemeProvider } from './components/ThemeProvider';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { ReminderProvider } from './context/ReminderContext';
-import { ReminderBanner } from './components/ReminderBanner';
 
 function LoadingWrapper({ children }: { children: React.ReactNode }) {
   const { loading } = useAuth();
@@ -36,7 +35,7 @@ export default function App() {
     <ThemeProvider defaultTheme="dark" storageKey="app-theme">
       <AuthProvider>
         <ReminderProvider>
-          <BrowserRouter>
+          <HashRouter>
             <LoadingWrapper>
               <ReminderBanner />
               <Routes>
@@ -54,9 +53,10 @@ export default function App() {
                 </Route>
 
                 <Route path="/transactions/table" element={<TransactionTable />} />
+                <Route path="*" element={<Dashboard />} />
               </Routes>
             </LoadingWrapper>
-          </BrowserRouter>
+          </HashRouter>
         </ReminderProvider>
       </AuthProvider>
     </ThemeProvider>
