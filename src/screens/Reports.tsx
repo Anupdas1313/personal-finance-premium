@@ -142,11 +142,17 @@ export default function Reports() {
   });
   const [selectedCategory, setSelectedCategory] = useState<string | 'ALL'>('ALL');
   const [selectedMethod, setSelectedMethod] = useState<string | 'ALL'>('ALL');
+  const [selectedMethodSub, setSelectedMethodSub] = useState<string | 'ALL'>('ALL');
   const [selectedTag, setSelectedTag] = useState<string | 'ALL'>('ALL');
   const [transactionType, setTransactionType] = useState<'ALL' | 'CREDIT' | 'DEBIT'>('ALL');
   const [payeeSearch, setPayeeSearch] = useState('');
   const [comparisonMode, setComparisonMode] = useState(false);
   const [activeChart, setActiveChart] = useState<'category' | 'daily' | 'tags'>('category');
+
+  // Derived: accounts grouped by type for sub-filter
+  const bankAccounts = useMemo(() => accounts.filter(a => (a.type || 'BANK') === 'BANK'), [accounts]);
+  const creditCards = useMemo(() => accounts.filter(a => a.type === 'CREDIT_CARD'), [accounts]);
+  const cashAccounts = useMemo(() => accounts.filter(a => a.type === 'CASH'), [accounts]);
 
   useEffect(() => {
     if (accountIdParam) setSelectedAccountId(accountIdParam);
@@ -175,6 +181,13 @@ export default function Reports() {
   // ── Data Queries ──
   const allTransactions = useLiveQuery(() => db.transactions.toArray(), [user?.uid]) || [];
 
+  // Extract unique UPI apps from transactions
+  const uniqueUpiApps = useMemo(() => {
+    const apps = new Set<string>();
+    allTransactions.forEach(t => { if (t.upiApp) apps.add(t.upiApp); });
+    return Array.from(apps).sort();
+  }, [allTransactions]);
+
   const filteredTransactions = useMemo(() => {
     let txs = [...allTransactions];
 
@@ -195,8 +208,20 @@ export default function Reports() {
     if (transactionType !== 'ALL') txs = txs.filter(t => t.type === transactionType);
     // Category
     if (selectedCategory !== 'ALL') txs = txs.filter(t => t.category === selectedCategory);
-    // Method
-    if (selectedMethod !== 'ALL') txs = txs.filter(t => t.paymentMethod === selectedMethod);
+    // Method (cascading)
+    if (selectedMethod !== 'ALL') {
+      txs = txs.filter(t => t.paymentMethod === selectedMethod);
+      // Sub-filter
+      if (selectedMethodSub !== 'ALL') {
+        if (selectedMethod === 'UPI') {
+          txs = txs.filter(t => t.upiApp === selectedMethodSub);
+        } else if (selectedMethod === 'Credit Card' || selectedMethod === 'Bank Transfer') {
+          txs = txs.filter(t => t.accountId === Number(selectedMethodSub));
+        } else if (selectedMethod === 'Cash') {
+          txs = txs.filter(t => t.accountId === Number(selectedMethodSub));
+        }
+      }
+    }
     // Tag
     if (selectedTag !== 'ALL') txs = txs.filter(t => t.expenseType === selectedTag);
     // Payee
@@ -206,7 +231,7 @@ export default function Reports() {
     }
 
     return txs.sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
-  }, [allTransactions, selectedAccountId, dateRange, selectedCategory, selectedMethod, selectedTag, transactionType, payeeSearch]);
+  }, [allTransactions, selectedAccountId, dateRange, selectedCategory, selectedMethod, selectedMethodSub, selectedTag, transactionType, payeeSearch]);
 
   // Comparison transactions
   const comparisonTransactions = useMemo(() => {
@@ -536,18 +561,43 @@ export default function Reports() {
             </div>
           </div>
 
-          {/* Method */}
+          {/* Method (Cascading) */}
           <div className="space-y-1.5">
-            <label className="text-[9px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">Method</label>
+            <label className="text-[9px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">Payment Channel</label>
             <div className="relative">
-              <select value={selectedMethod} onChange={(e) => setSelectedMethod(e.target.value)}
+              <select value={selectedMethod} onChange={(e) => { setSelectedMethod(e.target.value); setSelectedMethodSub('ALL'); }}
                 className="w-full appearance-none bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-[11px] font-semibold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all">
-                <option value="ALL">All Methods</option>
-                {['UPI', 'Credit Card', 'Cash', 'Bank Transfer'].map(m => <option key={m} value={m}>{m}</option>)}
+                <option value="ALL">All Channels</option>
+                <option value="UPI">📱 UPI</option>
+                <option value="Bank Transfer">🏦 Bank Transfer</option>
+                <option value="Credit Card">💳 Credit Card</option>
+                <option value="Cash">💵 Cash</option>
               </select>
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
             </div>
           </div>
+
+          {/* Sub-Filter (contextual) */}
+          {selectedMethod !== 'ALL' && (
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">
+                {selectedMethod === 'UPI' ? 'UPI App' : selectedMethod === 'Credit Card' ? 'Which Card' : selectedMethod === 'Bank Transfer' ? 'Which Bank' : 'Which Wallet'}
+              </label>
+              <div className="relative">
+                <select value={selectedMethodSub} onChange={(e) => setSelectedMethodSub(e.target.value)}
+                  className="w-full appearance-none bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-[11px] font-semibold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all">
+                  <option value="ALL">
+                    {selectedMethod === 'UPI' ? 'All UPI Apps' : selectedMethod === 'Credit Card' ? 'All Credit Cards' : selectedMethod === 'Bank Transfer' ? 'All Banks' : 'All Cash Accounts'}
+                  </option>
+                  {selectedMethod === 'UPI' && uniqueUpiApps.map(app => <option key={app} value={app}>{app}</option>)}
+                  {selectedMethod === 'Bank Transfer' && bankAccounts.map(acc => <option key={acc.id} value={acc.id}>{acc.bankName} (****{acc.accountLast4})</option>)}
+                  {selectedMethod === 'Credit Card' && creditCards.map(acc => <option key={acc.id} value={acc.id}>{acc.bankName} (****{acc.accountLast4})</option>)}
+                  {selectedMethod === 'Cash' && cashAccounts.map(acc => <option key={acc.id} value={acc.id}>{acc.bankName} (****{acc.accountLast4})</option>)}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
+              </div>
+            </div>
+          )}
 
           {/* Tag */}
           <div className="space-y-1.5">
@@ -584,10 +634,14 @@ export default function Reports() {
             <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest py-1">Active:</span>
             {selectedCategory !== 'ALL' && <span className="px-2 py-0.5 bg-brand-blue/5 dark:bg-white/5 text-brand-blue dark:text-white rounded-full text-[9px] font-bold">{selectedCategory} ×</span>}
             {selectedTag !== 'ALL' && <span className="px-2 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-full text-[9px] font-bold">#{selectedTag} ×</span>}
-            {selectedMethod !== 'ALL' && <span className="px-2 py-0.5 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 rounded-full text-[9px] font-bold">{selectedMethod} ×</span>}
+            {selectedMethod !== 'ALL' && (
+              <span className="px-2 py-0.5 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 rounded-full text-[9px] font-bold">
+                {selectedMethod}{selectedMethodSub !== 'ALL' ? ` → ${selectedMethod === 'UPI' ? selectedMethodSub : accounts.find(a => a.id === Number(selectedMethodSub))?.bankName || selectedMethodSub}` : ''} ×
+              </span>
+            )}
             {payeeSearch && <span className="px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-full text-[9px] font-bold">"{payeeSearch}" ×</span>}
             {transactionType !== 'ALL' && <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full text-[9px] font-bold">{transactionType} ×</span>}
-            <button onClick={() => { setSelectedCategory('ALL'); setSelectedTag('ALL'); setSelectedMethod('ALL'); setPayeeSearch(''); setTransactionType('ALL'); }}
+            <button onClick={() => { setSelectedCategory('ALL'); setSelectedTag('ALL'); setSelectedMethod('ALL'); setSelectedMethodSub('ALL'); setPayeeSearch(''); setTransactionType('ALL'); }}
               className="px-2 py-0.5 text-[9px] font-bold text-rose-500 hover:text-rose-600 flex items-center gap-0.5"><RefreshCw className="w-2.5 h-2.5" /> Clear</button>
           </div>
         )}
