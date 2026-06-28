@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Send, Bot, CheckCircle2, Sparkles, Landmark, Lightbulb,
   ChevronRight, Hash, AppWindow, Pencil, Mic, MicOff, X,
-  RotateCcw, Clock, Zap, TrendingUp, Camera, Image as ImageIcon
+  RotateCcw, Clock, Zap, TrendingUp, Camera, Image as ImageIcon, User
 } from 'lucide-react';
 import { format, subDays, subWeeks } from 'date-fns';
 import { CATEGORY_ICONS } from '../constants';
@@ -23,14 +23,18 @@ type ChatStage = 'IDLE' | 'ASK_AMOUNT' | 'ASK_TYPE' | 'ASK_BANK' | 'ASK_PAYMENT_
 // ─── Emoji → Category Shortcuts ──────────────────────────────────────────
 const EMOJI_CATEGORY: Record<string, string> = {
   '🍕': 'Food', '🍔': 'Food', '🍜': 'Food', '🥘': 'Food', '☕': 'Food', '🍩': 'Food',
-  '🚗': 'Transport', '🛵': 'Transport', '🚌': 'Transport', '✈️': 'Travel', '🚂': 'Travel',
-  '🛒': 'Groceries', '🛍️': 'Shopping', '👗': 'Shopping', '👟': 'Shopping',
-  '💊': 'Health', '🏥': 'Health', '🏋️': 'Health',
-  '📺': 'Bills', '📱': 'Bills', '💡': 'Bills',
-  '📚': 'Education', '🎓': 'Education',
-  '🎬': 'Entertainment', '🎮': 'Entertainment', '🎵': 'Entertainment',
+  '🍱': 'Food', '🍛': 'Food', '🥗': 'Food', '🍺': 'Food', '🧁': 'Food',
+  '🚗': 'Transport', '🛵': 'Transport', '🚌': 'Transport', '🚕': 'Transport', '🛺': 'Transport',
+  '✈️': 'Travel', '🚂': 'Travel', '🏨': 'Travel', '🗺️': 'Travel',
+  '🛒': 'Groceries', '🥦': 'Groceries', '🥛': 'Groceries',
+  '🛍️': 'Shopping', '👗': 'Shopping', '👟': 'Shopping', '💄': 'Shopping',
+  '💊': 'Health', '🏥': 'Health', '🏋️': 'Health', '🩺': 'Health',
+  '📺': 'Bills', '📱': 'Bills', '💡': 'Bills', '🔌': 'Bills',
+  '📚': 'Education', '🎓': 'Education', '📖': 'Education',
+  '🎬': 'Entertainment', '🎮': 'Entertainment', '🎵': 'Entertainment', '🎭': 'Entertainment',
   '🏠': 'Housing', '🏡': 'Housing',
-  '💰': 'Investment', '📈': 'Investment',
+  '💰': 'Investment', '📈': 'Investment', '💹': 'Investment',
+  '🙏': 'Donations', '⛪': 'Donations', '🕌': 'Donations', '🛕': 'Donations',
 };
 
 const EMOJI_TAG: Record<string, string> = {
@@ -39,15 +43,9 @@ const EMOJI_TAG: Record<string, string> = {
 
 // ─── Merchant Knowledge Base ──────────────────────────────────────────────
 const MERCHANT_KNOWLEDGE: Record<string, { category: string; tag: string }> = {
+  // ── Food & Dining ───────────────────────────────
   zomato: { category: 'Food', tag: 'Personal' },
   swiggy: { category: 'Food', tag: 'Personal' },
-  blinkit: { category: 'Groceries', tag: 'Personal' },
-  zepto: { category: 'Groceries', tag: 'Personal' },
-  dunzo: { category: 'Groceries', tag: 'Personal' },
-  bigbasket: { category: 'Groceries', tag: 'Personal' },
-  grofers: { category: 'Groceries', tag: 'Personal' },
-  jiomart: { category: 'Groceries', tag: 'Personal' },
-  instamart: { category: 'Groceries', tag: 'Personal' },
   starbucks: { category: 'Food', tag: 'Personal' },
   mcdonalds: { category: 'Food', tag: 'Personal' },
   dominos: { category: 'Food', tag: 'Personal' },
@@ -61,19 +59,86 @@ const MERCHANT_KNOWLEDGE: Record<string, { category: string; tag: string }> = {
   chai: { category: 'Food', tag: 'Personal' },
   coffee: { category: 'Food', tag: 'Personal' },
   cafe: { category: 'Food', tag: 'Personal' },
+  haldirams: { category: 'Food', tag: 'Personal' },
+  "haldiram's": { category: 'Food', tag: 'Personal' },
+  'barbeque nation': { category: 'Food', tag: 'Personal' },
+  bbq: { category: 'Food', tag: 'Personal' },
+  saravana: { category: 'Food', tag: 'Personal' },
+  'biryani by kilo': { category: 'Food', tag: 'Personal' },
+  eatfit: { category: 'Food', tag: 'Personal' },
+  faasos: { category: 'Food', tag: 'Personal' },
+  box8: { category: 'Food', tag: 'Personal' },
+  behrouz: { category: 'Food', tag: 'Personal' },
+  magicpin: { category: 'Food', tag: 'Personal' },
+  dineout: { category: 'Food', tag: 'Personal' },
+  eatsure: { category: 'Food', tag: 'Personal' },
+  restaurant: { category: 'Food', tag: 'Personal' },
+  lunch: { category: 'Food', tag: 'Personal' },
+  dinner: { category: 'Food', tag: 'Personal' },
+  breakfast: { category: 'Food', tag: 'Personal' },
+  snacks: { category: 'Food', tag: 'Personal' },
+  bakery: { category: 'Food', tag: 'Personal' },
+  // ── Groceries ──────────────────────────────────
+  blinkit: { category: 'Groceries', tag: 'Household' },
+  zepto: { category: 'Groceries', tag: 'Household' },
+  dunzo: { category: 'Groceries', tag: 'Household' },
+  bigbasket: { category: 'Groceries', tag: 'Household' },
+  grofers: { category: 'Groceries', tag: 'Household' },
+  jiomart: { category: 'Groceries', tag: 'Household' },
+  instamart: { category: 'Groceries', tag: 'Household' },
+  dmart: { category: 'Groceries', tag: 'Household' },
+  'd-mart': { category: 'Groceries', tag: 'Household' },
+  reliance: { category: 'Groceries', tag: 'Household' },
+  'reliance smart': { category: 'Groceries', tag: 'Household' },
+  more: { category: 'Groceries', tag: 'Household' },
+  spencers: { category: 'Groceries', tag: 'Household' },
+  'natures basket': { category: 'Groceries', tag: 'Household' },
+  'country delight': { category: 'Groceries', tag: 'Household' },
+  licious: { category: 'Groceries', tag: 'Household' },
+  freshtohome: { category: 'Groceries', tag: 'Household' },
+  milkbasket: { category: 'Groceries', tag: 'Household' },
+  vegetables: { category: 'Groceries', tag: 'Household' },
+  grocery: { category: 'Groceries', tag: 'Household' },
+  supermarket: { category: 'Groceries', tag: 'Household' },
+  kirana: { category: 'Groceries', tag: 'Household' },
+  // ── Transport ──────────────────────────────────
   uber: { category: 'Transport', tag: 'Personal' },
   ola: { category: 'Transport', tag: 'Personal' },
   rapido: { category: 'Transport', tag: 'Personal' },
   irctc: { category: 'Transport', tag: 'Personal' },
+  blusmart: { category: 'Transport', tag: 'Personal' },
+  meru: { category: 'Transport', tag: 'Personal' },
+  nammayatri: { category: 'Transport', tag: 'Personal' },
+  'namma yatri': { category: 'Transport', tag: 'Personal' },
+  shuttle: { category: 'Transport', tag: 'Personal' },
+  petrol: { category: 'Transport', tag: 'Personal' },
+  fuel: { category: 'Transport', tag: 'Personal' },
+  diesel: { category: 'Transport', tag: 'Personal' },
+  metro: { category: 'Transport', tag: 'Personal' },
+  auto: { category: 'Transport', tag: 'Personal' },
+  taxi: { category: 'Transport', tag: 'Personal' },
+  cab: { category: 'Transport', tag: 'Personal' },
+  parking: { category: 'Transport', tag: 'Personal' },
+  toll: { category: 'Transport', tag: 'Personal' },
+  fastag: { category: 'Transport', tag: 'Personal' },
+  rickshaw: { category: 'Transport', tag: 'Personal' },
+  // ── Travel ─────────────────────────────────────
   makemytrip: { category: 'Travel', tag: 'Personal' },
   goibibo: { category: 'Travel', tag: 'Personal' },
   redbus: { category: 'Travel', tag: 'Personal' },
   cleartrip: { category: 'Travel', tag: 'Personal' },
   ixigo: { category: 'Travel', tag: 'Personal' },
-  petrol: { category: 'Transport', tag: 'Personal' },
-  fuel: { category: 'Transport', tag: 'Personal' },
-  diesel: { category: 'Transport', tag: 'Personal' },
-  metro: { category: 'Transport', tag: 'Personal' },
+  airbnb: { category: 'Travel', tag: 'Personal' },
+  oyo: { category: 'Travel', tag: 'Personal' },
+  yatra: { category: 'Travel', tag: 'Personal' },
+  easemytrip: { category: 'Travel', tag: 'Personal' },
+  'booking.com': { category: 'Travel', tag: 'Personal' },
+  treebo: { category: 'Travel', tag: 'Personal' },
+  fabhotels: { category: 'Travel', tag: 'Personal' },
+  flight: { category: 'Travel', tag: 'Personal' },
+  hotel: { category: 'Travel', tag: 'Personal' },
+  train: { category: 'Travel', tag: 'Personal' },
+  // ── Shopping ────────────────────────────────────
   amazon: { category: 'Shopping', tag: 'Personal' },
   flipkart: { category: 'Shopping', tag: 'Personal' },
   myntra: { category: 'Shopping', tag: 'Personal' },
@@ -81,11 +146,20 @@ const MERCHANT_KNOWLEDGE: Record<string, { category: string; tag: string }> = {
   ajio: { category: 'Shopping', tag: 'Personal' },
   nykaa: { category: 'Shopping', tag: 'Personal' },
   snapdeal: { category: 'Shopping', tag: 'Personal' },
+  lenskart: { category: 'Shopping', tag: 'Personal' },
+  croma: { category: 'Shopping', tag: 'Personal' },
+  'reliance digital': { category: 'Shopping', tag: 'Personal' },
+  decathlon: { category: 'Shopping', tag: 'Personal' },
+  ikea: { category: 'Shopping', tag: 'Personal' },
+  'h&m': { category: 'Shopping', tag: 'Personal' },
+  zara: { category: 'Shopping', tag: 'Personal' },
+  'tata cliq': { category: 'Shopping', tag: 'Personal' },
+  firstcry: { category: 'Shopping', tag: 'Personal' },
+  // ── Bills & Utilities ──────────────────────────
   netflix: { category: 'Bills', tag: 'Personal' },
   hotstar: { category: 'Bills', tag: 'Personal' },
   disney: { category: 'Bills', tag: 'Personal' },
   primevideo: { category: 'Bills', tag: 'Personal' },
-  spotify: { category: 'Entertainment', tag: 'Personal' },
   jio: { category: 'Bills', tag: 'Personal' },
   airtel: { category: 'Bills', tag: 'Personal' },
   vi: { category: 'Bills', tag: 'Personal' },
@@ -93,41 +167,114 @@ const MERCHANT_KNOWLEDGE: Record<string, { category: string; tag: string }> = {
   electricity: { category: 'Bills', tag: 'Household' },
   water: { category: 'Bills', tag: 'Household' },
   gas: { category: 'Bills', tag: 'Household' },
+  insurance: { category: 'Bills', tag: 'Personal' },
+  lic: { category: 'Bills', tag: 'Personal' },
+  'tata play': { category: 'Bills', tag: 'Household' },
+  hathway: { category: 'Bills', tag: 'Household' },
+  'act fibernet': { category: 'Bills', tag: 'Household' },
+  broadband: { category: 'Bills', tag: 'Household' },
+  wifi: { category: 'Bills', tag: 'Household' },
+  dth: { category: 'Bills', tag: 'Household' },
+  recharge: { category: 'Bills', tag: 'Personal' },
+  postpaid: { category: 'Bills', tag: 'Personal' },
+  prepaid: { category: 'Bills', tag: 'Personal' },
+  // ── Entertainment ──────────────────────────────
+  spotify: { category: 'Entertainment', tag: 'Personal' },
+  bookmyshow: { category: 'Entertainment', tag: 'Personal' },
+  'book my show': { category: 'Entertainment', tag: 'Personal' },
+  pvr: { category: 'Entertainment', tag: 'Personal' },
+  inox: { category: 'Entertainment', tag: 'Personal' },
+  movie: { category: 'Entertainment', tag: 'Personal' },
+  cinema: { category: 'Entertainment', tag: 'Personal' },
+  concert: { category: 'Entertainment', tag: 'Personal' },
+  gaming: { category: 'Entertainment', tag: 'Personal' },
+  // ── Health ──────────────────────────────────────
   pharmeasy: { category: 'Health', tag: 'Personal' },
   netmeds: { category: 'Health', tag: 'Personal' },
   apollo: { category: 'Health', tag: 'Personal' },
   medplus: { category: 'Health', tag: 'Personal' },
+  '1mg': { category: 'Health', tag: 'Personal' },
+  'tata 1mg': { category: 'Health', tag: 'Personal' },
+  practo: { category: 'Health', tag: 'Personal' },
+  lybrate: { category: 'Health', tag: 'Personal' },
+  'cult.fit': { category: 'Health', tag: 'Personal' },
+  cultfit: { category: 'Health', tag: 'Personal' },
   medicine: { category: 'Health', tag: 'Personal' },
   pharmacy: { category: 'Health', tag: 'Personal' },
   hospital: { category: 'Health', tag: 'Personal' },
   doctor: { category: 'Health', tag: 'Personal' },
   gym: { category: 'Health', tag: 'Personal' },
-  insurance: { category: 'Bills', tag: 'Personal' },
-  lic: { category: 'Bills', tag: 'Personal' },
+  clinic: { category: 'Health', tag: 'Personal' },
+  dentist: { category: 'Health', tag: 'Personal' },
+  // ── Education ──────────────────────────────────
+  unacademy: { category: 'Education', tag: 'Personal' },
+  byjus: { category: 'Education', tag: 'Personal' },
+  "byju's": { category: 'Education', tag: 'Personal' },
+  coursera: { category: 'Education', tag: 'Personal' },
+  udemy: { category: 'Education', tag: 'Personal' },
+  skillshare: { category: 'Education', tag: 'Personal' },
+  school: { category: 'Education', tag: 'Personal' },
+  tuition: { category: 'Education', tag: 'Personal' },
+  coaching: { category: 'Education', tag: 'Personal' },
+  books: { category: 'Education', tag: 'Personal' },
+  stationery: { category: 'Education', tag: 'Personal' },
+  // ── Investment ──────────────────────────────────
   mutual: { category: 'Investment', tag: 'Personal' },
   zerodha: { category: 'Investment', tag: 'Personal' },
   groww: { category: 'Investment', tag: 'Personal' },
+  upstox: { category: 'Investment', tag: 'Personal' },
+  'angel one': { category: 'Investment', tag: 'Personal' },
+  angelone: { category: 'Investment', tag: 'Personal' },
+  kuvera: { category: 'Investment', tag: 'Personal' },
+  sip: { category: 'Investment', tag: 'Personal' },
+  stocks: { category: 'Investment', tag: 'Personal' },
+  crypto: { category: 'Investment', tag: 'Personal' },
+  // ── Loan ────────────────────────────────────────
   loan: { category: 'Loan', tag: 'Personal' },
   emi: { category: 'Loan', tag: 'Personal' },
+  // ── Housing ─────────────────────────────────────
   rent: { category: 'Housing', tag: 'Household' },
-  lenskart: { category: 'Shopping', tag: 'Personal' },
+  maintenance: { category: 'Housing', tag: 'Household' },
+  'society maintenance': { category: 'Housing', tag: 'Household' },
+  plumber: { category: 'Housing', tag: 'Household' },
+  electrician: { category: 'Housing', tag: 'Household' },
+  carpenter: { category: 'Housing', tag: 'Household' },
+  maid: { category: 'Housing', tag: 'Household' },
+  // ── Donations ───────────────────────────────────
+  temple: { category: 'Donations', tag: 'Personal' },
+  church: { category: 'Donations', tag: 'Personal' },
+  mosque: { category: 'Donations', tag: 'Personal' },
+  gurudwara: { category: 'Donations', tag: 'Personal' },
+  charity: { category: 'Donations', tag: 'Personal' },
+  donation: { category: 'Donations', tag: 'Personal' },
+  ngo: { category: 'Donations', tag: 'Personal' },
 };
 
 // ─── UPI Apps ─────────────────────────────────────────────────────────────
 const UPI_APPS: Record<string, string> = {
-  gpay: 'GPay', 'google pay': 'GPay', googlepay: 'GPay',
+  gpay: 'GPay', 'google pay': 'GPay', googlepay: 'GPay', 'g pay': 'GPay',
   phonepe: 'PhonePe', 'phone pe': 'PhonePe',
   paytm: 'Paytm', bhim: 'BHIM', cred: 'CRED',
   slice: 'Slice', amazonpay: 'Amazon Pay', 'amazon pay': 'Amazon Pay',
-  mobikwik: 'MobiKwik',
+  mobikwik: 'MobiKwik', whatsapp: 'WhatsApp Pay', 'whatsapp pay': 'WhatsApp Pay',
+  jupiter: 'Jupiter', fi: 'Fi Money', freecharge: 'Freecharge',
+  navi: 'Navi', 'samsung pay': 'Samsung Pay', imobile: 'iMobile Pay',
+  payzapp: 'PayZapp', supermoney: 'SuperMoney',
 };
 
 // ─── Bank Nicknames ───────────────────────────────────────────────────────
 const BANK_NICKNAMES: Record<string, string> = {
-  sbi: 'state bank', pnb: 'punjab national', hdfc: 'hdfc bank',
-  icici: 'icici bank', axis: 'axis bank', kotak: 'kotak mahindra',
-  bob: 'bank of baroda', canara: 'canara bank', yes: 'yes bank',
-  indusind: 'indusind bank', idfc: 'idfc', rbl: 'rbl bank',
+  sbi: 'state bank', pnb: 'punjab national', hdfc: 'hdfc',
+  icici: 'icici', axis: 'axis', kotak: 'kotak',
+  bob: 'bank of baroda', canara: 'canara', 'yes bank': 'yes bank',
+  indusind: 'indusind', idfc: 'idfc', rbl: 'rbl',
+  federal: 'federal', ubi: 'union bank', 'union bank': 'union bank',
+  'indian bank': 'indian bank', iob: 'indian overseas',
+  uco: 'uco bank', bandhan: 'bandhan', au: 'au small',
+  'paytm bank': 'paytm payments', 'airtel bank': 'airtel payments',
+  dbs: 'dbs', citi: 'citi', hsbc: 'hsbc',
+  'standard chartered': 'standard chartered', sc: 'standard chartered',
+  'post office': 'post office', fino: 'fino',
 };
 
 // ─── Fuzzy Match (Levenshtein distance) ─────────────────────────────────
@@ -162,11 +309,26 @@ const parseDate = (text: string): { date: string; confirmed: boolean } => {
   const t = text.toLowerCase();
   const now = new Date();
   if (t.match(/\b(today|aaj|abhi)\b/)) return { date: format(now, "yyyy-MM-dd'T'HH:mm"), confirmed: true };
-  if (t.match(/\b(yesterday|kal)\b/)) return { date: format(subDays(now, 1), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+  if (t.match(/\b(yesterday|kal|kal ka)\b/)) return { date: format(subDays(now, 1), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
   if (t.match(/\b(parso|day before yesterday)\b/)) return { date: format(subDays(now, 2), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+  if (t.match(/\b(tarso|narso)\b/)) return { date: format(subDays(now, 3), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+  // N days/weeks/months ago
   const daysAgo = t.match(/(\d+)\s+days?\s+ago/);
   if (daysAgo) return { date: format(subDays(now, parseInt(daysAgo[1])), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
-  if (t.includes('last week')) return { date: format(subWeeks(now, 1), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+  const weeksAgo = t.match(/(\d+)\s+weeks?\s+ago/);
+  if (weeksAgo) return { date: format(subWeeks(now, parseInt(weeksAgo[1])), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+  // Hindi relative dates
+  if (t.match(/\b(pichle hafte|pichle week|last week)\b/)) return { date: format(subWeeks(now, 1), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+  if (t.match(/\b(pichle mahine|pichle month|last month)\b/)) {
+    const d = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+    return { date: format(d, "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+  }
+  if (t.match(/\b(is hafte|is week|this week)\b/)) {
+    const day = now.getDay();
+    const monday = new Date(now); monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+    return { date: format(monday, "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+  }
+  // Last weekday
   const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
   for (let i = 0; i < weekdays.length; i++) {
     if (t.includes(`last ${weekdays[i]}`)) {
@@ -174,6 +336,40 @@ const parseDate = (text: string): { date: string; confirmed: boolean } => {
       return { date: format(subDays(now, diff), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
     }
   }
+  // Month names: "15 march", "march 15", "15th march", "in january"
+  const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+  const monthShort = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  for (let mi = 0; mi < months.length; mi++) {
+    const mName = months[mi]; const mShort = monthShort[mi];
+    const monthDayMatch = t.match(new RegExp(`(\\d{1,2})(?:st|nd|rd|th)?\\s+(?:of\\s+)?(?:${mName}|${mShort})`, 'i'));
+    if (monthDayMatch) {
+      const day = parseInt(monthDayMatch[1]);
+      const d = new Date(now.getFullYear(), mi, day);
+      if (d > now) d.setFullYear(d.getFullYear() - 1);
+      return { date: format(d, "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+    }
+    const dayMonthMatch = t.match(new RegExp(`(?:${mName}|${mShort})\\s+(\\d{1,2})(?:st|nd|rd|th)?`, 'i'));
+    if (dayMonthMatch) {
+      const day = parseInt(dayMonthMatch[1]);
+      const d = new Date(now.getFullYear(), mi, day);
+      if (d > now) d.setFullYear(d.getFullYear() - 1);
+      return { date: format(d, "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+    }
+    if (t.match(new RegExp(`\\bin\\s+(?:${mName}|${mShort})\\b`, 'i'))) {
+      const d = new Date(now.getFullYear(), mi, 1);
+      if (d > now) d.setFullYear(d.getFullYear() - 1);
+      return { date: format(d, "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+    }
+  }
+  // Full date: DD/MM/YYYY or DD-MM-YYYY
+  const fullDate = text.match(/\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/);
+  if (fullDate) {
+    let year = parseInt(fullDate[3]);
+    if (year < 100) year += 2000;
+    const d = new Date(year, parseInt(fullDate[2]) - 1, parseInt(fullDate[1]));
+    if (d <= now) return { date: format(d, "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+  }
+  // Day of current month
   const dayNum = text.match(/\b(\d{1,2})(?:st|nd|rd|th)?\b/);
   if (dayNum) {
     const day = parseInt(dayNum[1]);
@@ -182,6 +378,7 @@ const parseDate = (text: string): { date: string; confirmed: boolean } => {
       if (d <= now) return { date: format(d, "yyyy-MM-dd'T'HH:mm"), confirmed: true };
     }
   }
+  // Simple DD/MM
   const slashDate = text.match(/\b(\d{1,2})[\/\-](\d{1,2})\b/);
   if (slashDate) {
     const d = new Date(now.getFullYear(), parseInt(slashDate[2]) - 1, parseInt(slashDate[1]));
@@ -205,25 +402,62 @@ const parseAmount = (text: string): string => {
     else if (op === '-') res = a - b;
     else if (op === '*') res = a * b;
     else if (op === '/') res = a / b;
-    return String(res);
+    return String(Math.round(res * 100) / 100);
   }
 
   // Split: "split 1200 3 ways" or "split 1200 with rahul" (assumes / 2)
   const splitWaysMatch = t.match(/split\s+(\d+(?:\.\d+)?)\s+(\d+)\s+ways?/i);
   if (splitWaysMatch) {
-    return String(parseFloat(splitWaysMatch[1]) / parseFloat(splitWaysMatch[2]));
+    return String(Math.round(parseFloat(splitWaysMatch[1]) / parseFloat(splitWaysMatch[2]) * 100) / 100);
   }
   const splitWithMatch = t.match(/split\s+(\d+(?:\.\d+)?)\s+with\s+/i);
   if (splitWithMatch) {
-    return String(parseFloat(splitWithMatch[1]) / 2);
+    return String(Math.round(parseFloat(splitWithMatch[1]) / 2 * 100) / 100);
   }
 
+  // Per person: "250 per person 4 people" or "250 x 4"
+  const perPersonMatch = t.match(/(\d+(?:\.\d+)?)\s*(?:per\s*person|each|per\s*head)\s*(?:for\s*)?(\d+)\s*(?:people|persons?|ppl)?/i);
+  if (perPersonMatch) return String(Math.round(parseFloat(perPersonMatch[1]) * parseFloat(perPersonMatch[2]) * 100) / 100);
+
+  // Percentage tip: "10% tip on 500" or "tip 10% of 500"
+  const tipMatch = t.match(/(\d+(?:\.\d+)?)\s*%\s*(?:tip|of)\s*(?:on\s*)?(\d+(?:\.\d+)?)/i);
+  if (tipMatch) return String(Math.round(parseFloat(tipMatch[2]) * parseFloat(tipMatch[1]) / 100 * 100) / 100);
+  const tipMatch2 = t.match(/(?:tip|percent)\s*(\d+(?:\.\d+)?)\s*%?\s*(?:on|of)\s*(\d+(?:\.\d+)?)/i);
+  if (tipMatch2) return String(Math.round(parseFloat(tipMatch2[2]) * parseFloat(tipMatch2[1]) / 100 * 100) / 100);
+
+  // Crore: "1.5cr" or "2 crore"
+  const crMatch = t.match(/(\d+(?:\.\d+)?)\s*(?:cr(?:ore)?s?)\b/i);
+  if (crMatch) return String(parseFloat(crMatch[1]) * 10000000);
+
+  // Lakh: "1.5l" or "2 lakh"
+  const lakhMatch = t.match(/(\d+(?:\.\d+)?)\s*(?:l(?:akh|acs?)?)\b/i);
+  if (lakhMatch) return String(parseFloat(lakhMatch[1]) * 100000);
+
+  // K/Thousand: "2k" or "2.5k"
   const kMatch = t.match(/(\d+(?:\.\d+)?)\s*k\b/i);
   if (kMatch) return String(parseFloat(kMatch[1]) * 1000);
-  const lakhMatch = t.match(/(\d+(?:\.\d+)?)\s*(?:l(?:akh)?)\b/i);
-  if (lakhMatch) return String(parseFloat(lakhMatch[1]) * 100000);
+
+  // Hazar (Hindi thousand): "2 hazar" or "dhai hazar" (2500)
+  const hazarMatch = t.match(/(\d+(?:\.\d+)?)\s*(?:hazar|hazaar|hajar)\b/i);
+  if (hazarMatch) return String(parseFloat(hazarMatch[1]) * 1000);
+  if (t.match(/\b(dhai|dhaai)\s*(?:hazar|hazaar|hajar|sau)\b/)) {
+    if (t.includes('hazar') || t.includes('hazaar') || t.includes('hajar')) return '2500';
+    if (t.includes('sau')) return '250';
+  }
+  if (t.match(/\bsaadhe?\s*(\d+)\s*(?:hazar|hazaar|sau)\b/)) {
+    const saadheMatch = t.match(/\bsaadhe?\s*(\d+)\s*(hazar|hazaar|sau)\b/);
+    if (saadheMatch) {
+      const num = parseFloat(saadheMatch[1]);
+      const unit = saadheMatch[2];
+      if (unit.startsWith('h')) return String((num + 0.5) * 1000);
+      return String((num + 0.5) * 100);
+    }
+  }
+
+  // Currency prefix: ₹500, Rs. 250, INR 1000
   const rsMatch = t.match(/(?:₹|rs\.?|inr)\s*(\d+(?:\.\d+)?)/i);
   if (rsMatch) return rsMatch[1];
+  // Bare number fallback
   const numMatch = t.match(/\b(\d+(?:\.\d+)?)\b/);
   return numMatch ? numMatch[1] : '';
 };
@@ -267,11 +501,13 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
   const amount = parseAmount(text);
 
   let type = '';
-  if (t.match(/\b(received|got|salary|income|credit|added|deposit|inflow|credited|mila|aaya)\b/)) type = 'CREDIT';
+  // Hinglish-aware type detection
+  if (t.match(/\b(received|got|salary|income|credit|added|deposit|inflow|credited|mila|aaya|jama|milgaya|mil gaya)\b/)) type = 'CREDIT';
   else if (t.match(/\b(transfer(?:red)?\s+(?:to|from|\d)|moved?\s+(?:to|from|\d)|shifted\s+(?:to|from|\d)|bheja)\b/)) type = 'TRANSFER';
-  else if (t.match(/\b(paid|spent|bought|expense|debit|gave|withdrawn?|purchased?|kharcha|diya|de diya)\b/)) type = 'DEBIT';
-  // "sent" only counts as transfer if followed by money context, not standalone
-  else if (t.match(/\bsent?\s+(?:₹|rs|\d|money|amount)/)) type = 'TRANSFER';
+  else if (t.match(/\b(paid|spent|bought|expense|debit|gave|withdrawn?|purchased?|kharcha|diya|de diya|kharch|nikala|nikaal|udhar\s+diya|liya|mangaya|order)\b/)) type = 'DEBIT';
+  else if (t.match(/\bsent?\s+(?:₹|rs|\d|money|amount|paisa|paise|rupaiye)/)) type = 'TRANSFER';
+  // Hinglish refund/return
+  else if (t.match(/\b(refund|wapas\s+(?:mila|aaya)|return|cashback)\b/)) type = 'CREDIT';
 
   const acc = resolveBank(t, accounts);
   let accountId = acc?.id || '';
@@ -282,8 +518,12 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
 
   let paymentMethod = autoPaymentMethod;
   if (!paymentMethod) {
-    if (t.match(/\b(cash|nakit)\b/)) paymentMethod = 'Cash';
-    else if (t.match(/\b(credit\s+card|cc)\b/)) paymentMethod = 'Credit Card';
+    if (t.match(/\b(cash|nakit|naqad|nagad)\b/)) paymentMethod = 'Cash';
+    else if (t.match(/\b(credit\s+card|cc|credit\s*card)\b/)) paymentMethod = 'Credit Card';
+    else if (t.match(/\b(debit\s+card|dc|debit\s*card)\b/)) paymentMethod = 'Debit Card';
+    else if (t.match(/\b(net\s*banking|internet\s*banking|online\s*banking)\b/)) paymentMethod = 'Net Banking';
+    else if (t.match(/\b(wallet|paytm\s+wallet|mobikwik\s+wallet)\b/)) paymentMethod = 'Wallet';
+    else if (t.match(/\b(cheque|check|cheq)\b/)) paymentMethod = 'Cheque';
     else if (t.match(/\b(neft|rtgs|imps|bank\s+transfer)\b/)) paymentMethod = 'Bank Transfer';
     else if (upiApp) paymentMethod = 'UPI';
   }
@@ -304,9 +544,45 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
     }
   }
 
+  // Hinglish category keywords
+  if (!category) {
+    const hindiCategories: Record<string, string> = {
+      khana: 'Food', nashta: 'Food', 'chai pani': 'Food', 'chai-pani': 'Food',
+      doodh: 'Groceries', sabzi: 'Groceries', sabji: 'Groceries', atta: 'Groceries', chawal: 'Groceries', dal: 'Groceries', ration: 'Groceries',
+      bijli: 'Bills', 'bijli ka bill': 'Bills', 'paani ka bill': 'Bills', 'gas ka bill': 'Bills', bharti: 'Bills',
+      dawai: 'Health', dawa: 'Health', ilaaj: 'Health', 'doctor ki fees': 'Health',
+      kiraya: 'Transport', 'auto ka kiraya': 'Transport', gaadi: 'Transport', rick: 'Transport',
+      padhai: 'Education', 'school ki fees': 'Education', kitaab: 'Education', 'coaching fees': 'Education',
+      chanda: 'Donations', daan: 'Donations', mandir: 'Donations',
+    };
+    for (const [hindi, cat] of Object.entries(hindiCategories)) {
+      if (t.includes(hindi)) { category = cat; tag = tag || 'Personal'; break; }
+    }
+  }
+
+  // Time-of-day category suggestion (only if still no category)
+  if (!category && amount) {
+    const hour = new Date().getHours();
+    if (hour >= 6 && hour <= 10) category = 'Food'; // Morning = breakfast/coffee
+    else if (hour >= 11 && hour <= 14) category = 'Food'; // Lunch time
+    else if (hour >= 19 && hour <= 22) category = 'Food'; // Dinner time
+  }
+
   let parsedPayee = '';
-  const payeeMatch = text.match(/\b(?:to|paid\s+to|at|@|from|received\s+from)\s+([A-Za-z][A-Za-z0-9\s]{0,20}?)(?:\s+(?:via|using|on|for|from|today|yesterday|\d)|$)/i);
+  const payeeMatch = text.match(/\b(?:to|paid\s+to|at|@|from|received\s+from|on)\s+([A-Za-z][A-Za-z0-9\s]{0,20}?)(?:\s+(?:via|using|on|for|from|today|yesterday|\d)|$)/i);
   if (payeeMatch && type !== 'TRANSFER') parsedPayee = payeeMatch[1].trim();
+
+  // Aggressive payee fallback
+  if (!parsedPayee && type !== 'TRANSFER') {
+     const simpleMatch = text.match(/(?:₹|rs)?\s*\d+(?:\.\d+)?(?:k)?\s+([A-Za-z]+)/i);
+     if (simpleMatch) {
+       const candidate = simpleMatch[1].trim().toLowerCase();
+       const skipWords = ['and', 'for', 'to', 'from', 'via', 'using', 'in', 'on', 'spent', 'paid', 'credit', 'debit', 'cash', 'upi', 'gpay', 'today', 'yesterday'];
+       if (!skipWords.includes(candidate) && !appCategories.map(c => c.toLowerCase()).includes(candidate)) {
+         parsedPayee = simpleMatch[1].trim();
+       }
+     }
+  }
 
   let parsedNote = '';
   const forMatch = text.match(/\b(?:for|remark[:\s]+|note[:\s]+)(.+?)(?:\s+(?:via|using|from|to|today|yesterday|on \d|\d+\s*(?:days|week))\b|$)/i);
@@ -324,26 +600,6 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
   if (parsedNote || parsedPayee) confidence += 10;
 
   return { amount, type, accountId, autoPaymentMethod, upiApp, paymentMethod, category, tag, parsedPayee, parsedNote, date, dateConfirmed, isPredicted, confidence };
-};
-
-// ─── Voice Recognition Hook ───────────────────────────────────────────────
-const useSpeechRecognition = () => {
-  const [listening, setListening] = useState(false);
-  const recognitionRef = useRef<any>(null);
-  const supported = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
-  const start = (onResult: (text: string) => void) => {
-    if (!supported) return;
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const rec = new SR();
-    rec.lang = 'en-IN'; rec.interimResults = false; rec.maxAlternatives = 1;
-    rec.onstart = () => setListening(true);
-    rec.onend = () => setListening(false);
-    rec.onresult = (e: any) => onResult(e.results[0][0].transcript);
-    rec.onerror = () => setListening(false);
-    recognitionRef.current = rec; rec.start();
-  };
-  const stop = () => { recognitionRef.current?.stop(); setListening(false); };
-  return { start, stop, listening, supported };
 };
 
 // ─── Personal Learning Hook ───────────────────────────────────────────────
@@ -396,20 +652,18 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [stage, setStage] = useState<ChatStage>('IDLE');
   const [pendingTx, setPendingTx] = useState<any>({
     type: '', amount: '', category: '', selectedAccountId: '', toAccountId: '',
-    paymentMethod: '', upiApp: '', expenseType: '', partyName: '', note: '',
+    paymentMethod: '', upiApp: '', expenseType: '', party: '', note: '',
     transactionDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"), _dateConfirmed: false, _isPredicted: false, _confidence: 0
   });
   const [multiQueue, setMultiQueue] = useState<string[]>([]);
   const [autocomplete, setAutocomplete] = useState<any[]>([]);
   const [lastSaved, setLastSaved] = useState<any>(null);
+  const [isAutoFillEnabled, setIsAutoFillEnabled] = useState(true);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const speech = useSpeechRecognition();
   const { recentTx, smartDefaults, payeeMemory } = usePersonalLearning();
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isTyping]);
@@ -420,7 +674,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     const q = input.toLowerCase();
     db.transactions.filter(tx =>
       (tx.note && tx.note.toLowerCase().includes(q)) ||
-      (tx.partyName && tx.partyName.toLowerCase().includes(q))
+      (tx.party && tx.party.toLowerCase().includes(q))
     ).limit(3).toArray().then(setAutocomplete);
   }, [input]);
 
@@ -442,9 +696,23 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
   };
 
   const checkNextStep = (tx: any) => {
+    if (tx.party && tx.party !== '-' && !tx.expenseType && tx.type === 'DEBIT') {
+       const SUBSCRIPTION_KEYWORDS = ['netflix', 'spotify', 'prime', 'hotstar', 'youtube', 'apple', 'chatgpt', 'openai', 'github', 'hostinger', 'vercel'];
+       if (SUBSCRIPTION_KEYWORDS.some(k => tx.party.toLowerCase().includes(k))) {
+          tx.expenseType = 'Subscription';
+       }
+    }
     if (!tx.amount) { setStage('ASK_AMOUNT'); addAIMessage("How much was it? (e.g. 250, 2k, ₹500)"); }
     else if (!tx.type) { setStage('ASK_TYPE'); addAIMessage("Was this an Expense, Income, or Transfer?", ['💸 Expense', '💰 Income', '🔄 Transfer']); }
-    else if (!tx.selectedAccountId) {
+    else if (!tx.party && tx.party !== '-') {
+      setStage('ASK_PAYEE');
+      const prompt = tx.type === 'CREDIT' ? "Who paid you? (or source of income)" : tx.type === 'TRANSFER' ? "Who did you send this to?" : "Who did you pay? (or where did you spend?)";
+      addAIMessage(prompt, ['Skip']);
+    }
+    else if (!tx.category && tx.type !== 'TRANSFER') {
+      setStage('ASK_CATEGORY'); addAIMessage("Pick a category:", appCategories);
+      setAutocomplete(appCategories);
+    } else if (!tx.selectedAccountId) {
       setStage('ASK_BANK');
       const prompt = tx.type === 'CREDIT' ? "Which account received this?" : "Which account did you pay from?";
       // Show smart default as first option if available
@@ -477,13 +745,10 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         const filtered = upiApps.filter(a => a !== smartDefaults.upiApp);
         setStage('ASK_UPI_APP'); addAIMessage("Which UPI app?", [smartDefaults.upiApp, ...filtered]);
       } else { setStage('ASK_UPI_APP'); addAIMessage("Which UPI app?", upiApps); }
-    } else if (!tx.category) {
-      setStage('ASK_CATEGORY'); addAIMessage("Pick a category:", appCategories);
-      setAutocomplete(appCategories);
     } else if (!tx.expenseType && tx.type !== 'TRANSFER') {
       setStage('ASK_TAG'); addAIMessage("Tag this as:", tags);
-    } else if (!tx.note) {
-      setStage('ASK_NOTE'); addAIMessage("Add a short remark (what was this for?):");
+    } else if (!tx.note && tx.note !== '-') {
+      setStage('ASK_NOTE'); addAIMessage("Add a short remark (Optional):", ['Skip']);
     } else if (!tx._dateConfirmed) {
       setStage('ASK_DATE'); addAIMessage("When did this happen?", ['Today', 'Yesterday', '2 days ago', '3 days ago']);
     } else {
@@ -515,137 +780,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     return false;
   };
 
-  // ─── Ask Your Data (Universal Deep Search Engine) ────────────────────────────────
-  const handleChatQuery = async (query: string) => {
-    let q = query.toLowerCase().replace(/[^a-z0-9\s]/g, ''); // strip punctuation
-    const allTxs = await db.transactions.toArray();
-    let answer = "I couldn't find anything matching that query.";
 
-    // 1. Time Awareness
-    const now = new Date();
-    let startDate = new Date(0); // Epoch
-    let endDate = new Date('2100-01-01');
-    let timeRangeName = 'overall';
-
-    if (q.match(/\b(this month)\b/)) {
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-      timeRangeName = 'this month';
-    } else if (q.match(/\b(last month)\b/)) {
-      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
-      timeRangeName = 'last month';
-    } else if (q.match(/\b(today)\b/)) {
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-      const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-      startDate = todayStart;
-      endDate = todayEnd;
-      timeRangeName = 'today';
-    } else if (q.match(/\b(yesterday)\b/)) {
-      const yDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-      startDate = new Date(yDate.getFullYear(), yDate.getMonth(), yDate.getDate(), 0, 0, 0, 0);
-      endDate = new Date(yDate.getFullYear(), yDate.getMonth(), yDate.getDate(), 23, 59, 59, 999);
-      timeRangeName = 'yesterday';
-    } else if (q.match(/\b(this year)\b/)) {
-      startDate = new Date(now.getFullYear(), 0, 1);
-      endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
-      timeRangeName = 'this year';
-    }
-
-    // Filter by time immediately
-    const timeFilteredTxs = allTxs.filter(t => {
-      const d = new Date(t.dateTime);
-      return d >= startDate && d <= endDate;
-    });
-
-    // Handle Balance Queries
-    if (q.includes('balance') || q.includes('total in')) {
-      const bankNames = accounts.map(a => a.bankName.toLowerCase());
-      const fuzzy = fuzzyMatch(q, bankNames);
-      if (fuzzy) {
-        const acc = accounts.find(a => a.bankName.toLowerCase() === fuzzy);
-        if (acc) {
-          let bal = Number(acc.startingBalance) || 0;
-          allTxs.filter(t => Number(t.accountId) === Number(acc.id)).forEach(tx => {
-            if (tx.type === 'CREDIT') bal += Number(tx.amount);
-            else if (tx.type === 'DEBIT') bal -= Number(tx.amount);
-          });
-          answer = `Your current balance in ${acc.bankName} is ₹${bal.toLocaleString('en-IN')}.`;
-        }
-      } else {
-        answer = "I couldn't identify the bank account. Try asking 'What is my HDFC balance?'";
-      }
-      addAIMessage(`🔍 **Data Query:**\n${answer}`);
-      return;
-    }
-
-    // 2. Extract Target Subject
-    // Remove filler words to isolate the core noun/subject
-    let subject = q.replace(/\b(how much|did i|what is|show me|when did|last time|total|spent|spend|paid|pay|give|gave|to|on|at|for|about|this month|last month|today|yesterday|this year|and|the|a|my)\b/g, ' ').replace(/\s+/g, ' ').trim();
-    
-    // Category aliases mapper
-    const categoryAliases: Record<string, string[]> = { 
-      'home': ['rent', 'housing', 'house'], 
-      'house': ['rent', 'housing', 'home'], 
-      'grocery': ['shopping', 'food', 'groceries'], 
-      'cab': ['transport', 'taxi', 'uber', 'ola'], 
-      'flight': ['travel'], 
-      'movie': ['entertainment'] 
-    };
-    
-    let searchTerms = [subject];
-    for (const [alias, mapped] of Object.entries(categoryAliases)) {
-      if (subject.includes(alias) || q.includes(alias)) { 
-        searchTerms.push(...mapped);
-      }
-    }
-
-    // If query is totally empty after stripping, default to all DEBITs
-    if (!subject || subject.length < 2) {
-       const sum = timeFilteredTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + Number(t.amount), 0);
-       answer = `You have spent a total of ₹${sum.toLocaleString('en-IN')} ${timeRangeName}. Specify a category or payee for details!`;
-       addAIMessage(`🔍 **Data Query:**\n${answer}`);
-       return;
-    }
-
-    // 3. Universal Deep Search
-    const matches = timeFilteredTxs.filter(t => {
-      const fields = [
-        t.category, t.expenseType, t.partyName, t.note, t.paymentMethod, t.upiApp
-      ].map(f => (f || '').toLowerCase());
-      
-      // Exact substring match in any field against ANY search term
-      return fields.some(f => searchTerms.some(term => term.length > 2 && f.includes(term)));
-    });
-
-    if (matches.length > 0) {
-      // Distinguish between Credit and Debit if user asked about income vs expense
-      const isIncomeQuery = q.match(/\b(earned|income|received|salary|got)\b/);
-      const targetType = isIncomeQuery ? 'CREDIT' : 'DEBIT';
-      const filteredMatches = matches.filter(t => t.type === targetType);
-      
-      const txCount = filteredMatches.length;
-      const sum = filteredMatches.reduce((s, t) => s + Number(t.amount), 0);
-      
-      if (txCount === 0) {
-        answer = `You have ₹0 ${isIncomeQuery ? 'income' : 'expenses'} for '${subject}' ${timeRangeName}.`;
-      } else {
-        // Find best match property name to show user context
-        let matchedProperty = `'${subject}'`;
-        const sample = filteredMatches[0];
-        if (sample.category?.toLowerCase().includes(subject)) matchedProperty = `Category: ${sample.category}`;
-        else if (sample.partyName?.toLowerCase().includes(subject)) matchedProperty = `Payee: ${sample.partyName}`;
-        else if (sample.expenseType?.toLowerCase().includes(subject)) matchedProperty = `Tag: ${sample.expenseType}`;
-        else if (sample.note?.toLowerCase().includes(subject)) matchedProperty = `Remarks`;
-
-        answer = `You have ${isIncomeQuery ? 'received' : 'spent'} ₹${sum.toLocaleString('en-IN')} on **${matchedProperty}** ${timeRangeName} (across ${txCount} entries).`;
-      }
-    } else {
-       answer = `I found 0 records for '${subject}' ${timeRangeName}.`;
-    }
-
-    addAIMessage(`🔍 **Data Query:**\n${answer}`);
-  };
 
   const handleSend = useCallback((msgOverride?: string) => {
     const userMsg = (msgOverride || input).trim();
@@ -659,19 +794,102 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     // ── Special commands ──────────────────────────────────────────────────
     const t = userMsg.toLowerCase();
     
-    // Check if the previous AI message was a Data Query for conversational follow-ups
-    const lastMsg = messages[messages.length - 1];
-    const isFollowUpQuery = lastMsg?.role === 'ai' && lastMsg.content.includes('Data Query:');
+    // Chat-based Undo / Delete
+    if (stage === 'IDLE' || stage === 'PREVIEW') {
+      const deleteMatch = t.match(/^(?:undo|delete|remove)\s*(.*)$/i);
+      if (deleteMatch) {
+        const target = deleteMatch[1].trim();
+        setIsTyping(true);
+        setTimeout(async () => {
+          if (!target || target === 'last' || target === 'that' || target === 'it' || target === 'transaction') {
+            const last = await db.transactions.orderBy('dateTime').reverse().first();
+            if (last && last.id) {
+              if (last.linkedTransactionId) {
+                await db.transactions.delete(last.linkedTransactionId);
+              }
+              await db.transactions.delete(last.id);
+              setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted your last transaction (₹${last.amount} for ${last.party || last.category || 'unknown'}).` }]);
+              handleReset();
+            } else {
+              setMessages(prev => [...prev, { role: 'ai', content: `Hmm, I couldn't find any recent transaction to delete.` }]);
+            }
+          } else {
+            const recentMatches = await db.transactions
+              .filter(tx => 
+                (tx.party?.toLowerCase().includes(target) || false) || 
+                (tx.category?.toLowerCase().includes(target) || false) ||
+                (tx.note?.toLowerCase().includes(target) || false)
+              )
+              .toArray();
+            
+            if (recentMatches.length > 0) {
+              recentMatches.sort((a,b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
+              const match = recentMatches[0];
+              if (match.id) {
+                if (match.linkedTransactionId) {
+                  await db.transactions.delete(match.linkedTransactionId);
+                }
+                await db.transactions.delete(match.id);
+                setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted recent transaction matching "${target}" (₹${match.amount} for ${match.party || match.category}).` }]);
+                handleReset();
+              }
+            } else {
+              setMessages(prev => [...prev, { role: 'ai', content: `I couldn't find any recent transactions matching "${target}" to delete.` }]);
+            }
+          }
+          setIsTyping(false);
+        }, 600);
+        return;
+      }
+    }
 
-    // "Ask Your Data" Query Detection
-    // Key rule: if the message contains a standalone number (likely an amount), it's an ENTRY, not a query.
-    const hasAmount = t.match(/(?:₹|rs\.?\s*)?\b\d{2,}(?:\.\d+)?\b(?:\s*k)?/i);
-    const isQueryPattern = t.match(/\b(how much|what is|when did|show me|total|query|balance)\b/i) || t.endsWith('?');
-    const isEntryPattern = t.match(/^(add|record|log|paid|spent|bought|gave)/i) || hasAmount;
-    
-    if ((isQueryPattern && !isEntryPattern) || (isFollowUpQuery && !hasAmount && !t.match(/^(add|record|log|paid|spent)/i))) {
-      handleChatQuery(t);
-      return;
+    // Chat-based Undo / Delete
+    if (stage === 'IDLE' || stage === 'PREVIEW') {
+      const deleteMatch = t.match(/^(?:undo|delete|remove)\s*(.*)$/i);
+      if (deleteMatch) {
+        const target = deleteMatch[1].trim();
+        setIsTyping(true);
+        setTimeout(async () => {
+          if (!target || target === 'last' || target === 'that' || target === 'it' || target === 'transaction') {
+            const last = await db.transactions.orderBy('dateTime').reverse().first();
+            if (last && last.id) {
+              if (last.linkedTransactionId) {
+                await db.transactions.delete(last.linkedTransactionId);
+              }
+              await db.transactions.delete(last.id);
+              setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted your last transaction (₹${last.amount} for ${last.party || last.category || 'unknown'}).` }]);
+              handleReset();
+            } else {
+              setMessages(prev => [...prev, { role: 'ai', content: `Hmm, I couldn't find any recent transaction to delete.` }]);
+            }
+          } else {
+            const recentMatches = await db.transactions
+              .filter(tx => 
+                (tx.party?.toLowerCase().includes(target) || false) || 
+                (tx.category?.toLowerCase().includes(target) || false) ||
+                (tx.note?.toLowerCase().includes(target) || false)
+              )
+              .toArray();
+            
+            if (recentMatches.length > 0) {
+              recentMatches.sort((a,b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
+              const match = recentMatches[0];
+              if (match.id) {
+                if (match.linkedTransactionId) {
+                  await db.transactions.delete(match.linkedTransactionId);
+                }
+                await db.transactions.delete(match.id);
+                setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted recent transaction matching "${target}" (₹${match.amount} for ${match.party || match.category}).` }]);
+                handleReset();
+              }
+            } else {
+              setMessages(prev => [...prev, { role: 'ai', content: `I couldn't find any recent transactions matching "${target}" to delete.` }]);
+            }
+          }
+          setIsTyping(false);
+        }, 600);
+        return;
+      }
     }
 
     // "same" / "repeat" → copy last transaction
@@ -682,7 +900,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
           ...pendingTx,
           amount: last.amount, type: last.type, selectedAccountId: last.accountId,
           paymentMethod: last.paymentMethod, upiApp: last.upiApp || '',
-          category: last.category, expenseType: last.expenseType || '', partyName: last.partyName || '',
+          category: last.category, expenseType: last.expenseType || '', party: last.party || '',
           note: last.note, transactionDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
           _dateConfirmed: true, _isPredicted: false, _confidence: 90
         };
@@ -720,7 +938,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       // DO NOT auto-fill accountId/paymentMethod/upiApp from smart defaults.
       // Instead, let checkNextStep ASK the user (with smart defaults shown as first option).
       // Only apply payee memory for CATEGORY (not bank/method) — since category is safe to predict.
-      if (p.parsedPayee) {
+      if (isAutoFillEnabled && p.parsedPayee) {
         const mem = payeeMemory[p.parsedPayee.toLowerCase()];
         if (mem) {
           if (!p.category) { p.category = mem.category; p.isPredicted = true; }
@@ -736,6 +954,29 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       if (t.match(/\b(transfer|move|send|🔄)\b/)) updated.type = 'TRANSFER';
       else if (t.match(/\b(income|inflow|received|credit|salary|💰)\b/)) updated.type = 'CREDIT';
       else updated.type = 'DEBIT';
+      setPendingTx(updated); checkNextStep(updated);
+    } else if (stage === 'ASK_PAYEE') {
+      if (t.match(/^(skip|no|na|-)$/i)) {
+        updated.party = '-';
+      } else {
+        updated.party = userMsg;
+        // SMART AUTO-FILL: Check payee memory immediately
+        if (isAutoFillEnabled) {
+          const mem = payeeMemory[updated.party.toLowerCase()];
+          if (mem) {
+            if (!updated.category) { updated.category = mem.category; updated._isPredicted = true; }
+          } else {
+             // Also try merchant KB
+             const merchantKeys = Object.keys(MERCHANT_KNOWLEDGE);
+             const fuzzyMerchant = fuzzyMatch(updated.party, merchantKeys);
+             if (fuzzyMerchant) {
+               updated.category = MERCHANT_KNOWLEDGE[fuzzyMerchant].category;
+               updated.expenseType = updated.expenseType || MERCHANT_KNOWLEDGE[fuzzyMerchant].tag;
+               updated._isPredicted = true;
+             }
+          }
+        }
+      }
       setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_BANK') {
       const cleanName = userMsg.replace(/^(🏦|💵|💳)\s*/, '').trim();
@@ -761,8 +1002,9 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     } else if (stage === 'ASK_TAG') {
       updated.expenseType = userMsg; setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_NOTE') {
-      if (!userMsg.trim() || userMsg.match(/^(skip|no|na|-)$/i)) addAIMessage("Please add a short remark!");
-      else { updated.note = userMsg; setPendingTx(updated); checkNextStep(updated); }
+      if (!userMsg.trim() || userMsg.match(/^(skip|no|na|-)$/i)) updated.note = '-';
+      else updated.note = userMsg; 
+      setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_DATE') {
       const { date } = parseDate(userMsg);
       updated.transactionDate = date; updated._dateConfirmed = true;
@@ -781,7 +1023,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       ...(p.paymentMethod && !updated.paymentMethod && { paymentMethod: p.paymentMethod }),
       ...(p.category && { category: p.category }),
       ...(p.tag && { expenseType: p.tag }),
-      ...(p.parsedPayee && { partyName: p.parsedPayee }),
+      ...(p.parsedPayee && { party: p.parsedPayee }),
       ...(p.parsedNote && { note: p.parsedNote }),
       transactionDate: p.date || updated.transactionDate,
       _dateConfirmed: p.dateConfirmed || updated._dateConfirmed,
@@ -798,6 +1040,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     if (field === 'bank') { updated.selectedAccountId = ''; setStage('ASK_BANK'); addAIMessage("Correct Account:", getGroupedAccountOptions(updated)); }
     if (field === 'category') { updated.category = ''; setStage('ASK_CATEGORY'); addAIMessage("Correct Category:", appCategories); }
     if (field === 'tag') { updated.expenseType = ''; setStage('ASK_TAG'); addAIMessage("Correct Tag:", tags); }
+    if (field === 'payee') { updated.party = ''; setStage('ASK_PAYEE'); addAIMessage(updated.type === 'CREDIT' ? "Who paid you? (or source of income)" : updated.type === 'TRANSFER' ? "Who did you send this to?" : "Who did you pay? (or where did you spend?)", ['Skip']); }
     if (field === 'remark') { updated.note = ''; setStage('ASK_NOTE'); addAIMessage("Correct Remark:"); }
     if (field === 'date') { updated._dateConfirmed = false; setStage('ASK_DATE'); addAIMessage("When did this happen?", ['Today', 'Yesterday', '2 days ago', '3 days ago']); }
     setPendingTx(updated);
@@ -805,14 +1048,18 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
   const handleReset = () => {
     setStage('IDLE');
-    setPendingTx({ type: '', amount: '', category: '', selectedAccountId: '', toAccountId: '', paymentMethod: '', upiApp: '', expenseType: '', partyName: '', note: '', transactionDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"), _dateConfirmed: false, _isPredicted: false, _confidence: 0 });
+    setPendingTx({ type: '', amount: '', category: '', selectedAccountId: '', toAccountId: '', paymentMethod: '', upiApp: '', expenseType: '', party: '', note: '', transactionDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"), _dateConfirmed: false, _isPredicted: false, _confidence: 0 });
     setMultiQueue([]);
     setMessages([{ role: 'ai', content: "Reset! Tell me about your next expense 👇" }]);
   };
 
   const handleSaveAndNext = (tx: any) => {
-    setLastSaved(tx);
-    onSave(tx);
+    const finalTx = { ...tx };
+    if (finalTx.party === '-') finalTx.party = '';
+    if (finalTx.note === '-') finalTx.note = '';
+    
+    setLastSaved(finalTx);
+    onSave(finalTx);
     // If multi-transaction queue has more, process next
     if (multiQueue.length > 0) {
       const next = multiQueue[0];
@@ -824,69 +1071,12 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       }, 1500);
     }
   };
-
-  const handleVoice = () => {
-    if (speech.listening) { speech.stop(); return; }
-    speech.start((text) => {
-      setInput(text);
-      setMessages(prev => [...prev, { role: 'user', content: `🎤 ${text}` }]);
-      setTimeout(() => handleSend(text), 100);
-    });
-  };
-
-  const handleReceiptScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIsScanning(true);
-    setMessages(prev => [...prev, { role: 'user', content: '📸 Uploaded receipt. Scanning with AI...' }]);
-    
-    try {
-      const Tesseract = (await import('tesseract.js')).default;
-      const { data: { text } } = await Tesseract.recognize(file, 'eng');
-      const lines = text.split('\n');
-      
-      let foundAmount = '';
-      let foundMerchant = '';
-      for (const line of lines) {
-        const l = line.toLowerCase();
-        // Look for typical total lines
-        if (l.includes('total') || l.includes('amount') || l.includes('paid')) {
-           const amtMatch = l.match(/\b\d+(?:\.\d{1,2})?\b/);
-           if (amtMatch && parseFloat(amtMatch[0]) > 0) foundAmount = amtMatch[0];
-        }
-        // Very basic merchant guess
-        if (!foundMerchant && line.trim().length > 3 && !l.includes('date') && !l.includes('time')) {
-           foundMerchant = line.trim();
-        }
-      }
-      
-      if (!foundAmount) {
-         // Fallback: just grab the largest number on the receipt
-         const allNumbers = text.match(/\b\d+(?:\.\d{1,2})?\b/g);
-         if (allNumbers) {
-             const sorted = allNumbers.map(n => parseFloat(n)).sort((a,b) => b-a);
-             if (sorted[0] > 0) foundAmount = String(sorted[0]);
-         }
-      }
-      
-      const scanResult = `${foundAmount ? foundAmount : '0'} at ${foundMerchant || 'merchant'} today`;
-      setMessages(prev => [...prev, { role: 'ai', content: `📄 OCR Extracted:\n"${scanResult}"\nParsing...` }]);
-      handleSend(scanResult);
-    } catch (err) {
-      console.error(err);
-      addAIMessage("Sorry, I couldn't read that receipt clearly. Please type the expense manually.");
-    } finally {
-      setIsScanning(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
-
   const repeatLastTx = (tx: any) => {
     const cloned = {
       ...pendingTx,
       amount: tx.amount, type: tx.type, selectedAccountId: tx.accountId,
       paymentMethod: tx.paymentMethod, upiApp: tx.upiApp || '',
-      category: tx.category, expenseType: tx.expenseType || '', partyName: tx.partyName || '',
+      category: tx.category, expenseType: tx.expenseType || '', party: tx.party || '',
       note: tx.note, transactionDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
       _dateConfirmed: true, _isPredicted: false, _confidence: 90
     };
@@ -898,6 +1088,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
   return (
     <div className="flex flex-col h-full bg-[#F9FBFF] dark:bg-[#0A0A0A] relative">
+
 
       {/* Recent shortcuts — shown only in IDLE stage */}
       {stage === 'IDLE' && recentTx.length > 0 && (
@@ -976,14 +1167,14 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
             <div className="grid grid-cols-2 gap-2 mb-2">
               <div className="bg-white dark:bg-white/5 p-2 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:ring-2 ring-brand-green/30 transition-all group relative" onClick={() => handleEdit('amount')}>
-                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100"><Pencil className="w-2.5 h-2.5 text-brand-green" /></div>
+                <div className="absolute top-1 right-1 opacity-100"><Pencil className="w-2.5 h-2.5 text-brand-green/40 group-hover:text-brand-green transition-colors" /></div>
                 <span className="text-[17px] font-black text-brand-green dark:text-white">₹{pendingTx.amount}</span>
                 <span className={`text-[7px] font-black uppercase ${pendingTx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-red'}`}>
                   {pendingTx.type === 'CREDIT' ? 'Inflow' : pendingTx.type === 'TRANSFER' ? 'Transfer' : 'Outflow'}
                 </span>
               </div>
               <div className="bg-white dark:bg-white/5 p-2 rounded-2xl flex items-center gap-2 cursor-pointer hover:ring-2 ring-brand-green/30 transition-all group relative" onClick={() => handleEdit('category')}>
-                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100"><Pencil className="w-2.5 h-2.5 text-brand-green" /></div>
+                <div className="absolute top-1 right-1 opacity-100"><Pencil className="w-2.5 h-2.5 text-brand-green/40 group-hover:text-brand-green transition-colors" /></div>
                 <div className="text-xl">{CATEGORY_ICONS[pendingTx.category] || '📦'}</div>
                 <div className="flex flex-col">
                   <span className="text-[8px] font-black text-neutral-400 uppercase leading-none">Category</span>
@@ -996,11 +1187,13 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
               {[
                 { icon: <Landmark className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Account', value: accounts.find(a => a.id === pendingTx.selectedAccountId)?.bankName || '—', field: 'bank' },
                 { icon: <AppWindow className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Method', value: pendingTx.upiApp || pendingTx.paymentMethod || '—', field: null },
+                { icon: <User className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Payee', value: pendingTx.party || '—', field: 'payee' },
                 { icon: <Hash className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Tag', value: `#${pendingTx.expenseType || '—'}`, field: 'tag' },
                 { icon: <Lightbulb className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Note', value: pendingTx.note || '—', field: 'remark' },
               ].map(({ icon, label, value, field }) => (
                 <div key={label} onClick={() => field && handleEdit(field)}
-                  className={`bg-white dark:bg-white/5 p-2 rounded-xl flex items-center gap-2 border border-transparent transition-colors ${field ? 'cursor-pointer hover:border-brand-green/20 hover:bg-neutral-50 dark:hover:bg-white/5' : ''}`}>
+                  className={`bg-white dark:bg-white/5 p-2 rounded-xl flex items-center gap-2 border border-transparent transition-colors relative group ${field ? 'cursor-pointer hover:border-brand-green/20 hover:bg-neutral-50 dark:hover:bg-white/5' : ''}`}>
+                  {field && <div className="absolute top-1.5 right-1.5 opacity-100"><Pencil className="w-2.5 h-2.5 text-brand-green/40 group-hover:text-brand-green transition-colors" /></div>}
                   {icon}
                   <div className="flex flex-col overflow-hidden">
                     <span className="text-[7px] font-black text-neutral-400 uppercase leading-none">{label}</span>
@@ -1034,7 +1227,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         {autocomplete.length > 0 && stage === 'IDLE' && (
           <div className="flex gap-2 overflow-x-auto no-scrollbar">
             {autocomplete.map((tx, i) => (
-              <button key={i} onClick={() => handleSend(`${tx.amount} ${tx.partyName || tx.note || tx.category} today`)}
+              <button key={i} onClick={() => handleSend(`${tx.amount} ${tx.party || tx.note || tx.category} today`)}
                 className="flex-shrink-0 bg-white dark:bg-[#111111] border border-brand-green/20 rounded-xl px-3 py-1.5 text-left active:scale-95 transition-all shadow-sm flex items-center gap-2">
                 <Zap className="w-3 h-3 text-brand-green" />
                 <div>
@@ -1048,30 +1241,13 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
         {/* Input Bar */}
         <div className="flex items-center gap-1.5 bg-[#F9FBFF] dark:bg-[#111111] p-1.5 rounded-2xl border border-brand-blue/5 dark:border-white/5 shadow-xl">
-          <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handleReceiptScan} className="hidden" />
-          <button 
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isScanning}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all flex-shrink-0 bg-neutral-100 dark:bg-[#1A1A1A] text-neutral-400 hover:text-brand-green disabled:opacity-50`}
-            title="Scan Receipt"
-          >
-            {isScanning ? <div className="w-4 h-4 border-2 border-neutral-300 border-t-brand-green rounded-full animate-spin" /> : <Camera className="w-4 h-4" />}
-          </button>
-
-          {speech.supported && (
-            <button onClick={handleVoice}
-              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all flex-shrink-0 ${
-                speech.listening ? 'bg-red-500 text-white animate-pulse' : 'bg-neutral-100 dark:bg-[#1A1A1A] text-neutral-400 hover:text-brand-green'}`}>
-              {speech.listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-            </button>
-          )}
           <input
             type="text"
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSend()}
-            placeholder={speech.listening ? "Listening..." : "Expense, question, or 'same'..."}
-            className="flex-1 bg-transparent px-2 py-2 text-[12px] font-bold outline-none dark:text-white placeholder:text-neutral-400"
+            placeholder="Expense, question, or 'same'..."
+            className="flex-1 bg-transparent px-3 py-2 text-[12px] font-bold outline-none dark:text-white placeholder:text-neutral-400"
           />
           {input && <button onClick={() => setInput('')} className="text-neutral-300 hover:text-neutral-500"><X className="w-4 h-4" /></button>}
           <button onClick={() => handleSend()} className="w-10 h-10 bg-brand-green text-white rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition-transform flex-shrink-0">

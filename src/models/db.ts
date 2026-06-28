@@ -33,6 +33,7 @@ export interface Transaction {
   party?: string;
   isPersonalExpense?: boolean;
   expenseType?: string;
+  linkedTransactionId?: number;
 }
 
 export interface Budget {

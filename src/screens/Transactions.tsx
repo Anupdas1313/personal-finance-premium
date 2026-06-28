@@ -4,11 +4,12 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction } from '../models/db';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, addMonths, startOfYear, endOfYear, isSameDay } from 'date-fns';
 import { 
-  X, Trash2, Filter, Search, Edit3, Download, 
+  X, Trash2, Filter, Search, Edit3, Download, FileText,
   ChevronLeft, ChevronRight, ListOrdered, ArrowDownLeft, ArrowUpRight, BarChart3,
   Calendar, Layers, Tag as TagIcon, MoreVertical, Landmark, Smartphone
 } from 'lucide-react';
 import { useCategories } from '../hooks/useCategories';
+import { useTags } from '../hooks/useTags';
 import { useNavigate } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -47,6 +48,7 @@ const Portal: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 export default function Transactions() {
   const { user } = useAuth();
   const { categories: appCategories } = useCategories();
+  const { tags } = useTags();
   const navigate = useNavigate();
   
   // --- View Controls ---
@@ -59,9 +61,12 @@ export default function Transactions() {
 
   // --- Filtering ---
   const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'ALL' | 'CREDIT' | 'DEBIT'>('ALL');
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'CREDIT' | 'DEBIT' | 'TRANSFER'>('ALL');
+  const [sourceTypeFilter, setSourceTypeFilter] = useState<'ALL' | 'BANK' | 'CREDIT_CARD' | 'CASH'>('ALL');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [accountFilter, setAccountFilter] = useState<number | 'ALL'>('ALL');
+  const [tagFilter, setTagFilter] = useState('ALL');
+  const [methodFilter, setMethodFilter] = useState('ALL');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // --- Detail View ---
@@ -102,17 +107,24 @@ export default function Transactions() {
 
   const filteredTxs = useMemo(() => {
     return currentTxs.filter(tx => {
+      const txAccount = accounts.find(a => a.id === Number(tx.accountId));
+      const txSourceType = txAccount?.type || 'BANK';
+      const matchesSourceType = sourceTypeFilter === 'ALL' || txSourceType === sourceTypeFilter;
+
       const matchesType = typeFilter === 'ALL' || tx.type === typeFilter;
       const matchesCategory = categoryFilter === 'ALL' || tx.category === categoryFilter;
       const matchesAccount = accountFilter === 'ALL' || Number(tx.accountId) === Number(accountFilter);
+      const matchesTag = tagFilter === 'ALL' || tx.expenseType === tagFilter;
+      const matchesMethod = methodFilter === 'ALL' || tx.paymentMethod === methodFilter || (tx as any).upiApp === methodFilter;
+
       const matchesSearch = !searchTerm || 
         tx.note?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tx.party?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tx.category?.toLowerCase().includes(searchTerm.toLowerCase());
       
-      return matchesType && matchesCategory && matchesAccount && matchesSearch;
+      return matchesSourceType && matchesType && matchesCategory && matchesAccount && matchesTag && matchesMethod && matchesSearch;
     });
-  }, [currentTxs, typeFilter, categoryFilter, accountFilter, searchTerm]);
+  }, [currentTxs, sourceTypeFilter, typeFilter, categoryFilter, accountFilter, tagFilter, methodFilter, searchTerm, accounts]);
 
   const totals = useMemo(() => {
     return filteredTxs.reduce((acc, tx) => {
@@ -144,36 +156,61 @@ export default function Transactions() {
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.setTextColor(26, 35, 126);
-    doc.text('Transactions History', 14, 20);
     
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Generated on: ${format(new Date(), 'dd MMM yyyy, hh:mm a')}`, 14, 28);
-    doc.text(`Period: ${granularity} View`, 14, 33);
+    // Header styling
+    doc.setFontSize(20);
+    doc.setTextColor(26, 35, 126); // Brand blue
+    doc.text('STATEMENT OF TRANSACTIONS', 14, 20);
+    
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.text(`Generated: ${format(new Date(), 'dd MMM yyyy, hh:mm a')}`, 14, 26);
+    doc.text(`Period: ${granularity === 'ALL' ? 'All Time' : granularity}`, 14, 30);
+    
+    // Stats card/summary in PDF header
+    doc.setFontSize(9);
+    doc.setTextColor(50, 50, 50);
+    doc.text(`Total Inflow: Rs. ${totals.income.toLocaleString()}`, 140, 20);
+    doc.text(`Total Outflow: Rs. ${totals.expense.toLocaleString()}`, 140, 25);
+    doc.text(`Net Balance: Rs. ${(totals.income - totals.expense).toLocaleString()}`, 140, 30);
     
     autoTable(doc, {
-      startY: 40,
-      head: [['Date', 'Particulars', 'Category', 'Type', 'Amount']],
+      startY: 36,
+      head: [['Date', 'Particulars (Party)', 'Category', 'Remarks (Notes)', 'Flow', 'Amount']],
       body: filteredTxs.map(tx => [
-        format(new Date(tx.dateTime), 'dd MMM yy'),
-        (tx.party || tx.category || 'N/A').toUpperCase(),
+        format(new Date(tx.dateTime), 'dd MMM yy, hh:mm a'),
+        (tx.party || 'N/A').toUpperCase(),
         (tx.category || 'OTHER').toUpperCase(),
-        tx.type,
-        `₹${tx.amount.toLocaleString()}`,
+        tx.note || '-',
+        tx.type === 'CREDIT' ? 'INFLOW' : tx.type === 'DEBIT' ? 'OUTFLOW' : 'TRANSFER',
+        `Rs. ${Number(tx.amount).toLocaleString()}`,
       ]),
       theme: 'striped',
-      headStyles: { fillColor: [26, 35, 126], fontSize: 9, fontStyle: 'bold' },
-      bodyStyles: { fontSize: 8 }
+      headStyles: { fillColor: [26, 35, 126], fontSize: 8, fontStyle: 'bold', halign: 'left' },
+      bodyStyles: { fontSize: 7, textColor: [60, 60, 60] },
+      columnStyles: {
+        0: { cellWidth: 28 }, // Date
+        1: { cellWidth: 35 }, // Particulars
+        2: { cellWidth: 25 }, // Category
+        3: { cellWidth: 50 }, // Remarks
+        4: { cellWidth: 20 }, // Flow
+        5: { cellWidth: 25, halign: 'right' }  // Amount
+      },
+      margin: { top: 35 },
+      styles: { overflow: 'linebreak' }
     });
-    doc.save(`Transactions_${format(new Date(), 'yyyy_MM_dd')}.pdf`);
+    
+    doc.save(`Statement_${format(new Date(), 'yyyy_MM_dd')}.pdf`);
   };
 
   const deleteTransaction = async (id: number) => {
     if (window.confirm('Permanently remove this financial record?')) {
       setIsDeleting(true);
       try {
+        const tx = await db.transactions.get(id);
+        if (tx?.linkedTransactionId) {
+          await db.transactions.delete(tx.linkedTransactionId);
+        }
         await db.transactions.delete(id);
         setSelectedTx(null);
       } catch (err) {
@@ -218,13 +255,24 @@ export default function Transactions() {
           <h1 className="text-xl font-heading font-black text-brand-blue dark:text-white tracking-tight leading-none">Transactions</h1>
           <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-[0.2em] mt-0.5">Activity History</p>
         </div>
-        <button 
-          onClick={handleExportPDF}
-          className="p-1.5 bg-brand-blue/5 dark:bg-white/5 text-brand-blue dark:text-white rounded-lg hover:bg-brand-blue/10 transition-all active:scale-95 border border-brand-blue/10"
-          title="Export Report"
-        >
-          <Download className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={handleExportPDF}
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-brand-blue/5 dark:bg-white/5 text-brand-blue dark:text-white rounded-lg hover:bg-brand-blue/10 transition-all active:scale-95 border border-brand-blue/10 text-[9px] font-black uppercase tracking-wider"
+            title="Export PDF Statement"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>PDF</span>
+          </button>
+          <button 
+            onClick={handleExportCSV}
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-brand-blue/5 dark:bg-white/5 text-brand-blue dark:text-white rounded-lg hover:bg-brand-blue/10 transition-all active:scale-95 border border-brand-blue/10 text-[9px] font-black uppercase tracking-wider"
+            title="Export CSV Statement"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>CSV</span>
+          </button>
+        </div>
       </div>
 
       {/* --- Nano Summary Row --- */}
@@ -297,15 +345,32 @@ export default function Transactions() {
 
           {isFilterOpen && (
             <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} className="pointer-events-auto bg-white dark:bg-[#111111] p-4 rounded-[24px] border border-neutral-200 dark:border-white/10 shadow-2xl space-y-3">
+               
+               <div className="space-y-1">
+                  <label className="text-[7px] font-black text-neutral-400 uppercase tracking-widest pl-1">Source Type</label>
+                  <div className="flex bg-neutral-50 dark:bg-black/20 p-1 rounded-lg">
+                    {(['ALL', 'BANK', 'CREDIT_CARD', 'CASH'] as const).map(t => (
+                      <button key={t} onClick={() => { setSourceTypeFilter(t); setAccountFilter('ALL'); setMethodFilter('ALL'); }} className={`flex-1 py-1 rounded-md text-[8px] font-black tracking-widest transition-all ${sourceTypeFilter === t ? 'bg-white dark:bg-white/10 shadow-sm text-brand-blue dark:text-white' : 'text-neutral-400'}`}>
+                        {t === 'CREDIT_CARD' ? 'CREDIT' : t}
+                      </button>
+                    ))}
+                  </div>
+               </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1 col-span-2">
+                     <label className="text-[7px] font-black text-neutral-400 uppercase tracking-widest pl-1">Flow</label>
+                     <div className="flex bg-neutral-50 dark:bg-black/20 p-1 rounded-lg">
+                       {(['ALL', 'DEBIT', 'CREDIT', 'TRANSFER'] as const).map(t => (
+                         <button key={t} onClick={() => setTypeFilter(t)} className={`flex-1 py-1 rounded-md text-[8px] font-black tracking-widest transition-all ${typeFilter === t ? 'bg-white dark:bg-white/10 shadow-sm text-brand-blue dark:text-white' : 'text-neutral-400'}`}>
+                           {t === 'DEBIT' ? 'EXP' : t === 'CREDIT' ? 'INC' : t === 'TRANSFER' ? 'TRF' : 'ALL'}
+                         </button>
+                       ))}
+                     </div>
+                  </div>
+               </div>
+               
                <div className="grid grid-cols-2 gap-3">
-                 <div className="space-y-1">
-                    <label className="text-[7px] font-black text-neutral-400 uppercase tracking-widest pl-1">Flow</label>
-                    <div className="flex bg-neutral-50 dark:bg-black/20 p-1 rounded-lg">
-                      {(['ALL', 'DEBIT', 'CREDIT'] as const).map(t => (
-                        <button key={t} onClick={() => setTypeFilter(t)} className={`flex-1 py-1 rounded-md text-[8px] font-black tracking-widest transition-all ${typeFilter === t ? 'bg-white dark:bg-white/10 shadow-sm text-brand-blue dark:text-white' : 'text-neutral-400'}`}>{t}</button>
-                      ))}
-                    </div>
-                 </div>
                  <div className="space-y-1">
                     <label className="text-[7px] font-black text-neutral-400 uppercase tracking-widest pl-1">Category</label>
                     <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-full h-8 bg-neutral-50 dark:bg-black/20 border-neutral-100 dark:border-white/5 border px-2 py-0 rounded-lg text-[10px] font-bold text-brand-blue dark:text-white outline-none appearance-none">
@@ -313,13 +378,44 @@ export default function Transactions() {
                       {appCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                     </select>
                  </div>
+                 <div className="space-y-1">
+                    <label className="text-[7px] font-black text-neutral-400 uppercase tracking-widest pl-1">Tag</label>
+                    <select value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} className="w-full h-8 bg-neutral-50 dark:bg-black/20 border-neutral-100 dark:border-white/5 border px-2 py-0 rounded-lg text-[10px] font-bold text-brand-blue dark:text-white outline-none appearance-none">
+                      <option value="ALL">All Tags</option>
+                      {tags.map(t => <option key={t} value={t}>#{t}</option>)}
+                    </select>
+                 </div>
                </div>
-               <div className="space-y-1">
-                  <label className="text-[7px] font-black text-neutral-400 uppercase tracking-widest pl-1">Account Space</label>
-                  <select value={accountFilter} onChange={(e) => setAccountFilter(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))} className="w-full h-8 bg-neutral-50 dark:bg-black/20 border-neutral-100 dark:border-white/5 border px-2 py-0 rounded-lg text-[10px] font-bold text-brand-blue dark:text-white outline-none appearance-none">
-                    <option value="ALL">Full Account Scope</option>
-                    {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.bankName} (..{acc.accountLast4})</option>)}
-                  </select>
+               
+               <div className="grid grid-cols-2 gap-3">
+                 <div className="space-y-1">
+                    <label className="text-[7px] font-black text-neutral-400 uppercase tracking-widest pl-1">Account Space</label>
+                    <select value={accountFilter} onChange={(e) => setAccountFilter(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))} className="w-full h-8 bg-neutral-50 dark:bg-black/20 border-neutral-100 dark:border-white/5 border px-2 py-0 rounded-lg text-[10px] font-bold text-brand-blue dark:text-white outline-none appearance-none">
+                      <option value="ALL">All {sourceTypeFilter === 'ALL' ? 'Accounts' : sourceTypeFilter}</option>
+                      {accounts.filter(a => sourceTypeFilter === 'ALL' || a.type === sourceTypeFilter).map(acc => <option key={acc.id} value={acc.id}>{acc.bankName} (..{acc.accountLast4})</option>)}
+                    </select>
+                 </div>
+                 {sourceTypeFilter !== 'CREDIT_CARD' && sourceTypeFilter !== 'CASH' && (
+                  <div className="space-y-1">
+                     <label className="text-[7px] font-black text-neutral-400 uppercase tracking-widest pl-1">Method</label>
+                     <select value={methodFilter} onChange={(e) => setMethodFilter(e.target.value)} className="w-full h-8 bg-neutral-50 dark:bg-black/20 border-neutral-100 dark:border-white/5 border px-2 py-0 rounded-lg text-[10px] font-bold text-brand-blue dark:text-white outline-none appearance-none">
+                       <option value="ALL">All Methods</option>
+                       {['Cash', 'Credit Card', 'Bank Transfer', 'UPI', 'GPay', 'PhonePe', 'Paytm', 'Amazon Pay', 'CRED', 'BHIM']
+                         .filter(m => {
+                           if (sourceTypeFilter === 'BANK') {
+                             return m !== 'Cash' && m !== 'Credit Card';
+                           }
+                           return true;
+                         })
+                         .map(m => <option key={m} value={m}>{m}</option>)}
+                     </select>
+                  </div>
+                  )}
+               </div>
+               
+               <div className="flex items-center justify-between pt-2">
+                 <button onClick={() => { setSourceTypeFilter('ALL'); setTypeFilter('ALL'); setCategoryFilter('ALL'); setAccountFilter('ALL'); setTagFilter('ALL'); setMethodFilter('ALL'); setMinAmount(''); setMaxAmount(''); }} className="text-[10px] font-bold text-rose-500/80 hover:text-rose-500 transition-colors">Clear Filters</button>
+                 <button onClick={() => setIsFilterOpen(false)} className="px-4 py-1.5 bg-brand-blue dark:bg-white/10 text-white rounded-lg text-[10px] font-bold active:scale-95 transition-all shadow-md">Apply Filters</button>
                </div>
             </motion.div>
           )}

@@ -39,11 +39,9 @@ export default function Dashboard() {
       db.transactions.get(Number(editId)).then(tx => {
         if (tx) {
           setAmount(tx.amount.toString());
-          setType(tx.type);
           setCategory(tx.category || 'Other');
           setNote(tx.note || '');
           setPartyName(tx.party || '');
-          setSelectedAccountId(tx.accountId);
           setTransactionDate(format(new Date(tx.dateTime), "yyyy-MM-dd'T'HH:mm"));
           setPaymentMethod(tx.paymentMethod as any || 'UPI');
           setUpiApp((tx as any).upiApp || 'GPay');
@@ -51,6 +49,28 @@ export default function Dashboard() {
           setEntryMode('MANUAL');
           setIsAddingManual(true);
           setEditingTransactionId(Number(editId));
+
+          if (tx.category === 'Transfer' || tx.linkedTransactionId) {
+            setType('TRANSFER');
+            if (tx.type === 'DEBIT') {
+              setSelectedAccountId(tx.accountId);
+              if (tx.linkedTransactionId) {
+                db.transactions.get(tx.linkedTransactionId).then(linked => {
+                  if (linked) setToAccountId(linked.accountId);
+                });
+              }
+            } else {
+              setToAccountId(tx.accountId);
+              if (tx.linkedTransactionId) {
+                db.transactions.get(tx.linkedTransactionId).then(linked => {
+                  if (linked) setSelectedAccountId(linked.accountId);
+                });
+              }
+            }
+          } else {
+            setType(tx.type);
+            setSelectedAccountId(tx.accountId);
+          }
         }
       });
     } else if (searchParams.get('add') === 'true') {
@@ -123,7 +143,7 @@ export default function Dashboard() {
     const currentPaymentMethod = txData?.paymentMethod || paymentMethod;
     const currentUpiApp = txData?.upiApp || upiApp;
     const currentExpenseType = txData?.expenseType || expenseType;
-    const currentPartyName = txData?.partyName || partyName;
+    const currentPartyName = txData?.party || partyName;
     const currentNote = txData?.note || note;
     const currentCategory = txData?.category || category;
     const currentTransactionDate = txData?.transactionDate || transactionDate;
@@ -137,7 +157,7 @@ export default function Dashboard() {
           setErrorMessage('Please select a destination account for the transfer.');
           return;
         }
-        if (currentSelectedAccountId === currentToAccountId) {
+        if (Number(currentSelectedAccountId) === Number(currentToAccountId)) {
           setStatus('error');
           setErrorMessage('Source and destination accounts cannot be the same.');
           return;
@@ -145,37 +165,83 @@ export default function Dashboard() {
 
         const isTodaySelected = format(new Date(currentTransactionDate), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
         const finalDateTime = isTodaySelected ? new Date() : new Date(currentTransactionDate);
+        const amountVal = parseFloat(currentAmount.toString().replace(/,/g, '')) || 0;
 
-        // Add DEBIT transaction for source account
-        await db.transactions.add({
+        // Base Debit Payload
+        const debitPayload = {
           accountId: Number(currentSelectedAccountId),
-          amount: parseFloat(currentAmount.toString().replace(/,/g, '')) || 0,
-          type: 'DEBIT',
+          amount: amountVal,
+          type: 'DEBIT' as const,
           dateTime: finalDateTime,
-          note: currentNote || `Transfer to ${accounts.find(a => a.id === currentToAccountId)?.bankName}`,
+          note: currentNote || `Transfer to ${accounts.find(a => a.id === Number(currentToAccountId))?.bankName || 'Other Account'}`,
           category: 'Transfer',
           paymentMethod: currentPaymentMethod,
           upiApp: currentPaymentMethod === 'UPI' ? currentUpiApp : undefined,
-          party: accounts.find(a => a.id === currentToAccountId)?.bankName || 'Other Account',
+          party: accounts.find(a => a.id === Number(currentToAccountId))?.bankName || 'Other Account',
           expenseType: currentExpenseType
-        });
+        };
 
-        // Add CREDIT transaction for destination account
-        await db.transactions.add({
+        // Base Credit Payload
+        const creditPayload = {
           accountId: Number(currentToAccountId),
-          amount: parseFloat(currentAmount.toString().replace(/,/g, '')) || 0,
-          type: 'CREDIT',
+          amount: amountVal,
+          type: 'CREDIT' as const,
           dateTime: finalDateTime,
-          note: currentNote || `Transfer from ${accounts.find(a => a.id === currentSelectedAccountId)?.bankName}`,
+          note: currentNote || `Transfer from ${accounts.find(a => a.id === Number(currentSelectedAccountId))?.bankName || 'Other Account'}`,
           category: 'Transfer',
           paymentMethod: currentPaymentMethod,
           upiApp: currentPaymentMethod === 'UPI' ? currentUpiApp : undefined,
-          party: accounts.find(a => a.id === currentSelectedAccountId)?.bankName || 'Other Account',
+          party: accounts.find(a => a.id === Number(currentSelectedAccountId))?.bankName || 'Other Account',
           expenseType: currentExpenseType
-        });
+        };
+
+        if (editingTransactionId) {
+          const existing = await db.transactions.get(editingTransactionId);
+          if (existing) {
+            if (existing.linkedTransactionId) {
+              // Existing linked transfer, update both
+              await db.transactions.update(editingTransactionId, {
+                ...debitPayload,
+                linkedTransactionId: existing.linkedTransactionId
+              });
+              await db.transactions.update(existing.linkedTransactionId, {
+                ...creditPayload,
+                linkedTransactionId: editingTransactionId
+              });
+            } else {
+              // Legacy transfer, create a counterpart and link it
+              const counterpartId = await db.transactions.add({
+                ...creditPayload,
+                linkedTransactionId: editingTransactionId
+              });
+              await db.transactions.update(editingTransactionId, {
+                ...debitPayload,
+                linkedTransactionId: counterpartId
+              });
+            }
+          }
+        } else {
+          // New transfer: Add Debit side first, get ID, add Credit side, update Debit side.
+          const debitId = await db.transactions.add(debitPayload);
+          const creditId = await db.transactions.add({
+            ...creditPayload,
+            linkedTransactionId: debitId
+          });
+          await db.transactions.update(debitId, {
+            linkedTransactionId: creditId
+          });
+        }
       } else {
         const isTodaySelected = format(new Date(currentTransactionDate), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
         const finalDateTime = isTodaySelected ? new Date() : new Date(currentTransactionDate);
+
+        // If editing an existing transaction that was previously a transfer, delete its counterpart
+        if (editingTransactionId) {
+          const existing = await db.transactions.get(editingTransactionId);
+          if (existing?.linkedTransactionId) {
+            await db.transactions.delete(existing.linkedTransactionId);
+          }
+        }
 
         const txPayload = {
           accountId: Number(currentSelectedAccountId),
@@ -187,7 +253,8 @@ export default function Dashboard() {
           paymentMethod: currentPaymentMethod,
           upiApp: currentPaymentMethod === 'UPI' ? currentUpiApp : undefined,
           party: currentPartyName,
-          expenseType: currentExpenseType
+          expenseType: currentExpenseType,
+          linkedTransactionId: undefined // ensure link is cleared
         };
 
         if (editingTransactionId) {
@@ -195,8 +262,6 @@ export default function Dashboard() {
         } else {
           await db.transactions.add(txPayload as any);
         }
-        
-
       }
       
       setIsSaving(false);

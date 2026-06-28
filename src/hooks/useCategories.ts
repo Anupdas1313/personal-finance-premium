@@ -3,7 +3,7 @@ import { db } from '../models/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useAuth } from '../context/AuthContext';
 
-const DEFAULT_CATEGORIES = ['Food', 'Transport', 'Rent', 'Shopping', 'Bills', 'Entertainment', 'Salary', 'Transfer', 'Other'];
+const DEFAULT_CATEGORIES = ['Food', 'Transport', 'Rent', 'Shopping', 'Bills', 'Entertainment', 'Salary', 'Transfer', 'Groceries', 'Travel', 'Health', 'Investment', 'Loan', 'Housing', 'Education', 'Donations', 'Other'];
 
 let categoriesInitialized = false;
 
@@ -36,6 +36,13 @@ export function useCategories() {
             await db.categories.clear();
             const initial = DEFAULT_CATEGORIES.map(name => ({ name }));
             await db.categories.bulkAdd(initial);
+          }
+          // Migration: ensure new categories exist for existing users
+          const newCats = ['Groceries', 'Travel', 'Health', 'Investment', 'Loan', 'Housing', 'Education', 'Donations'];
+          const existingNames = (await db.categories.toArray()).map(c => c.name);
+          const missing = newCats.filter(c => !existingNames.includes(c));
+          if (missing.length > 0) {
+            await db.categories.bulkAdd(missing.map(name => ({ name })));
           }
         }
       } catch (e) {

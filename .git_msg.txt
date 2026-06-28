@@ -1,1 +1,1 @@
-polish: CSS overhaul, rebuilt Summary screen, mobile nav fix
+fix: AI Chat - stop aggressive auto-fill, fix type detection, fix date mutation, fix query/entry confusion, fix payee memory, tighten fuzzy matching
