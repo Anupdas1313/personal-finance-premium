@@ -145,12 +145,14 @@ const levenshtein = (a: string, b: string): number => {
 
 const fuzzyMatch = (input: string, candidates: string[]): string | null => {
   const t = input.toLowerCase().trim();
-  if (!t || t.length < 3) return null;
+  if (!t || t.length < 4) return null; // Require at least 4 chars to avoid false positives
   let best = { word: '', dist: Infinity };
   for (const c of candidates) {
+    if (c.length < 4) continue; // Skip short candidates
     const dist = levenshtein(t, c);
-    const threshold = Math.max(1, Math.floor(c.length / 4));
-    if (dist < best.dist && dist <= threshold) best = { word: c, dist };
+    // Require at least 60% character overlap (stricter than before)
+    const maxDist = Math.max(1, Math.floor(Math.min(t.length, c.length) * 0.35));
+    if (dist < best.dist && dist <= maxDist) best = { word: c, dist };
   }
   return best.word || null;
 };
@@ -266,8 +268,10 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
 
   let type = '';
   if (t.match(/\b(received|got|salary|income|credit|added|deposit|inflow|credited|mila|aaya)\b/)) type = 'CREDIT';
-  else if (t.match(/\b(transfer(?:red)?|moved?|sent|send|shifted|bheja)\b/)) type = 'TRANSFER';
+  else if (t.match(/\b(transfer(?:red)?\s+(?:to|from|\d)|moved?\s+(?:to|from|\d)|shifted\s+(?:to|from|\d)|bheja)\b/)) type = 'TRANSFER';
   else if (t.match(/\b(paid|spent|bought|expense|debit|gave|withdrawn?|purchased?|kharcha|diya|de diya)\b/)) type = 'DEBIT';
+  // "sent" only counts as transfer if followed by money context, not standalone
+  else if (t.match(/\bsent?\s+(?:₹|rs|\d|money|amount)/)) type = 'TRANSFER';
 
   const acc = resolveBank(t, accounts);
   let accountId = acc?.id || '';
@@ -365,8 +369,8 @@ const usePersonalLearning = () => {
         if (tx.paymentMethod) methodCount[tx.paymentMethod] = (methodCount[tx.paymentMethod] || 0) + 1;
         if (tx.upiApp) upiCount[tx.upiApp] = (upiCount[tx.upiApp] || 0) + 1;
         // Build payee → category/account memory
-        if (tx.partyName) {
-          const key = tx.partyName.toLowerCase().trim();
+        if (tx.party) {
+          const key = tx.party.toLowerCase().trim();
           if (!payeeMap[key]) payeeMap[key] = { category: tx.category, accountId: tx.accountId, paymentMethod: tx.paymentMethod, upiApp: tx.upiApp, count: 0 };
           payeeMap[key].count++;
         }
@@ -443,13 +447,36 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     else if (!tx.selectedAccountId) {
       setStage('ASK_BANK');
       const prompt = tx.type === 'CREDIT' ? "Which account received this?" : "Which account did you pay from?";
-      addAIMessage(prompt, getGroupedAccountOptions(tx));
+      // Show smart default as first option if available
+      const options = getGroupedAccountOptions(tx);
+      if (smartDefaults.accountId) {
+        const defaultAcc = accounts.find(a => a.id === Number(smartDefaults.accountId));
+        if (defaultAcc) {
+          const emoji = defaultAcc.type === 'BANK' ? '🏦' : defaultAcc.type === 'CASH' ? '💵' : '💳';
+          const defLabel = `${emoji} ${defaultAcc.bankName}`;
+          // Move default to front
+          const filtered = options.filter(o => o !== defLabel);
+          addAIMessage(prompt, [defLabel, ...filtered]);
+        } else addAIMessage(prompt, options);
+      } else addAIMessage(prompt, options);
     } else if (tx.type === 'TRANSFER' && !tx.toAccountId) {
       setStage('ASK_BANK'); addAIMessage("Transfer to which account?", getGroupedAccountOptions(tx));
     } else if (!tx.paymentMethod) {
-      setStage('ASK_PAYMENT_METHOD'); addAIMessage("How did you pay?", ['📱 UPI', '💳 Credit Card', '💵 Cash', '🏦 Bank Transfer']);
+      // Show smart default method as first option
+      const methods = ['📱 UPI', '💳 Credit Card', '💵 Cash', '🏦 Bank Transfer'];
+      if (smartDefaults.paymentMethod) {
+        const defMethod = methods.find(m => m.toLowerCase().includes(smartDefaults.paymentMethod.toLowerCase()));
+        if (defMethod) {
+          const filtered = methods.filter(m => m !== defMethod);
+          setStage('ASK_PAYMENT_METHOD'); addAIMessage("How did you pay?", [defMethod, ...filtered]);
+        } else { setStage('ASK_PAYMENT_METHOD'); addAIMessage("How did you pay?", methods); }
+      } else { setStage('ASK_PAYMENT_METHOD'); addAIMessage("How did you pay?", methods); }
     } else if (tx.paymentMethod === 'UPI' && !tx.upiApp) {
-      setStage('ASK_UPI_APP'); addAIMessage("Which UPI app?", ['GPay', 'PhonePe', 'Paytm', 'BHIM', 'CRED']);
+      const upiApps = ['GPay', 'PhonePe', 'Paytm', 'BHIM', 'CRED'];
+      if (smartDefaults.upiApp) {
+        const filtered = upiApps.filter(a => a !== smartDefaults.upiApp);
+        setStage('ASK_UPI_APP'); addAIMessage("Which UPI app?", [smartDefaults.upiApp, ...filtered]);
+      } else { setStage('ASK_UPI_APP'); addAIMessage("Which UPI app?", upiApps); }
     } else if (!tx.category) {
       setStage('ASK_CATEGORY'); addAIMessage("Pick a category:", appCategories);
       setAutocomplete(appCategories);
@@ -463,7 +490,8 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       setStage('PREVIEW');
       const conf = tx._confidence;
       const confLabel = conf >= 80 ? '🟢 High' : conf >= 50 ? '🟡 Medium' : '🔴 Low';
-      addAIMessage(`✅ Entry ready! Confidence: ${confLabel} (${conf}%)\n${tx._isPredicted ? '🤖 Smart-filled from your history' : ''}\nReview below and tap Save.`);
+      const warningNote = conf < 50 ? '\n⚠️ Low confidence — please double-check all fields before saving!' : '';
+      addAIMessage(`✅ Entry ready! Confidence: ${confLabel} (${conf}%)\n${tx._isPredicted ? '🤖 Smart-filled from your history' : ''}${warningNote}\nReview below and tap Save.`);
     }
   };
 
@@ -508,13 +536,15 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
       timeRangeName = 'last month';
     } else if (q.match(/\b(today)\b/)) {
-      startDate = new Date(now.setHours(0, 0, 0, 0));
-      endDate = new Date(now.setHours(23, 59, 59, 999));
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      startDate = todayStart;
+      endDate = todayEnd;
       timeRangeName = 'today';
     } else if (q.match(/\b(yesterday)\b/)) {
-      const y = new Date(now); y.setDate(y.getDate() - 1);
-      startDate = new Date(y.setHours(0, 0, 0, 0));
-      endDate = new Date(y.setHours(23, 59, 59, 999));
+      const yDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+      startDate = new Date(yDate.getFullYear(), yDate.getMonth(), yDate.getDate(), 0, 0, 0, 0);
+      endDate = new Date(yDate.getFullYear(), yDate.getMonth(), yDate.getDate(), 23, 59, 59, 999);
       timeRangeName = 'yesterday';
     } else if (q.match(/\b(this year)\b/)) {
       startDate = new Date(now.getFullYear(), 0, 1);
@@ -634,11 +664,14 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     const isFollowUpQuery = lastMsg?.role === 'ai' && lastMsg.content.includes('Data Query:');
 
     // "Ask Your Data" Query Detection
-    if (t.match(/\b(how much|what is|when did|show me|total|query|balance|spent|spend)\b/i) || t.endsWith('?') || (isFollowUpQuery && !t.match(/\d/))) {
-      if (!t.match(/^(add|record|log|paid)/i)) { // Prevent 'paid 500' from being intercepted
-        handleChatQuery(t);
-        return;
-      }
+    // Key rule: if the message contains a standalone number (likely an amount), it's an ENTRY, not a query.
+    const hasAmount = t.match(/(?:₹|rs\.?\s*)?\b\d{2,}(?:\.\d+)?\b(?:\s*k)?/i);
+    const isQueryPattern = t.match(/\b(how much|what is|when did|show me|total|query|balance)\b/i) || t.endsWith('?');
+    const isEntryPattern = t.match(/^(add|record|log|paid|spent|bought|gave)/i) || hasAmount;
+    
+    if ((isQueryPattern && !isEntryPattern) || (isFollowUpQuery && !hasAmount && !t.match(/^(add|record|log|paid|spent)/i))) {
+      handleChatQuery(t);
+      return;
     }
 
     // "same" / "repeat" → copy last transaction
@@ -684,20 +717,13 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     if (stage === 'IDLE' && !t.match(/^(edit|change|update)/)) {
       const p = parseUniversal(userMsg, accounts, appCategories);
 
-      // Apply personal learning: fill gaps from smart defaults & payee memory
-      if (!p.accountId && smartDefaults.accountId) p.accountId = smartDefaults.accountId;
-      if (!p.paymentMethod && smartDefaults.paymentMethod) p.paymentMethod = smartDefaults.paymentMethod;
-      if (!p.upiApp && smartDefaults.upiApp && p.paymentMethod === 'UPI') p.upiApp = smartDefaults.upiApp;
-
-      // Check payee memory
+      // DO NOT auto-fill accountId/paymentMethod/upiApp from smart defaults.
+      // Instead, let checkNextStep ASK the user (with smart defaults shown as first option).
+      // Only apply payee memory for CATEGORY (not bank/method) — since category is safe to predict.
       if (p.parsedPayee) {
         const mem = payeeMemory[p.parsedPayee.toLowerCase()];
         if (mem) {
-          if (!p.category) p.category = mem.category;
-          if (!p.accountId) p.accountId = mem.accountId;
-          if (!p.paymentMethod) p.paymentMethod = mem.paymentMethod;
-          if (!p.upiApp && mem.upiApp) p.upiApp = mem.upiApp;
-          p.isPredicted = true;
+          if (!p.category) { p.category = mem.category; p.isPredicted = true; }
         }
       }
 
