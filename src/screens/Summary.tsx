@@ -21,24 +21,44 @@ export default function Summary() {
   const prevMonthStart = startOfMonth(subMonths(currentMonth, 1));
   const prevMonthEnd = endOfMonth(subMonths(currentMonth, 1));
 
-  const monthTxs = transactions.filter(tx =>
-    isWithinInterval(new Date(tx.dateTime), { start: monthStart, end: monthEnd })
-  );
-  const prevMonthTxs = transactions.filter(tx =>
-    isWithinInterval(new Date(tx.dateTime), { start: prevMonthStart, end: prevMonthEnd })
-  );
+  const getTxTime = (dateTime: any) => {
+    if (!dateTime) return 0;
+    const d = new Date(dateTime);
+    const ts = d.getTime();
+    return isNaN(ts) ? 0 : ts;
+  };
 
-  const expenses = monthTxs.filter(tx => tx.type === 'DEBIT' && tx.category !== 'Transfer');
-  const income = monthTxs.filter(tx => tx.type === 'CREDIT' && tx.category !== 'Transfer');
-  const prevExpenses = prevMonthTxs.filter(tx => tx.type === 'DEBIT' && tx.category !== 'Transfer');
-  const prevIncome = prevMonthTxs.filter(tx => tx.type === 'CREDIT' && tx.category !== 'Transfer');
+  const monthStartTs = monthStart.getTime();
+  const monthEndTs = monthEnd.getTime();
+  const prevMonthStartTs = prevMonthStart.getTime();
+  const prevMonthEndTs = prevMonthEnd.getTime();
 
-  const totalExpense = expenses.reduce((s, tx) => s + tx.amount, 0);
-  const totalIncome = income.reduce((s, tx) => s + tx.amount, 0);
-  const prevTotalExpense = prevExpenses.reduce((s, tx) => s + tx.amount, 0);
-  const prevTotalIncome = prevIncome.reduce((s, tx) => s + tx.amount, 0);
+  const monthTxs = useMemo(() => {
+    return transactions.filter(tx => {
+      const t = getTxTime(tx.dateTime);
+      return t >= monthStartTs && t <= monthEndTs;
+    });
+  }, [transactions, monthStartTs, monthEndTs]);
+
+  const prevMonthTxs = useMemo(() => {
+    return transactions.filter(tx => {
+      const t = getTxTime(tx.dateTime);
+      return t >= prevMonthStartTs && t <= prevMonthEndTs;
+    });
+  }, [transactions, prevMonthStartTs, prevMonthEndTs]);
+
+  const expenses = useMemo(() => monthTxs.filter(tx => tx.type === 'DEBIT' && tx.category !== 'Transfer'), [monthTxs]);
+  const income = useMemo(() => monthTxs.filter(tx => tx.type === 'CREDIT' && tx.category !== 'Transfer'), [monthTxs]);
+  const prevExpenses = useMemo(() => prevMonthTxs.filter(tx => tx.type === 'DEBIT' && tx.category !== 'Transfer'), [prevMonthTxs]);
+  const prevIncome = useMemo(() => prevMonthTxs.filter(tx => tx.type === 'CREDIT' && tx.category !== 'Transfer'), [prevMonthTxs]);
+
+  const totalExpense = useMemo(() => expenses.reduce((s, tx) => s + (Number(tx.amount) || 0), 0), [expenses]);
+  const totalIncome = useMemo(() => income.reduce((s, tx) => s + (Number(tx.amount) || 0), 0), [income]);
+  const prevTotalExpense = useMemo(() => prevExpenses.reduce((s, tx) => s + (Number(tx.amount) || 0), 0), [prevExpenses]);
+  const prevTotalIncome = useMemo(() => prevIncome.reduce((s, tx) => s + (Number(tx.amount) || 0), 0), [prevIncome]);
   const savings = totalIncome - totalExpense;
-  const savingsRate = totalIncome > 0 ? ((savings / totalIncome) * 100).toFixed(0) : '0';
+  const savingsRateVal = totalIncome > 0 ? Math.round((savings / totalIncome) * 100) : 0;
+  const savingsRate = isNaN(savingsRateVal) ? '0' : savingsRateVal.toString();
 
   const expenseChange = prevTotalExpense > 0
     ? (((totalExpense - prevTotalExpense) / prevTotalExpense) * 100).toFixed(1)
@@ -89,9 +109,14 @@ export default function Summary() {
     const m = subMonths(new Date(), 5 - i);
     const ms = startOfMonth(m);
     const me = endOfMonth(m);
-    const txs = transactions.filter(tx => isWithinInterval(new Date(tx.dateTime), { start: ms, end: me }));
-    const e = txs.filter(tx => tx.type === 'DEBIT' && tx.category !== 'Transfer').reduce((s, tx) => s + tx.amount, 0);
-    const iAmt = txs.filter(tx => tx.type === 'CREDIT' && tx.category !== 'Transfer').reduce((s, tx) => s + tx.amount, 0);
+    const msTs = ms.getTime();
+    const meTs = me.getTime();
+    const txs = transactions.filter(tx => {
+      const t = getTxTime(tx.dateTime);
+      return t >= msTs && t <= meTs;
+    });
+    const e = txs.filter(tx => tx.type === 'DEBIT' && tx.category !== 'Transfer').reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
+    const iAmt = txs.filter(tx => tx.type === 'CREDIT' && tx.category !== 'Transfer').reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
     return {
       month: format(m, 'MMM'),
       income: iAmt,
