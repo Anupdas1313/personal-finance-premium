@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom';
 import { Wallet, AlertCircle } from 'lucide-react';
 
 export default function Auth() {
-  const { user, signIn, signUp } = useAuth();
+  const { user, signIn, signUp, signInWithGoogle } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,6 +35,18 @@ export default function Auth() {
       } else {
         setError(err.message || 'An error occurred');
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign in with Google');
     } finally {
       setLoading(false);
     }
@@ -89,11 +101,31 @@ export default function Auth() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-brand-blue hover:bg-brand-blue/90 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-brand-blue/20 disabled:opacity-50 mt-2"
+              className="w-full bg-brand-blue hover:bg-brand-blue/90 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-brand-blue/20 disabled:opacity-50 mt-2 cursor-pointer"
             >
               {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Sign Up')}
             </button>
           </form>
+
+          <div className="relative my-6 flex items-center justify-center">
+            <div className="absolute inset-0 border-t border-neutral-200 dark:border-white/5 w-full"></div>
+            <span className="relative bg-white dark:bg-[#121216] px-4 text-xs font-black text-neutral-400 uppercase tracking-widest">or</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+            className="w-full border border-neutral-200 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/[0.02] text-neutral-800 dark:text-white font-bold py-3.5 rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 cursor-pointer"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <path
+                fill="#EA4335"
+                d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114-3.568 0-6.477-2.909-6.477-6.477s2.909-6.477 6.477-6.477c1.78 0 3.398.72 4.584 1.89l3.136-3.136C19.78 1.945 16.224 0 12.24 0 5.48 0 0 5.48 0 12.24s5.48 12.24 12.24 12.24c6.76 0 12.24-5.48 12.24-12.24 0-.84-.085-1.654-.24-2.435H12.24Z"
+              />
+            </svg>
+            Continue with Google
+          </button>
 
           <div className="mt-6 text-center">
             <button
@@ -101,7 +133,7 @@ export default function Auth() {
                 setIsLogin(!isLogin);
                 setError('');
               }}
-              className="text-sm font-bold text-neutral-500 hover:text-brand-blue dark:hover:text-white transition-colors"
+              className="text-sm font-bold text-neutral-500 hover:text-brand-blue dark:hover:text-white transition-colors cursor-pointer"
             >
               {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
             </button>
