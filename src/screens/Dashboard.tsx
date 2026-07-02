@@ -18,6 +18,7 @@ import { AIChatEntry } from '../components/AIChatEntry';
 import { IndusIndLogo } from '../components/IndusIndLogo';
 import { UnionBankLogo } from '../components/UnionBankLogo';
 import { BankLogo } from '../components/BankLogo';
+import TutorialOverlay from '../components/TutorialOverlay';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -31,6 +32,26 @@ export default function Dashboard() {
 
 
   const [isAddingManual, setIsAddingManual] = useState(searchParams.get('add') === 'true');
+  const [showTutorial, setShowTutorial] = useState(false);
+  const userSettings = useLiveQuery(() => db.userSettings.toArray(), [user?.uid]);
+
+  useEffect(() => {
+    if (userSettings && user) {
+      const isTutorialCompleteLocal = localStorage.getItem(`tutorialComplete_${user.uid}`) === 'true';
+      const isTutorialCompleteCloud = userSettings.find(s => s.key === 'tutorialComplete')?.value === true;
+      if (!isTutorialCompleteLocal && !isTutorialCompleteCloud) {
+        setShowTutorial(true);
+      }
+    }
+  }, [userSettings, user]);
+
+  const handleTutorialComplete = async () => {
+    setShowTutorial(false);
+    if (user) {
+      localStorage.setItem(`tutorialComplete_${user.uid}`, 'true');
+      await db.userSettings.put({ key: 'tutorialComplete', value: true });
+    }
+  };
 
   // Sync state with URL and ensure fresh current time on open
   useEffect(() => {
@@ -859,6 +880,8 @@ export default function Dashboard() {
         </div>,
         document.body
       )}
+
+      {showTutorial && <TutorialOverlay onComplete={handleTutorialComplete} />}
     </div>
   );
 }

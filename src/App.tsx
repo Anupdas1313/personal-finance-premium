@@ -13,17 +13,36 @@ import PartyLedger from './screens/PartyLedger';
 import Reports from './screens/Reports';
 import Profile from './screens/Profile';
 import Auth from './screens/Auth';
+import Welcome from './screens/Welcome';
+import SetupAccount from './screens/SetupAccount';
 
 import { ThemeProvider } from './components/ThemeProvider';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { useRecurringEngine } from './logic/useRecurringEngine';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from './models/db';
 
 // Protect routes that require authentication
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function ProtectedRoute({ children, requireSetup = true }: { children: React.ReactNode, requireSetup?: boolean }) {
   const { user } = useAuth();
+  
+  // Check local storage first (instant)
+  const isSetupLocal = user ? localStorage.getItem(`onboardingComplete_${user.uid}`) === 'true' : false;
+  
+  // Also check Dexie in case it synced from cloud
+  const userSettings = useLiveQuery(() => db.userSettings.toArray(), []);
+  const isSetupCloud = userSettings?.find(s => s.key === 'setupComplete')?.value === true;
+  
+  const isSetup = isSetupLocal || isSetupCloud;
+
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
+  
+  if (requireSetup && !isSetup) {
+    return <Navigate to="/welcome" replace />;
+  }
+
   return <>{children}</>;
 }
 
@@ -66,6 +85,18 @@ export default function App() {
             <Routes>
               {/* Public route */}
               <Route path="/auth" element={<Auth />} />
+
+              {/* Onboarding routes */}
+              <Route path="/welcome" element={
+                <ProtectedRoute requireSetup={false}>
+                  <Welcome />
+                </ProtectedRoute>
+              } />
+              <Route path="/setup-account" element={
+                <ProtectedRoute requireSetup={false}>
+                  <SetupAccount />
+                </ProtectedRoute>
+              } />
 
               {/* Protected routes wrapped in Layout */}
               <Route path="/" element={

@@ -67,6 +67,12 @@ export interface MonthlyClose {
   closingBalance: number;
 }
 
+export interface UserSetting {
+  id?: number;
+  key: string;
+  value: any;
+}
+
 export interface Party {
   id?: number;
   name: string;
@@ -108,6 +114,7 @@ export class FinanceDatabase extends Dexie {
   categories!: Table<Category, number>;
   tags!: Table<Tag, number>;
   recurringTemplates!: Table<RecurringTemplate, number>;
+  userSettings!: Table<UserSetting, number>;
 
   constructor(dbName: string = 'FinanceDatabase_Local') {
     super(dbName);
@@ -168,6 +175,19 @@ export class FinanceDatabase extends Dexie {
       categories: '++id, &name',
       tags: '++id, &name',
       recurringTemplates: '++id, nextRunDate, isActive'
+    });
+    this.version(14).stores({
+      accounts: '++id, bankName, accountLast4',
+      transactions: '++id, accountId, type, dateTime, category',
+      monthlyClosings: '++id, &month',
+      budgets: '++id, category, month, [category+month]',
+      parties: '++id, name, type',
+      ledgerTransactions: '++id, partyId, type, dateTime',
+      accountClosings: '++id, accountId, closingDate',
+      categories: '++id, &name',
+      tags: '++id, &name',
+      recurringTemplates: '++id, nextRunDate, isActive',
+      userSettings: '++id, &key'
     });
 
     // Auto-generate globally unique numeric IDs for all tables to prevent sync collisions
