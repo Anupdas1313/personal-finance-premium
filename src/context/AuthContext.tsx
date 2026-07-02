@@ -39,6 +39,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      // If the user logs in via Email/Password but their email is NOT verified, 
+      // do not expose them to the UI to prevent a brief flash of the Dashboard.
+      const isPasswordUser = firebaseUser?.providerData.some(p => p.providerId === 'password');
+      if (firebaseUser && isPasswordUser && !firebaseUser.emailVerified) {
+        setUser(null);
+        startSync(null, db as any);
+        setLoading(false);
+        return;
+      }
+
       if (firebaseUser) {
         const mappedUser = {
           uid: firebaseUser.uid,
