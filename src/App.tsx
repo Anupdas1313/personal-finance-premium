@@ -45,6 +45,19 @@ function LoadingWrapper({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  React.useEffect(() => {
+    // Request persistent storage to ensure the browser doesn't evict local Dexie databases under storage pressure.
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().then(granted => {
+        if (granted) {
+          console.log("Persistent storage granted by browser.");
+        } else {
+          console.log("Persistent storage denied by browser.");
+        }
+      });
+    }
+  }, []);
+
   return (
     <ThemeProvider defaultTheme="dark" storageKey="app-theme">
       <AuthProvider>
