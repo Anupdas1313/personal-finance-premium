@@ -6,6 +6,7 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signOut,
+  sendEmailVerification,
   User as FirebaseUser,
   GoogleAuthProvider,
   signInWithPopup
@@ -60,13 +61,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    if (!userCredential.user.emailVerified) {
+      await signOut(auth);
+      const error: any = new Error('Email not verified');
+      error.code = 'auth/email-not-verified';
+      throw error;
+    }
   };
 
   const signUp = async (email: string, password: string, _name?: string) => {
     // Note: To save profile data (like name), we would use updateProfile or Firestore.
     // The user explicitly requested: "Do NOT save user profile data".
-    await createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    await sendEmailVerification(userCredential.user);
+    await signOut(auth);
   };
 
   const signInWithGoogle = async () => {
