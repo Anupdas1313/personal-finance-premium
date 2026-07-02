@@ -1,14 +1,29 @@
-import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, deleteDoc, Timestamp } from 'firebase/firestore';
 import { firestoreDb } from './firebase';
 import { FinanceDatabase } from '../models/db';
 
-let isSyncingFromCloud = false;
+let syncingKeys = new Set<string>();
 let syncUnsubscribes: (() => void)[] = [];
 
+// Helper to convert Firestore Timestamps to JS Dates
+function convertTimestampsToDates(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  if (obj instanceof Timestamp) return obj.toDate();
+  if (Array.isArray(obj)) return obj.map(convertTimestampsToDates);
+  if (typeof obj === 'object') {
+    const newObj: any = {};
+    for (const key in obj) {
+      newObj[key] = convertTimestampsToDates(obj[key]);
+    }
+    return newObj;
+  }
+  return obj;
+}
+
 export function startSync(uid: string | null, db: FinanceDatabase) {
-  // Stop existing sync if any
   syncUnsubscribes.forEach(unsub => unsub());
   syncUnsubscribes = [];
+  syncingKeys.clear();
 
   if (!uid) return;
 
@@ -24,10 +39,14 @@ export function startSync(uid: string | null, db: FinanceDatabase) {
     // 1. Listen to Firestore changes and update Dexie
     const unsub = onSnapshot(collection(firestoreDb, `users/${uid}/${tableName}`), (snapshot) => {
       snapshot.docChanges().forEach(async (change) => {
-        isSyncingFromCloud = true;
+        const id = Number(change.doc.id);
+        const syncKey = `${tableName}-${id}`;
+        
+        syncingKeys.add(syncKey);
         try {
-          const data = change.doc.data();
-          const id = Number(change.doc.id);
+          const rawData = change.doc.data();
+          const data = convertTimestampsToDates(rawData);
+          
           if (change.type === 'added' || change.type === 'modified') {
             await table.put({ ...data, id });
           } else if (change.type === 'removed') {
@@ -36,24 +55,25 @@ export function startSync(uid: string | null, db: FinanceDatabase) {
         } catch (e) {
           console.error(`Sync error for ${tableName}:`, e);
         } finally {
-          isSyncingFromCloud = false;
+          syncingKeys.delete(syncKey);
         }
       });
     });
     syncUnsubscribes.push(unsub);
 
     // 2. Listen to Dexie changes and update Firestore
-    // Note: The creating hook is already attached in db.ts to generate the ID
     table.hook('creating', function (primKey, obj) {
-      if (isSyncingFromCloud) return;
-      // primKey might be assigned by the db.ts hook, wait for next tick or use the generated obj.id
+      const syncKey = `${tableName}-${primKey}`;
+      if (syncingKeys.has(syncKey)) return;
+      
       setTimeout(() => {
-        setDoc(doc(firestoreDb, `users/${uid}/${tableName}`, String(obj.id)), obj);
+        setDoc(doc(firestoreDb, `users/${uid}/${tableName}`, String(obj.id)), obj).catch(console.error);
       }, 0);
     });
 
     table.hook('updating', function (mods, primKey, obj) {
-      if (isSyncingFromCloud) return;
+      const syncKey = `${tableName}-${primKey}`;
+      if (syncingKeys.has(syncKey)) return;
       
       const updatedObj = { ...obj };
       for (const key in mods) {
@@ -61,12 +81,14 @@ export function startSync(uid: string | null, db: FinanceDatabase) {
          else updatedObj[key as keyof typeof updatedObj] = mods[key];
       }
       
-      setDoc(doc(firestoreDb, `users/${uid}/${tableName}`, String(primKey)), updatedObj);
+      setDoc(doc(firestoreDb, `users/${uid}/${tableName}`, String(primKey)), updatedObj).catch(console.error);
     });
 
     table.hook('deleting', function (primKey, obj) {
-      if (isSyncingFromCloud) return;
-      deleteDoc(doc(firestoreDb, `users/${uid}/${tableName}`, String(primKey)));
+      const syncKey = `${tableName}-${primKey}`;
+      if (syncingKeys.has(syncKey)) return;
+      
+      deleteDoc(doc(firestoreDb, `users/${uid}/${tableName}`, String(primKey))).catch(console.error);
     });
   });
 }
