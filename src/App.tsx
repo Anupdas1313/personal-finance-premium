@@ -31,16 +31,30 @@ function ProtectedRoute({ children, requireSetup = true }: { children: React.Rea
   
   // Also check Dexie in case it synced from cloud
   const userSettings = useLiveQuery(() => db.userSettings.toArray(), []);
-  const isSetupCloud = userSettings?.find(s => s.key === 'setupComplete')?.value === true;
   
-  const isSetup = isSetupLocal || isSetupCloud;
-
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
-  
-  if (requireSetup && !isSetup) {
-    return <Navigate to="/welcome" replace />;
+
+  // If local storage says we're setup, we can proceed immediately.
+  // Otherwise, wait for Dexie to finish its initial load before deciding.
+  if (requireSetup && !isSetupLocal) {
+    if (userSettings === undefined) {
+      // Still loading from DB
+      return (
+        <div className="min-h-screen bg-[#F4F7FF] dark:bg-[#0C0C0F] flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-brand-blue/30 border-t-brand-blue rounded-full animate-spin"></div>
+        </div>
+      );
+    }
+    
+    const isSetupCloud = userSettings.find(s => s.key === 'setupComplete')?.value === true;
+    if (!isSetupCloud) {
+      return <Navigate to="/welcome" replace />;
+    } else {
+      // Sync to local storage for next time
+      localStorage.setItem(`onboardingComplete_${user.uid}`, 'true');
+    }
   }
 
   return <>{children}</>;
