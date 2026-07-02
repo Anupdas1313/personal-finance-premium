@@ -14,6 +14,9 @@ export default defineConfig(({mode}) => {
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['icon.svg'],
+        workbox: {
+          maximumFileSizeToCacheInBytes: 5000000
+        },
         manifest: {
           name: 'Expensify',
           short_name: 'Expensify',

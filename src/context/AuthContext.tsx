@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { initializeDB } from '../models/db';
+import { initializeDB, db } from '../models/db';
 import { auth } from '../lib/firebase';
+import { startSync } from '../lib/syncEngine';
 import { 
   onAuthStateChanged, 
   signInWithEmailAndPassword, 
@@ -46,9 +47,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           photoURL: firebaseUser.photoURL
         };
         setUser(mappedUser);
-        initializeDB(mappedUser.uid);
+        const activeDB = initializeDB(mappedUser.uid);
+        startSync(mappedUser.uid, activeDB);
       } else {
         setUser(null);
+        startSync(null, db as any);
       }
       setLoading(false);
     });
