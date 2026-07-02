@@ -47,7 +47,7 @@ export default function Auth() {
           <div className="w-16 h-16 bg-brand-blue rounded-[20px] shadow-lg shadow-brand-blue/20 flex items-center justify-center mb-4">
             <Wallet className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-heading font-black text-brand-blue dark:text-white tracking-tight">Anup Finance</h1>
+          <h1 className="text-2xl font-heading font-black text-brand-blue dark:text-white tracking-tight">Expensify</h1>
           <p className="text-sm font-bold text-neutral-500 mt-1 uppercase tracking-widest">Master your money</p>
         </div>
 

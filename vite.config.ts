@@ -15,8 +15,8 @@ export default defineConfig(({mode}) => {
         registerType: 'autoUpdate',
         includeAssets: ['icon.svg'],
         manifest: {
-          name: 'Anup Finance Premium',
-          short_name: 'Finance',
+          name: 'Expensify',
+          short_name: 'Expensify',
           description: 'Premium offline-first expense tracker and financial dashboard',
           theme_color: '#060608',
           background_color: '#060608',
