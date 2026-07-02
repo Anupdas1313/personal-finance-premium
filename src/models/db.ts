@@ -157,17 +157,17 @@ export class FinanceDatabase extends Dexie {
     this.version(11).stores({
       recurringTemplates: '++id, nextRunDate, isActive'
     });
-    this.version(12).stores({
-      accounts: 'id, bankName, accountLast4',
-      transactions: 'id, accountId, type, dateTime, category',
-      monthlyClosings: 'id, &month',
-      budgets: 'id, category, month, [category+month]',
-      parties: 'id, name, type',
-      ledgerTransactions: 'id, partyId, type, dateTime',
-      accountClosings: 'id, accountId, closingDate',
-      categories: 'id, &name',
-      tags: 'id, &name',
-      recurringTemplates: 'id, nextRunDate, isActive'
+    this.version(13).stores({
+      accounts: '++id, bankName, accountLast4',
+      transactions: '++id, accountId, type, dateTime, category',
+      monthlyClosings: '++id, &month',
+      budgets: '++id, category, month, [category+month]',
+      parties: '++id, name, type',
+      ledgerTransactions: '++id, partyId, type, dateTime',
+      accountClosings: '++id, accountId, closingDate',
+      categories: '++id, &name',
+      tags: '++id, &name',
+      recurringTemplates: '++id, nextRunDate, isActive'
     });
 
     // Auto-generate globally unique numeric IDs for all tables to prevent sync collisions
