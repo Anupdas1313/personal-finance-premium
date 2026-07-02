@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './screens/Dashboard';
 import Transactions from './screens/Transactions';
@@ -12,15 +12,25 @@ import Ledger from './screens/Ledger';
 import PartyLedger from './screens/PartyLedger';
 import Reports from './screens/Reports';
 import Profile from './screens/Profile';
+import Auth from './screens/Auth';
 
 import { ThemeProvider } from './components/ThemeProvider';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { useRecurringEngine } from './logic/useRecurringEngine';
 
+// Protect routes that require authentication
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+  return <>{children}</>;
+}
+
 function LoadingWrapper({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   
-  // Start the auto-logging engine for recurring transactions
+  // Start the auto-logging engine for recurring transactions if user is logged in
   useRecurringEngine(user?.uid);
   
   if (loading) {
@@ -41,7 +51,15 @@ export default function App() {
         <HashRouter>
           <LoadingWrapper>
             <Routes>
-              <Route path="/" element={<Layout />}>
+              {/* Public route */}
+              <Route path="/auth" element={<Auth />} />
+
+              {/* Protected routes wrapped in Layout */}
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }>
                 <Route index element={<Dashboard />} />
                 <Route path="transactions" element={<Transactions />} />
                 <Route path="accounts" element={<Accounts />} />
@@ -54,8 +72,14 @@ export default function App() {
                 <Route path="profile" element={<Profile />} />
               </Route>
 
-              <Route path="/transactions/table" element={<TransactionTable />} />
-              <Route path="*" element={<Dashboard />} />
+              {/* Protected routes without Layout */}
+              <Route path="/transactions/table" element={
+                <ProtectedRoute>
+                  <TransactionTable />
+                </ProtectedRoute>
+              } />
+
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </LoadingWrapper>
         </HashRouter>

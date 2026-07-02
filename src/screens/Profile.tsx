@@ -4,7 +4,7 @@ import { User, Mail, ShieldCheck, CheckCircle2, AlertTriangle, Save } from 'luci
 import { cn } from '../logic/utils';
 
 export default function Profile() {
-  const { user, updateProfileName } = useAuth();
+  const { user, updateProfileName, logout } = useAuth();
   const [name, setName] = useState(user?.displayName || '');
   const [isUpdating, setIsUpdating] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -130,6 +130,27 @@ export default function Profile() {
                   </button>
                 </div>
               </form>
+            </div>
+          </section>
+
+          <section>
+            <div className="bg-rose-50 dark:bg-rose-500/5 border border-rose-100 dark:border-rose-500/10 rounded-[32px] p-6 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-sm text-rose-600 dark:text-rose-400">Sign Out</h3>
+                <p className="text-xs text-rose-500/70 dark:text-rose-400/70 mt-1">Log out of your account on this device</p>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    await logout();
+                  } catch (e) {
+                    console.error('Logout failed', e);
+                  }
+                }}
+                className="px-6 py-3 bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 hover:bg-rose-200 dark:hover:bg-rose-500/30 rounded-xl font-bold transition-all text-xs uppercase tracking-widest"
+              >
+                Log Out
+              </button>
             </div>
           </section>
         </div>

@@ -1,5 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { initializeDB } from '../models/db';
+import { auth } from '../lib/firebase';
+import { 
+  onAuthStateChanged, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut,
+  User as FirebaseUser
+} from 'firebase/auth';
 
 interface User {
   uid: string;
@@ -20,63 +28,53 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const LOCAL_USER_KEY = 'expense_tracker_local_user';
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem(LOCAL_USER_KEY);
-    const initialUser = storedUser ? JSON.parse(storedUser) : {
-      uid: 'LOCAL_USER',
-      email: 'guest@local.app',
-      displayName: 'Guest User',
-      photoURL: null
-    };
-    
-    setUser(initialUser);
-    initializeDB(initialUser.uid);
-    setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      if (firebaseUser) {
+        const mappedUser = {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+          photoURL: firebaseUser.photoURL
+        };
+        setUser(mappedUser);
+        initializeDB(mappedUser.uid);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const logout = async () => {
-    // No-op since we're removing login page
+    await signOut(auth);
   };
 
-  const signIn = async (email: string) => {
-    const newUser = {
-      uid: 'LOCAL_USER',
-      email: email,
-      displayName: email.split('@')[0],
-      photoURL: null
-    };
-    localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(newUser));
-    setUser(newUser);
-    initializeDB(newUser.uid);
+  const signIn = async (email: string, password: string) => {
+    await signInWithEmailAndPassword(auth, email, password);
   };
 
-  const signUp = async (email: string, _password: string, name?: string) => {
-    const newUser = {
-      uid: 'LOCAL_USER',
-      email: email,
-      displayName: name || email.split('@')[0],
-      photoURL: null
-    };
-    localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(newUser));
-    setUser(newUser);
-    initializeDB(newUser.uid);
+  const signUp = async (email: string, password: string, _name?: string) => {
+    // Note: To save profile data (like name), we would use updateProfile or Firestore.
+    // The user explicitly requested: "Do NOT save user profile data".
+    await createUserWithEmailAndPassword(auth, email, password);
   };
 
   const resetPassword = async (_email: string) => {
-    console.log('Reset password requested in local mode.');
+    // Placeholder for future implementation
+    console.log('Reset password requested');
   };
 
   const updateProfileName = async (name: string) => {
+    // Note: The user requested not to save profile data, so this remains a no-op for now.
     if (user) {
-      const updated = { ...user, displayName: name };
-      localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(updated));
-      setUser(updated);
+      setUser({ ...user, displayName: name });
     }
   };
 
