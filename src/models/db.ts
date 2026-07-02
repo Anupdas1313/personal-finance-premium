@@ -162,10 +162,24 @@ export class FinanceDatabase extends Dexie {
 
 // Global db instance management
 let activeDB: FinanceDatabase = new FinanceDatabase('FinanceDatabase_Local');
+let currentDBName: string = 'FinanceDatabase_Local';
 
 export const initializeDB = (uid: string | null) => {
-  // In local mode, we always use the same database name
-  // The uid parameter is kept for backward compatibility with existing calls
+  const dbName = uid ? `FinanceDB_${uid}` : 'FinanceDatabase_Local';
+
+  // If already using the correct DB, skip re-init
+  if (dbName === currentDBName && activeDB.isOpen()) {
+    return activeDB;
+  }
+
+  // Close previous DB before switching
+  if (activeDB.isOpen()) {
+    activeDB.close();
+  }
+
+  activeDB = new FinanceDatabase(dbName);
+  currentDBName = dbName;
+  activeDB.open();
   return activeDB;
 };
 
