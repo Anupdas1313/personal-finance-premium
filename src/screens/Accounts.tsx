@@ -626,7 +626,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
       // Use current time or 1ms after last tx
       const lastTxTime = transactions.length > 0 
         ? new Date(transactions[transactions.length - 1].dateTime).getTime() 
-        : new Date(account.startingBalanceDate).getTime();
+        : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
       const partitionTime = Math.max(lastTxTime + 1, Date.now());
 
       const lastClosing = closings.length > 0 ? closings[closings.length - 1] : null;
@@ -802,7 +802,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
           <tbody>
             {/* System Start Balance - Always at the Peak */}
             <tr className="bg-brand-blue/[0.02] dark:bg-white/[0.01] border-b border-neutral-100/50 dark:border-[#222222]">
-              <td className="px-2 py-2 whitespace-nowrap"><span className="text-[9px] font-black text-neutral-400 uppercase tracking-tighter">{format(new Date(account.startingBalanceDate), 'dd MMM yyyy')}</span></td>
+              <td className="px-2 py-2 whitespace-nowrap"><span className="text-[9px] font-black text-neutral-400 uppercase tracking-tighter">{account.startingBalanceDate ? format(new Date(account.startingBalanceDate), 'dd MMM yyyy') : '-'}</span></td>
               <td className="px-2 py-2"><span className="text-[9px] font-black text-brand-blue/50 dark:text-white/40 uppercase tracking-widest">System Start Balance</span></td>
               <td className="px-2 py-2 opacity-50"><span className="text-[9px]">-</span></td>
               <td className="px-2 py-2 text-right whitespace-nowrap"><span className="text-[11px] font-black text-neutral-200">-</span></td>
@@ -812,7 +812,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             {statementData.map((tx, idx) => {
               // Find any partitions that occurred between the previous transaction and this one
               const txTime = new Date(tx.dateTime).getTime();
-              const prevTxTime = idx > 0 ? new Date(statementData[idx-1].dateTime).getTime() : new Date(account.startingBalanceDate).getTime();
+              const prevTxTime = idx > 0 ? new Date(statementData[idx-1].dateTime).getTime() : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
               
               const matchingClosings = closings.filter(c => {
                 const cTime = new Date(c.closingDate).getTime();
@@ -839,7 +839,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             {(() => {
                 const lastTxTimeInView = statementData.length > 0 
                     ? new Date(statementData[statementData.length - 1].dateTime).getTime() 
-                    : new Date(account.startingBalanceDate).getTime();
+                    : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
                 
                 const trailingClosings = closings.filter(c => {
                     const cTime = new Date(c.closingDate).getTime();
