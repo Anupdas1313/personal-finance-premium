@@ -159,18 +159,51 @@ export default function Profile() {
                 <p className="text-xs text-rose-600/70 dark:text-rose-500/70 mt-1">Permanently delete your account and all data</p>
               </div>
               <button
+                disabled={isUpdating}
                 onClick={async () => {
                   const confirmDelete = window.confirm(
                     'DANGER: This will permanently delete your account, including all your settings, transactions, and preferences from both this device and the cloud. This action CANNOT be undone.\n\nAre you absolutely sure?'
                   );
                   if (!confirmDelete) return;
 
+                  setIsUpdating(true);
                   try {
+                    if (!user) return;
+                    const uid = user.uid;
+
+                    // 1. Delete from Firestore first
+                    const { collection, getDocs, deleteDoc } = await import('firebase/firestore');
+                    const { firestoreDb } = await import('../lib/firebase');
+                    const tables = [
+                      'accounts', 'transactions', 'monthlyClosings', 'budgets', 
+                      'parties', 'ledgerTransactions', 'accountClosings', 
+                      'categories', 'tags', 'recurringTemplates', 'userSettings'
+                    ];
+
+                    for (const table of tables) {
+                      try {
+                        const qs = await getDocs(collection(firestoreDb, `users/${uid}/${table}`));
+                        const deletePromises = qs.docs.map(doc => deleteDoc(doc.ref));
+                        await Promise.all(deletePromises);
+                      } catch (err) {
+                        console.error(`Failed to delete table ${table}`, err);
+                      }
+                    }
+
+                    // 2. Stop sync to prevent any writes while deleting
+                    const { stopSync } = await import('../lib/syncEngine');
+                    stopSync();
+
+                    // 3. Delete local data
                     const { db } = await import('../models/db');
-                    await db.delete(); // Completely wipe the IndexedDB for this user
-                    localStorage.removeItem(`onboardingComplete_${user?.uid}`);
-                    localStorage.removeItem(`tutorialComplete_${user?.uid}`);
+                    if (db.isOpen()) {
+                      db.close(); // MUST close before delete to prevent hanging
+                    }
+                    await db.delete(); 
+                    localStorage.removeItem(`onboardingComplete_${uid}`);
+                    localStorage.removeItem(`tutorialComplete_${uid}`);
                     
+                    // 4. Finally delete the Auth user
                     await deleteAccount();
                   } catch (e: any) {
                     if (e.code === 'auth/requires-recent-login') {
@@ -178,11 +211,13 @@ export default function Profile() {
                     } else {
                       showMessage('error', e.message || 'Failed to delete account');
                     }
+                  } finally {
+                    setIsUpdating(false);
                   }
                 }}
-                className="px-6 py-3 bg-rose-600 dark:bg-rose-600 text-white hover:bg-rose-700 dark:hover:bg-rose-700 rounded-xl font-bold transition-all text-xs uppercase tracking-widest w-full sm:w-auto"
+                className="px-6 py-3 bg-rose-600 dark:bg-rose-600 text-white hover:bg-rose-700 dark:hover:bg-rose-700 rounded-xl font-bold transition-all text-xs uppercase tracking-widest w-full sm:w-auto disabled:opacity-50"
               >
-                Delete Account
+                {isUpdating ? 'Deleting...' : 'Delete Account'}
               </button>
             </div>
           </section>
