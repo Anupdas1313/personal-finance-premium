@@ -190,6 +190,14 @@ export default function Profile() {
                       }
                     }));
 
+                    // Delete the user root folder/document itself
+                    try {
+                      const { doc } = await import('firebase/firestore');
+                      await deleteDoc(doc(firestoreDb, 'users', uid));
+                    } catch (err) {
+                      console.error('Failed to delete user root doc', err);
+                    }
+
                     // 2. Stop sync to prevent any writes while deleting
                     const { stopSync } = await import('../lib/syncEngine');
                     stopSync();
