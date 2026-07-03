@@ -473,6 +473,7 @@ export default function Accounts() {
 }
 
 function PartitionRow({ partition }: { partition: any }) {
+  const currency = useCurrency();
   return (
     <tr className="bg-brand-blue/[0.05] dark:bg-brand-blue/[0.15] border-y border-brand-blue/10 dark:border-brand-blue/30">
       <td colSpan={4} className="px-2 py-2">
@@ -488,6 +489,7 @@ function PartitionRow({ partition }: { partition: any }) {
 }
 
 function AccountStatementDetail({ accountId, onClose }: { accountId: number, onClose: () => void }) {
+  const currency = useCurrency();
   const { user } = useAuth();
   const navigate = useNavigate();
   const account = useLiveQuery(() => db.accounts.get(accountId), [accountId, user?.uid]);

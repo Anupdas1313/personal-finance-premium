@@ -21,6 +21,12 @@ interface AIChatEntryProps {
 type ChatStage = 'IDLE' | 'ASK_AMOUNT' | 'ASK_TYPE' | 'ASK_BANK' | 'ASK_PAYMENT_METHOD'
   | 'ASK_UPI_APP' | 'ASK_CATEGORY' | 'ASK_TAG' | 'ASK_PAYEE' | 'ASK_NOTE' | 'ASK_DATE' | 'PREVIEW';
 
+interface ChatMessage {
+  role: 'user' | 'ai';
+  content: string;
+  options?: string[];
+}
+
 // ─── Emoji → Category Shortcuts ──────────────────────────────────────────
 const EMOJI_CATEGORY: Record<string, string> = {
   '🍕': 'Food', '🍔': 'Food', '🍜': 'Food', '🥘': 'Food', '☕': 'Food', '🍩': 'Food',
@@ -647,6 +653,7 @@ const usePersonalLearning = () => {
 
 // ─── Main Component ───────────────────────────────────────────────────────
 export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags, isSaving, showSuccess }) => {
+  const currency = useCurrency();
   const { categories: appCategories } = useCategories();
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'ai', content: "Hi! 👋 Describe your expense naturally — I'll fill everything in.\n\nTry: *\"paid 500 to Zomato via GPay from HDFC yesterday for dinner\"*\nOr say *\"same\"* to repeat your last entry." }

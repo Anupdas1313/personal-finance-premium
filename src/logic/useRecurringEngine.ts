@@ -27,8 +27,7 @@ export function useRecurringEngine(uid?: string | null) {
               dateTime: new Date(runDate.setHours(10, 0, 0, 0)), // default to 10 AM
               category: template.category,
               note: `[Auto-Logged] ${template.note}`,
-              paymentMethod: template.paymentMethod || 'Bank',
-              toAccountId: template.toAccountId,
+              paymentMethod: template.paymentMethod || 'Bank'
             });
 
             // 2. Advance nextRunDate

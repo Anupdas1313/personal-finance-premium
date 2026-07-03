@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom';
 import { Wallet, AlertCircle, Mail } from 'lucide-react';
 
 export default function Auth() {
-  const { user, signIn, signUp, signInWithGoogle } = useAuth();
+  const { user, signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
