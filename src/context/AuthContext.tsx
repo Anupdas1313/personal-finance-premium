@@ -1,24 +1,20 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { initializeDB, db } from '../models/db';
-import { auth } from '../lib/firebase';
-import { startSync } from '../lib/syncEngine';
 import { 
-  onAuthStateChanged, 
+  User, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  signOut,
-  sendEmailVerification,
-  User as FirebaseUser,
+  signOut, 
+  onAuthStateChanged,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  deleteUser,
+  updateProfile
 } from 'firebase/auth';
-
-interface User {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-  photoURL: string | null;
-}
+import { auth } from '../lib/firebase';
+import { startSync, stopSync } from '../lib/syncEngine';
+import { db, initializeDB } from '../models/db';
 
 interface AuthContextType {
   user: User | null;
@@ -29,20 +25,22 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateProfileName: (name: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | null>(null);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-      // If the user logs in via Email/Password but their email is NOT verified, 
-      // do not expose them to the UI to prevent a brief flash of the Dashboard.
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      // For email/password users, require email verification
       const isPasswordUser = firebaseUser?.providerData.some(p => p.providerId === 'password');
+      
       if (firebaseUser && isPasswordUser && !firebaseUser.emailVerified) {
+        // If not verified, sign them out and don't set user state
         setUser(null);
         startSync(null, db as any);
         setLoading(false);
@@ -50,18 +48,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (firebaseUser) {
+        // Create a stable copy of the user object to avoid proxy issues
         const mappedUser = {
           uid: firebaseUser.uid,
           email: firebaseUser.email,
-          displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
-          photoURL: firebaseUser.photoURL
-        };
+          displayName: firebaseUser.displayName,
+          emailVerified: firebaseUser.emailVerified,
+          photoURL: firebaseUser.photoURL,
+        } as User;
+        
         setUser(mappedUser);
         const activeDB = initializeDB(mappedUser.uid);
         startSync(mappedUser.uid, activeDB);
       } else {
         setUser(null);
-        startSync(null, db as any);
+        stopSync();
       }
       setLoading(false);
     });
@@ -83,10 +84,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (email: string, password: string, _name?: string) => {
-    // Note: To save profile data (like name), we would use updateProfile or Firestore.
-    // The user explicitly requested: "Do NOT save user profile data".
+  const signUp = async (email: string, password: string, name?: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    if (name && userCredential.user) {
+        await updateProfile(userCredential.user, { displayName: name });
+    }
     await sendEmailVerification(userCredential.user);
     await signOut(auth);
   };
@@ -96,28 +98,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await signInWithPopup(auth, provider);
   };
 
-  const resetPassword = async (_email: string) => {
-    // Placeholder for future implementation
-    console.log('Reset password requested');
+  const resetPassword = async (email: string) => {
+    await sendPasswordResetEmail(auth, email);
   };
 
   const updateProfileName = async (name: string) => {
-    // Note: The user requested not to save profile data, so this remains a no-op for now.
-    if (user) {
-      setUser({ ...user, displayName: name });
+    if (auth.currentUser) {
+      await updateProfile(auth.currentUser, { displayName: name });
+      // Update local state to reflect change immediately
+      if (user) {
+        setUser({ ...user, displayName: name });
+      }
+    }
+  };
+
+  const deleteAccount = async () => {
+    if (auth.currentUser) {
+      await deleteUser(auth.currentUser);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, logout, signIn, signUp, signInWithGoogle, resetPassword, updateProfileName }}>
+    <AuthContext.Provider value={{ user, loading, logout, signIn, signUp, signInWithGoogle, resetPassword, updateProfileName, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

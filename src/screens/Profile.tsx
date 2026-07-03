@@ -4,7 +4,7 @@ import { User, Mail, ShieldCheck, CheckCircle2, AlertTriangle, Save } from 'luci
 import { cn } from '../logic/utils';
 
 export default function Profile() {
-  const { user, updateProfileName, logout } = useAuth();
+  const { user, updateProfileName, logout, deleteAccount } = useAuth();
   const [name, setName] = useState(user?.displayName || '');
   const [isUpdating, setIsUpdating] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -133,8 +133,8 @@ export default function Profile() {
             </div>
           </section>
 
-          <section>
-            <div className="bg-rose-50 dark:bg-rose-500/5 border border-rose-100 dark:border-rose-500/10 rounded-[32px] p-6 flex items-center justify-between">
+          <section className="space-y-4">
+            <div className="bg-rose-50 dark:bg-rose-500/5 border border-rose-100 dark:border-rose-500/10 rounded-[32px] p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="font-bold text-sm text-rose-600 dark:text-rose-400">Sign Out</h3>
                 <p className="text-xs text-rose-500/70 dark:text-rose-400/70 mt-1">Log out of your account on this device</p>
@@ -147,9 +147,42 @@ export default function Profile() {
                     console.error('Logout failed', e);
                   }
                 }}
-                className="px-6 py-3 bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 hover:bg-rose-200 dark:hover:bg-rose-500/30 rounded-xl font-bold transition-all text-xs uppercase tracking-widest"
+                className="px-6 py-3 bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 hover:bg-rose-200 dark:hover:bg-rose-500/30 rounded-xl font-bold transition-all text-xs uppercase tracking-widest w-full sm:w-auto"
               >
                 Log Out
+              </button>
+            </div>
+
+            <div className="bg-rose-100 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-[32px] p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="font-bold text-sm text-rose-700 dark:text-rose-500">Delete Account</h3>
+                <p className="text-xs text-rose-600/70 dark:text-rose-500/70 mt-1">Permanently delete your account and all data</p>
+              </div>
+              <button
+                onClick={async () => {
+                  const confirmDelete = window.confirm(
+                    'DANGER: This will permanently delete your account, including all your settings, transactions, and preferences from both this device and the cloud. This action CANNOT be undone.\n\nAre you absolutely sure?'
+                  );
+                  if (!confirmDelete) return;
+
+                  try {
+                    const { db } = await import('../models/db');
+                    await db.delete(); // Completely wipe the IndexedDB for this user
+                    localStorage.removeItem(`onboardingComplete_${user?.uid}`);
+                    localStorage.removeItem(`tutorialComplete_${user?.uid}`);
+                    
+                    await deleteAccount();
+                  } catch (e: any) {
+                    if (e.code === 'auth/requires-recent-login') {
+                      showMessage('error', 'Please log out and log back in to verify your identity before deleting your account.');
+                    } else {
+                      showMessage('error', e.message || 'Failed to delete account');
+                    }
+                  }
+                }}
+                className="px-6 py-3 bg-rose-600 dark:bg-rose-600 text-white hover:bg-rose-700 dark:hover:bg-rose-700 rounded-xl font-bold transition-all text-xs uppercase tracking-widest w-full sm:w-auto"
+              >
+                Delete Account
               </button>
             </div>
           </section>

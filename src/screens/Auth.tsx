@@ -121,7 +121,33 @@ export default function Auth() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">Password</label>
+                  <div className="flex justify-between items-center mb-1.5 ml-1">
+                    <label className="block text-[10px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-widest">Password</label>
+                    {isLogin && (
+                      <button 
+                        type="button" 
+                        onClick={async () => {
+                          if (!email) {
+                            setError('Please enter your email to reset password');
+                            return;
+                          }
+                          try {
+                            setLoading(true);
+                            await resetPassword(email);
+                            setError('');
+                            alert('Password reset link sent to your email.');
+                          } catch (err: any) {
+                            setError(err.message || 'Failed to send reset link');
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                        className="text-[10px] font-black text-brand-blue dark:text-brand-cyan uppercase tracking-widest hover:underline"
+                      >
+                        Forgot?
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="password"
                     required

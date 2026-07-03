@@ -20,9 +20,14 @@ function convertTimestampsToDates(obj: any): any {
   return obj;
 }
 
-export function startSync(uid: string | null, db: FinanceDatabase) {
+export function stopSync() {
   syncUnsubscribes.forEach(unsub => unsub());
   syncUnsubscribes = [];
+  syncingKeys.clear();
+}
+
+export function startSync(uid: string | null, db: FinanceDatabase) {
+  stopSync();
   syncingKeys.clear();
 
   if (!uid) return;
