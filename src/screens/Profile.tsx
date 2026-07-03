@@ -207,7 +207,10 @@ export default function Profile() {
                     await deleteAccount();
                   } catch (e: any) {
                     if (e.code === 'auth/requires-recent-login') {
-                      showMessage('error', 'Please log out and log back in to verify your identity before deleting your account.');
+                      showMessage('error', 'Security requirement: Please log in again to verify your identity. Logging out...');
+                      setTimeout(() => {
+                        logout();
+                      }, 3000);
                     } else {
                       showMessage('error', e.message || 'Failed to delete account');
                     }
