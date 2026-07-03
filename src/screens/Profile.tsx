@@ -171,7 +171,7 @@ export default function Profile() {
                     if (!user) return;
                     const uid = user.uid;
 
-                    // 1. Delete from Firestore first
+                    // 1. Delete from Firestore concurrently (much faster)
                     const { collection, getDocs, deleteDoc } = await import('firebase/firestore');
                     const { firestoreDb } = await import('../lib/firebase');
                     const tables = [
@@ -180,7 +180,7 @@ export default function Profile() {
                       'categories', 'tags', 'recurringTemplates', 'userSettings'
                     ];
 
-                    for (const table of tables) {
+                    await Promise.all(tables.map(async (table) => {
                       try {
                         const qs = await getDocs(collection(firestoreDb, `users/${uid}/${table}`));
                         const deletePromises = qs.docs.map(doc => deleteDoc(doc.ref));
@@ -188,23 +188,26 @@ export default function Profile() {
                       } catch (err) {
                         console.error(`Failed to delete table ${table}`, err);
                       }
-                    }
+                    }));
 
                     // 2. Stop sync to prevent any writes while deleting
                     const { stopSync } = await import('../lib/syncEngine');
                     stopSync();
 
-                    // 3. Delete local data
+                    // 3. Delete the Auth user first. 
+                    // This triggers onAuthStateChanged, redirects to /login, and unmounts all useLiveQuery hooks.
+                    await deleteAccount();
+
+                    // 4. Delete local data safely now that hooks are unmounted
                     const { db } = await import('../models/db');
                     if (db.isOpen()) {
-                      db.close(); // MUST close before delete to prevent hanging
+                      db.close();
                     }
-                    await db.delete(); 
+                    // Run delete without awaiting so it doesn't block the UI if it takes a moment
+                    db.delete().catch(e => console.error("Error deleting local db", e)); 
                     localStorage.removeItem(`onboardingComplete_${uid}`);
                     localStorage.removeItem(`tutorialComplete_${uid}`);
                     
-                    // 4. Finally delete the Auth user
-                    await deleteAccount();
                   } catch (e: any) {
                     if (e.code === 'auth/requires-recent-login') {
                       showMessage('error', 'Security requirement: Please log in again to verify your identity. Logging out...');
