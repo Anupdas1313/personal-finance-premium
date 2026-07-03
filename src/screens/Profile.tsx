@@ -210,10 +210,43 @@ export default function Profile() {
                     
                   } catch (e: any) {
                     if (e.code === 'auth/requires-recent-login') {
-                      showMessage('error', 'Security requirement: Please log in again to verify your identity. Logging out...');
-                      setTimeout(() => {
-                        logout();
-                      }, 3000);
+                      try {
+                        const { EmailAuthProvider, reauthenticateWithCredential, GoogleAuthProvider, reauthenticateWithPopup } = await import('firebase/auth');
+                        const { auth } = await import('../lib/firebase');
+                        
+                        const providerId = user.providerData[0]?.providerId;
+                        
+                        if (providerId === 'google.com') {
+                          const provider = new GoogleAuthProvider();
+                          await reauthenticateWithPopup(auth.currentUser!, provider);
+                        } else if (providerId === 'password') {
+                          const pwd = window.prompt("Security requirement: Please enter your password to confirm account deletion:");
+                          if (!pwd) {
+                            setIsUpdating(false);
+                            return;
+                          }
+                          const credential = EmailAuthProvider.credential(user.email!, pwd);
+                          await reauthenticateWithCredential(auth.currentUser!, credential);
+                        } else {
+                          showMessage('error', 'Please log out and log back in to verify your identity.');
+                          return;
+                        }
+                        
+                        // Retry deletion after successful re-auth
+                        await deleteAccount();
+
+                        // Retry local data deletion
+                        const { db } = await import('../models/db');
+                        if (db.isOpen()) {
+                          db.close();
+                        }
+                        db.delete().catch(err => console.error("Error deleting local db", err)); 
+                        localStorage.removeItem(`onboardingComplete_${uid}`);
+                        localStorage.removeItem(`tutorialComplete_${uid}`);
+                        
+                      } catch (reauthError: any) {
+                        showMessage('error', reauthError.message || 'Authentication failed. Please log out and log back in.');
+                      }
                     } else {
                       showMessage('error', e.message || 'Failed to delete account');
                     }
