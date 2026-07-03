@@ -11,6 +11,7 @@ import { toBlob } from 'html-to-image';
 import { motion, useSpring, useTransform } from 'framer-motion';
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
+import { useCurrency } from '../hooks/useCurrency';
 
 function CountUp({ value, prefix = '', suffix = '' }: { value: number, prefix?: string, suffix?: string }) {
   const spring = useSpring(0, { bounce: 0, duration: 1500 });
@@ -37,6 +38,7 @@ const safeFormatDate = (dateVal: any, formatStr: string) => {
 };
 
 export default function TransactionTable() {
+  const currency = useCurrency();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -359,7 +361,7 @@ export default function TransactionTable() {
       <div style="text-align: center; margin-bottom: 16px;">
         <div style="font-size: 14px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">${typeLabel}</div>
         <div style="font-size: 36px; font-weight: bold; color: ${amountColor}; margin: 8px 0;">
-          ${isCredit ? '+' : '-'}₹${(tx.amount || 0).toLocaleString('en-IN')}
+          ${isCredit ? '+' : '-'}{currency}${(tx.amount || 0).toLocaleString('en-IN')}
         </div>
         <div style="font-size: 18px; font-weight: 500;">${merchantNote}</div>
       </div>
@@ -452,7 +454,7 @@ export default function TransactionTable() {
                     <span className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em]">Outflow</span>
                   </div>
                   <div className="text-base sm:text-2xl font-semibold text-brand-red truncate w-full">
-                    <CountUp value={summary.spent} prefix="-₹" />
+                    <CountUp value={summary.spent} prefix="-${currency}" />
                   </div>
                 </div>
 
@@ -462,7 +464,7 @@ export default function TransactionTable() {
                     <span className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em]">Inflow</span>
                   </div>
                   <div className="text-base sm:text-2xl font-semibold text-brand-green truncate w-full">
-                    <CountUp value={summary.received} prefix="+₹" />
+                    <CountUp value={summary.received} prefix="+${currency}" />
                   </div>
                 </div>
 
@@ -473,7 +475,7 @@ export default function TransactionTable() {
                   </div>
 
                   <div className={`text-base sm:text-2xl font-semibold truncate w-full ${summary.received - summary.spent >= 0 ? 'text-brand-green' : 'text-brand-red'}`}>
-                    <CountUp value={Math.abs(summary.received - summary.spent)} prefix={summary.received - summary.spent >= 0 ? '+₹' : '-₹'} />
+                    <CountUp value={Math.abs(summary.received - summary.spent)} prefix={summary.received - summary.spent >= 0 ? '+{currency}' : '-{currency}'} />
                   </div>
                 </div>
 
@@ -651,7 +653,7 @@ export default function TransactionTable() {
                     </td>
 
                     <td className={`px-4 py-3 text-right font-semibold ${tx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-red'}`}>
-                      {tx.type === 'CREDIT' ? '+' : '-'}₹{(tx.amount || 0).toLocaleString('en-IN')}
+                      {tx.type === 'CREDIT' ? '+' : '-'}{currency}{(tx.amount || 0).toLocaleString('en-IN')}
                     </td>
 
                     <td className="hidden md:table-cell px-4 py-3 font-medium text-[#717171] dark:text-[#A0A0A0]">

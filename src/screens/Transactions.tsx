@@ -16,6 +16,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../hooks/useCurrency';
 
 // ─── Category appearance maps ─────────────────────────────────────
 const CATEGORY_ICONS: Record<string, string> = {
@@ -44,6 +45,7 @@ const Portal: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 // Main Transactions Screen
 // ═════════════════════════════════════════════════════════════════
 export default function Transactions() {
+  const currency = useCurrency();
   const { user } = useAuth();
   const { categories: appCategories } = useCategories();
   const { tags } = useTags();
@@ -150,7 +152,7 @@ export default function Transactions() {
           </div>
           <div>
             <p className="text-[6px] font-black text-neutral-400 dark:text-white/40 uppercase tracking-[0.1em] leading-none">Inflow</p>
-            <h3 className="text-xs font-heading font-black text-emerald-600 tracking-tight">₹{totals.income.toLocaleString()}</h3>
+            <h3 className="text-xs font-heading font-black text-emerald-600 tracking-tight">{currency}{totals.income.toLocaleString()}</h3>
           </div>
         </div>
         <div className="w-px h-4 bg-neutral-100 dark:bg-white/5" />
@@ -160,7 +162,7 @@ export default function Transactions() {
           </div>
           <div>
             <p className="text-[6px] font-black text-neutral-400 dark:text-white/40 uppercase tracking-[0.1em] leading-none">Outflow</p>
-            <h3 className="text-xs font-heading font-black text-rose-600 tracking-tight">₹{totals.expense.toLocaleString()}</h3>
+            <h3 className="text-xs font-heading font-black text-rose-600 tracking-tight">{currency}{totals.expense.toLocaleString()}</h3>
           </div>
         </div>
       </div>
@@ -348,7 +350,7 @@ export default function Transactions() {
                     </div>
                   </div>
                   <p className={`text-base font-heading font-black tracking-tighter ${tx.type === 'DEBIT' ? 'text-rose-500' : tx.type === 'TRANSFER' ? 'text-cyan-500' : 'text-emerald-500'}`}>
-                    {tx.type === 'DEBIT' ? '−' : tx.type === 'TRANSFER' ? '⇄' : '+'}₹{Number(tx.amount).toLocaleString()}
+                    {tx.type === 'DEBIT' ? '−' : tx.type === 'TRANSFER' ? '⇄' : '+'}{currency}{Number(tx.amount).toLocaleString()}
                   </p>
                 </motion.div>
               </div>

@@ -9,8 +9,10 @@ import { format, startOfDay, parseISO, endOfMonth, startOfMonth, subMonths, endO
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../hooks/useCurrency';
 
 export default function Accounts() {
+  const currency = useCurrency();
   const { user } = useAuth();
   const navigate = useNavigate();
   const accounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
@@ -188,7 +190,7 @@ export default function Accounts() {
             <div className="flex items-center gap-1.5">
               <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Portfolio</span>
               <p className="text-sm font-heading font-black text-brand-blue dark:text-white tracking-tighter">
-                ₹{totalNetWorth.toLocaleString('en-IN')}
+                {currency}{totalNetWorth.toLocaleString('en-IN')}
               </p>
             </div>
           </div>
@@ -200,7 +202,7 @@ export default function Accounts() {
             <div className="flex items-center gap-1.5">
               <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Liquid</span>
               <p className="text-sm font-heading font-black text-brand-green tracking-tighter">
-                ₹{totalLiquid.toLocaleString('en-IN')}
+                {currency}{totalLiquid.toLocaleString('en-IN')}
               </p>
             </div>
           </div>
@@ -212,7 +214,7 @@ export default function Accounts() {
             <div className="flex items-center gap-1.5">
               <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Liabilities</span>
               <p className="text-sm font-heading font-black text-rose-500 tracking-tighter">
-                ₹{totalLiabilities.toLocaleString('en-IN')}
+                {currency}{totalLiabilities.toLocaleString('en-IN')}
               </p>
             </div>
           </div>
@@ -320,7 +322,7 @@ export default function Accounts() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-[0.2em]">Starting Balance (₹)</label>
+                <label className="block text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-[0.2em]">Starting Balance ({currency})</label>
                 <input
                   type="number"
                   value={startingBalance}
@@ -398,7 +400,7 @@ export default function Accounts() {
                 </div>
                 <div className="text-right">
                    <p className="text-[8px] font-black text-neutral-400 uppercase tracking-widest mb-0.5">Total</p>
-                   <p className="text-lg font-heading font-black text-brand-blue dark:text-white tracking-tighter">₹{total.toLocaleString('en-IN')}</p>
+                   <p className="text-lg font-heading font-black text-brand-blue dark:text-white tracking-tighter">{currency}{total.toLocaleString('en-IN')}</p>
                 </div>
               </div>
 
@@ -432,7 +434,7 @@ export default function Accounts() {
                           <div className="mb-6">
                             <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1">Account Balance</p>
                             <p className={`text-3xl font-heading font-black tracking-tighter ${currentBalance >= 0 ? (account.type === 'CREDIT_CARD' ? 'text-brand-blue dark:text-white' : 'text-brand-green') : 'text-brand-red'} dark:text-brand-cyan mb-2`}>
-                              ₹{currentBalance.toLocaleString('en-IN')}
+                              {currency}{currentBalance.toLocaleString('en-IN')}
                             </p>
                             <div className="h-1.5 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden">
                                <div className={`h-full ${incomeToExpenseRatio > 80 ? 'bg-rose-500' : 'bg-brand-green'}`} style={{ width: `${incomeToExpenseRatio}%` }} />
@@ -442,11 +444,11 @@ export default function Accounts() {
                             <div className="flex items-center gap-4">
                               <div className="flex flex-col">
                                 <span className="text-[7px] font-black text-neutral-400 uppercase">In</span>
-                                <span className="text-[10px] font-black text-emerald-500">₹{(info?.inflow || 0).toLocaleString()}</span>
+                                <span className="text-[10px] font-black text-emerald-500">{currency}{(info?.inflow || 0).toLocaleString()}</span>
                               </div>
                               <div className="flex flex-col">
                                 <span className="text-[7px] font-black text-neutral-400 uppercase">Out</span>
-                                <span className="text-[10px] font-black text-rose-500">₹{(info?.outflow || 0).toLocaleString()}</span>
+                                <span className="text-[10px] font-black text-rose-500">{currency}{(info?.outflow || 0).toLocaleString()}</span>
                               </div>
                             </div>
                             <button onClick={e => { e.stopPropagation(); setSelectedAccountId(account.id!); }} className="w-9 h-9 rounded-2xl bg-brand-green text-white flex items-center justify-center">
@@ -477,7 +479,7 @@ function PartitionRow({ partition }: { partition: any }) {
         <div className="flex items-center justify-end">
           <div className="flex items-center gap-2.5">
             <span className="text-[8px] font-semibold text-brand-blue/60 dark:text-white/50 uppercase tracking-[0.2em]">New Start Balance</span>
-            <span className="text-[11px] font-semibold text-brand-blue dark:text-white tracking-tight">₹{partition.closingBalance.toLocaleString()}</span>
+            <span className="text-[11px] font-semibold text-brand-blue dark:text-white tracking-tight">{currency}{partition.closingBalance.toLocaleString()}</span>
           </div>
         </div>
       </td>
@@ -598,16 +600,16 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     doc.setFontSize(10);
     doc.text(`Bank: ${account.bankName}`, 14, 30);
     doc.text(`Account: **** ${account.accountLast4}`, 14, 35);
-    doc.text(`Closing Balance: INR ${currentViewStateBalance.toLocaleString()}`, 14, 45);
+    doc.text(`Closing Balance: ${currency} ${currentViewStateBalance.toLocaleString()}`, 14, 45);
     autoTable(doc, {
       startY: 55,
       head: [['Date', 'Particulars', 'Debit (Dr)', 'Credit (Cr)', 'Balance']],
       body: statementData.map(tx => [
         format(new Date(tx.dateTime), 'dd MMM yyyy'),
         (tx.note || tx.category || '').toUpperCase(),
-        tx.type === 'DEBIT' ? `INR ${tx.amount.toLocaleString()}` : '-',
-        tx.type === 'CREDIT' ? `INR ${tx.amount.toLocaleString()}` : '-',
-        `INR ${tx.runningBalance.toLocaleString()}`
+        tx.type === 'DEBIT' ? `${currency} ${tx.amount.toLocaleString()}` : '-',
+        tx.type === 'CREDIT' ? `${currency} ${tx.amount.toLocaleString()}` : '-',
+        `${currency} ${tx.runningBalance.toLocaleString()}`
       ]),
       theme: 'grid',
       headStyles: { fillColor: [26, 35, 126] }
@@ -697,7 +699,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               <div className="flex items-center gap-1">
                 <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest leading-none">{account.accountLast4}</p>
                 <div className="w-0.5 h-0.5 rounded-full bg-neutral-300" />
-                <p className="text-[8px] font-semibold text-brand-blue/60 dark:text-white/60 uppercase">₹{actualTotalBalance.toLocaleString()}</p>
+                <p className="text-[8px] font-semibold text-brand-blue/60 dark:text-white/60 uppercase">{currency}{actualTotalBalance.toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -724,17 +726,17 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             <div className="flex items-center gap-3">
               <div className="flex flex-col">
                 <p className="text-[6px] font-semibold text-neutral-400 uppercase tracking-[0.1em]">Opening</p>
-                <p className="text-[10px] font-semibold text-brand-blue/50 dark:text-white/40">₹{openingBalanceForView.toLocaleString()}</p>
+                <p className="text-[10px] font-semibold text-brand-blue/50 dark:text-white/40">{currency}{openingBalanceForView.toLocaleString()}</p>
               </div>
               <div className="w-px h-5 bg-neutral-100 dark:bg-white/10" />
               <div className="flex flex-col">
                 <p className="text-[6px] font-semibold text-neutral-400 uppercase tracking-[0.1em]">Closing</p>
-                <p className="text-[10px] font-semibold text-brand-blue dark:text-white">₹{currentViewStateBalance.toLocaleString()}</p>
+                <p className="text-[10px] font-semibold text-brand-blue dark:text-white">{currency}{currentViewStateBalance.toLocaleString()}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 italic">
-              <span className="text-[8px] font-bold text-brand-green">IN: ₹{totalCredit.toLocaleString()}</span>
-              <span className="text-[8px] font-bold text-brand-red">OUT: ₹{totalDebit.toLocaleString()}</span>
+              <span className="text-[8px] font-bold text-brand-green">IN: {currency}{totalCredit.toLocaleString()}</span>
+              <span className="text-[8px] font-bold text-brand-red">OUT: {currency}{totalDebit.toLocaleString()}</span>
             </div>
           </div>
 
@@ -806,7 +808,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               <td className="px-2 py-2"><span className="text-[9px] font-black text-brand-blue/50 dark:text-white/40 uppercase tracking-widest">System Start Balance</span></td>
               <td className="px-2 py-2 opacity-50"><span className="text-[9px]">-</span></td>
               <td className="px-2 py-2 text-right whitespace-nowrap"><span className="text-[11px] font-black text-neutral-200">-</span></td>
-              <td className="px-2 py-2 text-right whitespace-nowrap"><span className="text-[10px] font-black text-brand-blue/70 dark:text-white/60 tracking-tighter">₹{account.startingBalance.toLocaleString()}</span></td>
+              <td className="px-2 py-2 text-right whitespace-nowrap"><span className="text-[10px] font-black text-brand-blue/70 dark:text-white/60 tracking-tighter">{currency}{account.startingBalance.toLocaleString()}</span></td>
             </tr>
 
             {statementData.map((tx, idx) => {
@@ -828,8 +830,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                     <td className="px-2 py-2 whitespace-nowrap"><span className="text-[9px] font-bold text-neutral-400 uppercase tracking-tighter">{format(new Date(tx.dateTime), 'dd MMM HH:mm')}</span></td>
                     <td className="px-2 py-2"><span className="text-[10px] font-black text-neutral-700 dark:text-neutral-300 uppercase truncate max-w-[120px] block">{tx.party || '-'}</span></td>
                     <td className="px-2 py-2"><span className="text-[8px] font-bold text-neutral-400 dark:text-neutral-500 italic truncate max-w-[150px] block">{tx.note || '-'}</span></td>
-                    <td className="px-2 py-2 text-right whitespace-nowrap"><span className={`text-[11px] font-black tracking-tighter ${tx.type === 'CREDIT' ? 'text-emerald-500' : 'text-rose-500'}`}>{tx.type === 'CREDIT' ? '+' : '-'}₹{tx.amount.toLocaleString()}</span></td>
-                    <td className="px-2 py-2 text-right whitespace-nowrap"><span className="text-[10px] font-black text-brand-blue/70 dark:text-white/60 tracking-tighter">₹{tx.runningBalance.toLocaleString()}</span></td>
+                    <td className="px-2 py-2 text-right whitespace-nowrap"><span className={`text-[11px] font-black tracking-tighter ${tx.type === 'CREDIT' ? 'text-emerald-500' : 'text-rose-500'}`}>{tx.type === 'CREDIT' ? '+' : '-'}{currency}{tx.amount.toLocaleString()}</span></td>
+                    <td className="px-2 py-2 text-right whitespace-nowrap"><span className="text-[10px] font-black text-brand-blue/70 dark:text-white/60 tracking-tighter">{currency}{tx.runningBalance.toLocaleString()}</span></td>
                   </tr>
                 </React.Fragment>
               );

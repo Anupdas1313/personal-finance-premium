@@ -17,6 +17,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
+import { useCurrency } from '../hooks/useCurrency';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   AreaChart, Area, XAxis, YAxis, CartesianGrid, BarChart, Bar
@@ -73,7 +74,7 @@ const generateInsights = (txs: Transaction[], prevTxs: Transaction[]): Insight[]
     const biggest = debits.reduce((a, b) => a.amount > b.amount ? a : b);
     insights.push({
       icon: '💸', color: 'rose',
-      text: `Biggest expense: ₹${biggest.amount.toLocaleString('en-IN')} to ${biggest.party || biggest.category} on ${format(new Date(biggest.dateTime), 'dd MMM')}`
+      text: `Biggest expense: {currency}${biggest.amount.toLocaleString('en-IN')} to ${biggest.party || biggest.category} on ${format(new Date(biggest.dateTime), 'dd MMM')}`
     });
   }
 
@@ -82,7 +83,7 @@ const generateInsights = (txs: Transaction[], prevTxs: Transaction[]): Insight[]
     const avg = Math.round(totalExpense / debits.length);
     insights.push({
       icon: '📊', color: 'blue',
-      text: `${debits.length} expenses averaging ₹${avg.toLocaleString('en-IN')} each`
+      text: `${debits.length} expenses averaging {currency}${avg.toLocaleString('en-IN')} each`
     });
   }
 
@@ -126,6 +127,7 @@ const generateInsights = (txs: Transaction[], prevTxs: Transaction[]): Insight[]
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 export default function Reports() {
+  const currency = useCurrency();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const accountIdParam = searchParams.get('accountId');
@@ -365,7 +367,7 @@ export default function Reports() {
     doc.setTextColor(5, 150, 105);
     doc.text('TOTAL INCOME', 18, y + 6);
     doc.setFontSize(11);
-    doc.text(`INR ${totals.income.toLocaleString()}`, 18, y + 14);
+    doc.text(`${currency} ${totals.income.toLocaleString()}`, 18, y + 14);
     // Expense
     doc.setFillColor(254, 242, 242);
     doc.roundedRect(14 + boxW + 7, y, boxW, 18, 2, 2, 'F');
@@ -373,7 +375,7 @@ export default function Reports() {
     doc.setFontSize(9);
     doc.text('TOTAL EXPENSE', 14 + boxW + 11, y + 6);
     doc.setFontSize(11);
-    doc.text(`INR ${totals.expense.toLocaleString()}`, 14 + boxW + 11, y + 14);
+    doc.text(`${currency} ${totals.expense.toLocaleString()}`, 14 + boxW + 11, y + 14);
     // Net
     doc.setFillColor(238, 242, 255);
     doc.roundedRect(14 + (boxW + 7) * 2, y, boxW, 18, 2, 2, 'F');
@@ -381,7 +383,7 @@ export default function Reports() {
     doc.setFontSize(9);
     doc.text('NET CASH FLOW', 14 + (boxW + 7) * 2 + 4, y + 6);
     doc.setFontSize(11);
-    doc.text(`INR ${(totals.income - totals.expense).toLocaleString()}`, 14 + (boxW + 7) * 2 + 4, y + 14);
+    doc.text(`${currency} ${(totals.income - totals.expense).toLocaleString()}`, 14 + (boxW + 7) * 2 + 4, y + 14);
     y += 26;
 
     // Category mini bar chart in PDF
@@ -401,7 +403,7 @@ export default function Reports() {
         doc.setFontSize(7);
         doc.setTextColor(80);
         doc.text(`${cat.name}`, Math.max(barW, 2) + 18, y + 4);
-        doc.text(`INR ${cat.value.toLocaleString()} (${((cat.value / totals.expense) * 100).toFixed(0)}%)`, pageW - 14, y + 4, { align: 'right' });
+        doc.text(`${currency} ${cat.value.toLocaleString()} (${((cat.value / totals.expense) * 100).toFixed(0)}%)`, pageW - 14, y + 4, { align: 'right' });
         y += 8;
       });
       y += 4;
@@ -419,9 +421,9 @@ export default function Reports() {
         (tx.paymentMethod || '—').toUpperCase(),
         tx.type === 'DEBIT' ? tx.amount.toLocaleString() : '',
         tx.type === 'CREDIT' ? tx.amount.toLocaleString() : '',
-        (tx.runningBalance >= 0 ? '' : '-') + '₹' + Math.abs(tx.runningBalance).toLocaleString(),
+        (tx.runningBalance >= 0 ? '' : '-') + '{currency}' + Math.abs(tx.runningBalance).toLocaleString(),
       ]),
-      foot: [['', '', '', '', 'TOTALS', totals.expense.toLocaleString(), totals.income.toLocaleString(), '₹' + (totals.income - totals.expense).toLocaleString()]],
+      foot: [['', '', '', '', 'TOTALS', totals.expense.toLocaleString(), totals.income.toLocaleString(), '{currency}' + (totals.income - totals.expense).toLocaleString()]],
       theme: 'grid',
       headStyles: { fillColor: [26, 35, 126], fontSize: 7, cellPadding: 2 },
       footStyles: { fillColor: [240, 240, 250], textColor: [26, 35, 126], fontStyle: 'bold', fontSize: 7 },
@@ -675,32 +677,32 @@ export default function Reports() {
         {/* Income */}
         <div className="bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-500/20">
           <p className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em] mb-1">Total Income</p>
-          <p className="text-xl font-heading font-semibold text-emerald-700 dark:text-white tracking-tight">₹{totals.income.toLocaleString('en-IN')}</p>
+          <p className="text-xl font-heading font-semibold text-emerald-700 dark:text-white tracking-tight">{currency}{totals.income.toLocaleString('en-IN')}</p>
           {comparisonMode && compTotals.income > 0 && (
             <div className={`flex items-center gap-1 mt-1 text-[9px] font-bold ${pctChange(totals.income, compTotals.income) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
               {pctChange(totals.income, compTotals.income) >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              {Math.abs(pctChange(totals.income, compTotals.income)).toFixed(0)}% vs prev · ₹{compTotals.income.toLocaleString('en-IN')}
+              {Math.abs(pctChange(totals.income, compTotals.income)).toFixed(0)}% vs prev · {currency}{compTotals.income.toLocaleString('en-IN')}
             </div>
           )}
         </div>
         {/* Expense */}
         <div className="bg-rose-50 dark:bg-rose-500/10 p-4 rounded-2xl border border-rose-100 dark:border-rose-500/20">
           <p className="text-[9px] font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-[0.2em] mb-1">Total Expense</p>
-          <p className="text-xl font-heading font-semibold text-rose-700 dark:text-white tracking-tight">₹{totals.expense.toLocaleString('en-IN')}</p>
+          <p className="text-xl font-heading font-semibold text-rose-700 dark:text-white tracking-tight">{currency}{totals.expense.toLocaleString('en-IN')}</p>
           {comparisonMode && compTotals.expense > 0 && (
             <div className={`flex items-center gap-1 mt-1 text-[9px] font-bold ${pctChange(totals.expense, compTotals.expense) <= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
               {pctChange(totals.expense, compTotals.expense) <= 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
-              {Math.abs(pctChange(totals.expense, compTotals.expense)).toFixed(0)}% vs prev · ₹{compTotals.expense.toLocaleString('en-IN')}
+              {Math.abs(pctChange(totals.expense, compTotals.expense)).toFixed(0)}% vs prev · {currency}{compTotals.expense.toLocaleString('en-IN')}
             </div>
           )}
         </div>
         {/* Net */}
         <div className="bg-brand-blue p-4 rounded-2xl shadow-xl shadow-brand-blue/10">
           <p className="text-[9px] font-semibold text-white/50 uppercase tracking-[0.2em] mb-1">Net Position</p>
-          <p className="text-xl font-heading font-semibold text-white tracking-tight">₹{(totals.income - totals.expense).toLocaleString('en-IN')}</p>
+          <p className="text-xl font-heading font-semibold text-white tracking-tight">{currency}{(totals.income - totals.expense).toLocaleString('en-IN')}</p>
           {comparisonMode && (
             <p className="text-[9px] font-bold text-white/40 mt-1">
-              Prev: ₹{(compTotals.income - compTotals.expense).toLocaleString('en-IN')}
+              Prev: {currency}{(compTotals.income - compTotals.expense).toLocaleString('en-IN')}
             </p>
           )}
         </div>
@@ -746,7 +748,7 @@ export default function Reports() {
                         {categoryData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                       </Pie>
                       <Tooltip contentStyle={{ background: '#111', border: '1px solid #222', borderRadius: 12, fontSize: 11 }}
-                        formatter={(v: number) => [`₹${v.toLocaleString('en-IN')}`, '']} />
+                        formatter={(v: number) => [`{currency}${v.toLocaleString('en-IN')}`, '']} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -770,7 +772,7 @@ export default function Reports() {
                             </span>
                           )}
                           <span className="text-[9px] text-neutral-400">{pct}%</span>
-                          <span className="text-[11px] font-black text-brand-blue dark:text-white">₹{d.value.toLocaleString('en-IN')}</span>
+                          <span className="text-[11px] font-black text-brand-blue dark:text-white">{currency}{d.value.toLocaleString('en-IN')}</span>
                         </div>
                       </div>
                     );
@@ -792,9 +794,9 @@ export default function Reports() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                     <XAxis dataKey="date" tick={{ fontSize: 8, fill: '#A0A0A0', fontWeight: 700 }} axisLine={false} tickLine={false} interval={Math.max(0, Math.floor(dailyData.length / 8))} />
-                    <YAxis tick={{ fontSize: 8, fill: '#A0A0A0' }} axisLine={false} tickLine={false} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
+                    <YAxis tick={{ fontSize: 8, fill: '#A0A0A0' }} axisLine={false} tickLine={false} tickFormatter={v => `{currency}${(v / 1000).toFixed(0)}k`} />
                     <Tooltip contentStyle={{ background: '#111', border: '1px solid #222', borderRadius: 12, fontSize: 11 }}
-                      formatter={(v: number) => [`₹${v.toLocaleString('en-IN')}`, 'Spent']} />
+                      formatter={(v: number) => [`{currency}${v.toLocaleString('en-IN')}`, 'Spent']} />
                     <Area type="monotone" dataKey="amount" stroke="#E53935" strokeWidth={2} fill="url(#dailyGrad)" />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -808,9 +810,9 @@ export default function Reports() {
                   <BarChart data={tagData} barSize={16} barGap={4}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                     <XAxis dataKey="name" tick={{ fontSize: 9, fill: '#A0A0A0', fontWeight: 700 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 8, fill: '#A0A0A0' }} axisLine={false} tickLine={false} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
+                    <YAxis tick={{ fontSize: 8, fill: '#A0A0A0' }} axisLine={false} tickLine={false} tickFormatter={v => `{currency}${(v / 1000).toFixed(0)}k`} />
                     <Tooltip contentStyle={{ background: '#111', border: '1px solid #222', borderRadius: 12, fontSize: 11 }}
-                      formatter={(v: number) => [`₹${v.toLocaleString('en-IN')}`, '']} />
+                      formatter={(v: number) => [`{currency}${v.toLocaleString('en-IN')}`, '']} />
                     <Bar dataKey="expense" fill="#E53935" radius={[4, 4, 0, 0]} name="Expense" />
                     <Bar dataKey="income" fill="#00A86B" radius={[4, 4, 0, 0]} name="Income" />
                   </BarChart>
@@ -852,8 +854,8 @@ export default function Reports() {
                       <div className="h-full rounded-full" style={{ width: `${Math.min((cat.value / (Math.max(cat.value, prevVal) || 1)) * 100, 100)}%`, background: CHART_COLORS[i % CHART_COLORS.length] }} />
                     </div>
                   </div>
-                  <span className="text-[9px] font-bold text-neutral-400 w-14 text-right">₹{prevVal.toLocaleString('en-IN')}</span>
-                  <span className="text-[9px] font-bold text-brand-blue dark:text-white w-14 text-right">₹{cat.value.toLocaleString('en-IN')}</span>
+                  <span className="text-[9px] font-bold text-neutral-400 w-14 text-right">{currency}{prevVal.toLocaleString('en-IN')}</span>
+                  <span className="text-[9px] font-bold text-brand-blue dark:text-white w-14 text-right">{currency}{cat.value.toLocaleString('en-IN')}</span>
                   <span className={`text-[9px] font-black w-12 text-right ${change > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
                     {change > 0 ? '↑' : '↓'}{Math.abs(change).toFixed(0)}%
                   </span>
@@ -917,17 +919,17 @@ export default function Reports() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     {tx.type === 'DEBIT' ? (
-                      <span className="text-[11px] font-heading font-semibold text-rose-500 tracking-tight">₹{tx.amount.toLocaleString('en-IN')}</span>
+                      <span className="text-[11px] font-heading font-semibold text-rose-500 tracking-tight">{currency}{tx.amount.toLocaleString('en-IN')}</span>
                     ) : <span className="text-neutral-200 dark:text-neutral-700">—</span>}
                   </td>
                   <td className="px-4 py-3 text-right">
                     {tx.type === 'CREDIT' ? (
-                      <span className="text-[11px] font-heading font-semibold text-emerald-500 tracking-tight">₹{tx.amount.toLocaleString('en-IN')}</span>
+                      <span className="text-[11px] font-heading font-semibold text-emerald-500 tracking-tight">{currency}{tx.amount.toLocaleString('en-IN')}</span>
                     ) : <span className="text-neutral-200 dark:text-neutral-700">—</span>}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span className={`text-[10px] font-heading font-bold tracking-tight ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-rose-500'}`}>
-                      {tx.runningBalance >= 0 ? '' : '-'}₹{Math.abs(tx.runningBalance).toLocaleString('en-IN')}
+                      {tx.runningBalance >= 0 ? '' : '-'}{currency}{Math.abs(tx.runningBalance).toLocaleString('en-IN')}
                     </span>
                   </td>
                 </tr>
@@ -942,14 +944,14 @@ export default function Reports() {
                   <td className="px-4 py-3 hidden md:table-cell" />
                   <td className="px-4 py-3 hidden lg:table-cell" />
                   <td className="px-4 py-3 text-right">
-                    <span className="text-[12px] font-heading font-black text-rose-600 tracking-tight">₹{totals.expense.toLocaleString('en-IN')}</span>
+                    <span className="text-[12px] font-heading font-black text-rose-600 tracking-tight">{currency}{totals.expense.toLocaleString('en-IN')}</span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <span className="text-[12px] font-heading font-black text-emerald-600 tracking-tight">₹{totals.income.toLocaleString('en-IN')}</span>
+                    <span className="text-[12px] font-heading font-black text-emerald-600 tracking-tight">{currency}{totals.income.toLocaleString('en-IN')}</span>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span className={`text-[12px] font-heading font-black tracking-tight ${(totals.income - totals.expense) >= 0 ? 'text-brand-blue dark:text-white' : 'text-rose-600'}`}>
-                      ₹{(totals.income - totals.expense).toLocaleString('en-IN')}
+                      {currency}{(totals.income - totals.expense).toLocaleString('en-IN')}
                     </span>
                   </td>
                 </tr>

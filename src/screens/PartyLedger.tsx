@@ -5,8 +5,10 @@ import { db, LedgerTransaction } from '../models/db';
 import { useAuth } from '../context/AuthContext';
 import { ArrowLeft, Plus, TrendingUp, TrendingDown, Clock, Search, Trash2, Calendar, FileText, Download, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useCurrency } from '../hooks/useCurrency';
 
 export default function PartyLedger() {
+  const currency = useCurrency();
   const { user } = useAuth();
   const { id } = useParams();
   const partyId = Number(id);
@@ -119,7 +121,7 @@ export default function PartyLedger() {
         </div>
         <p className="text-[12px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-2">Net Financial Standing</p>
         <h2 className={`text-6xl font-heading font-semibold tracking-tight mb-4 transition-colors ${netBalance >= 0 ? 'text-brand-green' : 'text-brand-red'}`}>
-            ₹{Math.abs(netBalance).toLocaleString('en-IN')}
+            {currency}{Math.abs(netBalance).toLocaleString('en-IN')}
         </h2>
         <div className={`inline-flex items-center gap-2 px-6 py-2 rounded-full font-semibold text-[10px] uppercase tracking-[0.2em] ${netBalance >= 0 ? 'bg-brand-green/10 text-brand-green' : 'bg-brand-red/10 text-brand-red'}`}>
             {netBalance >= 0 ? "You will get money" : "You will give money"}
@@ -180,15 +182,15 @@ export default function PartyLedger() {
                                     </div>
                                 </td>
                                 <td className="px-6 py-5 text-right font-semibold text-brand-red">
-                                    {tx.type === 'CASH_OUT' ? `₹${tx.amount.toLocaleString('en-IN')}` : '-'}
+                                    {tx.type === 'CASH_OUT' ? `{currency}${tx.amount.toLocaleString('en-IN')}` : '-'}
                                 </td>
                                 <td className="px-6 py-5 text-right font-semibold text-brand-green">
-                                    {tx.type === 'CASH_IN' ? `₹${tx.amount.toLocaleString('en-IN')}` : '-'}
+                                    {tx.type === 'CASH_IN' ? `{currency}${tx.amount.toLocaleString('en-IN')}` : '-'}
                                 </td>
                                 <td className="px-6 py-5 text-right">
                                     <div className="flex flex-col items-end">
                                         <p className={`font-semibold tracking-tight ${balance >= 0 ? 'text-brand-green' : 'text-brand-red'}`}>
-                                            ₹{Math.abs(balance).toLocaleString('en-IN')}
+                                            {currency}{Math.abs(balance).toLocaleString('en-IN')}
                                         </p>
                                         <button onClick={() => handleDelete(tx.id!)} className="opacity-0 group-hover:opacity-100 p-1 text-brand-red hover:bg-brand-red/10 rounded transition-all mt-1">
                                             <Trash2 className="w-3.5 h-3.5" />
@@ -242,7 +244,7 @@ export default function PartyLedger() {
               <div>
                 <label className="block text-[10px] font-semibold text-brand-blue/40 uppercase tracking-[0.2em] mb-1.5 ml-1">Amount</label>
                 <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-brand-blue/20">₹</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-brand-blue/20">{currency}</span>
                     <input 
                         type="number" 
                         value={amount}

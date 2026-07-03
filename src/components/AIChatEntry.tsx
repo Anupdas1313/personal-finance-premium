@@ -8,6 +8,7 @@ import { format, subDays, subWeeks } from 'date-fns';
 import { CATEGORY_ICONS } from '../constants';
 import { db } from '../models/db';
 import { useCategories } from '../hooks/useCategories';
+import { useCurrency } from '../hooks/useCurrency';
 
 interface AIChatEntryProps {
   onSave: (transaction: any) => void;
@@ -454,8 +455,8 @@ const parseAmount = (text: string): string => {
     }
   }
 
-  // Currency prefix: ₹500, Rs. 250, INR 1000
-  const rsMatch = t.match(/(?:₹|rs\.?|inr)\s*(\d+(?:\.\d+)?)/i);
+  // Currency prefix: {currency}500, Rs. 250, ${currency} 1000
+  const rsMatch = t.match(/(?:{currency}|rs\.?|inr)\s*(\d+(?:\.\d+)?)/i);
   if (rsMatch) return rsMatch[1];
   // Bare number fallback
   const numMatch = t.match(/\b(\d+(?:\.\d+)?)\b/);
@@ -505,7 +506,7 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
   if (t.match(/\b(received|got|salary|income|credit|added|deposit|inflow|credited|mila|aaya|jama|milgaya|mil gaya)\b/)) type = 'CREDIT';
   else if (t.match(/\b(transfer(?:red)?\s+(?:to|from|\d)|moved?\s+(?:to|from|\d)|shifted\s+(?:to|from|\d)|bheja)\b/)) type = 'TRANSFER';
   else if (t.match(/\b(paid|spent|bought|expense|debit|gave|withdrawn?|purchased?|kharcha|diya|de diya|kharch|nikala|nikaal|udhar\s+diya|liya|mangaya|order)\b/)) type = 'DEBIT';
-  else if (t.match(/\bsent?\s+(?:₹|rs|\d|money|amount|paisa|paise|rupaiye)/)) type = 'TRANSFER';
+  else if (t.match(/\bsent?\s+(?:${currency}|rs|\d|money|amount|paisa|paise|rupaiye)/)) type = 'TRANSFER';
   // Hinglish refund/return
   else if (t.match(/\b(refund|wapas\s+(?:mila|aaya)|return|cashback)\b/)) type = 'CREDIT';
 
@@ -574,7 +575,7 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
 
   // Aggressive payee fallback
   if (!parsedPayee && type !== 'TRANSFER') {
-     const simpleMatch = text.match(/(?:₹|rs)?\s*\d+(?:\.\d+)?(?:k)?\s+([A-Za-z]+)/i);
+     const simpleMatch = text.match(/(?:${currency}|rs)?\s*\d+(?:\.\d+)?(?:k)?\s+([A-Za-z]+)/i);
      if (simpleMatch) {
        const candidate = simpleMatch[1].trim().toLowerCase();
        const skipWords = ['and', 'for', 'to', 'from', 'via', 'using', 'in', 'on', 'spent', 'paid', 'credit', 'debit', 'cash', 'upi', 'gpay', 'today', 'yesterday'];
@@ -702,7 +703,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
           tx.expenseType = 'Subscription';
        }
     }
-    if (!tx.amount) { setStage('ASK_AMOUNT'); addAIMessage("How much was it? (e.g. 250, 2k, ₹500)"); }
+    if (!tx.amount) { setStage('ASK_AMOUNT'); addAIMessage("How much was it? (e.g. 250, 2k, {currency}500)"); }
     else if (!tx.type) { setStage('ASK_TYPE'); addAIMessage("Was this an Expense, Income, or Transfer?", ['💸 Expense', '💰 Income', '🔄 Transfer']); }
     else if (!tx.party && tx.party !== '-') {
       setStage('ASK_PAYEE');
@@ -766,7 +767,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     const amtOverride = t.match(/(?:make it|change to|no,?\s*it'?s?|actually)\s*([\d.,k]+)/i);
     if (amtOverride) {
       const newAmt = parseAmount(amtOverride[1]);
-      if (newAmt) { updated.amount = newAmt; setPendingTx(updated); setStage('PREVIEW'); addAIMessage(`✏️ Amount updated to ₹${newAmt}. Tap Save!`); return true; }
+      if (newAmt) { updated.amount = newAmt; setPendingTx(updated); setStage('PREVIEW'); addAIMessage(`✏️ Amount updated to {currency}${newAmt}. Tap Save!`); return true; }
     }
     if (stage === 'ASK_CATEGORY') {
       const catOverride = userMsg.match(/^\[(.*)\]$/);
@@ -808,7 +809,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
                 await db.transactions.delete(last.linkedTransactionId);
               }
               await db.transactions.delete(last.id);
-              setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted your last transaction (₹${last.amount} for ${last.party || last.category || 'unknown'}).` }]);
+              setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted your last transaction ({currency}${last.amount} for ${last.party || last.category || 'unknown'}).` }]);
               handleReset();
             } else {
               setMessages(prev => [...prev, { role: 'ai', content: `Hmm, I couldn't find any recent transaction to delete.` }]);
@@ -830,7 +831,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
                   await db.transactions.delete(match.linkedTransactionId);
                 }
                 await db.transactions.delete(match.id);
-                setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted recent transaction matching "${target}" (₹${match.amount} for ${match.party || match.category}).` }]);
+                setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted recent transaction matching "${target}" (${currency}${match.amount} for ${match.party || match.category}).` }]);
                 handleReset();
               }
             } else {
@@ -857,7 +858,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
                 await db.transactions.delete(last.linkedTransactionId);
               }
               await db.transactions.delete(last.id);
-              setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted your last transaction (₹${last.amount} for ${last.party || last.category || 'unknown'}).` }]);
+              setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted your last transaction (${currency}${last.amount} for ${last.party || last.category || 'unknown'}).` }]);
               handleReset();
             } else {
               setMessages(prev => [...prev, { role: 'ai', content: `Hmm, I couldn't find any recent transaction to delete.` }]);
@@ -879,7 +880,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
                   await db.transactions.delete(match.linkedTransactionId);
                 }
                 await db.transactions.delete(match.id);
-                setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted recent transaction matching "${target}" (₹${match.amount} for ${match.party || match.category}).` }]);
+                setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted recent transaction matching "${target}" (${currency}${match.amount} for ${match.party || match.category}).` }]);
                 handleReset();
               }
             } else {
@@ -906,7 +907,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         };
         setPendingTx(cloned);
         setStage('PREVIEW');
-        addAIMessage(`♻️ Copied last entry: ₹${last.amount} — ${last.note || 'No note'}\nReview and save!`);
+        addAIMessage(`♻️ Copied last entry: ${currency}${last.amount} — ${last.note || 'No note'}\nReview and save!`);
         return;
       } else {
         addAIMessage("No previous transactions found yet. Tell me about your expense!");
@@ -949,7 +950,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     } else if (stage === 'ASK_AMOUNT') {
       const amt = parseAmount(userMsg);
       if (amt && !isNaN(parseFloat(amt))) { updated.amount = parseFloat(amt); setPendingTx(updated); checkNextStep(updated); }
-      else addAIMessage("Hmm, try: 500, 2k, ₹250");
+      else addAIMessage("Hmm, try: 500, 2k, ${currency}250");
     } else if (stage === 'ASK_TYPE') {
       if (t.match(/\b(transfer|move|send|🔄)\b/)) updated.type = 'TRANSFER';
       else if (t.match(/\b(income|inflow|received|credit|salary|💰)\b/)) updated.type = 'CREDIT';
@@ -1081,7 +1082,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       _dateConfirmed: true, _isPredicted: false, _confidence: 90
     };
     setPendingTx(cloned); setStage('PREVIEW');
-    setMessages(prev => [...prev, { role: 'ai', content: `♻️ Loaded: ₹${tx.amount} — ${tx.note || tx.category}\nReview and save!` }]);
+    setMessages(prev => [...prev, { role: 'ai', content: `♻️ Loaded: {currency}${tx.amount} — ${tx.note || tx.category}\nReview and save!` }]);
   };
 
   const confidenceColor = pendingTx._confidence >= 80 ? 'text-brand-green' : pendingTx._confidence >= 50 ? 'text-yellow-500' : 'text-brand-red';
@@ -1103,7 +1104,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
                 onClick={() => repeatLastTx(tx)}
                 className="flex-shrink-0 bg-white dark:bg-[#111111] border border-brand-blue/5 dark:border-white/5 rounded-2xl px-3 py-2 text-left hover:border-brand-green/30 active:scale-95 transition-all shadow-sm"
               >
-                <div className="text-[10px] font-black text-brand-green">₹{tx.amount}</div>
+                <div className="text-[10px] font-black text-brand-green">{currency}{tx.amount}</div>
                 <div className="text-[8px] text-neutral-400 truncate max-w-[70px]">{tx.note || tx.category}</div>
               </button>
             ))}
@@ -1168,7 +1169,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
             <div className="grid grid-cols-2 gap-2 mb-2">
               <div className="bg-white dark:bg-white/5 p-2 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:ring-2 ring-brand-green/30 transition-all group relative" onClick={() => handleEdit('amount')}>
                 <div className="absolute top-1 right-1 opacity-100"><Pencil className="w-2.5 h-2.5 text-brand-green/40 group-hover:text-brand-green transition-colors" /></div>
-                <span className="text-[17px] font-black text-brand-green dark:text-white">₹{pendingTx.amount}</span>
+                <span className="text-[17px] font-black text-brand-green dark:text-white">{currency}{pendingTx.amount}</span>
                 <span className={`text-[7px] font-black uppercase ${pendingTx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-red'}`}>
                   {pendingTx.type === 'CREDIT' ? 'Inflow' : pendingTx.type === 'TRANSFER' ? 'Transfer' : 'Outflow'}
                 </span>
@@ -1231,7 +1232,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
                 className="flex-shrink-0 bg-white dark:bg-[#111111] border border-brand-green/20 rounded-xl px-3 py-1.5 text-left active:scale-95 transition-all shadow-sm flex items-center gap-2">
                 <Zap className="w-3 h-3 text-brand-green" />
                 <div>
-                  <div className="text-[9px] font-black text-brand-green">₹{tx.amount}</div>
+                  <div className="text-[9px] font-black text-brand-green">{currency}{tx.amount}</div>
                   <div className="text-[8px] text-neutral-400 truncate max-w-[80px]">{tx.note || tx.category}</div>
                 </div>
               </button>

@@ -4,8 +4,10 @@ import { db, Party } from '../models/db';
 import { useAuth } from '../context/AuthContext';
 import { Plus, Search, UserPlus, Phone, ChevronRight, TrendingUp, TrendingDown, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useCurrency } from '../hooks/useCurrency';
 
 export default function Ledger() {
+  const currency = useCurrency();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
@@ -72,7 +74,7 @@ export default function Ledger() {
         <div className="bg-white dark:bg-[#111111] p-6 rounded-[32px] border border-brand-blue/5 dark:border-[#222222] shadow-sm flex items-center justify-between">
             <div>
                 <p className="text-[10px] font-black text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-widest mb-1">Total You'll Get</p>
-                <p className="text-3xl font-black text-brand-green tracking-tighter">₹{stats.totalGet.toLocaleString('en-IN')}</p>
+                <p className="text-3xl font-black text-brand-green tracking-tighter">{currency}{stats.totalGet.toLocaleString('en-IN')}</p>
             </div>
             <div className="w-12 h-12 bg-brand-green/10 rounded-2xl flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-brand-green" />
@@ -81,7 +83,7 @@ export default function Ledger() {
         <div className="bg-white dark:bg-[#111111] p-6 rounded-[32px] border border-brand-blue/5 dark:border-[#222222] shadow-sm flex items-center justify-between">
             <div>
                 <p className="text-[10px] font-black text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-widest mb-1">Total You'll Give</p>
-                <p className="text-3xl font-black text-brand-red tracking-tighter">₹{stats.totalGive.toLocaleString('en-IN')}</p>
+                <p className="text-3xl font-black text-brand-red tracking-tighter">{currency}{stats.totalGive.toLocaleString('en-IN')}</p>
             </div>
             <div className="w-12 h-12 bg-brand-red/10 rounded-2xl flex items-center justify-center">
                 <TrendingDown className="w-6 h-6 text-brand-red" />
@@ -91,7 +93,7 @@ export default function Ledger() {
             <div>
                 <p className="text-[10px] font-black text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-widest mb-1">Net Ledger Standing</p>
                 <p className={`text-3xl font-black tracking-tighter ${stats.totalGet - stats.totalGive >= 0 ? 'text-brand-green' : 'text-brand-red'}`}>
-                    ₹{Math.abs(stats.totalGet - stats.totalGive).toLocaleString('en-IN')}
+                    {currency}{Math.abs(stats.totalGet - stats.totalGive).toLocaleString('en-IN')}
                 </p>
             </div>
             <div className="w-12 h-12 bg-brand-blue/5 rounded-2xl flex items-center justify-center">
@@ -160,7 +162,7 @@ export default function Ledger() {
                                     {balance >= 0 ? "You'll Get" : "You'll Give"}
                                 </p>
                                 <p className={`text-xl font-black ${balance >= 0 ? 'text-brand-green' : 'text-brand-red'}`}>
-                                    ₹{Math.abs(balance).toLocaleString('en-IN')}
+                                    {currency}{Math.abs(balance).toLocaleString('en-IN')}
                                 </p>
                             </div>
                             <div className="w-10 h-10 rounded-full bg-brand-blue/5 flex items-center justify-center text-brand-blue group-hover:bg-brand-blue group-hover:text-white transition-all shadow-sm">

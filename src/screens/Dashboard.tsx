@@ -19,8 +19,10 @@ import { IndusIndLogo } from '../components/IndusIndLogo';
 import { UnionBankLogo } from '../components/UnionBankLogo';
 import { BankLogo } from '../components/BankLogo';
 import TutorialOverlay from '../components/TutorialOverlay';
+import { useCurrency } from '../hooks/useCurrency';
 
 export default function Dashboard() {
+  const currency = useCurrency();
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -439,7 +441,7 @@ export default function Dashboard() {
       </div>
       <div className="text-right">
         <p className={`font-heading font-black text-sm tracking-tighter ${acc.currentBalance < 0 ? 'text-brand-red' : 'text-brand-green'}`}>
-          ₹{acc.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
+          {currency}{acc.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
         </p>
         <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest leading-none mt-0.5">Balance</p>
       </div>
@@ -495,7 +497,7 @@ export default function Dashboard() {
           <div className="flex-1">
             <p className="text-[8px] font-black text-rose-400 uppercase tracking-widest mb-1">Outflow</p>
             <p className="text-xl font-heading font-black text-brand-blue dark:text-white tracking-tighter">
-              ₹{totalSpending.toLocaleString('en-IN')}
+              {currency}{totalSpending.toLocaleString('en-IN')}
             </p>
           </div>
           
@@ -504,7 +506,7 @@ export default function Dashboard() {
           <div className="flex-1">
             <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-1">Inflow</p>
             <p className="text-xl font-heading font-black text-brand-blue dark:text-white tracking-tighter">
-              ₹{totalIncome.toLocaleString('en-IN')}
+              {currency}{totalIncome.toLocaleString('en-IN')}
             </p>
           </div>
         </div>
@@ -514,12 +516,12 @@ export default function Dashboard() {
             <p className="text-[8px] font-black text-brand-blue/30 dark:text-white/20 uppercase tracking-widest leading-none mb-1">Total Liquidity</p>
             {timeFilter !== 'All Time' && (
               <p className={`text-[8px] font-bold ${monthDelta >= 0 ? 'text-emerald-500' : 'text-rose-500'} uppercase tracking-tight`}>
-                {monthDelta >= 0 ? '↑' : '↓'} ₹{Math.abs(monthDelta).toLocaleString('en-IN')}
+                {monthDelta >= 0 ? '↑' : '↓'} {currency}{Math.abs(monthDelta).toLocaleString('en-IN')}
               </p>
             )}
           </div>
           <p className={`text-lg font-heading font-black tracking-tighter text-brand-blue dark:text-brand-cyan`}>
-            ₹{totalWealth.toLocaleString('en-IN')}
+            {currency}{totalWealth.toLocaleString('en-IN')}
           </p>
         </div>
       </div>
@@ -531,9 +533,9 @@ export default function Dashboard() {
             <h3 className="text-[10px] font-black text-brand-blue/60 dark:text-brand-blue/80 uppercase tracking-[0.2em] mb-1">Monthly Insights</h3>
             <p className="text-sm font-bold text-[#111111] dark:text-[#F7F7F7] leading-tight">
               {thisMonthSpendingToDate > lastMonthSpendingToDate ? (
-                <>You've spent <span className="text-rose-500 font-black">₹{(thisMonthSpendingToDate - lastMonthSpendingToDate).toLocaleString('en-IN')} more</span> than last month at this time.</>
+                <>You've spent <span className="text-rose-500 font-black">{currency}{(thisMonthSpendingToDate - lastMonthSpendingToDate).toLocaleString('en-IN')} more</span> than last month at this time.</>
               ) : (
-                <>You've spent <span className="text-emerald-500 font-black">₹{(lastMonthSpendingToDate - thisMonthSpendingToDate).toLocaleString('en-IN')} less</span> than last month at this time.</>
+                <>You've spent <span className="text-emerald-500 font-black">{currency}{(lastMonthSpendingToDate - thisMonthSpendingToDate).toLocaleString('en-IN')} less</span> than last month at this time.</>
               )}
             </p>
           </div>
@@ -544,12 +546,12 @@ export default function Dashboard() {
         <div className="flex items-center gap-4 mt-3">
           <div>
             <p className="text-[9px] font-black text-brand-blue/40 dark:text-white/30 uppercase tracking-widest">This Month</p>
-            <p className="text-xs font-black text-brand-blue dark:text-white">₹{thisMonthSpendingToDate.toLocaleString('en-IN')}</p>
+            <p className="text-xs font-black text-brand-blue dark:text-white">{currency}{thisMonthSpendingToDate.toLocaleString('en-IN')}</p>
           </div>
           <div className="w-px h-6 bg-brand-blue/10 dark:bg-white/10"></div>
           <div>
             <p className="text-[9px] font-black text-brand-blue/40 dark:text-white/30 uppercase tracking-widest">Last Month</p>
-            <p className="text-xs font-black text-brand-blue dark:text-white">₹{lastMonthSpendingToDate.toLocaleString('en-IN')}</p>
+            <p className="text-xs font-black text-brand-blue dark:text-white">{currency}{lastMonthSpendingToDate.toLocaleString('en-IN')}</p>
           </div>
         </div>
       </div>
@@ -578,7 +580,7 @@ export default function Dashboard() {
                      <span className="text-[10px] font-black text-brand-blue/60 dark:text-white/40 uppercase tracking-[0.2em]">Checking & Savings</span>
                    </div>
                    <span className="text-xs font-heading font-black text-brand-blue dark:text-white tracking-tighter">
-                     ₹{groupedAccounts['BANK'].reduce((sum, a) => sum + (a.currentBalance || 0), 0).toLocaleString('en-IN')}
+                     {currency}{groupedAccounts['BANK'].reduce((sum, a) => sum + (a.currentBalance || 0), 0).toLocaleString('en-IN')}
                    </span>
                 </div>
                 <div className="px-1 pb-1">
@@ -598,7 +600,7 @@ export default function Dashboard() {
                      <span className="text-[10px] font-black text-rose-500/60 dark:text-rose-500/40 uppercase tracking-[0.2em]">Credit Lines</span>
                    </div>
                    <span className="text-xs font-heading font-black text-rose-500 dark:text-rose-400 tracking-tighter">
-                     ₹{groupedAccounts['CREDIT_CARD'].reduce((sum, a) => sum + (a.currentBalance || 0), 0).toLocaleString('en-IN')}
+                     {currency}{groupedAccounts['CREDIT_CARD'].reduce((sum, a) => sum + (a.currentBalance || 0), 0).toLocaleString('en-IN')}
                    </span>
                 </div>
                 <div className="px-1 pb-1">
@@ -618,7 +620,7 @@ export default function Dashboard() {
                      <span className="text-[10px] font-black text-brand-green/60 dark:text-brand-green/40 uppercase tracking-[0.2em]">Cash & Wallets</span>
                    </div>
                    <span className="text-xs font-heading font-black text-brand-green dark:text-brand-green tracking-tighter">
-                     ₹{groupedAccounts['CASH'].reduce((sum, a) => sum + (a.currentBalance || 0), 0).toLocaleString('en-IN')}
+                     {currency}{groupedAccounts['CASH'].reduce((sum, a) => sum + (a.currentBalance || 0), 0).toLocaleString('en-IN')}
                    </span>
                 </div>
                 <div className="px-1 pb-1">
@@ -700,7 +702,7 @@ export default function Dashboard() {
                     {/* LEFT: Amount Segment */}
                     <div className="flex flex-col items-center gap-1 border-r border-[#EBEBEB] dark:border-white/5 pr-4">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-sm font-bold text-neutral-300 dark:text-[#333333]">₹</span>
+                        <span className="text-sm font-bold text-neutral-300 dark:text-[#333333]">{currency}</span>
                         <input 
                           type="number" inputMode="decimal" autoFocus value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" step="0.01"
                           className="bg-transparent text-xl font-heading font-bold text-center outline-none min-w-0 w-full text-brand-green dark:text-white tracking-tight caret-brand-green"

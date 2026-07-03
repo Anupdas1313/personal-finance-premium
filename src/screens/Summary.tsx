@@ -5,6 +5,7 @@ import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { useState, useMemo, Component, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, PieChart as PieIcon, Tag, Store, Layers, AlertTriangle } from 'lucide-react';
 import { CATEGORY_ICONS } from '../constants';
+import { useCurrency } from '../hooks/useCurrency';
 
 const COLORS = ['#00A86B', '#6366F1', '#D4AF37', '#06B6D4', '#E53935', '#8B5CF6', '#10B981', '#F59E0B', '#EC4899', '#14B8A6'];
 
@@ -257,7 +258,7 @@ function SummaryContent() {
     trendInsight = `Great job! Your spending is ${Math.round(((avg6MonthExpense - totalExpense) / avg6MonthExpense) * 100)}% lower than your 6-month average.`;
   }
 
-  const fmtAmt = (n: number) => `₹${Math.abs(n).toLocaleString('en-IN')}`;
+  const fmtAmt = (n: number) => `{currency}${Math.abs(n).toLocaleString('en-IN')}`;
 
   return (
     <div className="space-y-4 max-w-4xl mx-auto pb-24 px-3">
@@ -473,6 +474,7 @@ function SummaryContent() {
 
 // ── Export with Error Boundary ────────────────────────────────────────────────
 export default function Summary() {
+  const currency = useCurrency();
   return (
     <SummaryErrorBoundary>
       <SummaryContent />

@@ -5,8 +5,10 @@ import { useAuth } from '../context/AuthContext';
 import { Repeat, Plus, Trash2, CheckCircle2 } from 'lucide-react';
 import { cn } from '../logic/utils';
 import { format } from 'date-fns';
+import { useCurrency } from '../hooks/useCurrency';
 
 export function RecurringBillsManager() {
+  const currency = useCurrency();
   const { user } = useAuth();
   const templates = useLiveQuery(() => db.recurringTemplates.toArray(), [user?.uid]) || [];
   const accounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
@@ -163,7 +165,7 @@ export function RecurringBillsManager() {
                   </div>
                   <div className="flex items-center gap-3">
                     <p className={cn("text-sm font-black", t.type === 'DEBIT' ? "text-brand-red" : "text-brand-green")}>
-                      {t.type === 'DEBIT' ? '-' : '+'}₹{t.amount.toLocaleString('en-IN')}
+                      {t.type === 'DEBIT' ? '-' : '+'}{currency}{t.amount.toLocaleString('en-IN')}
                     </p>
                     <button onClick={() => toggleActive(t)}>
                       <CheckCircle2 className={cn("w-5 h-5", t.isActive ? "text-brand-green" : "text-neutral-300 dark:text-[#444]")} />

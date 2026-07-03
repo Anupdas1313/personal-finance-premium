@@ -5,8 +5,10 @@ import { useAuth } from '../context/AuthContext';
 import { Target, Plus, X, AlertCircle, Edit2, Trash2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { useCategories } from '../hooks/useCategories';
+import { useCurrency } from '../hooks/useCurrency';
 
 export default function Budgets() {
+  const currency = useCurrency();
   const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const monthStr = format(currentMonth, 'yyyy-MM');
@@ -147,9 +149,9 @@ export default function Budgets() {
                   <div className="flex justify-between items-end mb-2">
                     <p className="text-brand-blue/40 dark:text-[#A0A0A0] text-sm font-medium">
                       <span className={`font-semibold text-lg ${isOverBudget ? 'text-brand-red' : 'text-brand-blue dark:text-[#F7F7F7]'}`}>
-                        ₹{spent.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
+                        {currency}{spent.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
                       </span>
-                      {' '} / ₹{budget.amount.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
+                      {' '} / {currency}{budget.amount.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
                     </p>
                     <p className="text-sm font-semibold text-brand-blue dark:text-[#F7F7F7]">
                       {percentage.toFixed(0)}%
@@ -200,7 +202,7 @@ export default function Budgets() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-brand-blue/40 mb-1.5 uppercase tracking-[0.2em]">Threshold Amount (₹)</label>
+                <label className="block text-[10px] font-semibold text-brand-blue/40 mb-1.5 uppercase tracking-[0.2em]">Threshold Amount ({currency})</label>
                 <input
                   type="number"
                   value={budgetAmount}
