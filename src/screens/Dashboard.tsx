@@ -6,6 +6,7 @@ import { format, startOfMonth, startOfYear, isToday, isYesterday, startOfDay } f
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
 
@@ -36,6 +37,17 @@ export default function Dashboard() {
   const [isAddingManual, setIsAddingManual] = useState(searchParams.get('add') === 'true');
   const [showTutorial, setShowTutorial] = useState(false);
   const userSettings = useLiveQuery(() => db.userSettings.toArray(), [user?.uid]);
+
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(() => {
+      setActiveSlide(prev => (prev + 1) % 3);
+    }, 2000); // auto transitions every 2 seconds
+    return () => clearInterval(interval);
+  }, [isPaused]);
 
   useEffect(() => {
     if (userSettings && user) {
@@ -315,7 +327,7 @@ export default function Dashboard() {
   const allClosings = useLiveQuery(() => db.accountClosings.toArray(), [user?.uid]) || [];
 
   // Optimized balance and metrics calculation
-  const { balances, totalIncome, totalSpending, totalWealth, thisMonthSpendingToDate, lastMonthSpendingToDate } = useLiveQuery(async () => {
+  const { balances, totalIncome, totalSpending, totalWealth, thisMonthSpendingToDate, lastMonthSpendingToDate, todaySpending, yesterdaySpending, thisWeekSpending, lastWeekSpending } = useLiveQuery(async () => {
     const accs = await db.accounts.toArray();
     const closings = await db.accountClosings.toArray();
     const monthlyClosings = await db.monthlyClosings.orderBy('month').reverse().toArray();
@@ -363,7 +375,7 @@ export default function Dashboard() {
 
     const totalWealth = calculatedBalances.reduce((sum, b) => sum + b, 0);
 
-    // 3. Monthly Insights calculation (comparing this month up to today vs last month up to same day)
+    // 3. Insights calculations
     let thisMonthSpendingToDate = 0;
     let lastMonthSpendingToDate = 0;
     const currentDayOfMonth = now.getDate();
@@ -371,13 +383,40 @@ export default function Dashboard() {
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
     const lastMonthCurrentDay = new Date(now.getFullYear(), now.getMonth() - 1, currentDayOfMonth, 23, 59, 59).getTime();
 
+    // Daily
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const yesterdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).getTime();
+    const yesterdaySameTime = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, now.getHours(), now.getMinutes(), now.getSeconds()).getTime();
+
+    // Weekly
+    const sevenDaysAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+    const fourteenDaysAgo = now.getTime() - 14 * 24 * 60 * 60 * 1000;
+
+    let todaySpending = 0;
+    let yesterdaySpending = 0;
+    let thisWeekSpending = 0;
+    let lastWeekSpending = 0;
+
     allTxs.forEach(tx => {
       if (tx.category !== 'Transfer' && tx.type === 'DEBIT') {
         const txTime = new Date(tx.dateTime).getTime();
+        // Monthly
         if (txTime >= monthStart && txTime <= now.getTime()) {
           thisMonthSpendingToDate += (Number(tx.amount) || 0);
         } else if (txTime >= lastMonthStart && txTime <= lastMonthCurrentDay) {
           lastMonthSpendingToDate += (Number(tx.amount) || 0);
+        }
+        // Daily
+        if (txTime >= todayStart && txTime <= now.getTime()) {
+          todaySpending += (Number(tx.amount) || 0);
+        } else if (txTime >= yesterdayStart && txTime <= yesterdaySameTime) {
+          yesterdaySpending += (Number(tx.amount) || 0);
+        }
+        // Weekly
+        if (txTime >= sevenDaysAgo && txTime <= now.getTime()) {
+          thisWeekSpending += (Number(tx.amount) || 0);
+        } else if (txTime >= fourteenDaysAgo && txTime <= sevenDaysAgo) {
+          lastWeekSpending += (Number(tx.amount) || 0);
         }
       }
     });
@@ -388,9 +427,13 @@ export default function Dashboard() {
       totalSpending: spending,
       totalWealth,
       thisMonthSpendingToDate,
-      lastMonthSpendingToDate
+      lastMonthSpendingToDate,
+      todaySpending,
+      yesterdaySpending,
+      thisWeekSpending,
+      lastWeekSpending
     };
-  }, [timeFilter, user?.uid]) || { balances: [], totalIncome: 0, totalSpending: 0, totalWealth: 0, thisMonthSpendingToDate: 0, lastMonthSpendingToDate: 0 };
+  }, [timeFilter, user?.uid]) || { balances: [], totalIncome: 0, totalSpending: 0, totalWealth: 0, thisMonthSpendingToDate: 0, lastMonthSpendingToDate: 0, todaySpending: 0, yesterdaySpending: 0, thisWeekSpending: 0, lastWeekSpending: 0 };
   
   const monthDelta = totalIncome - totalSpending;
   const totalBalance = balances.reduce((sum, acc) => sum + acc.currentBalance, 0);
@@ -526,33 +569,126 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Monthly Insights Card */}
-      <div className="bg-brand-green/5 border border-brand-green/10 rounded-[24px] p-4 relative overflow-hidden group hover:border-brand-green/20 transition-colors">
-        <div className="flex items-start justify-between mb-2">
-          <div>
-            <h3 className="text-[13px] font-semibold text-brand-green mb-1">Monthly Insights</h3>
-            <p className="text-sm font-semibold text-neutral-800 leading-tight">
-              {thisMonthSpendingToDate > lastMonthSpendingToDate ? (
-                <>You've spent <span className="text-rose-500 font-bold">{currency}{(thisMonthSpendingToDate - lastMonthSpendingToDate).toLocaleString('en-IN')} more</span> than last month at this time.</>
-              ) : (
-                <>You've spent <span className="text-brand-green font-bold">{currency}{(lastMonthSpendingToDate - thisMonthSpendingToDate).toLocaleString('en-IN')} less</span> than last month at this time.</>
-              )}
-            </p>
-          </div>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${thisMonthSpendingToDate > lastMonthSpendingToDate ? 'bg-rose-500/10 text-rose-500' : 'bg-brand-green/10 text-brand-green'}`}>
-            <BarChart3 className="w-4 h-4" />
-          </div>
-        </div>
-        <div className="flex items-center gap-4 mt-3">
-          <div>
-            <p className="text-[12px] font-medium text-neutral-500">This Month</p>
-            <p className="text-xs font-bold text-neutral-800">{currency}{thisMonthSpendingToDate.toLocaleString('en-IN')}</p>
-          </div>
-          <div className="w-px h-6 bg-neutral-200"></div>
-          <div>
-            <p className="text-[12px] font-medium text-neutral-500">Last Month</p>
-            <p className="text-xs font-bold text-neutral-800">{currency}{lastMonthSpendingToDate.toLocaleString('en-IN')}</p>
-          </div>
+      {/* Sliding Insights Card */}
+      <div 
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+        onTouchStart={() => setIsPaused(true)}
+        onTouchEnd={() => setIsPaused(false)}
+        className="bg-brand-green/5 border border-brand-green/10 rounded-[24px] p-4 relative overflow-hidden group hover:border-brand-green/20 transition-colors min-h-[148px] flex flex-col justify-between"
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeSlide}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="w-full flex-1 flex flex-col justify-between"
+          >
+            {activeSlide === 0 && (
+              <>
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h3 className="text-[13px] font-semibold text-brand-green mb-1">Daily Insights</h3>
+                    <p className="text-sm font-semibold text-neutral-800 leading-tight">
+                      {todaySpending > yesterdaySpending ? (
+                        <>You've spent <span className="text-rose-500 font-bold">{currency}{(todaySpending - yesterdaySpending).toLocaleString('en-IN')} more</span> than yesterday at this time.</>
+                      ) : (
+                        <>You've spent <span className="text-brand-green font-bold">{currency}{(yesterdaySpending - todaySpending).toLocaleString('en-IN')} less</span> than yesterday at this time.</>
+                      )}
+                    </p>
+                  </div>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${todaySpending > yesterdaySpending ? 'bg-rose-500/10 text-rose-500' : 'bg-brand-green/10 text-brand-green'}`}>
+                    <BarChart3 className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 mt-auto">
+                  <div>
+                    <p className="text-[12px] font-medium text-neutral-500">Today</p>
+                    <p className="text-xs font-bold text-neutral-800">{currency}{todaySpending.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="w-px h-6 bg-neutral-200"></div>
+                  <div>
+                    <p className="text-[12px] font-medium text-neutral-500">Yesterday (to this hour)</p>
+                    <p className="text-xs font-bold text-neutral-800">{currency}{yesterdaySpending.toLocaleString('en-IN')}</p>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {activeSlide === 1 && (
+              <>
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h3 className="text-[13px] font-semibold text-brand-green mb-1">Weekly Insights</h3>
+                    <p className="text-sm font-semibold text-neutral-800 leading-tight">
+                      {thisWeekSpending > lastWeekSpending ? (
+                        <>You've spent <span className="text-rose-500 font-bold">{currency}{(thisWeekSpending - lastWeekSpending).toLocaleString('en-IN')} more</span> than the previous 7 days.</>
+                      ) : (
+                        <>You've spent <span className="text-brand-green font-bold">{currency}{(lastWeekSpending - thisWeekSpending).toLocaleString('en-IN')} less</span> than the previous 7 days.</>
+                      )}
+                    </p>
+                  </div>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${thisWeekSpending > lastWeekSpending ? 'bg-rose-500/10 text-rose-500' : 'bg-brand-green/10 text-brand-green'}`}>
+                    <BarChart3 className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 mt-auto">
+                  <div>
+                    <p className="text-[12px] font-medium text-neutral-500">This Week</p>
+                    <p className="text-xs font-bold text-neutral-800">{currency}{thisWeekSpending.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="w-px h-6 bg-neutral-200"></div>
+                  <div>
+                    <p className="text-[12px] font-medium text-neutral-500">Previous Week</p>
+                    <p className="text-xs font-bold text-neutral-800">{currency}{lastWeekSpending.toLocaleString('en-IN')}</p>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {activeSlide === 2 && (
+              <>
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h3 className="text-[13px] font-semibold text-brand-green mb-1">Monthly Insights</h3>
+                    <p className="text-sm font-semibold text-neutral-800 leading-tight">
+                      {thisMonthSpendingToDate > lastMonthSpendingToDate ? (
+                        <>You've spent <span className="text-rose-500 font-bold">{currency}{(thisMonthSpendingToDate - lastMonthSpendingToDate).toLocaleString('en-IN')} more</span> than last month at this time.</>
+                      ) : (
+                        <>You've spent <span className="text-brand-green font-bold">{currency}{(lastMonthSpendingToDate - thisMonthSpendingToDate).toLocaleString('en-IN')} less</span> than last month at this time.</>
+                      )}
+                    </p>
+                  </div>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${thisMonthSpendingToDate > lastMonthSpendingToDate ? 'bg-rose-500/10 text-rose-500' : 'bg-brand-green/10 text-brand-green'}`}>
+                    <BarChart3 className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 mt-auto">
+                  <div>
+                    <p className="text-[12px] font-medium text-neutral-500">This Month</p>
+                    <p className="text-xs font-bold text-neutral-800">{currency}{thisMonthSpendingToDate.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="w-px h-6 bg-neutral-200"></div>
+                  <div>
+                    <p className="text-[12px] font-medium text-neutral-500">Last Month (to this day)</p>
+                    <p className="text-xs font-bold text-neutral-800">{currency}{lastMonthSpendingToDate.toLocaleString('en-IN')}</p>
+                  </div>
+                </div>
+              </>
+            )}
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Small Dot Navigation indicators */}
+        <div className="absolute bottom-3 right-4 flex gap-1">
+          {[0, 1, 2].map(idx => (
+            <div 
+              key={idx}
+              className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${activeSlide === idx ? 'bg-brand-green w-3' : 'bg-brand-green/20'}`}
+            />
+          ))}
         </div>
       </div>
 
