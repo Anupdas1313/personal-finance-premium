@@ -230,6 +230,9 @@ export default function Dashboard() {
           expenseType: currentExpenseType
         };
 
+        Object.keys(debitPayload).forEach(k => (debitPayload as any)[k] === undefined && delete (debitPayload as any)[k]);
+        Object.keys(creditPayload).forEach(k => (creditPayload as any)[k] === undefined && delete (creditPayload as any)[k]);
+
         if (editingTransactionId) {
           const existing = await db.transactions.get(editingTransactionId);
           if (existing) {
@@ -291,6 +294,13 @@ export default function Dashboard() {
           expenseType: currentExpenseType,
           linkedTransactionId: undefined // ensure link is cleared
         };
+
+        // Remove undefined properties to prevent Dexie/Firestore errors
+        Object.keys(txPayload).forEach(key => {
+          if ((txPayload as any)[key] === undefined) {
+            delete (txPayload as any)[key];
+          }
+        });
 
         if (editingTransactionId) {
           await db.transactions.update(editingTransactionId, txPayload);

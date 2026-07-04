@@ -75,6 +75,11 @@ export function startSync(uid: string | null, db: FinanceDatabase) {
         if (syncingKeys.has(syncKey)) return;
         
         const objWithId = { ...obj, id };
+        // Firestore rejects undefined values synchronously, which would crash this callback
+        Object.keys(objWithId).forEach(key => {
+          if (objWithId[key] === undefined) delete objWithId[key];
+        });
+        
         setDoc(doc(firestoreDb, `users/${uid}/${tableName}`, String(id)), objWithId).catch(console.error);
       };
     });
