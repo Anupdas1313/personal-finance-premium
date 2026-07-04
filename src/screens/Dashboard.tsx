@@ -725,17 +725,17 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Credit Cards & Liabilites Card */}
+            {/* Credit Cards & Liabilities Card */}
             {groupedAccounts['CREDIT_CARD'].length > 0 && (
-              <div className="bg-[#FFF8F8] dark:bg-[#0C0C0F] rounded-[28px] p-1 border border-brand-red/5 dark:border-white/5 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 flex justify-between items-center bg-white/40 dark:bg-white/[0.02] rounded-[24px] mb-1">
+              <div className="bg-white rounded-[28px] p-1 border border-neutral-200 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 flex justify-between items-center bg-neutral-50 rounded-[24px] mb-1">
                    <div className="flex items-center gap-2.5">
-                     <div className="w-6 h-6 rounded-lg bg-rose-500/5 dark:bg-rose-500/10 flex items-center justify-center">
+                     <div className="w-6 h-6 rounded-lg bg-rose-50 flex items-center justify-center">
                        <CreditCard className="w-3.5 h-3.5 text-rose-500" />
                      </div>
-                     <span className="text-[10px] font-black text-rose-500/60 dark:text-rose-500/40 uppercase tracking-[0.2em]">Credit Lines</span>
+                     <span className="text-[13px] font-semibold text-neutral-700">Credit Lines</span>
                    </div>
-                   <span className="text-xs font-heading font-black text-rose-500 dark:text-rose-400 tracking-tighter">
+                   <span className="text-xs font-bold text-neutral-900 tracking-tight">
                      {currency}{groupedAccounts['CREDIT_CARD'].reduce((sum, a) => sum + (a.currentBalance || 0), 0).toLocaleString('en-IN')}
                    </span>
                 </div>
@@ -747,15 +747,15 @@ export default function Dashboard() {
 
             {/* Cash Wallets Card */}
             {groupedAccounts['CASH'].length > 0 && (
-              <div className="bg-[#F8FFF9] dark:bg-[#0C0C0F] rounded-[28px] p-1 border border-brand-green/5 dark:border-white/5 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 flex justify-between items-center bg-white/40 dark:bg-white/[0.02] rounded-[24px] mb-1">
+              <div className="bg-white rounded-[28px] p-1 border border-neutral-200 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 flex justify-between items-center bg-neutral-50 rounded-[24px] mb-1">
                    <div className="flex items-center gap-2.5">
-                     <div className="w-6 h-6 rounded-lg bg-brand-green/5 dark:bg-brand-green/10 flex items-center justify-center">
+                     <div className="w-6 h-6 rounded-lg bg-brand-green/10 flex items-center justify-center">
                        <Coins className="w-3.5 h-3.5 text-brand-green" />
                      </div>
-                     <span className="text-[10px] font-black text-brand-green/60 dark:text-brand-green/40 uppercase tracking-[0.2em]">Cash & Wallets</span>
+                     <span className="text-[13px] font-semibold text-neutral-700">Cash & Wallets</span>
                    </div>
-                   <span className="text-xs font-heading font-black text-brand-green dark:text-brand-green tracking-tighter">
+                   <span className="text-xs font-bold text-neutral-900 tracking-tight">
                      {currency}{groupedAccounts['CASH'].reduce((sum, a) => sum + (a.currentBalance || 0), 0).toLocaleString('en-IN')}
                    </span>
                 </div>
