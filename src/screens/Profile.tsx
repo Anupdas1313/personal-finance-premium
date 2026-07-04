@@ -222,7 +222,7 @@ export default function Profile() {
                         const { EmailAuthProvider, reauthenticateWithCredential, GoogleAuthProvider, reauthenticateWithPopup } = await import('firebase/auth');
                         const { auth } = await import('../lib/firebase');
                         
-                        const providerId = user.providerData[0]?.providerId;
+                        const providerId = auth.currentUser?.providerData[0]?.providerId;
                         
                         if (providerId === 'google.com') {
                           const provider = new GoogleAuthProvider();
