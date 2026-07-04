@@ -707,8 +707,8 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 gap-3">
             {/* Bank Category Card */}
             {groupedAccounts['BANK'].length > 0 && (
-              <div className="bg-white rounded-[28px] p-1 border border-neutral-200 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 flex justify-between items-center bg-neutral-50 rounded-[24px] mb-1">
+              <div className="bg-brand-green/5 rounded-[28px] p-1 border border-brand-green/10 overflow-hidden">
+                <div className="px-4 py-3 flex justify-between items-center bg-white rounded-[24px] mb-1 shadow-sm">
                    <div className="flex items-center gap-2.5">
                      <div className="w-6 h-6 rounded-lg bg-brand-green/10 flex items-center justify-center">
                        <Landmark className="w-3.5 h-3.5 text-brand-green" />
@@ -727,8 +727,8 @@ export default function Dashboard() {
 
             {/* Credit Cards & Liabilities Card */}
             {groupedAccounts['CREDIT_CARD'].length > 0 && (
-              <div className="bg-white rounded-[28px] p-1 border border-neutral-200 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 flex justify-between items-center bg-neutral-50 rounded-[24px] mb-1">
+              <div className="bg-brand-green/5 rounded-[28px] p-1 border border-brand-green/10 overflow-hidden">
+                <div className="px-4 py-3 flex justify-between items-center bg-white rounded-[24px] mb-1 shadow-sm">
                    <div className="flex items-center gap-2.5">
                      <div className="w-6 h-6 rounded-lg bg-rose-50 flex items-center justify-center">
                        <CreditCard className="w-3.5 h-3.5 text-rose-500" />
@@ -747,8 +747,8 @@ export default function Dashboard() {
 
             {/* Cash Wallets Card */}
             {groupedAccounts['CASH'].length > 0 && (
-              <div className="bg-white rounded-[28px] p-1 border border-neutral-200 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 flex justify-between items-center bg-neutral-50 rounded-[24px] mb-1">
+              <div className="bg-brand-green/5 rounded-[28px] p-1 border border-brand-green/10 overflow-hidden">
+                <div className="px-4 py-3 flex justify-between items-center bg-white rounded-[24px] mb-1 shadow-sm">
                    <div className="flex items-center gap-2.5">
                      <div className="w-6 h-6 rounded-lg bg-brand-green/10 flex items-center justify-center">
                        <Coins className="w-3.5 h-3.5 text-brand-green" />
