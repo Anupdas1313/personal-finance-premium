@@ -6,8 +6,10 @@ import { useState, useMemo, Component, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, PieChart as PieIcon, Tag, Store, Layers, AlertTriangle } from 'lucide-react';
 import { CATEGORY_ICONS } from '../constants';
 import { useCurrency } from '../hooks/useCurrency';
+import { cn } from '../logic/utils';
 
-const COLORS = ['#00A86B', '#6366F1', '#D4AF37', '#06B6D4', '#E53935', '#8B5CF6', '#10B981', '#F59E0B', '#EC4899', '#14B8A6'];
+// Cleaner, modern color palette
+const COLORS = ['#00A86B', '#34D399', '#6EE7B7', '#A7F3D0', '#10B981', '#059669', '#047857', '#064E3B'];
 
 // ── Error Boundary ──────────────────────────────────────────────────────────
 class SummaryErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: string }> {
@@ -22,11 +24,11 @@ class SummaryErrorBoundary extends Component<{ children: ReactNode }, { hasError
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center">
-          <AlertTriangle className="w-10 h-10 text-amber-500 mb-3" />
-          <h2 className="text-lg font-bold text-neutral-800 dark:text-white mb-2">Something went wrong</h2>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4 max-w-xs">{this.state.error}</p>
+          <AlertTriangle className="w-10 h-10 text-rose-500 mb-3" />
+          <h2 className="text-lg font-bold text-neutral-900 mb-2">Something went wrong</h2>
+          <p className="text-sm text-neutral-500 mb-4 max-w-xs">{this.state.error}</p>
           <button onClick={() => this.setState({ hasError: false, error: '' })}
-            className="px-4 py-2 bg-brand-green text-white rounded-xl text-xs font-bold">
+            className="px-5 py-2.5 bg-brand-green text-white rounded-xl text-sm font-semibold shadow-sm">
             Try Again
           </button>
         </div>
@@ -66,7 +68,7 @@ function MiniDonut({ data, colors, size = 160 }: { data: { name: string; value: 
   const total = data.reduce((s, d) => s + d.value, 0);
   if (total === 0) return null;
   const r = size / 2;
-  const innerR = r * 0.62;
+  const innerR = r * 0.65;
   const cx = r;
   const cy = r;
   let cumAngle = -90;
@@ -99,7 +101,7 @@ function MiniDonut({ data, colors, size = 160 }: { data: { name: string; value: 
       'Z',
     ].join(' ');
 
-    return <path key={i} d={pathD} fill={colors[i % colors.length]} />;
+    return <path key={i} d={pathD} fill={colors[i % colors.length]} stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" />;
   });
 
   return (
@@ -112,14 +114,14 @@ function MiniDonut({ data, colors, size = 160 }: { data: { name: string; value: 
 // ── Mini Bar Chart (pure SVG, no recharts) ───────────────────────────────────
 function MiniBarChart({ data }: { data: { month: string; income: number; expenses: number }[] }) {
   const maxVal = Math.max(...data.map(d => Math.max(d.income, d.expenses)), 1);
-  const barW = 12;
+  const barW = 14;
   const gap = 4;
   const groupW = barW * 2 + gap;
   const chartH = 140;
   const chartW = data.length * (groupW + 16);
 
   return (
-    <div className="w-full overflow-x-auto">
+    <div className="w-full overflow-x-auto pb-2 scrollbar-hide">
       <svg width={chartW} height={chartH + 30} viewBox={`0 0 ${chartW} ${chartH + 30}`} className="mx-auto block">
         {data.map((d, i) => {
           const x = i * (groupW + 16) + 8;
@@ -127,9 +129,9 @@ function MiniBarChart({ data }: { data: { month: string; income: number; expense
           const expH = (d.expenses / maxVal) * chartH;
           return (
             <g key={i}>
-              <rect x={x} y={chartH - incH} width={barW} height={incH} rx={3} fill="#34D399" />
-              <rect x={x + barW + gap} y={chartH - expH} width={barW} height={expH} rx={3} fill="#FB7185" />
-              <text x={x + groupW / 2} y={chartH + 18} textAnchor="middle" fontSize={9} fontWeight={800} fill="#888">{d.month}</text>
+              <rect x={x} y={chartH - incH} width={barW} height={incH} rx={4} fill="#00A86B" opacity={0.8} />
+              <rect x={x + barW + gap} y={chartH - expH} width={barW} height={expH} rx={4} fill="#F43F5E" opacity={0.9} />
+              <text x={x + groupW / 2} y={chartH + 20} textAnchor="middle" fontSize={11} fontWeight={600} fill="#737373">{d.month}</text>
             </g>
           );
         })}
@@ -206,7 +208,7 @@ function SummaryContent() {
         const accName = accounts.find(a => a.id === tx.accountId)?.bankName || 'Unknown';
         byAccount[accName] = (byAccount[accName] || 0) + amt;
         if (tx.party && typeof tx.party === 'string') {
-          const pName = tx.party.toUpperCase().trim();
+          const pName = tx.party.trim();
           if (pName) byParty[pName] = (byParty[pName] || 0) + amt;
         }
       }
@@ -258,213 +260,212 @@ function SummaryContent() {
     trendInsight = `Great job! Your spending is ${Math.round(((avg6MonthExpense - totalExpense) / avg6MonthExpense) * 100)}% lower than your 6-month average.`;
   }
 
-  const fmtAmt = (n: number) => `{currency}${Math.abs(n).toLocaleString('en-IN')}`;
+  const fmtAmt = (n: number) => `{currency}${Math.abs(n).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+  const currencySymbol = useCurrency();
+
+  const formatWithCurrency = (n: number) => `${currencySymbol}${Math.abs(n).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 
   return (
-    <div className="space-y-4 max-w-4xl mx-auto pb-24 px-3">
+    <div className="space-y-5 max-w-4xl mx-auto pb-24 px-4 bg-neutral-50 min-h-screen pt-4">
 
       {/* ── HEADER ── */}
-      <div className="flex items-center justify-between pt-2 pb-1">
+      <div className="flex items-center justify-between pb-2">
         <div>
-          <h1 className="text-2xl font-heading font-black text-brand-blue dark:text-white tracking-tight leading-none">Analytics</h1>
-          <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-[0.2em] mt-1">Financial Insights</p>
+          <h1 className="text-2xl font-extrabold text-neutral-900 tracking-tight leading-none">Analytics</h1>
+          <p className="text-[14px] font-medium text-neutral-500 mt-1">Financial Insights</p>
         </div>
-        <div className="flex items-center gap-1.5 bg-white dark:bg-white/5 px-2 py-1.5 rounded-2xl shadow-sm border border-neutral-100 dark:border-white/5">
+        <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-2xl shadow-sm border border-neutral-200">
           <button onClick={() => setCurrentMonth(m => subMonths(m, 1))}
-            className="w-7 h-7 flex items-center justify-center bg-neutral-50 dark:bg-white/5 hover:bg-neutral-100 dark:hover:bg-white/10 text-neutral-500 rounded-xl transition-all active:scale-95">
-            <ChevronLeft className="w-4 h-4" />
+            className="w-8 h-8 flex items-center justify-center bg-neutral-50 hover:bg-neutral-100 text-neutral-600 rounded-xl transition-all active:scale-95">
+            <ChevronLeft className="w-5 h-5" />
           </button>
-          <span className="font-black text-brand-blue dark:text-white text-[11px] uppercase tracking-widest min-w-[80px] text-center">
+          <span className="font-bold text-neutral-800 text-[14px] min-w-[70px] text-center">
             {format(currentMonth, 'MMM yyyy')}
           </span>
           <button
             onClick={() => setCurrentMonth(m => { const next = new Date(m.getFullYear(), m.getMonth() + 1, 1); return next > new Date() ? m : next; })}
             disabled={isCurrentMonth}
-            className="w-7 h-7 flex items-center justify-center bg-neutral-50 dark:bg-white/5 hover:bg-neutral-100 dark:hover:bg-white/10 text-neutral-500 rounded-xl transition-all active:scale-95 disabled:opacity-30">
-            <ChevronRight className="w-4 h-4" />
+            className="w-8 h-8 flex items-center justify-center bg-neutral-50 hover:bg-neutral-100 text-neutral-600 rounded-xl transition-all active:scale-95 disabled:opacity-30">
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </div>
 
       {/* ── 1. AT A GLANCE ── */}
-      <div className="bg-gradient-to-br from-brand-blue to-indigo-900 rounded-[28px] p-5 shadow-lg relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      <div className="bg-brand-green rounded-3xl p-6 shadow-md relative overflow-hidden text-white">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-white/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="relative z-10">
-          <h2 className="text-white/80 font-bold text-[13px] tracking-tight mb-4">
-            In {monthName}, you earned <span className="text-emerald-400 font-black">{fmtAmt(totalIncome)}</span> and spent <span className="text-rose-400 font-black">{fmtAmt(totalExpense)}</span>, leaving you with <span className="text-white font-black">{savings >= 0 ? '+' : '-'}{fmtAmt(savings)}</span>.
+          <h2 className="text-white/90 font-medium text-[15px] leading-relaxed mb-6">
+            In {monthName}, you earned <span className="font-bold text-white">{formatWithCurrency(totalIncome)}</span> and spent <span className="font-bold text-white">{formatWithCurrency(totalExpense)}</span>, leaving you with <span className="font-bold text-white">{savings >= 0 ? '+' : '-'}{formatWithCurrency(savings)}</span>.
           </h2>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <div className="flex justify-between items-end">
-              <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">Savings Rate</span>
-              <span className="text-lg font-heading font-black text-white">{savingsRate}%</span>
+              <span className="text-[13px] font-semibold text-white/80">Savings Rate</span>
+              <span className="text-2xl font-extrabold text-white">{savingsRate}%</span>
             </div>
-            <div className="h-2.5 bg-black/20 rounded-full overflow-hidden flex">
-              <div className="h-full bg-emerald-400 transition-all duration-1000" style={{ width: `${Math.max(0, Math.min(100, savingsRate))}%` }} />
-              <div className="h-full bg-rose-400 transition-all duration-1000" style={{ width: `${Math.max(0, Math.min(100, 100 - savingsRate))}%` }} />
-            </div>
-            <div className="flex justify-between mt-1">
-              <span className="text-[8px] font-bold text-emerald-400/80 uppercase tracking-wider">Saved</span>
-              <span className="text-[8px] font-bold text-rose-400/80 uppercase tracking-wider">Spent</span>
+            <div className="h-3 bg-black/20 rounded-full overflow-hidden flex">
+              <div className="h-full bg-white transition-all duration-1000" style={{ width: `${Math.max(0, Math.min(100, savingsRate))}%` }} />
+              <div className="h-full bg-white/30 transition-all duration-1000" style={{ width: `${Math.max(0, Math.min(100, 100 - savingsRate))}%` }} />
             </div>
           </div>
         </div>
       </div>
 
       {/* ── KPI ROW ── */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="bg-white dark:bg-[#0C0C0F] p-3 rounded-2xl border border-neutral-100 dark:border-white/5 shadow-sm">
-          <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest mb-1">Income</p>
-          <p className="text-sm font-heading font-black text-brand-blue dark:text-white tracking-tighter">{fmtAmt(totalIncome)}</p>
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-white p-4 rounded-3xl border border-neutral-100 shadow-sm flex flex-col justify-center">
+          <p className="text-[13px] font-semibold text-neutral-500 mb-1">Income</p>
+          <p className="text-[18px] font-bold text-neutral-900 tracking-tight">{formatWithCurrency(totalIncome)}</p>
           {incomeChangePct !== null && (
-            <div className={`flex items-center gap-0.5 text-[8px] font-bold mt-0.5 ${incomeChangePct >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-              {incomeChangePct >= 0 ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
-              {Math.abs(Math.round(incomeChangePct))}% vs last
+            <div className={`flex items-center gap-1 text-[12px] font-semibold mt-1 ${incomeChangePct >= 0 ? 'text-brand-green' : 'text-rose-500'}`}>
+              {incomeChangePct >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+              {Math.abs(Math.round(incomeChangePct))}%
             </div>
           )}
         </div>
-        <div className="bg-white dark:bg-[#0C0C0F] p-3 rounded-2xl border border-neutral-100 dark:border-white/5 shadow-sm">
-          <p className="text-[8px] font-black text-rose-500 uppercase tracking-widest mb-1">Spent</p>
-          <p className="text-sm font-heading font-black text-brand-blue dark:text-white tracking-tighter">{fmtAmt(totalExpense)}</p>
+        <div className="bg-white p-4 rounded-3xl border border-neutral-100 shadow-sm flex flex-col justify-center">
+          <p className="text-[13px] font-semibold text-neutral-500 mb-1">Spent</p>
+          <p className="text-[18px] font-bold text-neutral-900 tracking-tight">{formatWithCurrency(totalExpense)}</p>
           {expenseChangePct !== null && (
-            <div className={`flex items-center gap-0.5 text-[8px] font-bold mt-0.5 ${expenseChangePct <= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-              {expenseChangePct <= 0 ? <TrendingDown className="w-2.5 h-2.5" /> : <TrendingUp className="w-2.5 h-2.5" />}
-              {Math.abs(Math.round(expenseChangePct))}% vs last
+            <div className={`flex items-center gap-1 text-[12px] font-semibold mt-1 ${expenseChangePct <= 0 ? 'text-brand-green' : 'text-rose-500'}`}>
+              {expenseChangePct <= 0 ? <TrendingDown className="w-3.5 h-3.5" /> : <TrendingUp className="w-3.5 h-3.5" />}
+              {Math.abs(Math.round(expenseChangePct))}%
             </div>
           )}
         </div>
-        <div className={`p-3 rounded-2xl border shadow-sm ${savings >= 0 ? 'bg-emerald-50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/10' : 'bg-rose-50 dark:bg-rose-500/5 border-rose-100 dark:border-rose-500/10'}`}>
-          <p className="text-[8px] font-black text-neutral-400 uppercase tracking-widest mb-1">Saved</p>
-          <p className={`text-sm font-heading font-black tracking-tighter ${savings >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>{savings >= 0 ? '+' : '-'}{fmtAmt(savings)}</p>
-          <div className={`text-[8px] font-bold mt-0.5 ${savings >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{savingsRate}% rate</div>
+        <div className={`p-4 rounded-3xl border shadow-sm flex flex-col justify-center ${savings >= 0 ? 'bg-brand-green/5 border-brand-green/10' : 'bg-rose-50 border-rose-100'}`}>
+          <p className="text-[13px] font-semibold text-neutral-500 mb-1">Saved</p>
+          <p className={`text-[18px] font-bold tracking-tight ${savings >= 0 ? 'text-brand-green' : 'text-rose-600'}`}>{savings >= 0 ? '+' : '-'}{formatWithCurrency(savings)}</p>
+          <div className={`text-[12px] font-semibold mt-1 ${savings >= 0 ? 'text-brand-green' : 'text-rose-500'}`}>{savingsRate}% rate</div>
         </div>
       </div>
 
       {/* ── 2. CATEGORIES DONUT ── */}
-      <div className="bg-white dark:bg-[#0C0C0F] rounded-[28px] border border-neutral-100 dark:border-white/5 shadow-sm p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500"><PieIcon className="w-3.5 h-3.5" /></div>
-          <h2 className="text-[11px] font-black text-neutral-800 dark:text-white uppercase tracking-widest">Spends by Category</h2>
+      <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-brand-green/10 flex items-center justify-center text-brand-green"><PieIcon className="w-5 h-5" /></div>
+          <h2 className="text-[16px] font-bold text-neutral-900">Spending by Category</h2>
         </div>
         {pieData.length > 0 ? (
           <div className="flex flex-col items-center">
-            <div className="relative">
-              <MiniDonut data={pieData} colors={COLORS} size={160} />
+            <div className="relative mb-6">
+              <MiniDonut data={pieData} colors={COLORS} size={180} />
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest">Total</span>
-                <span className="text-base font-heading font-black text-brand-blue dark:text-white tracking-tighter">{fmtAmt(totalExpense)}</span>
+                <span className="text-[12px] font-medium text-neutral-400">Total</span>
+                <span className="text-[18px] font-bold text-neutral-900 tracking-tight">{formatWithCurrency(totalExpense)}</span>
               </div>
             </div>
-            <div className="w-full space-y-2 mt-4">
+            <div className="w-full space-y-3">
               {pieData.slice(0, 5).map((d, i) => (
                 <div key={d.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
-                    <span className="text-[11px] font-bold text-neutral-600 dark:text-neutral-300">{CATEGORY_ICONS[d.name] || '📦'} {d.name}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="w-3 h-3 rounded-full shrink-0 shadow-sm" style={{ background: COLORS[i % COLORS.length] }} />
+                    <span className="text-[14px] font-semibold text-neutral-700">{CATEGORY_ICONS[d.name] || '📦'} {d.name}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-black text-neutral-400">{totalExpense > 0 ? Math.round((d.value / totalExpense) * 100) : 0}%</span>
-                    <span className="text-[11px] font-black text-brand-blue dark:text-white">{fmtAmt(d.value)}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[13px] font-medium text-neutral-400">{totalExpense > 0 ? Math.round((d.value / totalExpense) * 100) : 0}%</span>
+                    <span className="text-[14px] font-bold text-neutral-900">{formatWithCurrency(d.value)}</span>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center opacity-40 py-10">
-            <PieIcon className="w-8 h-8 mb-2" />
-            <p className="text-[10px] font-black uppercase tracking-widest">No spending data</p>
+          <div className="flex flex-col items-center justify-center opacity-50 py-12">
+            <PieIcon className="w-10 h-10 mb-3 text-neutral-400" />
+            <p className="text-[14px] font-medium text-neutral-500">No spending data</p>
           </div>
         )}
       </div>
 
       {/* ── 3. ACCOUNTS ── */}
-      <div className="bg-white dark:bg-[#0C0C0F] rounded-[28px] border border-neutral-100 dark:border-white/5 shadow-sm p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500"><Layers className="w-3.5 h-3.5" /></div>
-          <h2 className="text-[11px] font-black text-neutral-800 dark:text-white uppercase tracking-widest">Spends by Account</h2>
+      <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500"><Layers className="w-5 h-5" /></div>
+          <h2 className="text-[16px] font-bold text-neutral-900">Spending by Account</h2>
         </div>
         {accData.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {accData.map((d) => {
               const pct = totalExpense > 0 ? (d.value / totalExpense) * 100 : 0;
               return (
-                <div key={d.name} className="bg-neutral-50 dark:bg-white/[0.02] p-3 rounded-2xl">
-                  <div className="flex justify-between items-end mb-2">
-                    <span className="text-[11px] font-black text-neutral-800 dark:text-white truncate pr-2">{d.name}</span>
-                    <span className="text-[12px] font-heading font-black text-brand-blue dark:text-emerald-400 tracking-tight shrink-0">{fmtAmt(d.value)}</span>
+                <div key={d.name} className="bg-neutral-50 p-4 rounded-2xl">
+                  <div className="flex justify-between items-end mb-3">
+                    <span className="text-[14px] font-semibold text-neutral-800 truncate pr-2">{d.name}</span>
+                    <span className="text-[14px] font-bold text-neutral-900 tracking-tight shrink-0">{formatWithCurrency(d.value)}</span>
                   </div>
-                  <div className="h-1.5 bg-neutral-200 dark:bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                  <div className="h-2 bg-neutral-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-500 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center opacity-40 py-10">
-            <Layers className="w-8 h-8 mb-2" />
-            <p className="text-[10px] font-black uppercase tracking-widest">No account data</p>
+          <div className="flex flex-col items-center justify-center opacity-50 py-12">
+            <Layers className="w-10 h-10 mb-3 text-neutral-400" />
+            <p className="text-[14px] font-medium text-neutral-500">No account data</p>
           </div>
         )}
       </div>
 
       {/* ── 4. TOP TAGS ── */}
-      <div className="bg-white dark:bg-[#0C0C0F] rounded-[28px] border border-neutral-100 dark:border-white/5 shadow-sm p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-500"><Tag className="w-3.5 h-3.5" /></div>
-          <h2 className="text-[11px] font-black text-neutral-800 dark:text-white uppercase tracking-widest">Top Tags</h2>
+      <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500"><Tag className="w-5 h-5" /></div>
+          <h2 className="text-[16px] font-bold text-neutral-900">Top Tags</h2>
         </div>
         {tagData.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {tagData.map((d) => (
-              <div key={d.name} className="flex items-center justify-between w-full bg-neutral-50 dark:bg-white/[0.02] p-2.5 rounded-xl">
-                <span className="text-[10px] font-black text-neutral-600 dark:text-neutral-300 uppercase tracking-widest">#{d.name}</span>
-                <span className="text-[11px] font-black text-brand-blue dark:text-amber-400">{fmtAmt(d.value)}</span>
+              <div key={d.name} className="flex items-center justify-between w-full bg-neutral-50 p-3.5 rounded-2xl">
+                <span className="text-[13px] font-semibold text-neutral-600 bg-white px-2 py-1 rounded-lg border border-neutral-200 shadow-sm">#{d.name}</span>
+                <span className="text-[14px] font-bold text-neutral-900">{formatWithCurrency(d.value)}</span>
               </div>
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center opacity-40 py-10">
-            <Tag className="w-8 h-8 mb-2" />
-            <p className="text-[10px] font-black uppercase tracking-widest">No tags used</p>
+          <div className="flex flex-col items-center justify-center opacity-50 py-12">
+            <Tag className="w-10 h-10 mb-3 text-neutral-400" />
+            <p className="text-[14px] font-medium text-neutral-500">No tags used</p>
           </div>
         )}
       </div>
 
       {/* ── 5. TOP PAYEES ── */}
-      <div className="bg-white dark:bg-[#0C0C0F] rounded-[28px] border border-neutral-100 dark:border-white/5 shadow-sm p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center text-rose-500"><Store className="w-3.5 h-3.5" /></div>
-          <h2 className="text-[11px] font-black text-neutral-800 dark:text-white uppercase tracking-widest">Top Payees</h2>
+      <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500"><Store className="w-5 h-5" /></div>
+          <h2 className="text-[16px] font-bold text-neutral-900">Top Payees</h2>
         </div>
         {partyData.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {partyData.map((d, i) => (
-              <div key={d.name} className="flex items-center justify-between w-full p-2 border-b border-neutral-50 dark:border-white/5 last:border-0">
+              <div key={d.name} className="flex items-center justify-between w-full p-3 bg-neutral-50 rounded-2xl">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-5 h-5 rounded bg-rose-50 dark:bg-rose-500/10 text-rose-500 flex items-center justify-center text-[9px] font-black shrink-0">{i + 1}</div>
-                  <span className="text-[11px] font-bold text-neutral-700 dark:text-neutral-200 truncate pr-2">{d.name}</span>
+                  <div className="w-6 h-6 rounded-full bg-white text-rose-500 border border-neutral-200 flex items-center justify-center text-[11px] font-bold shrink-0 shadow-sm">{i + 1}</div>
+                  <span className="text-[14px] font-semibold text-neutral-700 truncate pr-2">{d.name}</span>
                 </div>
-                <span className="text-[11px] font-black text-brand-blue dark:text-rose-400 shrink-0">{fmtAmt(d.value)}</span>
+                <span className="text-[14px] font-bold text-neutral-900 shrink-0">{formatWithCurrency(d.value)}</span>
               </div>
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center opacity-40 py-10">
-            <Store className="w-8 h-8 mb-2" />
-            <p className="text-[10px] font-black uppercase tracking-widest">No payee data</p>
+          <div className="flex flex-col items-center justify-center opacity-50 py-12">
+            <Store className="w-10 h-10 mb-3 text-neutral-400" />
+            <p className="text-[14px] font-medium text-neutral-500">No payee data</p>
           </div>
         )}
       </div>
 
       {/* ── 6. TRENDS ── */}
-      <div className="bg-white dark:bg-[#0C0C0F] rounded-[28px] border border-neutral-100 dark:border-white/5 shadow-sm p-4">
-        <h2 className="text-[11px] font-black text-neutral-800 dark:text-white uppercase tracking-widest mb-1">6-Month Big Picture</h2>
-        <p className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 mb-4">{trendInsight}</p>
+      <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm p-6">
+        <h2 className="text-[16px] font-bold text-neutral-900 mb-2">6-Month Big Picture</h2>
+        <p className="text-[14px] font-medium text-neutral-500 mb-6 leading-relaxed">{trendInsight}</p>
         {barData.length > 0 && <MiniBarChart data={barData} />}
-        <div className="flex items-center justify-center gap-6 mt-4 pt-3 border-t border-neutral-100 dark:border-white/5">
-          <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-[#34D399]" /><span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Income</span></div>
-          <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-[#FB7185]" /><span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Expenses</span></div>
+        <div className="flex items-center justify-center gap-6 mt-6 pt-4 border-t border-neutral-100">
+          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#00A86B]" /><span className="text-[13px] font-semibold text-neutral-600">Income</span></div>
+          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#F43F5E]" /><span className="text-[13px] font-semibold text-neutral-600">Expenses</span></div>
         </div>
       </div>
 
@@ -474,7 +475,6 @@ function SummaryContent() {
 
 // ── Export with Error Boundary ────────────────────────────────────────────────
 export default function Summary() {
-  const currency = useCurrency();
   return (
     <SummaryErrorBoundary>
       <SummaryContent />
