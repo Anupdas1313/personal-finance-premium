@@ -381,7 +381,7 @@ function SummaryContent() {
       {/* ── 3. ACCOUNTS ── */}
       <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500"><Layers className="w-5 h-5" /></div>
+          <div className="w-10 h-10 rounded-xl bg-brand-green/10 flex items-center justify-center text-brand-green"><Layers className="w-5 h-5" /></div>
           <h2 className="text-[16px] font-bold text-neutral-900">Spending by Account</h2>
         </div>
         {accData.length > 0 ? (
@@ -395,7 +395,7 @@ function SummaryContent() {
                     <span className="text-[14px] font-bold text-neutral-900 tracking-tight shrink-0">{formatWithCurrency(d.value)}</span>
                   </div>
                   <div className="h-2 bg-neutral-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                    <div className="h-full bg-brand-green rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               );

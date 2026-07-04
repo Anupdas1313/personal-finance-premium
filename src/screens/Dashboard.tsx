@@ -473,85 +473,85 @@ export default function Dashboard() {
 
       {/* Cash Flow Hero Card - REDUCED SIZE */}
       <div 
-        className="relative overflow-hidden rounded-[24px] bg-[#F4F7FF] dark:bg-[#0C0C0F] p-4 shadow-sm border border-brand-blue/5 dark:border-white/5 group"
+        className="relative overflow-hidden rounded-[24px] bg-white p-4 shadow-sm border border-neutral-200 group"
       >
-        <div className="absolute top-0 right-0 w-32 h-32 bg-brand-blue/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-brand-green/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
         
         <div className="relative z-10 flex items-center justify-between mb-4">
-          <h2 className="text-[9px] font-black text-brand-blue/40 dark:text-white/30 tracking-[0.2em] uppercase">Cash Flow</h2>
+          <h2 className="text-[13px] font-semibold text-neutral-500 tracking-tight">Cash Flow</h2>
           <div className="relative" onClick={(e) => e.stopPropagation()}>
             <select
               value={timeFilter}
               onChange={(e) => setTimeFilter(e.target.value as any)}
-              className="appearance-none bg-white dark:bg-[#1A1A1A] text-brand-blue/60 dark:text-white/70 text-[8px] font-black uppercase tracking-[0.1em] px-2.5 py-1 rounded-lg pr-6 cursor-pointer outline-none transition-colors border border-brand-blue/5"
+              className="appearance-none bg-neutral-50 text-neutral-700 text-[12px] font-semibold px-2.5 py-1 rounded-lg pr-6 cursor-pointer outline-none transition-colors border border-neutral-200"
             >
               <option value="This Month">This Month</option>
               <option value="This Year">This Year</option>
               <option value="All Time">All Time</option>
             </select>
-            <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-brand-blue/20 pointer-events-none" />
+            <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
           </div>
         </div>
 
         <div className="relative z-10 flex justify-between items-center mb-5 px-1">
           <div className="flex-1">
-            <p className="text-[8px] font-black text-rose-400 uppercase tracking-widest mb-1">Outflow</p>
-            <p className="text-xl font-heading font-black text-brand-blue dark:text-white tracking-tighter">
+            <p className="text-[13px] font-semibold text-rose-500 mb-1">Outflow</p>
+            <p className="text-xl font-bold text-neutral-900 tracking-tight">
               {currency}{totalSpending.toLocaleString('en-IN')}
             </p>
           </div>
           
-          <div className="w-px h-8 bg-brand-blue/5 dark:bg-white/5 mx-4"></div>
+          <div className="w-px h-8 bg-neutral-200 mx-4"></div>
 
           <div className="flex-1">
-            <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-1">Inflow</p>
-            <p className="text-xl font-heading font-black text-brand-blue dark:text-white tracking-tighter">
+            <p className="text-[13px] font-semibold text-brand-green mb-1">Inflow</p>
+            <p className="text-xl font-bold text-neutral-900 tracking-tight">
               {currency}{totalIncome.toLocaleString('en-IN')}
             </p>
           </div>
         </div>
 
-        <div className="relative z-10 bg-white/40 dark:bg-white/5 border border-white dark:border-white/5 rounded-2xl p-3 flex justify-between items-center backdrop-blur-sm">
+        <div className="relative z-10 bg-neutral-50 border border-neutral-200 rounded-2xl p-3 flex justify-between items-center">
           <div className="flex flex-col">
-            <p className="text-[8px] font-black text-brand-blue/30 dark:text-white/20 uppercase tracking-widest leading-none mb-1">Total Liquidity</p>
+            <p className="text-[13px] font-semibold text-neutral-500 leading-none mb-1">Total Liquidity</p>
             {timeFilter !== 'All Time' && (
-              <p className={`text-[8px] font-bold ${monthDelta >= 0 ? 'text-emerald-500' : 'text-rose-500'} uppercase tracking-tight`}>
+              <p className={`text-[11px] font-semibold ${monthDelta >= 0 ? 'text-brand-green' : 'text-rose-500'} tracking-tight`}>
                 {monthDelta >= 0 ? '↑' : '↓'} {currency}{Math.abs(monthDelta).toLocaleString('en-IN')}
               </p>
             )}
           </div>
-          <p className={`text-lg font-heading font-black tracking-tighter text-brand-blue dark:text-brand-cyan`}>
+          <p className={`text-lg font-bold tracking-tight text-neutral-900`}>
             {currency}{totalWealth.toLocaleString('en-IN')}
           </p>
         </div>
       </div>
 
       {/* Monthly Insights Card */}
-      <div className="bg-gradient-to-br from-brand-blue/5 to-transparent dark:from-brand-blue/10 dark:to-transparent border border-brand-blue/10 dark:border-brand-blue/20 rounded-[24px] p-4 relative overflow-hidden group hover:border-brand-blue/30 transition-colors">
+      <div className="bg-brand-green/5 border border-brand-green/10 rounded-[24px] p-4 relative overflow-hidden group hover:border-brand-green/20 transition-colors">
         <div className="flex items-start justify-between mb-2">
           <div>
-            <h3 className="text-[10px] font-black text-brand-blue/60 dark:text-brand-blue/80 uppercase tracking-[0.2em] mb-1">Monthly Insights</h3>
-            <p className="text-sm font-bold text-[#111111] dark:text-[#F7F7F7] leading-tight">
+            <h3 className="text-[13px] font-semibold text-brand-green mb-1">Monthly Insights</h3>
+            <p className="text-sm font-semibold text-neutral-800 leading-tight">
               {thisMonthSpendingToDate > lastMonthSpendingToDate ? (
-                <>You've spent <span className="text-rose-500 font-black">{currency}{(thisMonthSpendingToDate - lastMonthSpendingToDate).toLocaleString('en-IN')} more</span> than last month at this time.</>
+                <>You've spent <span className="text-rose-500 font-bold">{currency}{(thisMonthSpendingToDate - lastMonthSpendingToDate).toLocaleString('en-IN')} more</span> than last month at this time.</>
               ) : (
-                <>You've spent <span className="text-emerald-500 font-black">{currency}{(lastMonthSpendingToDate - thisMonthSpendingToDate).toLocaleString('en-IN')} less</span> than last month at this time.</>
+                <>You've spent <span className="text-brand-green font-bold">{currency}{(lastMonthSpendingToDate - thisMonthSpendingToDate).toLocaleString('en-IN')} less</span> than last month at this time.</>
               )}
             </p>
           </div>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${thisMonthSpendingToDate > lastMonthSpendingToDate ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${thisMonthSpendingToDate > lastMonthSpendingToDate ? 'bg-rose-500/10 text-rose-500' : 'bg-brand-green/10 text-brand-green'}`}>
             <BarChart3 className="w-4 h-4" />
           </div>
         </div>
         <div className="flex items-center gap-4 mt-3">
           <div>
-            <p className="text-[9px] font-black text-brand-blue/40 dark:text-white/30 uppercase tracking-widest">This Month</p>
-            <p className="text-xs font-black text-brand-blue dark:text-white">{currency}{thisMonthSpendingToDate.toLocaleString('en-IN')}</p>
+            <p className="text-[12px] font-medium text-neutral-500">This Month</p>
+            <p className="text-xs font-bold text-neutral-800">{currency}{thisMonthSpendingToDate.toLocaleString('en-IN')}</p>
           </div>
-          <div className="w-px h-6 bg-brand-blue/10 dark:bg-white/10"></div>
+          <div className="w-px h-6 bg-neutral-200"></div>
           <div>
-            <p className="text-[9px] font-black text-brand-blue/40 dark:text-white/30 uppercase tracking-widest">Last Month</p>
-            <p className="text-xs font-black text-brand-blue dark:text-white">{currency}{lastMonthSpendingToDate.toLocaleString('en-IN')}</p>
+            <p className="text-[12px] font-medium text-neutral-500">Last Month</p>
+            <p className="text-xs font-bold text-neutral-800">{currency}{lastMonthSpendingToDate.toLocaleString('en-IN')}</p>
           </div>
         </div>
       </div>
@@ -571,15 +571,15 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 gap-3">
             {/* Bank Category Card */}
             {groupedAccounts['BANK'].length > 0 && (
-              <div className="bg-[#F8F9FF] dark:bg-[#0C0C0F] rounded-[28px] p-1 border border-brand-blue/5 dark:border-white/5 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 flex justify-between items-center bg-white/40 dark:bg-white/[0.02] rounded-[24px] mb-1">
+              <div className="bg-white rounded-[28px] p-1 border border-neutral-200 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 flex justify-between items-center bg-neutral-50 rounded-[24px] mb-1">
                    <div className="flex items-center gap-2.5">
-                     <div className="w-6 h-6 rounded-lg bg-brand-blue/5 dark:bg-brand-blue/10 flex items-center justify-center">
-                       <Landmark className="w-3.5 h-3.5 text-brand-blue dark:text-brand-cyan" />
+                     <div className="w-6 h-6 rounded-lg bg-brand-green/10 flex items-center justify-center">
+                       <Landmark className="w-3.5 h-3.5 text-brand-green" />
                      </div>
-                     <span className="text-[10px] font-black text-brand-blue/60 dark:text-white/40 uppercase tracking-[0.2em]">Checking & Savings</span>
+                     <span className="text-[13px] font-semibold text-neutral-700">Checking & Savings</span>
                    </div>
-                   <span className="text-xs font-heading font-black text-brand-blue dark:text-white tracking-tighter">
+                   <span className="text-xs font-bold text-neutral-900 tracking-tight">
                      {currency}{groupedAccounts['BANK'].reduce((sum, a) => sum + (a.currentBalance || 0), 0).toLocaleString('en-IN')}
                    </span>
                 </div>
