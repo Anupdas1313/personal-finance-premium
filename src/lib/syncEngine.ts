@@ -67,13 +67,16 @@ export function startSync(uid: string | null, db: FinanceDatabase) {
     syncUnsubscribes.push(unsub);
 
     // 2. Listen to Dexie changes and update Firestore
-    table.hook('creating', function (primKey, obj) {
-      const syncKey = `${tableName}-${primKey}`;
-      if (syncingKeys.has(syncKey)) return;
-      
-      setTimeout(() => {
-        setDoc(doc(firestoreDb, `users/${uid}/${tableName}`, String(obj.id)), obj).catch(console.error);
-      }, 0);
+    table.hook('creating', function (primKey, obj, transaction) {
+      // Use Dexie's this.onsuccess callback to get the actual generated ID for auto-increment keys
+      this.onsuccess = function (actualPrimKey) {
+        const id = Number(actualPrimKey);
+        const syncKey = `${tableName}-${id}`;
+        if (syncingKeys.has(syncKey)) return;
+        
+        const objWithId = { ...obj, id };
+        setDoc(doc(firestoreDb, `users/${uid}/${tableName}`, String(id)), objWithId).catch(console.error);
+      };
     });
 
     table.hook('updating', function (mods, primKey, obj) {
