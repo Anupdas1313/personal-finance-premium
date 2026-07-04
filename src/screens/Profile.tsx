@@ -170,20 +170,17 @@ export default function Profile() {
                   try {
                     if (!user) return;
                     const uid = user.uid;
-
-                    // 1. Delete from Firestore concurrently (much faster)
-                    const { collection, getDocs, deleteDoc } = await import('firebase/firestore');
+                    // 1. Delete from Firestore concurrently
+                    const { collection, getDocs, deleteDoc, doc } = await import('firebase/firestore');
                     const { firestoreDb } = await import('../lib/firebase');
-                    const tables = [
-                      'accounts', 'transactions', 'monthlyClosings', 'budgets', 
-                      'parties', 'ledgerTransactions', 'accountClosings', 
-                      'categories', 'tags', 'recurringTemplates', 'userSettings'
-                    ];
+                    const { db } = await import('../models/db');
+                    
+                    const tableNames = db.tables.map(t => t.name);
 
-                    await Promise.all(tables.map(async (table) => {
+                    await Promise.all(tableNames.map(async (table) => {
                       try {
                         const qs = await getDocs(collection(firestoreDb, `users/${uid}/${table}`));
-                        const deletePromises = qs.docs.map(doc => deleteDoc(doc.ref));
+                        const deletePromises = qs.docs.map(d => deleteDoc(d.ref));
                         await Promise.all(deletePromises);
                       } catch (err) {
                         console.error(`Failed to delete table ${table}`, err);
@@ -192,7 +189,6 @@ export default function Profile() {
 
                     // Delete the user root folder/document itself
                     try {
-                      const { doc } = await import('firebase/firestore');
                       await deleteDoc(doc(firestoreDb, 'users', uid));
                     } catch (err) {
                       console.error('Failed to delete user root doc', err);
@@ -202,32 +198,24 @@ export default function Profile() {
                     const { stopSync } = await import('../lib/syncEngine');
                     stopSync();
 
-                    // 3. Delete the Auth user first. 
-                    // This triggers onAuthStateChanged, redirects to /login, and unmounts all useLiveQuery hooks.
-                    await deleteAccount();
-
-                    // 4. Delete local data safely now that hooks are unmounted
-                    const { db } = await import('../models/db');
-                    if (db.isOpen()) {
-                      db.close();
-                    }
-                    // Run delete without awaiting so it doesn't block the UI if it takes a moment
-                    db.delete().catch(e => console.error("Error deleting local db", e)); 
+                    // 3. Clear local data safely before unmounting
+                    await Promise.all(db.tables.map(table => table.clear()));
                     localStorage.removeItem(`onboardingComplete_${uid}`);
                     localStorage.removeItem(`tutorialComplete_${uid}`);
+
+                    // 4. Delete the Auth user last. 
+                    // This triggers onAuthStateChanged, redirects to /login, and unmounts components.
+                    await deleteAccount();
                     
                   } catch (e: any) {
                     if (e.code === 'auth/requires-recent-login') {
                       try {
-                        const { EmailAuthProvider, reauthenticateWithCredential, GoogleAuthProvider, reauthenticateWithPopup } = await import('firebase/auth');
+                        const { EmailAuthProvider, reauthenticateWithCredential } = await import('firebase/auth');
                         const { auth } = await import('../lib/firebase');
                         
                         const providerId = auth.currentUser?.providerData[0]?.providerId;
                         
-                        if (providerId === 'google.com') {
-                          const provider = new GoogleAuthProvider();
-                          await reauthenticateWithPopup(auth.currentUser!, provider);
-                        } else if (providerId === 'password') {
+                        if (providerId === 'password') {
                           const pwd = window.prompt("Security requirement: Please enter your password to confirm account deletion:");
                           if (!pwd) {
                             setIsUpdating(false);
@@ -235,23 +223,15 @@ export default function Profile() {
                           }
                           const credential = EmailAuthProvider.credential(user.email!, pwd);
                           await reauthenticateWithCredential(auth.currentUser!, credential);
+                          
+                          // Retry deletion after successful re-auth
+                          await deleteAccount();
                         } else {
-                          showMessage('error', 'Please log out and log back in to verify your identity.');
+                          // For Google or other providers where popups often fail on Mobile PWA:
+                          alert("For security purposes, you must verify your identity to delete your account. You will be logged out now. Please log back in and try deleting your account again.");
+                          logout();
                           return;
                         }
-                        
-                        // Retry deletion after successful re-auth
-                        await deleteAccount();
-
-                        // Retry local data deletion
-                        const { db } = await import('../models/db');
-                        if (db.isOpen()) {
-                          db.close();
-                        }
-                        db.delete().catch(err => console.error("Error deleting local db", err)); 
-                        localStorage.removeItem(`onboardingComplete_${user.uid}`);
-                        localStorage.removeItem(`tutorialComplete_${user.uid}`);
-                        
                       } catch (reauthError: any) {
                         showMessage('error', reauthError.message || 'Authentication failed. Please log out and log back in.');
                       }
