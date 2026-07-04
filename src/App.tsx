@@ -31,6 +31,28 @@ function ProtectedRoute({ children, requireSetup = true }: { children: React.Rea
   
   // Also check Dexie in case it synced from cloud
   const userSettings = useLiveQuery(() => db.userSettings.toArray(), []);
+  const isSetupCloud = userSettings?.find(s => s.key === 'setupComplete')?.value === true;
+  
+  const [isCheckingCloud, setIsCheckingCloud] = React.useState(!isSetupLocal);
+
+  React.useEffect(() => {
+    if (isSetupCloud && user) {
+      localStorage.setItem(`onboardingComplete_${user.uid}`, 'true');
+      setIsCheckingCloud(false);
+    }
+  }, [isSetupCloud, user]);
+
+  React.useEffect(() => {
+    if (user && !isSetupLocal) {
+      // Give the sync engine up to 3 seconds to download the userSettings from Firestore
+      const timer = setTimeout(() => {
+        setIsCheckingCloud(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    } else {
+      setIsCheckingCloud(false);
+    }
+  }, [user, isSetupLocal]);
   
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -38,23 +60,18 @@ function ProtectedRoute({ children, requireSetup = true }: { children: React.Rea
 
   // If local storage says we're setup, we can proceed immediately.
   // Otherwise, wait for Dexie to finish its initial load before deciding.
-  if (requireSetup && !isSetupLocal) {
-    if (userSettings === undefined) {
-      // Still loading from DB
+  if (requireSetup && !isSetupLocal && !isSetupCloud) {
+    if (userSettings === undefined || isCheckingCloud) {
+      // Still loading from DB or checking cloud
       return (
-        <div className="min-h-screen bg-[#F4F7FF] dark:bg-[#0C0C0F] flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-brand-blue/30 border-t-brand-blue rounded-full animate-spin"></div>
+        <div className="min-h-screen bg-[#F4F7FF] dark:bg-[#0C0C0F] flex flex-col items-center justify-center gap-4">
+          <div className="w-8 h-8 border-2 border-brand-green/30 border-t-brand-green rounded-full animate-spin"></div>
+          <p className="text-sm font-semibold text-neutral-500 animate-pulse">Checking cloud backups...</p>
         </div>
       );
     }
     
-    const isSetupCloud = userSettings.find(s => s.key === 'setupComplete')?.value === true;
-    if (!isSetupCloud) {
-      return <Navigate to="/welcome" replace />;
-    } else {
-      // Sync to local storage for next time
-      localStorage.setItem(`onboardingComplete_${user.uid}`, 'true');
-    }
+    return <Navigate to="/welcome" replace />;
   }
 
   return <>{children}</>;
