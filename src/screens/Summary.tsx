@@ -295,24 +295,14 @@ function SummaryContent() {
       <div className="bg-brand-green rounded-3xl p-6 shadow-md relative overflow-hidden text-white">
         <div className="absolute top-0 right-0 w-48 h-48 bg-white/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="relative z-10">
-          <h2 className="text-white/90 font-medium text-[15px] leading-relaxed mb-6">
-            In {monthName}, you earned <span className="font-bold text-white">{formatWithCurrency(totalIncome)}</span> and spent <span className="font-bold text-white">{formatWithCurrency(totalExpense)}</span>, leaving you with <span className="font-bold text-white">{savings >= 0 ? '+' : '-'}{formatWithCurrency(savings)}</span>.
+          <h2 className="text-white font-bold text-[17px] leading-relaxed">
+            In {monthName}, you earned <span className="font-extrabold">{formatWithCurrency(totalIncome)}</span> and spent <span className="font-extrabold">{formatWithCurrency(totalExpense)}</span>.
           </h2>
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between items-end">
-              <span className="text-[13px] font-semibold text-white/80">Savings Rate</span>
-              <span className="text-2xl font-extrabold text-white">{savingsRate}%</span>
-            </div>
-            <div className="h-3 bg-black/20 rounded-full overflow-hidden flex">
-              <div className="h-full bg-white transition-all duration-1000" style={{ width: `${Math.max(0, Math.min(100, savingsRate))}%` }} />
-              <div className="h-full bg-white/30 transition-all duration-1000" style={{ width: `${Math.max(0, Math.min(100, 100 - savingsRate))}%` }} />
-            </div>
-          </div>
         </div>
       </div>
 
       {/* ── KPI ROW ── */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <div className="bg-white p-4 rounded-3xl border border-neutral-100 shadow-sm flex flex-col justify-center">
           <p className="text-[13px] font-semibold text-neutral-500 mb-1">Income</p>
           <p className="text-[18px] font-bold text-neutral-900 tracking-tight">{formatWithCurrency(totalIncome)}</p>
@@ -332,11 +322,6 @@ function SummaryContent() {
               {Math.abs(Math.round(expenseChangePct))}%
             </div>
           )}
-        </div>
-        <div className={`p-4 rounded-3xl border shadow-sm flex flex-col justify-center ${savings >= 0 ? 'bg-brand-green/5 border-brand-green/10' : 'bg-rose-50 border-rose-100'}`}>
-          <p className="text-[13px] font-semibold text-neutral-500 mb-1">Saved</p>
-          <p className={`text-[18px] font-bold tracking-tight ${savings >= 0 ? 'text-brand-green' : 'text-rose-600'}`}>{savings >= 0 ? '+' : '-'}{formatWithCurrency(savings)}</p>
-          <div className={`text-[12px] font-semibold mt-1 ${savings >= 0 ? 'text-brand-green' : 'text-rose-500'}`}>{savingsRate}% rate</div>
         </div>
       </div>
 
