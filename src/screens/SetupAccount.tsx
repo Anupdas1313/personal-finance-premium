@@ -107,7 +107,7 @@ export default function SetupAccount() {
           key={s} 
           className={cn(
             "h-1.5 rounded-full transition-all duration-300",
-            step === s ? "w-10 bg-brand-blue" : step > s ? "w-4 bg-brand-blue/30" : "w-2 bg-neutral-200"
+            step === s ? "w-10 bg-brand-green" : step > s ? "w-4 bg-brand-green/30" : "w-2 bg-neutral-200"
           )}
         />
       ))}
@@ -128,8 +128,8 @@ export default function SetupAccount() {
               exit={{ opacity: 0, x: -20 }}
               className="flex-1 flex flex-col"
             >
-              <div className="w-14 h-14 bg-brand-blue/5 border border-brand-blue/10 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
-                <Globe className="w-6 h-6 text-brand-blue" />
+              <div className="w-14 h-14 bg-brand-green/5 border border-brand-green/10 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+                <Globe className="w-6 h-6 text-brand-green" />
               </div>
               
               <h1 className="text-3xl font-bold text-neutral-900 mb-2 tracking-tight">
@@ -149,7 +149,7 @@ export default function SetupAccount() {
                       placeholder="e.g. Alex"
                       value={profileName}
                       onChange={e => setProfileName(e.target.value)}
-                      className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue rounded-2xl px-5 py-4 text-sm font-semibold outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
+                      className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-2xl px-5 py-4 text-sm font-semibold outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
                       autoFocus
                     />
                   </div>
@@ -164,7 +164,7 @@ export default function SetupAccount() {
                         placeholder="Search country or currency..."
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue rounded-xl pl-10 pr-4 py-3 text-sm outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
+                        className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-xl pl-10 pr-4 py-3 text-sm outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
                       />
                     </div>
 
@@ -177,7 +177,7 @@ export default function SetupAccount() {
                           className={cn(
                             "w-full p-4 rounded-xl border flex items-center justify-between transition-all text-left",
                             currency === opt.symbol 
-                              ? "bg-brand-blue border-brand-blue text-white shadow-md"
+                              ? "bg-brand-green border-brand-green text-white shadow-md"
                               : "bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50"
                           )}
                         >
@@ -187,7 +187,7 @@ export default function SetupAccount() {
                               {opt.name} ({opt.code})
                             </div>
                           </div>
-                          <div className={cn("text-xl font-black", currency === opt.symbol ? "text-brand-cyan" : "text-brand-blue")}>
+                          <div className={cn("text-xl font-black", currency === opt.symbol ? "text-white" : "text-brand-green")}>
                             {opt.symbol}
                           </div>
                         </button>
@@ -205,7 +205,7 @@ export default function SetupAccount() {
                   <button 
                     type="submit"
                     disabled={!profileName.trim()}
-                    className="w-full bg-brand-blue hover:bg-brand-blue/90 text-white h-[56px] rounded-2xl font-bold text-[13px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-brand-blue/20 disabled:opacity-50"
+                    className="w-full bg-brand-green hover:bg-brand-green/90 text-white h-[56px] rounded-2xl font-bold text-[13px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-brand-green/20 disabled:opacity-50"
                   >
                     Continue <ArrowRight className="w-4 h-4" />
                   </button>
@@ -222,8 +222,8 @@ export default function SetupAccount() {
               exit={{ opacity: 0, x: -20 }}
               className="flex-1 flex flex-col"
             >
-              <div className="w-14 h-14 bg-brand-blue/5 border border-brand-blue/10 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
-                <Landmark className="w-6 h-6 text-brand-blue" />
+              <div className="w-14 h-14 bg-brand-green/5 border border-brand-green/10 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+                <Landmark className="w-6 h-6 text-brand-green" />
               </div>
               
               <h1 className="text-3xl font-bold text-neutral-900 mb-2 tracking-tight">
@@ -246,7 +246,7 @@ export default function SetupAccount() {
                           className={cn(
                             "py-3.5 rounded-2xl border text-[10px] font-bold uppercase tracking-widest transition-all",
                             type === t 
-                              ? "bg-brand-blue border-brand-blue text-white shadow-md"
+                              ? "bg-brand-green border-brand-green text-white shadow-md"
                               : "bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"
                           )}
                         >
@@ -264,7 +264,7 @@ export default function SetupAccount() {
                       placeholder={type === 'CASH' ? 'e.g. Physical Wallet' : 'e.g. Chase Bank'}
                       value={bankName}
                       onChange={e => setBankName(e.target.value)}
-                      className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue rounded-2xl px-5 py-4 text-sm font-semibold outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
+                      className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-2xl px-5 py-4 text-sm font-semibold outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
                     />
                   </div>
 
@@ -277,7 +277,7 @@ export default function SetupAccount() {
                         placeholder="e.g. 1234"
                         value={accountLast4}
                         onChange={e => setAccountLast4(e.target.value.replace(/\D/g, ''))}
-                        className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue rounded-2xl px-5 py-4 text-sm font-semibold outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
+                        className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-2xl px-5 py-4 text-sm font-semibold outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
                       />
                     </div>
                   )}
@@ -291,7 +291,7 @@ export default function SetupAccount() {
                         placeholder="0.00"
                         value={startingBalance}
                         onChange={e => setStartingBalance(e.target.value)}
-                        className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue rounded-2xl pl-10 pr-5 py-4 text-sm font-semibold outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
+                        className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-2xl pl-10 pr-5 py-4 text-sm font-semibold outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
                       />
                     </div>
                   </div>
@@ -301,7 +301,7 @@ export default function SetupAccount() {
                   <button 
                     type="submit"
                     disabled={!bankName}
-                    className="w-full bg-brand-blue hover:bg-brand-blue/90 text-white h-[56px] rounded-2xl font-bold text-[13px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-brand-blue/20 disabled:opacity-50"
+                    className="w-full bg-brand-green hover:bg-brand-green/90 text-white h-[56px] rounded-2xl font-bold text-[13px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-brand-green/20 disabled:opacity-50"
                   >
                     Continue <ArrowRight className="w-4 h-4" />
                   </button>
@@ -318,21 +318,21 @@ export default function SetupAccount() {
               exit={{ opacity: 0, x: -20 }}
               className="flex-1 flex flex-col"
             >
-              <div className="w-14 h-14 bg-brand-blue/5 border border-brand-blue/10 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
-                <Tag className="w-6 h-6 text-brand-blue" />
+              <div className="w-14 h-14 bg-brand-green/5 border border-brand-green/10 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+                <Tag className="w-6 h-6 text-brand-green" />
               </div>
               
               <h1 className="text-3xl font-bold text-neutral-900 mb-2 tracking-tight">
                 Tags: A Game Changer
               </h1>
               
-              <div className="bg-brand-blue/5 border border-brand-blue/10 rounded-3xl p-6 mb-8 shadow-sm relative overflow-hidden">
+              <div className="bg-brand-green/5 border border-brand-green/10 rounded-3xl p-6 mb-8 shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                 <div className="relative z-10">
-                  <p className="text-base font-medium text-brand-blue/80 leading-relaxed mb-4">
-                    Knowing you spent {currency}50 on <span className="font-bold text-brand-blue">Food</span> is good...
+                  <p className="text-base font-medium text-brand-green/80 leading-relaxed mb-4">
+                    Knowing you spent {currency}50 on <span className="font-bold text-brand-green">Food</span> is good...
                   </p>
-                  <p className="text-base font-medium text-brand-blue/80 leading-relaxed">
+                  <p className="text-base font-medium text-brand-green/80 leading-relaxed">
                     But knowing {currency}40 of it was an impulsive <span className="bg-white px-2 py-1 rounded-lg text-brand-green font-bold ml-1 border border-brand-green/20 shadow-sm inline-flex items-center gap-1"><Tag className="w-3 h-3" /> WANT</span> is what actually changes your financial future.
                   </p>
                 </div>
@@ -374,7 +374,7 @@ export default function SetupAccount() {
               <div className="mt-auto pt-8 pb-6 flex flex-col gap-3">
                 <button 
                   onClick={handleNext}
-                  className="w-full bg-brand-blue hover:bg-brand-blue/90 text-white h-[56px] rounded-2xl font-bold text-[13px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-brand-blue/20"
+                  className="w-full bg-brand-green hover:bg-brand-green/90 text-white h-[56px] rounded-2xl font-bold text-[13px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-brand-green/20"
                 >
                   Continue <ArrowRight className="w-4 h-4" />
                 </button>
@@ -411,15 +411,15 @@ export default function SetupAccount() {
                 
                 {/* Mock User Message */}
                 <div className="flex gap-3 mb-6 items-end justify-end">
-                  <div className="bg-brand-blue text-white rounded-2xl rounded-br-sm px-4 py-3 shadow-md max-w-[85%]">
+                  <div className="bg-brand-green text-white rounded-2xl rounded-br-sm px-4 py-3 shadow-md max-w-[85%]">
                     <p className="text-sm font-medium">Bought a MacBook Pro for {currency}2500 at Apple for work #WANT</p>
                   </div>
                 </div>
 
                 {/* Mock AI Response */}
                 <div className="flex gap-3 items-end">
-                  <div className="w-8 h-8 rounded-full bg-brand-green flex flex-shrink-0 items-center justify-center shadow-md">
-                    <Bot className="w-4 h-4 text-white" />
+                  <div className="w-8 h-8 rounded-full bg-white border border-brand-green/20 flex flex-shrink-0 items-center justify-center shadow-md">
+                    <Bot className="w-4 h-4 text-brand-green" />
                   </div>
                   <div className="bg-white border border-neutral-200 text-neutral-800 rounded-2xl rounded-bl-sm p-4 shadow-md max-w-[85%]">
                     <div className="flex items-center gap-2 mb-3">
@@ -451,7 +451,7 @@ export default function SetupAccount() {
               <div className="mt-auto pt-4 pb-6 flex flex-col gap-3">
                 <button 
                   onClick={handleNext}
-                  className="w-full bg-brand-blue hover:bg-brand-blue/90 text-white h-[56px] rounded-2xl font-bold text-[13px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-brand-blue/20"
+                  className="w-full bg-brand-green hover:bg-brand-green/90 text-white h-[56px] rounded-2xl font-bold text-[13px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-brand-green/20"
                 >
                   Awesome <ArrowRight className="w-4 h-4" />
                 </button>
@@ -504,7 +504,7 @@ export default function SetupAccount() {
                     placeholder="Add a new category..."
                     className="flex-1 bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-xl px-4 py-3.5 text-sm font-semibold outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
                   />
-                  <button type="submit" disabled={!newCat.trim()} className="px-5 bg-brand-green text-white rounded-xl hover:bg-brand-green/90 transition-all disabled:opacity-50">
+                  <button type="submit" disabled={!newCat.trim()} className="px-5 bg-brand-green text-white rounded-xl hover:bg-brand-green/90 transition-all disabled:opacity-50 shadow-md shadow-brand-green/20">
                     <Plus className="w-5 h-5" />
                   </button>
                 </form>

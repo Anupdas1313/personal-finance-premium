@@ -8,7 +8,7 @@ const SLIDES = [
     id: 1,
     title: 'Welcome to Expensify',
     description: 'The most elegant way to track your personal finances, completely re-imagined for modern life.',
-    icon: <Wallet className="w-16 h-16 text-brand-blue" />
+    icon: <Wallet className="w-16 h-16 text-brand-green" />
   },
   {
     id: 2,
@@ -20,7 +20,7 @@ const SLIDES = [
     id: 3,
     title: 'AI Powered Insights',
     description: 'Just chat or speak with our integrated AI to log expenses or analyze your spending habits effortlessly.',
-    icon: <Sparkles className="w-16 h-16 text-brand-blue" />
+    icon: <Sparkles className="w-16 h-16 text-brand-green" />
   }
 ];
 
@@ -52,11 +52,11 @@ export default function Welcome() {
               {SLIDES[currentSlide].icon}
             </div>
             
-            <h1 className="text-3xl font-black text-brand-blue mb-4 tracking-tight">
+            <h1 className="text-3xl font-black text-brand-green mb-4 tracking-tight">
               {SLIDES[currentSlide].title}
             </h1>
             
-            <p className="text-sm font-medium text-brand-blue/60 leading-relaxed px-4">
+            <p className="text-sm font-medium text-brand-green/70 leading-relaxed px-4">
               {SLIDES[currentSlide].description}
             </p>
           </motion.div>
@@ -70,8 +70,8 @@ export default function Welcome() {
               key={idx} 
               className={`h-1.5 rounded-full transition-all duration-300 ${
                 currentSlide === idx 
-                  ? 'w-8 bg-brand-blue' 
-                  : 'w-2 bg-brand-blue/10'
+                  ? 'w-8 bg-brand-green' 
+                  : 'w-2 bg-brand-green/10'
               }`} 
             />
           ))}
@@ -79,7 +79,7 @@ export default function Welcome() {
 
         <button 
           onClick={handleNext}
-          className="w-full bg-brand-blue hover:bg-brand-blue/90 text-white h-14 rounded-2xl font-black text-[13px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-brand-blue/20"
+          className="w-full bg-brand-green hover:bg-brand-green/90 text-white h-14 rounded-2xl font-black text-[13px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-brand-green/20"
         >
           {currentSlide === SLIDES.length - 1 ? 'Get Started' : 'Next'}
           <ArrowRight className="w-4 h-4" />
