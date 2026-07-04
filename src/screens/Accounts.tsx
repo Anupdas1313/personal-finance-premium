@@ -413,12 +413,12 @@ export default function Accounts() {
                     const incomeToExpenseRatio = info ? (info.inflow > 0 ? Math.min((info.outflow / info.inflow) * 100, 100) : (info.outflow > 0 ? 100 : 0)) : 0;
                     
                     return (
-                      <div key={account.id} onClick={() => setSelectedAccountId(account.id!)} className="group relative bg-white dark:bg-[#111111] rounded-[32px] border border-neutral-100 dark:border-white/5 shadow-sm hover:shadow-2xl transition-all cursor-pointer overflow-hidden flex flex-col">
-                        <div className={`h-1.5 w-full ${account.type === 'BANK' ? 'bg-brand-blue' : account.type === 'CASH' ? 'bg-brand-green' : 'bg-rose-500'} opacity-40`} />
+                      <div key={account.id} onClick={() => setSelectedAccountId(account.id!)} className="group relative bg-brand-green/5 dark:bg-[#111111] rounded-[32px] border border-brand-green/10 dark:border-white/5 shadow-sm hover:shadow-2xl transition-all cursor-pointer overflow-hidden flex flex-col">
+                        <div className={`h-1.5 w-full ${account.type === 'BANK' ? 'bg-brand-green' : account.type === 'CASH' ? 'bg-brand-green' : 'bg-brand-green'} opacity-40`} />
                         <div className="p-6 flex flex-col flex-1">
                           <div className="flex justify-between items-start mb-6">
                             <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 bg-neutral-100 dark:bg-white/5 rounded-[20px] flex items-center justify-center p-2.5 border border-neutral-200/50">
+                              <div className="w-12 h-12 bg-white dark:bg-white/5 rounded-[20px] flex items-center justify-center p-2.5 border border-brand-green/10 shadow-sm">
                                 <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
                               </div>
                               <div className="min-w-0">
@@ -427,7 +427,7 @@ export default function Accounts() {
                               </div>
                             </div>
                             <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                               <button onClick={() => handleEdit(account)} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-brand-blue transition-all"><Pencil className="w-3.5 h-3.5" /></button>
+                               <button onClick={() => handleEdit(account)} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-brand-green transition-all"><Pencil className="w-3.5 h-3.5" /></button>
                                <button onClick={() => handleDelete(account.id!)} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-brand-red transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
                             </div>
                           </div>
