@@ -143,7 +143,12 @@ export default function Accounts() {
       await db.accounts.delete(id);
       const txs = await db.transactions.where('accountId').equals(id).toArray();
       for (const tx of txs) {
-        if (tx.id) await db.transactions.delete(tx.id);
+        if (tx.id) {
+          if (tx.linkedTransactionId) {
+            await db.transactions.delete(tx.linkedTransactionId);
+          }
+          await db.transactions.delete(tx.id);
+        }
       }
     }
   };
