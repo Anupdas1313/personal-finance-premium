@@ -62,11 +62,11 @@ export default function TutorialOverlay({ onComplete }: TutorialOverlayProps) {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: -20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="bg-white w-full max-w-sm rounded-[32px] overflow-hidden shadow-2xl relative flex flex-col border border-brand-green/10"
+          className="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl relative flex flex-col border border-neutral-100"
         >
           <button 
             onClick={onComplete}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-brand-green/5 flex items-center justify-center text-brand-green/60 hover:text-brand-green hover:bg-brand-green/10 transition-all z-10"
+            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200 transition-all z-10"
           >
             <X className="w-4 h-4" />
           </button>
@@ -78,7 +78,7 @@ export default function TutorialOverlay({ onComplete }: TutorialOverlayProps) {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: 'spring' }}
-                className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-xl border border-brand-green/10 relative z-10"
+                className="w-24 h-24 rounded-[2rem] bg-white flex items-center justify-center shadow-lg border border-brand-green/10 relative z-10"
               >
                 {steps[step].icon}
               </motion.div>
@@ -86,9 +86,9 @@ export default function TutorialOverlay({ onComplete }: TutorialOverlayProps) {
           ) : (
             <div className={`h-64 ${steps[step].color} border-b p-5 flex flex-col justify-end gap-3 overflow-hidden relative`}>
               <div className="absolute inset-0 bg-gradient-to-b from-brand-green/5 to-transparent" />
-              <div className="absolute top-4 left-4 bg-white px-3 py-1.5 rounded-full flex items-center gap-2 border border-brand-green/10 shadow-sm z-10">
+              <div className="absolute top-4 left-4 bg-white px-3 py-1.5 rounded-xl flex items-center gap-1.5 border border-brand-green/10 shadow-sm z-10">
                 <Bot className="w-4 h-4 text-brand-green" />
-                <span className="text-[10px] font-bold text-brand-green tracking-widest uppercase">Expensify AI</span>
+                <span className="text-[13px] font-semibold text-brand-green">Expensify AI</span>
               </div>
               
               <AnimatePresence>
@@ -96,7 +96,7 @@ export default function TutorialOverlay({ onComplete }: TutorialOverlayProps) {
                   <motion.div 
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    className="bg-brand-green text-white rounded-2xl rounded-tr-sm px-4 py-3 text-[13px] font-medium self-end ml-auto w-fit shadow-md relative z-10"
+                    className="bg-brand-green text-white rounded-2xl rounded-tr-sm px-4 py-3 text-[14px] font-medium self-end ml-auto w-fit shadow-md relative z-10"
                   >
                     Bought a large pizza for {currency}25 from Domino's using my credit card
                   </motion.div>
@@ -123,27 +123,27 @@ export default function TutorialOverlay({ onComplete }: TutorialOverlayProps) {
                   <motion.div 
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    className="bg-white rounded-2xl rounded-tl-sm p-4 shadow-xl border border-brand-green/10 flex items-center justify-between relative z-10"
+                    className="bg-white rounded-2xl rounded-tl-sm p-4 shadow-lg border border-brand-green/10 flex items-center justify-between relative z-10"
                   >
                     <div>
-                      <p className="font-bold text-brand-green text-sm truncate max-w-[160px]">Domino's Pizza</p>
+                      <p className="font-semibold text-neutral-900 text-[15px] truncate max-w-[160px]">Domino's Pizza</p>
                       <div className="flex items-center gap-1.5 mt-1.5">
-                        <span className="text-[9px] font-black text-brand-green/70 bg-brand-green/10 px-2 py-0.5 rounded uppercase tracking-wider">Food</span>
-                        <span className="text-[9px] font-black text-white bg-brand-green px-2 py-0.5 rounded uppercase tracking-wider shadow-sm shadow-brand-green/20">#WANT</span>
+                        <span className="font-medium bg-neutral-100 px-1.5 py-0.5 rounded text-neutral-600 text-[12px]">Food</span>
+                        <span className="font-medium bg-brand-green/10 text-brand-green px-1.5 py-0.5 rounded text-[12px]">#WANT</span>
                       </div>
                     </div>
-                    <p className="font-black text-rose-500 text-sm">-{currency}25.00</p>
+                    <p className="font-semibold text-rose-500 text-[15px]">-{currency}25.00</p>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           )}
 
-          <div className="p-8 text-center bg-white relative z-10">
-            <h2 className="text-xl font-black text-brand-green mb-3 tracking-tight">
+          <div className="p-6 pt-8 text-center bg-white relative z-10">
+            <h2 className="text-[22px] font-extrabold text-neutral-900 mb-2 tracking-tight">
               {steps[step].title}
             </h2>
-            <p className="text-sm font-medium text-brand-green/60 leading-relaxed mb-8">
+            <p className="text-[15px] text-neutral-500 leading-relaxed mb-8">
               {steps[step].description}
             </p>
 
@@ -153,7 +153,7 @@ export default function TutorialOverlay({ onComplete }: TutorialOverlayProps) {
                   <div 
                     key={idx}
                     className={`h-1.5 rounded-full transition-all duration-300 ${
-                      step === idx ? 'w-6 bg-brand-green' : 'w-1.5 bg-brand-green/20'
+                      step === idx ? 'w-6 bg-brand-green' : 'w-1.5 bg-neutral-200'
                     }`}
                   />
                 ))}
@@ -161,10 +161,10 @@ export default function TutorialOverlay({ onComplete }: TutorialOverlayProps) {
 
               <button 
                 onClick={handleNext}
-                className="bg-brand-green text-white px-6 py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest active:scale-95 transition-all shadow-xl shadow-brand-green/20 flex items-center gap-2 hover:bg-brand-green/90"
+                className="bg-brand-green text-white px-6 py-3 rounded-xl font-semibold text-[15px] active:scale-95 transition-all shadow-md flex items-center gap-2 hover:bg-brand-green/90"
               >
                 {step === steps.length - 1 ? 'Get Started' : 'Next'}
-                {step !== steps.length - 1 && <ArrowRight className="w-3.5 h-3.5" />}
+                {step !== steps.length - 1 && <ArrowRight className="w-4 h-4" />}
               </button>
             </div>
           </div>

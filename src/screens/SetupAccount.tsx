@@ -51,10 +51,7 @@ export default function SetupAccount() {
   const completeSetup = async () => {
     setIsSaving(true);
     try {
-      // Save global currency preference
       await saveUserSetting('currency', currency);
-
-      // Add the account (fallback balance to 0 if empty)
       const balance = parseFloat(startingBalance);
       
       await db.accounts.add({
@@ -65,13 +62,11 @@ export default function SetupAccount() {
         type
       });
 
-      // Mark setup as complete
       if (user) {
         localStorage.setItem(`onboardingComplete_${user.uid}`, 'true');
         await saveUserSetting('setupComplete', true);
       }
 
-      // Go to dashboard
       navigate('/', { replace: true });
     } catch (error) {
       console.error('Failed to setup account:', error);
@@ -82,7 +77,6 @@ export default function SetupAccount() {
 
   const handleNext = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    
     if (step === 1) {
       if (profileName.trim()) {
         await updateProfileName(profileName.trim());
@@ -101,7 +95,7 @@ export default function SetupAccount() {
   };
 
   const renderStepIndicator = () => (
-    <div className="flex items-center justify-center gap-2 mb-10">
+    <div className="flex items-center justify-center gap-2 mb-6">
       {[1, 2, 3, 4, 5].map((s) => (
         <div 
           key={s} 
@@ -115,8 +109,8 @@ export default function SetupAccount() {
   );
 
   return (
-    <div className="fixed inset-0 bg-white flex flex-col z-[200] overflow-y-auto antialiased">
-      <div className="flex-1 flex flex-col max-w-md w-full mx-auto p-6 pt-12 relative">
+    <div className="fixed inset-0 bg-white flex flex-col z-[200] overflow-hidden antialiased">
+      <div className="flex-1 flex flex-col max-w-md w-full mx-auto p-5 pt-8 relative h-full">
         {renderStepIndicator()}
         
         <AnimatePresence mode="wait">
@@ -126,88 +120,82 @@ export default function SetupAccount() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="flex-1 flex flex-col"
+              className="flex-1 flex flex-col h-full"
             >
-              <div className="w-14 h-14 bg-brand-green/5 border border-brand-green/10 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+              <div className="w-12 h-12 bg-brand-green/5 border border-brand-green/10 rounded-2xl flex items-center justify-center mb-4 shadow-sm flex-shrink-0">
                 <Globe className="w-6 h-6 text-brand-green" />
               </div>
               
-              <h1 className="text-3xl font-bold text-neutral-900 mb-2 tracking-tight">
+              <h1 className="text-2xl font-extrabold text-neutral-900 mb-2 tracking-tight flex-shrink-0">
                 Welcome to Expensify
               </h1>
-              <p className="text-sm font-medium text-neutral-500 mb-8 leading-relaxed">
+              <p className="text-[15px] text-neutral-500 mb-6 flex-shrink-0">
                 Let's personalize your experience. What should we call you, and which currency is used in your country?
               </p>
 
-              <form onSubmit={handleNext} className="flex-1 flex flex-col">
-                <div className="space-y-6 flex-1 flex flex-col">
-                  <div>
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2 ml-1">Your Name</label>
+              <form onSubmit={handleNext} className="flex-1 flex flex-col min-h-0">
+                <div className="space-y-4 flex-1 flex flex-col min-h-0">
+                  <div className="flex-shrink-0">
+                    <label className="block text-[13px] font-semibold text-neutral-700 mb-1.5 ml-1">Your Name</label>
                     <input
                       type="text"
                       required
                       placeholder="e.g. Alex"
                       value={profileName}
                       onChange={e => setProfileName(e.target.value)}
-                      className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-2xl px-5 py-4 text-sm font-semibold outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
-                      autoFocus
+                      className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-xl px-4 py-3 text-[15px] font-medium outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
                     />
                   </div>
 
-                  <div className="flex-1 flex flex-col min-h-[300px]">
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2 ml-1">Country & Currency</label>
+                  <div className="flex-1 flex flex-col min-h-0">
+                    <label className="block text-[13px] font-semibold text-neutral-700 mb-1.5 ml-1">Country & Currency</label>
                     
-                    <div className="relative mb-3">
-                      <Search className="w-4 h-4 text-neutral-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                    <div className="relative mb-2 flex-shrink-0">
+                      <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <input 
                         type="text"
                         placeholder="Search country or currency..."
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-xl pl-10 pr-4 py-3 text-sm outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
+                        className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-xl pl-10 pr-4 py-3 text-[15px] outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
                       />
                     </div>
 
-                    <div className="flex-1 overflow-y-auto pr-2 space-y-2 max-h-[300px]">
+                    <div className="flex-1 overflow-y-auto pr-1 space-y-1.5">
                       {filteredCurrencies.map(opt => (
                         <button
                           key={opt.country + opt.code}
                           type="button"
                           onClick={() => setCurrency(opt.symbol)}
                           className={cn(
-                            "w-full p-4 rounded-xl border flex items-center justify-between transition-all text-left",
+                            "w-full p-3.5 rounded-xl border flex items-center justify-between transition-all text-left",
                             currency === opt.symbol 
                               ? "bg-brand-green border-brand-green text-white shadow-md"
-                              : "bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50"
+                              : "bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50"
                           )}
                         >
                           <div>
-                            <div className="font-bold text-sm">{opt.country}</div>
-                            <div className={cn("text-xs", currency === opt.symbol ? "text-white/80" : "text-neutral-400")}>
+                            <div className="font-semibold text-[15px]">{opt.country}</div>
+                            <div className={cn("text-xs font-medium", currency === opt.symbol ? "text-white/80" : "text-neutral-500")}>
                               {opt.name} ({opt.code})
                             </div>
                           </div>
-                          <div className={cn("text-xl font-black", currency === opt.symbol ? "text-white" : "text-brand-green")}>
+                          <div className={cn("text-xl font-bold", currency === opt.symbol ? "text-white" : "text-brand-green")}>
                             {opt.symbol}
                           </div>
                         </button>
                       ))}
-                      {filteredCurrencies.length === 0 && (
-                        <div className="p-8 text-center text-sm text-neutral-400">
-                          No currencies found matching "{searchQuery}"
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-8 pb-6">
+                <div className="pt-4 pb-2 flex-shrink-0">
                   <button 
                     type="submit"
                     disabled={!profileName.trim()}
-                    className="w-full bg-brand-green hover:bg-brand-green/90 text-white h-[56px] rounded-2xl font-bold text-[13px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-brand-green/20 disabled:opacity-50"
+                    className="w-full bg-brand-green hover:bg-brand-green/90 text-white h-[52px] rounded-xl font-semibold text-base flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
                   >
-                    Continue <ArrowRight className="w-4 h-4" />
+                    Continue
                   </button>
                 </div>
               </form>
@@ -220,23 +208,23 @@ export default function SetupAccount() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="flex-1 flex flex-col"
+              className="flex-1 flex flex-col h-full"
             >
-              <div className="w-14 h-14 bg-brand-green/5 border border-brand-green/10 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+              <div className="w-12 h-12 bg-brand-green/5 border border-brand-green/10 rounded-2xl flex items-center justify-center mb-4 shadow-sm flex-shrink-0">
                 <Landmark className="w-6 h-6 text-brand-green" />
               </div>
               
-              <h1 className="text-3xl font-bold text-neutral-900 mb-2 tracking-tight">
+              <h1 className="text-2xl font-extrabold text-neutral-900 mb-2 tracking-tight flex-shrink-0">
                 First Account
               </h1>
-              <p className="text-sm font-medium text-neutral-500 mb-8 leading-relaxed">
+              <p className="text-[15px] text-neutral-500 mb-6 flex-shrink-0">
                 Add a bank account, a credit card, or a cash wallet to establish your financial baseline.
               </p>
 
-              <form onSubmit={handleNext} className="flex-1 flex flex-col">
-                <div className="space-y-6">
+              <form onSubmit={handleNext} className="flex-1 flex flex-col min-h-0">
+                <div className="space-y-4 overflow-y-auto pr-1 pb-4 flex-1">
                   <div>
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2 ml-1">Account Type</label>
+                    <label className="block text-[13px] font-semibold text-neutral-700 mb-1.5 ml-1">Account Type</label>
                     <div className="grid grid-cols-3 gap-2">
                       {(['BANK', 'CASH', 'CREDIT_CARD'] as const).map(t => (
                         <button
@@ -244,66 +232,66 @@ export default function SetupAccount() {
                           type="button"
                           onClick={() => setType(t)}
                           className={cn(
-                            "py-3.5 rounded-2xl border text-[10px] font-bold uppercase tracking-widest transition-all",
+                            "py-3 rounded-xl border text-[13px] font-semibold transition-all",
                             type === t 
                               ? "bg-brand-green border-brand-green text-white shadow-md"
-                              : "bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"
+                              : "bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50"
                           )}
                         >
-                          {t.replace('_', ' ')}
+                          {t === 'CREDIT_CARD' ? 'Credit' : t.charAt(0) + t.slice(1).toLowerCase()}
                         </button>
                       ))}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2 ml-1">Account Name</label>
+                    <label className="block text-[13px] font-semibold text-neutral-700 mb-1.5 ml-1">Account Name</label>
                     <input
                       type="text"
                       required
                       placeholder={type === 'CASH' ? 'e.g. Physical Wallet' : 'e.g. Chase Bank'}
                       value={bankName}
                       onChange={e => setBankName(e.target.value)}
-                      className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-2xl px-5 py-4 text-sm font-semibold outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
+                      className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-xl px-4 py-3 text-[15px] font-medium outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
                     />
                   </div>
 
                   {type !== 'CASH' && (
                     <div>
-                      <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2 ml-1">Last 4 Digits (Optional)</label>
+                      <label className="block text-[13px] font-semibold text-neutral-700 mb-1.5 ml-1">Last 4 Digits <span className="text-neutral-400 font-normal">(Optional)</span></label>
                       <input
                         type="text"
                         maxLength={4}
                         placeholder="e.g. 1234"
                         value={accountLast4}
                         onChange={e => setAccountLast4(e.target.value.replace(/\D/g, ''))}
-                        className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-2xl px-5 py-4 text-sm font-semibold outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
+                        className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-xl px-4 py-3 text-[15px] font-medium outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
                       />
                     </div>
                   )}
 
                   <div>
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2 ml-1">Current Balance</label>
+                    <label className="block text-[13px] font-semibold text-neutral-700 mb-1.5 ml-1">Current Balance</label>
                     <div className="relative">
-                      <span className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-500 font-bold">{currency}</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 font-semibold text-[15px]">{currency}</span>
                       <input
                         type="number"
                         placeholder="0.00"
                         value={startingBalance}
                         onChange={e => setStartingBalance(e.target.value)}
-                        className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-2xl pl-10 pr-5 py-4 text-sm font-semibold outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
+                        className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-xl pl-8 pr-4 py-3 text-[15px] font-medium outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-auto pt-8 pb-6">
+                <div className="pt-4 pb-2 flex-shrink-0">
                   <button 
                     type="submit"
                     disabled={!bankName}
-                    className="w-full bg-brand-green hover:bg-brand-green/90 text-white h-[56px] rounded-2xl font-bold text-[13px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-brand-green/20 disabled:opacity-50"
+                    className="w-full bg-brand-green hover:bg-brand-green/90 text-white h-[52px] rounded-xl font-semibold text-base flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
                   >
-                    Continue <ArrowRight className="w-4 h-4" />
+                    Continue
                   </button>
                 </div>
               </form>
@@ -316,33 +304,33 @@ export default function SetupAccount() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="flex-1 flex flex-col"
+              className="flex-1 flex flex-col h-full"
             >
-              <div className="w-14 h-14 bg-brand-green/5 border border-brand-green/10 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+              <div className="w-12 h-12 bg-brand-green/5 border border-brand-green/10 rounded-2xl flex items-center justify-center mb-4 shadow-sm flex-shrink-0">
                 <Tag className="w-6 h-6 text-brand-green" />
               </div>
               
-              <h1 className="text-3xl font-bold text-neutral-900 mb-2 tracking-tight">
+              <h1 className="text-2xl font-extrabold text-neutral-900 mb-2 tracking-tight flex-shrink-0">
                 Tags: A Game Changer
               </h1>
               
-              <div className="bg-brand-green/5 border border-brand-green/10 rounded-3xl p-6 mb-8 shadow-sm relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+              <div className="bg-brand-green/5 border border-brand-green/10 rounded-2xl p-5 mb-6 shadow-sm relative overflow-hidden flex-shrink-0">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                 <div className="relative z-10">
-                  <p className="text-base font-medium text-brand-green/80 leading-relaxed mb-4">
-                    Knowing you spent {currency}50 on <span className="font-bold text-brand-green">Food</span> is good...
+                  <p className="text-[15px] text-neutral-700 leading-relaxed mb-3">
+                    Knowing you spent {currency}50 on <span className="font-semibold text-brand-green">Food</span> is good...
                   </p>
-                  <p className="text-base font-medium text-brand-green/80 leading-relaxed">
-                    But knowing {currency}40 of it was an impulsive <span className="bg-white px-2 py-1 rounded-lg text-brand-green font-bold ml-1 border border-brand-green/20 shadow-sm inline-flex items-center gap-1"><Tag className="w-3 h-3" /> WANT</span> is what actually changes your financial future.
+                  <p className="text-[15px] text-neutral-700 leading-relaxed">
+                    But knowing {currency}40 of it was an impulsive <span className="bg-white px-1.5 py-0.5 rounded-md text-brand-green font-semibold ml-1 border border-brand-green/20 shadow-sm inline-flex items-center gap-1 text-sm"><Tag className="w-3 h-3" /> WANT</span> is what actually changes your financial future.
                   </p>
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto min-h-[150px]">
-                <p className="text-sm font-medium text-neutral-500 mb-4">We've added standard tags for you. Add more if you like!</p>
-                <div className="flex flex-wrap gap-2 mb-6">
+              <div className="flex-1 overflow-y-auto pr-1">
+                <p className="text-[14px] text-neutral-500 mb-3">We've added standard tags for you. Add more if you like!</p>
+                <div className="flex flex-wrap gap-2 mb-4">
                   {tags.map(tag => (
-                    <div key={tag} className="flex items-center gap-2 px-3.5 py-2 bg-white border border-neutral-200 text-neutral-800 rounded-xl text-xs font-bold shadow-sm">
+                    <div key={tag} className="flex items-center gap-2 px-3 py-1.5 bg-white border border-neutral-200 text-neutral-800 rounded-lg text-[13px] font-semibold shadow-sm">
                       #{tag}
                       <button onClick={() => removeTag(tag)} className="text-neutral-400 hover:text-rose-500 transition-colors">
                         <X className="w-3.5 h-3.5" />
@@ -363,24 +351,24 @@ export default function SetupAccount() {
                     value={newTag}
                     onChange={e => setNewTag(e.target.value)}
                     placeholder="Add a new tag..."
-                    className="flex-1 bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-xl px-4 py-3.5 text-sm font-semibold outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
+                    className="flex-1 bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-xl px-4 py-3 text-[15px] font-medium outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
                   />
-                  <button type="submit" disabled={!newTag.trim()} className="px-5 bg-brand-green text-white rounded-xl hover:bg-brand-green/90 transition-all disabled:opacity-50 shadow-md shadow-brand-green/20">
+                  <button type="submit" disabled={!newTag.trim()} className="px-5 bg-brand-green text-white rounded-xl hover:bg-brand-green/90 transition-all disabled:opacity-50">
                     <Plus className="w-5 h-5" />
                   </button>
                 </form>
               </div>
 
-              <div className="mt-auto pt-8 pb-6 flex flex-col gap-3">
+              <div className="pt-4 pb-2 flex-shrink-0 flex flex-col gap-2">
                 <button 
                   onClick={handleNext}
-                  className="w-full bg-brand-green hover:bg-brand-green/90 text-white h-[56px] rounded-2xl font-bold text-[13px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-brand-green/20"
+                  className="w-full bg-brand-green hover:bg-brand-green/90 text-white h-[52px] rounded-xl font-semibold text-base flex items-center justify-center gap-2 active:scale-95 transition-all"
                 >
-                  Continue <ArrowRight className="w-4 h-4" />
+                  Continue
                 </button>
                 <button 
                   onClick={handleNext}
-                  className="w-full h-12 rounded-2xl font-bold text-xs text-neutral-400 hover:text-neutral-600 uppercase tracking-widest transition-colors"
+                  className="w-full h-10 rounded-xl font-medium text-[14px] text-neutral-500 hover:text-neutral-700 transition-colors"
                 >
                   Skip for now
                 </button>
@@ -394,66 +382,62 @@ export default function SetupAccount() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="flex-1 flex flex-col"
+              className="flex-1 flex flex-col h-full"
             >
-              <div className="w-14 h-14 bg-brand-green/10 border border-brand-green/20 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+              <div className="w-12 h-12 bg-brand-green/10 border border-brand-green/20 rounded-2xl flex items-center justify-center mb-4 shadow-sm flex-shrink-0">
                 <Sparkles className="w-6 h-6 text-brand-green" />
               </div>
               
-              <h1 className="text-3xl font-bold text-neutral-900 mb-2 tracking-tight">
+              <h1 className="text-2xl font-extrabold text-neutral-900 mb-2 tracking-tight flex-shrink-0">
                 AI Powered Entry
               </h1>
-              <p className="text-sm font-medium text-neutral-500 mb-8 leading-relaxed">
+              <p className="text-[15px] text-neutral-500 mb-6 flex-shrink-0">
                 Log transactions naturally using AI. Just type or speak, and let the AI do the heavy lifting.
               </p>
 
-              <div className="bg-neutral-50 border border-neutral-200 rounded-3xl p-5 mb-8 shadow-inner relative overflow-hidden flex-1 flex flex-col justify-center">
+              <div className="bg-neutral-50 border border-neutral-200 rounded-2xl p-4 mb-6 shadow-inner relative overflow-hidden flex-1 flex flex-col justify-center">
                 
                 {/* Mock User Message */}
-                <div className="flex gap-3 mb-6 items-end justify-end">
-                  <div className="bg-brand-green text-white rounded-2xl rounded-br-sm px-4 py-3 shadow-md max-w-[85%]">
-                    <p className="text-sm font-medium">Bought a MacBook Pro for {currency}2500 at Apple for work #WANT</p>
+                <div className="flex gap-3 mb-5 items-end justify-end">
+                  <div className="bg-brand-green text-white rounded-2xl rounded-br-sm px-4 py-2.5 shadow-sm max-w-[85%]">
+                    <p className="text-[14px] font-medium">Bought a MacBook Pro for {currency}2500 at Apple for work #WANT</p>
                   </div>
                 </div>
 
                 {/* Mock AI Response */}
                 <div className="flex gap-3 items-end">
-                  <div className="w-8 h-8 rounded-full bg-white border border-brand-green/20 flex flex-shrink-0 items-center justify-center shadow-md">
-                    <Bot className="w-4 h-4 text-brand-green" />
+                  <div className="w-7 h-7 rounded-full bg-white border border-brand-green/20 flex flex-shrink-0 items-center justify-center shadow-sm">
+                    <Bot className="w-3.5 h-3.5 text-brand-green" />
                   </div>
-                  <div className="bg-white border border-neutral-200 text-neutral-800 rounded-2xl rounded-bl-sm p-4 shadow-md max-w-[85%]">
-                    <div className="flex items-center gap-2 mb-3">
-                      <CheckCircle2 className="w-4 h-4 text-brand-green" />
-                      <span className="text-xs font-bold uppercase tracking-widest text-neutral-500">Ready to save</span>
+                  <div className="bg-white border border-neutral-200 text-neutral-800 rounded-2xl rounded-bl-sm p-3.5 shadow-sm max-w-[85%]">
+                    <div className="flex items-center gap-1.5 mb-2.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-brand-green" />
+                      <span className="text-xs font-bold text-neutral-500">Ready to save</span>
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center text-sm">
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between items-center text-[13px]">
                         <span className="text-neutral-500">Amount</span>
-                        <span className="font-bold text-rose-500">-{currency}2500.00</span>
+                        <span className="font-semibold text-rose-500">-{currency}2500.00</span>
                       </div>
-                      <div className="flex justify-between items-center text-sm">
+                      <div className="flex justify-between items-center text-[13px]">
                         <span className="text-neutral-500">Category</span>
-                        <span className="font-bold bg-neutral-100 px-2 py-0.5 rounded text-neutral-700">Shopping</span>
+                        <span className="font-medium bg-neutral-100 px-1.5 py-0.5 rounded text-neutral-700">Shopping</span>
                       </div>
-                      <div className="flex justify-between items-center text-sm">
+                      <div className="flex justify-between items-center text-[13px]">
                         <span className="text-neutral-500">Tag</span>
-                        <span className="font-bold bg-brand-green/10 text-brand-green px-2 py-0.5 rounded">#WANT</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-neutral-500">Note</span>
-                        <span className="font-medium text-neutral-700">MacBook Pro @ Apple</span>
+                        <span className="font-medium bg-brand-green/10 text-brand-green px-1.5 py-0.5 rounded">#WANT</span>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-auto pt-4 pb-6 flex flex-col gap-3">
+              <div className="pt-4 pb-2 flex-shrink-0">
                 <button 
                   onClick={handleNext}
-                  className="w-full bg-brand-green hover:bg-brand-green/90 text-white h-[56px] rounded-2xl font-bold text-[13px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-brand-green/20"
+                  className="w-full bg-brand-green hover:bg-brand-green/90 text-white h-[52px] rounded-xl font-semibold text-base flex items-center justify-center gap-2 active:scale-95 transition-all"
                 >
-                  Awesome <ArrowRight className="w-4 h-4" />
+                  Awesome
                 </button>
               </div>
             </motion.div>
@@ -465,23 +449,23 @@ export default function SetupAccount() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="flex-1 flex flex-col"
+              className="flex-1 flex flex-col h-full"
             >
-              <div className="w-14 h-14 bg-brand-green/10 border border-brand-green/20 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+              <div className="w-12 h-12 bg-brand-green/10 border border-brand-green/20 rounded-2xl flex items-center justify-center mb-4 shadow-sm flex-shrink-0">
                 <CheckCircle2 className="w-6 h-6 text-brand-green" />
               </div>
               
-              <h1 className="text-3xl font-bold text-neutral-900 mb-2 tracking-tight">
+              <h1 className="text-2xl font-extrabold text-neutral-900 mb-2 tracking-tight flex-shrink-0">
                 Daily Categories
               </h1>
-              <p className="text-sm font-medium text-neutral-500 mb-6 leading-relaxed">
+              <p className="text-[15px] text-neutral-500 mb-6 flex-shrink-0">
                 We've preloaded standard categories for you. You can tailor these exactly to your lifestyle later in Settings.
               </p>
 
-              <div className="flex-1 overflow-y-auto min-h-[200px]">
-                <div className="flex flex-wrap gap-2 mb-6">
+              <div className="flex-1 overflow-y-auto pr-1">
+                <div className="flex flex-wrap gap-2 mb-5">
                   {categories.map(cat => (
-                    <div key={cat} className="flex items-center gap-2 px-3.5 py-2 bg-white border border-neutral-200 text-neutral-800 rounded-xl text-xs font-bold shadow-sm">
+                    <div key={cat} className="flex items-center gap-2 px-3 py-1.5 bg-white border border-neutral-200 text-neutral-800 rounded-lg text-[13px] font-semibold shadow-sm">
                       {cat}
                       <button onClick={() => removeCategory(cat)} className="text-neutral-400 hover:text-rose-500 transition-colors">
                         <X className="w-3.5 h-3.5" />
@@ -502,29 +486,27 @@ export default function SetupAccount() {
                     value={newCat}
                     onChange={e => setNewCat(e.target.value)}
                     placeholder="Add a new category..."
-                    className="flex-1 bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-xl px-4 py-3.5 text-sm font-semibold outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
+                    className="flex-1 bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-xl px-4 py-3 text-[15px] font-medium outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
                   />
-                  <button type="submit" disabled={!newCat.trim()} className="px-5 bg-brand-green text-white rounded-xl hover:bg-brand-green/90 transition-all disabled:opacity-50 shadow-md shadow-brand-green/20">
+                  <button type="submit" disabled={!newCat.trim()} className="px-5 bg-brand-green text-white rounded-xl hover:bg-brand-green/90 transition-all disabled:opacity-50">
                     <Plus className="w-5 h-5" />
                   </button>
                 </form>
               </div>
 
-              <div className="mt-auto pt-8 pb-6 flex flex-col gap-3">
+              <div className="pt-4 pb-2 flex-shrink-0">
                 <button 
                   onClick={handleNext}
                   disabled={isSaving}
-                  className="w-full bg-brand-green hover:bg-brand-green/90 text-white h-[56px] rounded-2xl font-bold text-[13px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-brand-green/20 disabled:opacity-50"
+                  className="w-full bg-brand-green hover:bg-brand-green/90 text-white h-[52px] rounded-xl font-semibold text-base flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
                 >
                   {isSaving ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-5 h-5 animate-spin" />
                       Finalizing...
                     </>
                   ) : (
-                    <>
-                      Go to Dashboard <ArrowRight className="w-4 h-4" />
-                    </>
+                    "Go to Dashboard"
                   )}
                 </button>
               </div>
