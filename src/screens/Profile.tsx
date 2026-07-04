@@ -249,8 +249,8 @@ export default function Profile() {
                           db.close();
                         }
                         db.delete().catch(err => console.error("Error deleting local db", err)); 
-                        localStorage.removeItem(`onboardingComplete_${uid}`);
-                        localStorage.removeItem(`tutorialComplete_${uid}`);
+                        localStorage.removeItem(`onboardingComplete_${user.uid}`);
+                        localStorage.removeItem(`tutorialComplete_${user.uid}`);
                         
                       } catch (reauthError: any) {
                         showMessage('error', reauthError.message || 'Authentication failed. Please log out and log back in.');

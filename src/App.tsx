@@ -92,7 +92,7 @@ export default function App() {
   }, []);
 
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="app-theme">
+    <ThemeProvider defaultTheme="light" storageKey="app-theme">
       <AuthProvider>
         <HashRouter>
           <LoadingWrapper>
