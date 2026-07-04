@@ -66,7 +66,7 @@ export default function TutorialOverlay({ onComplete }: TutorialOverlayProps) {
         >
           <button 
             onClick={onComplete}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/10 flex items-center justify-center text-white/80 hover:text-white hover:bg-black/20 transition-all z-10"
+            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/20 transition-all z-10"
           >
             <X className="w-4 h-4" />
           </button>

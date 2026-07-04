@@ -318,22 +318,22 @@ export default function SetupAccount() {
               exit={{ opacity: 0, x: -20 }}
               className="flex-1 flex flex-col"
             >
-              <div className="w-14 h-14 bg-purple-500/10 border border-purple-500/20 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
-                <Tag className="w-6 h-6 text-purple-600" />
+              <div className="w-14 h-14 bg-brand-blue/5 border border-brand-blue/10 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+                <Tag className="w-6 h-6 text-brand-blue" />
               </div>
               
               <h1 className="text-3xl font-bold text-neutral-900 mb-2 tracking-tight">
                 Tags: A Game Changer
               </h1>
               
-              <div className="bg-gradient-to-br from-purple-900 to-brand-blue rounded-3xl p-6 mb-8 shadow-2xl shadow-purple-900/20 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+              <div className="bg-brand-blue/5 border border-brand-blue/10 rounded-3xl p-6 mb-8 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                 <div className="relative z-10">
-                  <p className="text-base font-medium text-white/90 leading-relaxed mb-4">
-                    Knowing you spent {currency}50 on <span className="font-bold text-white">Food</span> is good...
+                  <p className="text-base font-medium text-brand-blue/80 leading-relaxed mb-4">
+                    Knowing you spent {currency}50 on <span className="font-bold text-brand-blue">Food</span> is good...
                   </p>
-                  <p className="text-base font-medium text-white/90 leading-relaxed">
-                    But knowing {currency}40 of it was an impulsive <span className="bg-white/20 px-2 py-1 rounded-lg text-white font-bold ml-1 border border-white/30 backdrop-blur-sm shadow-sm inline-flex items-center gap-1"><Tag className="w-3 h-3" /> WANT</span> is what actually changes your financial future.
+                  <p className="text-base font-medium text-brand-blue/80 leading-relaxed">
+                    But knowing {currency}40 of it was an impulsive <span className="bg-white px-2 py-1 rounded-lg text-brand-green font-bold ml-1 border border-brand-green/20 shadow-sm inline-flex items-center gap-1"><Tag className="w-3 h-3" /> WANT</span> is what actually changes your financial future.
                   </p>
                 </div>
               </div>
@@ -363,9 +363,9 @@ export default function SetupAccount() {
                     value={newTag}
                     onChange={e => setNewTag(e.target.value)}
                     placeholder="Add a new tag..."
-                    className="flex-1 bg-neutral-50 border border-neutral-200 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-xl px-4 py-3.5 text-sm font-semibold outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
+                    className="flex-1 bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-xl px-4 py-3.5 text-sm font-semibold outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
                   />
-                  <button type="submit" disabled={!newTag.trim()} className="px-5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all disabled:opacity-50">
+                  <button type="submit" disabled={!newTag.trim()} className="px-5 bg-brand-green text-white rounded-xl hover:bg-brand-green/90 transition-all disabled:opacity-50 shadow-md shadow-brand-green/20">
                     <Plus className="w-5 h-5" />
                   </button>
                 </form>
@@ -396,8 +396,8 @@ export default function SetupAccount() {
               exit={{ opacity: 0, x: -20 }}
               className="flex-1 flex flex-col"
             >
-              <div className="w-14 h-14 bg-brand-cyan/10 border border-brand-cyan/20 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
-                <Sparkles className="w-6 h-6 text-brand-cyan" />
+              <div className="w-14 h-14 bg-brand-green/10 border border-brand-green/20 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+                <Sparkles className="w-6 h-6 text-brand-green" />
               </div>
               
               <h1 className="text-3xl font-bold text-neutral-900 mb-2 tracking-tight">
@@ -418,8 +418,8 @@ export default function SetupAccount() {
 
                 {/* Mock AI Response */}
                 <div className="flex gap-3 items-end">
-                  <div className="w-8 h-8 rounded-full bg-brand-cyan flex flex-shrink-0 items-center justify-center shadow-lg">
-                    <Bot className="w-4 h-4 text-brand-blue" />
+                  <div className="w-8 h-8 rounded-full bg-brand-green flex flex-shrink-0 items-center justify-center shadow-md">
+                    <Bot className="w-4 h-4 text-white" />
                   </div>
                   <div className="bg-white border border-neutral-200 text-neutral-800 rounded-2xl rounded-bl-sm p-4 shadow-md max-w-[85%]">
                     <div className="flex items-center gap-2 mb-3">
@@ -437,7 +437,7 @@ export default function SetupAccount() {
                       </div>
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-neutral-500">Tag</span>
-                        <span className="font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded">#WANT</span>
+                        <span className="font-bold bg-brand-green/10 text-brand-green px-2 py-0.5 rounded">#WANT</span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-neutral-500">Note</span>
