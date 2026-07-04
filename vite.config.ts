@@ -21,8 +21,8 @@ export default defineConfig(({mode}) => {
           name: 'Expensify',
           short_name: 'Expensify',
           description: 'Premium offline-first expense tracker and financial dashboard',
-          theme_color: '#060608',
-          background_color: '#060608',
+          theme_color: '#ffffff',
+          background_color: '#ffffff',
           display: 'standalone',
           orientation: 'portrait',
           icons: [
