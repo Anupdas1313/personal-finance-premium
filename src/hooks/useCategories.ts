@@ -14,10 +14,14 @@ export function useCategories() {
   const dbCategories = useLiveQuery(
     async () => {
       const cats = await db.categories.toArray();
-      return cats.map(c => c.name);
+      // Sort by sortOrder first, then fallback to id
+      cats.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || (a.id ?? 0) - (b.id ?? 0));
+      return cats;
     },
     [user?.uid]
   ) || [];
+
+  const categories = React.useMemo(() => dbCategories.map(c => c.name), [dbCategories]);
 
   React.useEffect(() => {
     async function initCategories() {
@@ -26,7 +30,7 @@ export function useCategories() {
       try {
         const count = await db.categories.count();
         if (count === 0) {
-          const initial = DEFAULT_CATEGORIES.map(name => ({ name }));
+          const initial = DEFAULT_CATEGORIES.map((name, index) => ({ name, sortOrder: index }));
           await db.categories.bulkPut(initial);
         } else {
           // Migration: if the database accidentally got populated with Tags instead of Categories (due to a previous bug)
@@ -34,7 +38,7 @@ export function useCategories() {
           const names = cats.map(c => c.name);
           if (names.includes('Personal') && names.includes('Tenant / Customer') && !names.includes('Food')) {
             await db.categories.clear();
-            const initial = DEFAULT_CATEGORIES.map(name => ({ name }));
+            const initial = DEFAULT_CATEGORIES.map((name, index) => ({ name, sortOrder: index }));
             await db.categories.bulkAdd(initial);
           }
           // Migration: ensure new categories exist for existing users
@@ -42,7 +46,8 @@ export function useCategories() {
           const existingNames = (await db.categories.toArray()).map(c => c.name);
           const missing = newCats.filter(c => !existingNames.includes(c));
           if (missing.length > 0) {
-            await db.categories.bulkAdd(missing.map(name => ({ name })));
+            const startOrder = existingNames.length;
+            await db.categories.bulkAdd(missing.map((name, index) => ({ name, sortOrder: startOrder + index })));
           }
         }
       } catch (e) {
@@ -57,9 +62,10 @@ export function useCategories() {
 
   const addCategory = async (category: string) => {
     const trimmed = category.trim();
-    if (!trimmed || dbCategories.includes(trimmed)) return false;
+    if (!trimmed || categories.includes(trimmed)) return false;
     
-    await db.categories.add({ name: trimmed });
+    const count = await db.categories.count();
+    await db.categories.add({ name: trimmed, sortOrder: count });
     return true;
   };
 
@@ -72,9 +78,27 @@ export function useCategories() {
 
   const resetCategories = async () => {
     await db.categories.clear();
-    const initial = DEFAULT_CATEGORIES.map(name => ({ name }));
+    const initial = DEFAULT_CATEGORIES.map((name, index) => ({ name, sortOrder: index }));
     await db.categories.bulkAdd(initial);
   };
 
-  return { categories: dbCategories, addCategory, removeCategory, resetCategories };
+  const updateCategoryOrder = async (orderedCategories: typeof dbCategories) => {
+    await db.transaction('rw', db.categories, async () => {
+      for (let i = 0; i < orderedCategories.length; i++) {
+        const cat = orderedCategories[i];
+        if (cat.id) {
+          await db.categories.update(cat.id, { sortOrder: i });
+        }
+      }
+    });
+  };
+
+  return { 
+    categories, 
+    rawCategories: dbCategories, 
+    addCategory, 
+    removeCategory, 
+    resetCategories,
+    updateCategoryOrder
+  };
 }

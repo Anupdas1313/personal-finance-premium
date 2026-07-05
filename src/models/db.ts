@@ -12,6 +12,7 @@ export interface Account {
 export interface Category {
   id?: number;
   name: string;
+  sortOrder?: number;
 }
 
 export interface Tag {

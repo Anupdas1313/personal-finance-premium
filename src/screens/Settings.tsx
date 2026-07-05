@@ -17,7 +17,7 @@ export default function Settings() {
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [newCategory, setNewCategory] = useState('');
   
-  const { categories, addCategory, removeCategory, resetCategories } = useCategories();
+  const { categories, rawCategories, addCategory, removeCategory, resetCategories, updateCategoryOrder } = useCategories();
   const { tags, addTag, removeTag, resetTags } = useTags();
   const { theme, setTheme } = useTheme();
   const currency = useCurrency();
@@ -25,6 +25,38 @@ export default function Settings() {
   const [newTag, setNewTag] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    e.dataTransfer.setData('text/plain', index.toString());
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+    if (isNaN(draggedIndex) || draggedIndex === targetIndex) return;
+
+    const reordered = [...rawCategories];
+    const [draggedItem] = reordered.splice(draggedIndex, 1);
+    reordered.splice(targetIndex, 0, draggedItem);
+
+    await updateCategoryOrder(reordered);
+  };
+
+  const handleMoveCategory = async (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= rawCategories.length) return;
+
+    const reordered = [...rawCategories];
+    const temp = reordered[index];
+    reordered[index] = reordered[targetIndex];
+    reordered[targetIndex] = temp;
+
+    await updateCategoryOrder(reordered);
+  };
 
   const handleUpdateCurrency = async (newVal: string) => {
     try {
@@ -346,13 +378,52 @@ export default function Settings() {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="flex flex-wrap gap-2">
-                      {categories.map((category) => (
-                        <div key={category} className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-50 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] rounded-full text-xs font-semibold border border-neutral-100 dark:border-[#333333] shadow-sm">
-                          {category}
-                          <button type="button" onClick={() => removeCategory(category)} className="text-brand-blue/20 dark:text-[#666666] hover:text-brand-red transition-colors">
-                            <X className="w-3.5 h-3.5" />
-                          </button>
+                    <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-wider pl-1">
+                      Drag rows or use ▲ ▼ buttons to reorder categories.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {rawCategories.map((category, index) => (
+                        <div
+                          key={category.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, index)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, index)}
+                          className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-[#1A1A1E] border border-neutral-100 dark:border-white/5 rounded-xl text-xs font-bold text-brand-blue dark:text-white cursor-grab active:cursor-grabbing hover:bg-neutral-100 dark:hover:bg-[#222222] transition-colors group"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-neutral-300 dark:text-neutral-600 cursor-grab group-hover:text-brand-green select-none">☰</span>
+                            <span className="truncate">{category.name}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              disabled={index === 0}
+                              onClick={() => handleMoveCategory(index, -1)}
+                              className="p-1 text-[10px] text-neutral-400 hover:text-brand-green hover:bg-neutral-200 dark:hover:bg-[#2c2c2f] rounded disabled:opacity-20 transition-colors"
+                              title="Move Up"
+                            >
+                              ▲
+                            </button>
+                            <button
+                              type="button"
+                              disabled={index === rawCategories.length - 1}
+                              onClick={() => handleMoveCategory(index, 1)}
+                              className="p-1 text-[10px] text-neutral-400 hover:text-brand-green hover:bg-neutral-200 dark:hover:bg-[#2c2c2f] rounded disabled:opacity-20 transition-colors"
+                              title="Move Down"
+                            >
+                              ▼
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeCategory(category.name)}
+                              className="p-1 text-neutral-300 hover:text-brand-red ml-1.5 transition-colors"
+                              title="Remove"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
