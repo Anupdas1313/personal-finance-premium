@@ -2,13 +2,15 @@ import { useState, useRef } from 'react';
 import { cn } from '../logic/utils';
 
 import { db } from '../models/db';
-import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as SettingsIcon, X, Moon, Sun, Monitor, Palette, Tag, ShieldAlert } from 'lucide-react';
+import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as SettingsIcon, X, Moon, Sun, Monitor, Palette, Tag, ShieldAlert, Coins, Sliders, CalendarClock, Database } from 'lucide-react';
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
 import { useTheme } from '../components/ThemeProvider';
+import { useCurrency } from '../hooks/useCurrency';
 import { RecurringBillsManager } from '../components/RecurringBillsManager';
 
 export default function Settings() {
+  const [activeTab, setActiveTab] = useState<'preferences' | 'organization' | 'automation' | 'data'>('preferences');
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
@@ -18,10 +20,26 @@ export default function Settings() {
   const { categories, addCategory, removeCategory, resetCategories } = useCategories();
   const { tags, addTag, removeTag, resetTags } = useTags();
   const { theme, setTheme } = useTheme();
+  const currency = useCurrency();
   
   const [newTag, setNewTag] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUpdateCurrency = async (newVal: string) => {
+    try {
+      const existing = await db.userSettings.where('key').equals('currency').first();
+      if (existing) {
+        await db.userSettings.update(existing.id!, { value: newVal });
+      } else {
+        await db.userSettings.add({ key: 'currency', value: newVal });
+      }
+      showMessage('success', 'Currency format updated successfully');
+    } catch (err) {
+      console.error(err);
+      showMessage('error', 'Failed to update currency settings');
+    }
+  };
 
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
@@ -153,280 +171,373 @@ export default function Settings() {
   };
 
   return (
-    <div className="space-y-8 max-w-3xl mx-auto pb-8">
+    <div className="space-y-6 max-w-3xl mx-auto pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex items-center gap-4 mb-2">
         <div className="p-3 bg-neutral-100 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] rounded-2xl border border-brand-blue/5 dark:border-transparent ring-2 ring-brand-cyan/20">
-          <SettingsIcon className="w-6 h-6" />
+          <SettingsIcon className="w-5 h-5" />
         </div>
         <div>
-          <h1 className="text-4xl font-heading font-semibold tracking-tight text-brand-blue dark:text-[#F7F7F7]">Settings</h1>
-          <p className="text-brand-blue/40 dark:text-[#A0A0A0] font-semibold mt-1 uppercase tracking-[0.2em] text-[10px]">Cloud Infrastructure Control</p>
+          <h1 className="text-3xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">Settings</h1>
+          <p className="text-neutral-400 font-bold mt-0.5 uppercase tracking-widest text-[8px]">Global Control Dashboard</p>
         </div>
       </div>
 
       {message && (
-        <div className={`p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 shadow-sm ${
+        <div className={`p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 shadow-sm text-xs ${
           message.type === 'success' 
             ? 'bg-brand-green/10 text-brand-green border border-brand-green/20' 
             : 'bg-brand-red/10 text-brand-red border border-brand-red/20'
         }`}>
-          {message.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+          {message.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
           <p className="font-bold">{message.text}</p>
         </div>
       )}
 
-      {/* SECTION: RECURRING BILLS */}
-      <RecurringBillsManager />
+      {/* Tabs Menu */}
+      <div className="flex border-b border-neutral-100 dark:border-[#222222] overflow-x-auto whitespace-nowrap scrollbar-none gap-2 px-1">
+        {[
+          { id: 'preferences', label: 'Preferences', icon: <Sliders className="w-3.5 h-3.5" /> },
+          { id: 'organization', label: 'Organization', icon: <Tag className="w-3.5 h-3.5" /> },
+          { id: 'automation', label: 'Automation', icon: <CalendarClock className="w-3.5 h-3.5" /> },
+          { id: 'data', label: 'Backup & Danger', icon: <Database className="w-3.5 h-3.5" /> },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id as any)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2.5 text-[9px] font-black uppercase tracking-widest border-b-2 transition-all rounded-t-xl",
+              activeTab === tab.id
+                ? "border-brand-green text-brand-green bg-brand-green/5 dark:bg-brand-green/10"
+                : "border-transparent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+            )}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-      {/* SECTION: THEME */}
-      <section>
-        <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Appearance</h2>
-        <div className="bg-white dark:bg-[#111111] rounded-[32px] border border-brand-blue/5 dark:border-[#222222] shadow-sm overflow-hidden transform-gpu [backface-visibility:hidden]">
-          <div className="p-5">
-            <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7] mb-6">
-              <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
-                <Palette className="w-5 h-5 text-brand-blue dark:text-inherit" />
-              </div>
-              <div>
-                <p className="font-semibold text-brand-blue dark:text-[#F7F7F7]">App Theme</p>
-                <p className="text-xs font-medium text-brand-blue/30 dark:text-[#A0A0A0] mt-0.5 uppercase tracking-[0.1em]">Choose individual aesthetic context</p>
-              </div>
-            </div>
+      {/* TAB CONTENTS */}
+      <div className="mt-4">
+        {activeTab === 'preferences' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-left duration-300">
+            {/* Theme Selector */}
+            <section>
+              <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Appearance</h2>
+              <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm overflow-hidden">
+                <div className="p-5">
+                  <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7] mb-6">
+                    <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
+                      <Palette className="w-4 h-4 text-brand-blue dark:text-inherit" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-brand-blue dark:text-[#F7F7F7]">App Theme</p>
+                      <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Toggle light, dark, or system mode aesthetics</p>
+                    </div>
+                  </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pl-0 sm:pl-[3.25rem]">
-              <button
-                onClick={() => setTheme('light')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all",
-                  theme === 'light' 
-                    ? "border-brand-blue bg-brand-blue/5 dark:bg-[#1A1A1A]" 
-                    : "border-transparent bg-neutral-100 dark:bg-[#222222] hover:bg-brand-blue/5 hover:border-brand-cyan"
-                )}
-              >
-                <Sun className={cn("w-5 h-5", theme === 'light' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")} />
-                <span className={cn("font-bold text-sm", theme === 'light' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")}>Light Mode</span>
-              </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setTheme('light')}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all text-xs font-bold",
+                        theme === 'light' 
+                          ? "border-brand-green bg-brand-green/5 text-brand-green" 
+                          : "border-transparent bg-neutral-50 dark:bg-[#1A1A1E] text-neutral-400 hover:bg-neutral-100"
+                      )}
+                    >
+                      <Sun className="w-4 h-4" />
+                      <span>Light Mode</span>
+                    </button>
 
-              <button
-                onClick={() => setTheme('dark')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all",
-                  theme === 'dark' 
-                    ? "border-brand-blue dark:border-[#F7F7F7] bg-brand-blue/5 dark:bg-[#1A1A1A]" 
-                    : "border-transparent bg-neutral-100 dark:bg-[#222222] hover:bg-brand-blue/5 hover:border-brand-cyan"
-                )}
-              >
-                <Moon className={cn("w-5 h-5", theme === 'dark' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")} />
-                <span className={cn("font-bold text-sm", theme === 'dark' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")}>Dark Mode</span>
-              </button>
+                    <button
+                      type="button"
+                      onClick={() => setTheme('dark')}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all text-xs font-bold",
+                        theme === 'dark' 
+                          ? "border-brand-green bg-brand-green/10 text-brand-green dark:text-[#F7F7F7]" 
+                          : "border-transparent bg-neutral-50 dark:bg-[#1A1A1E] text-neutral-400 hover:bg-neutral-100"
+                      )}
+                    >
+                      <Moon className="w-4 h-4" />
+                      <span>Dark Mode</span>
+                    </button>
 
-              <button
-                onClick={() => setTheme('system')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all",
-                  theme === 'system' 
-                    ? "border-brand-blue dark:border-[#F7F7F7] bg-brand-blue/5 dark:bg-[#1A1A1A]" 
-                    : "border-transparent bg-neutral-100 dark:bg-[#222222] hover:bg-brand-blue/5 hover:border-brand-cyan"
-                )}
-              >
-                <Monitor className={cn("w-5 h-5", theme === 'system' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")} />
-                <span className={cn("font-bold text-sm", theme === 'system' ? "text-[#222222] dark:text-[#F7F7F7]" : "text-[#717171] dark:text-[#A0A0A0]")}>System</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION: CATEGORIES */}
-      <section>
-        <h2 className="text-xs font-semibold text-[#1A237E] dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2 opacity-70">Categories</h2>
-        <div className="bg-white dark:bg-[#111111] rounded-[32px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_20px_50px_rgba(26,35,126,0.05)] dark:shadow-none overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222] transform-gpu [backface-visibility:hidden]">
-          <div className="p-5 flex flex-col gap-5">
-            <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
-              <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
-                <Tag className="w-5 h-5 text-brand-blue dark:text-inherit" />
-              </div>
-              <div>
-                <p className="font-semibold text-brand-blue dark:text-[#F7F7F7]">Categorization Engine</p>
-                <p className="text-xs font-medium text-brand-blue/30 dark:text-[#A0A0A0] mt-0.5 uppercase tracking-[0.1em]">Configure meta-tags for financial data</p>
-              </div>
-            </div>
-
-            <div className="pl-0 sm:pl-[3.25rem] space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {categories.map((category) => (
-                  <div key={category} className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] rounded-full text-xs font-semibold border border-brand-blue/10 dark:border-[#333333] shadow-sm">
-                    {category}
-                    <button onClick={() => removeCategory(category)} className="text-brand-blue/20 dark:text-[#666666] hover:text-brand-red transition-colors">
-                      <X className="w-3.5 h-3.5" />
+                    <button
+                      type="button"
+                      onClick={() => setTheme('system')}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all text-xs font-bold",
+                        theme === 'system' 
+                          ? "border-brand-green bg-brand-green/10 text-brand-green dark:text-[#F7F7F7]" 
+                          : "border-transparent bg-neutral-50 dark:bg-[#1A1A1E] text-neutral-400 hover:bg-neutral-100"
+                      )}
+                    >
+                      <Monitor className="w-4 h-4" />
+                      <span>System Settings</span>
                     </button>
                   </div>
-                ))}
+                </div>
               </div>
+            </section>
 
-              <div className="flex flex-col sm:flex-row gap-3">
-                <form onSubmit={handleAddCategory} className="flex flex-1 gap-2">
-                  <input
-                    type="text"
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    placeholder="E.g., Pet Supplies"
-                    className="flex-1 px-4 py-2.5 bg-neutral-50 dark:bg-[#1A1A1A] border border-brand-blue/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-cyan transition-all text-sm font-medium text-brand-blue dark:text-[#F7F7F7] placeholder-brand-blue/20"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!newCategory.trim()}
-                    className="px-6 py-2.5 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl font-semibold hover:bg-brand-green/90 hover:ring-2 hover:ring-brand-cyan transition-all disabled:opacity-50 text-xs uppercase tracking-[0.2em] shadow-lg shadow-brand-green/10"
-                  >
-                    Deploy
-                  </button>
-                </form>
-
-                <button
-                  onClick={() => {
-                    if (window.confirm('Are you sure you want to restore default categories?')) {
-                      resetCategories();
-                      showMessage('success', 'Categories reset to default');
-                    }
-                  }}
-                  className="px-4 py-2.5 text-xs font-semibold text-brand-blue/40 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-[#F7F7F7] hover:bg-brand-blue/5 rounded-xl transition-colors uppercase tracking-[0.2em]"
-                >
-                  Restore Defaults
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-5 flex flex-col gap-5 border-t border-[#EBEBEB] dark:border-[#222222]">
-            <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
-              <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
-                <Tag className="w-5 h-5 text-brand-blue dark:text-inherit" />
-              </div>
-              <div>
-                <p className="font-semibold text-brand-blue dark:text-[#F7F7F7]">Transaction Classifiers</p>
-                <p className="text-xs font-medium text-brand-blue/30 dark:text-[#A0A0A0] mt-0.5 uppercase tracking-[0.1em]">Customize global transaction tags</p>
-              </div>
-            </div>
-
-            <div className="pl-0 sm:pl-[3.25rem] space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {tags.map((tag) => (
-                  <div key={tag} className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] rounded-full text-xs font-semibold border border-brand-blue/10 dark:border-[#333333] shadow-sm">
-                    #{tag}
-                    <button onClick={() => removeTag(tag)} className="text-brand-blue/20 dark:text-[#666666] hover:text-brand-red transition-colors">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+            {/* Currency Selector */}
+            <section>
+              <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Currency Settings</h2>
+              <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm overflow-hidden">
+                <div className="p-5">
+                  <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7] mb-6">
+                    <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
+                      <Coins className="w-4 h-4 text-brand-blue dark:text-inherit" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-brand-blue dark:text-[#F7F7F7]">Primary Currency</p>
+                      <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Select the default prefix for financial calculations</p>
+                    </div>
                   </div>
-                ))}
-              </div>
 
-              <div className="flex flex-col sm:flex-row gap-3">
-                <form onSubmit={handleAddTag} className="flex flex-1 gap-2">
-                  <input
-                    type="text"
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    placeholder="E.g., Business, Urgent"
-                    className="flex-1 px-4 py-2.5 bg-neutral-50 dark:bg-[#1A1A1A] border border-brand-blue/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-cyan transition-all text-sm font-medium text-brand-blue dark:text-[#F7F7F7] placeholder-brand-blue/20"
-                  />
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      { symbol: '$', label: 'USD ($)' },
+                      { symbol: '₹', label: 'INR (₹)' },
+                      { symbol: '€', label: 'EUR (€)' },
+                      { symbol: '£', label: 'GBP (£)' },
+                    ].map((item) => (
+                      <button
+                        key={item.symbol}
+                        type="button"
+                        onClick={() => handleUpdateCurrency(item.symbol)}
+                        className={cn(
+                          "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all gap-1.5",
+                          currency === item.symbol
+                            ? "border-brand-green bg-brand-green/5 text-brand-green dark:text-[#F7F7F7]"
+                            : "border-transparent bg-neutral-50 dark:bg-[#1A1A1E] text-neutral-400 hover:bg-neutral-100"
+                        )}
+                      >
+                        <span className="text-xl font-black">{item.symbol}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        )}
+
+        {activeTab === 'organization' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-left duration-300">
+            {/* Category manager */}
+            <section>
+              <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Category Manager</h2>
+              <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm overflow-hidden divide-y divide-neutral-100 dark:divide-[#222222]">
+                <div className="p-5 flex flex-col gap-5">
+                  <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
+                    <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
+                      <Tag className="w-4 h-4 text-brand-blue dark:text-inherit" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-brand-blue dark:text-[#F7F7F7]">Custom Categories</p>
+                      <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Manage transaction classification categories</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                      {categories.map((category) => (
+                        <div key={category} className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-50 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] rounded-full text-xs font-semibold border border-neutral-100 dark:border-[#333333] shadow-sm">
+                          {category}
+                          <button type="button" onClick={() => removeCategory(category)} className="text-brand-blue/20 dark:text-[#666666] hover:text-brand-red transition-colors">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <form onSubmit={handleAddCategory} className="flex flex-1 gap-2">
+                        <input
+                          type="text"
+                          value={newCategory}
+                          onChange={(e) => setNewCategory(e.target.value)}
+                          placeholder="E.g., Pet Supplies"
+                          className="flex-1 px-4 py-2.5 bg-neutral-50 dark:bg-[#1A1A1A] border border-neutral-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/20 transition-all text-xs font-semibold text-brand-blue dark:text-[#F7F7F7]"
+                        />
+                        <button
+                          type="submit"
+                          disabled={!newCategory.trim()}
+                          className="px-5 py-2.5 bg-brand-green text-white rounded-xl font-bold hover:brightness-110 transition-all disabled:opacity-50 text-[9px] uppercase tracking-widest shadow-lg shadow-brand-green/10"
+                        >
+                          Add
+                        </button>
+                      </form>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm('Are you sure you want to restore default categories?')) {
+                            resetCategories();
+                            showMessage('success', 'Categories reset to default');
+                          }
+                        }}
+                        className="px-4 py-2.5 text-[9px] font-black text-neutral-400 hover:text-brand-blue dark:hover:text-[#F7F7F7] hover:bg-neutral-50 rounded-xl transition-all uppercase tracking-widest"
+                      >
+                        Restore Defaults
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tag manager */}
+                <div className="p-5 flex flex-col gap-5">
+                  <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
+                    <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
+                      <Tag className="w-4 h-4 text-brand-blue dark:text-inherit" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-brand-blue dark:text-[#F7F7F7]">Transaction Tags</p>
+                      <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Customize global index hashtag labels</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map((tag) => (
+                        <div key={tag} className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-50 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] rounded-full text-xs font-semibold border border-neutral-100 dark:border-[#333333] shadow-sm">
+                          #{tag}
+                          <button type="button" onClick={() => removeTag(tag)} className="text-brand-blue/20 dark:text-[#666666] hover:text-brand-red transition-colors">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <form onSubmit={handleAddTag} className="flex flex-1 gap-2">
+                        <input
+                          type="text"
+                          value={newTag}
+                          onChange={(e) => setNewTag(e.target.value)}
+                          placeholder="E.g., Business, Urgent"
+                          className="flex-1 px-4 py-2.5 bg-neutral-50 dark:bg-[#1A1A1A] border border-neutral-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/20 transition-all text-xs font-semibold text-brand-blue dark:text-[#F7F7F7]"
+                        />
+                        <button
+                          type="submit"
+                          disabled={!newTag.trim()}
+                          className="px-5 py-2.5 bg-brand-green text-white rounded-xl font-bold hover:brightness-110 transition-all disabled:opacity-50 text-[9px] uppercase tracking-widest shadow-lg shadow-brand-green/10"
+                        >
+                          Add
+                        </button>
+                      </form>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm('Are you sure you want to restore default tags?')) {
+                            resetTags();
+                            showMessage('success', 'Tags reset to default');
+                          }
+                        }}
+                        className="px-4 py-2.5 text-[9px] font-black text-neutral-400 hover:text-brand-blue dark:hover:text-[#F7F7F7] hover:bg-neutral-50 rounded-xl transition-all uppercase tracking-widest"
+                      >
+                        Restore Defaults
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        )}
+
+        {activeTab === 'automation' && (
+          <div className="animate-in fade-in slide-in-from-left duration-300">
+            <RecurringBillsManager />
+          </div>
+        )}
+
+        {activeTab === 'data' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-left duration-300">
+            {/* Backup/Restore */}
+            <section>
+              <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Backup & Recovery</h2>
+              <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm overflow-hidden divide-y divide-neutral-100 dark:divide-[#222222]">
+                <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
+                    <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
+                      <Download className="w-4 h-4 text-brand-blue dark:text-inherit" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-brand-blue dark:text-[#F7F7F7]">Export Backup File</p>
+                      <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Download your accounts and transactions as a JSON file</p>
+                    </div>
+                  </div>
+
                   <button
-                    type="submit"
-                    disabled={!newTag.trim()}
-                    className="px-6 py-2.5 bg-brand-cyan dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl font-semibold hover:bg-brand-cyan/90 transition-all disabled:opacity-50 text-xs uppercase tracking-[0.2em] shadow-lg shadow-brand-cyan/10"
+                    type="button"
+                    onClick={handleExportData}
+                    disabled={isExporting}
+                    className="px-5 py-2.5 bg-white dark:bg-[#111111] border border-neutral-200 dark:border-[#333333] hover:bg-neutral-50 dark:hover:bg-[#222222] text-neutral-600 dark:text-neutral-400 rounded-xl font-bold transition-all disabled:opacity-50 text-[9px] uppercase tracking-widest w-full sm:w-auto text-center shadow-sm"
                   >
-                    Deploy
+                    {isExporting ? 'Exporting...' : 'Export JSON'}
                   </button>
-                </form>
-                <button
-                  onClick={() => {
-                    if (window.confirm('Are you sure you want to restore default tags?')) {
-                      resetTags();
-                      showMessage('success', 'Tags reset to default');
-                    }
-                  }}
-                  className="px-4 py-2.5 text-xs font-semibold text-brand-blue/40 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-[#F7F7F7] hover:bg-brand-blue/5 rounded-xl transition-colors uppercase tracking-[0.2em]"
-                >
-                  Restore
-                </button>
+                </div>
+
+                <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
+                    <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
+                      <Upload className="w-4 h-4 text-brand-blue dark:text-inherit" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-brand-blue dark:text-[#F7F7F7]">Restore from Backup</p>
+                      <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Upload a backup JSON file to restore your database</p>
+                    </div>
+                  </div>
+
+                  <div className="w-full sm:w-auto">
+                    <input type="file" accept=".json" ref={fileInputRef} onChange={handleImportData} className="hidden" id="import-file" />
+                    <label
+                      htmlFor="import-file"
+                      className={`block w-full sm:w-auto px-5 py-2.5 bg-white dark:bg-[#111111] border border-neutral-200 dark:border-[#333333] hover:bg-neutral-50 dark:hover:bg-[#222222] text-neutral-600 dark:text-neutral-400 rounded-xl font-bold transition-all cursor-pointer text-center text-[9px] uppercase tracking-widest shadow-sm ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}
+                    >
+                      {isImporting ? 'Importing...' : 'Import JSON'}
+                    </label>
+                  </div>
+                </div>
               </div>
-            </div>
+            </section>
+
+            {/* Danger Zone */}
+            <section>
+              <h2 className="text-[10px] font-semibold text-brand-red uppercase tracking-[0.2em] mb-4 px-2">Danger Zone</h2>
+              <div className="bg-brand-red/5 rounded-[24px] border border-brand-red/10 overflow-hidden divide-y divide-brand-red/10">
+                <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 text-brand-red">
+                    <div className="p-2.5 bg-brand-red/10 rounded-xl flex-shrink-0">
+                      <ShieldAlert className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-brand-red">Purge Local Storage</p>
+                      <p className="text-[10px] font-medium text-brand-red/60 mt-0.5">Wipe IndexedDB browser storage (WARNING: Permanent data loss)</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleClearData}
+                    disabled={isClearing}
+                    className="px-5 py-2.5 bg-brand-red text-white rounded-xl font-bold hover:brightness-110 transition-all disabled:opacity-50 text-[9px] uppercase tracking-widest w-full sm:w-auto flex justify-center items-center gap-2 shadow-lg shadow-brand-red/10"
+                  >
+                    <Trash2 className="w-3.5 h-3.5"/>
+                    {isClearing ? 'Purging...' : 'Purge Database'}
+                  </button>
+                </div>
+              </div>
+            </section>
           </div>
-        </div>
-      </section>
-
-      {/* SECTION: DATA MANAGEMENT */}
-      <section>
-        <h2 className="text-xs font-semibold text-[#525252] dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-3 px-2">Data & Storage</h2>
-        <div className="bg-white dark:bg-[#111111] rounded-3xl border border-[#EBEBEB] dark:border-[#222222] shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-none overflow-hidden divide-y divide-[#EBEBEB] dark:divide-[#222222] transform-gpu [backface-visibility:hidden]">
-          <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
-              <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
-                <Download className="w-5 h-5 text-brand-blue dark:text-inherit" />
-              </div>
-              <div>
-                <p className="font-semibold text-brand-blue dark:text-[#F7F7F7]">Archive Pipeline</p>
-                <p className="text-xs font-medium text-brand-blue/30 dark:text-[#A0A0A0] mt-0.5 uppercase tracking-[0.1em]">Export data cluster to JSON</p>
-              </div>
-            </div>
-
-            <button
-              onClick={handleExportData}
-              disabled={isExporting}
-              className="px-5 py-2.5 bg-white dark:bg-[#111111] border border-brand-blue/10 text-brand-blue dark:text-[#F7F7F7] rounded-xl font-semibold hover:bg-brand-blue/5 transition-all disabled:opacity-50 text-xs uppercase tracking-[0.2em] w-full sm:w-auto text-center shadow-sm"
-            >
-              {isExporting ? 'Exporting...' : 'Export JSON'}
-            </button>
-          </div>
-
-          <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
-              <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
-                <Upload className="w-5 h-5 text-brand-blue dark:text-inherit" />
-              </div>
-              <div>
-                <p className="font-semibold text-brand-blue dark:text-[#F7F7F7]">Restore Protocol</p>
-                <p className="text-xs font-medium text-brand-blue/30 dark:text-[#A0A0A0] mt-0.5 uppercase tracking-[0.1em]">Sync data cluster from file</p>
-              </div>
-            </div>
-
-            <div className="w-full sm:w-auto">
-              <input type="file" accept=".json" ref={fileInputRef} onChange={handleImportData} className="hidden" id="import-file" />
-              <label
-                htmlFor="import-file"
-                className={`block w-full sm:w-auto px-5 py-2.5 bg-white dark:bg-[#111111] border border-brand-blue/10 text-brand-blue dark:text-[#F7F7F7] rounded-xl font-semibold hover:bg-brand-blue/5 transition-all cursor-pointer text-center text-xs uppercase tracking-[0.2em] shadow-sm ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}
-              >
-                {isImporting ? 'Importing...' : 'Import JSON'}
-              </label>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION: DANGER ZONE */}
-      <section>
-        <h2 className="text-[10px] font-semibold text-brand-red uppercase tracking-[0.3em] mb-4 px-2">Terminal Phase</h2>
-        <div className="bg-brand-red/5 rounded-3xl border border-brand-red/10 overflow-hidden divide-y divide-brand-red/10 transform-gpu [backface-visibility:hidden]">
-          <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4 text-brand-red">
-              <div className="p-2.5 bg-brand-red/10 rounded-xl flex-shrink-0">
-                <ShieldAlert className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="font-semibold text-brand-red">Purge Local Cluster</p>
-                <p className="text-xs font-medium text-brand-red/40 mt-0.5 uppercase tracking-[0.1em]">Zero-out all local storage points</p>
-              </div>
-            </div>
-            <button
-              onClick={handleClearData}
-              disabled={isClearing}
-              className="px-6 py-3 bg-brand-red text-white rounded-xl font-semibold hover:bg-brand-red/90 transition-all disabled:opacity-50 text-[10px] uppercase tracking-[0.3em] w-full sm:w-auto flex justify-center items-center gap-2 shadow-lg shadow-brand-red/10"
-            >
-              <Trash2 className="w-4 h-4"/>
-              {isClearing ? 'Purging...' : 'Wipe System'}
-            </button>
-          </div>
-        </div>
-      </section>
+        )}
+      </div>
     </div>
   );
 }
