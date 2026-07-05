@@ -31,223 +31,228 @@ export default function Profile() {
   const userInitial = user?.displayName?.[0] || user?.email?.[0] || '?';
 
   return (
-    <div className="space-y-8 max-w-3xl mx-auto pb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex items-center gap-4 mb-2">
-        <div className="p-3 bg-neutral-100 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] rounded-2xl border border-brand-blue/5 dark:border-transparent ring-2 ring-brand-cyan/20">
-          <User className="w-6 h-6" />
+    <div className="space-y-6 max-w-2xl mx-auto pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex items-center gap-4 mb-2 px-1">
+        <div className="p-3 bg-brand-green/5 dark:bg-[#111612] text-brand-green dark:text-brand-cyan rounded-2xl border border-brand-green/10 dark:border-brand-green/5">
+          <User className="w-5 h-5" />
         </div>
         <div>
-          <h1 className="text-4xl font-heading font-semibold tracking-tight text-brand-blue dark:text-[#F7F7F7]">Profile</h1>
-          <p className="text-brand-blue/40 dark:text-[#A0A0A0] font-semibold mt-1 uppercase tracking-[0.2em] text-[10px]">User Account Management</p>
+          <h1 className="text-3xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">Profile</h1>
+          <p className="text-neutral-400 font-bold mt-0.5 uppercase tracking-widest text-[8px]">User Account Management</p>
         </div>
       </div>
 
       {message && (
         <div className={cn(
-          "p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 shadow-sm",
+          "p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 shadow-sm text-xs",
           message.type === 'success' 
             ? 'bg-brand-green/10 text-brand-green border border-brand-green/20' 
             : 'bg-brand-red/10 text-brand-red border border-brand-red/20'
         )}>
-          {message.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
-          <p className="font-bold text-sm">{message.text}</p>
+          {message.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+          <p className="font-bold">{message.text}</p>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Left: Avatar & Quick Actions */}
-        <div className="md:col-span-1 space-y-6">
-          <div className="bg-white dark:bg-[#111111] rounded-[32px] border border-brand-blue/5 dark:border-[#222222] shadow-sm p-8 flex flex-col items-center">
-            <div className="w-24 h-24 bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue rounded-full flex items-center justify-center text-4xl font-black shadow-xl mb-4 uppercase ring-4 ring-brand-blue/10 dark:ring-brand-cyan/10">
-              {userInitial}
-            </div>
-            <h2 className="text-lg font-bold text-brand-blue dark:text-white text-center line-clamp-1">
-              {user?.displayName || 'Anonymous User'}
-            </h2>
-            <p className="text-xs font-semibold text-brand-blue/40 dark:text-[#A0A0A0] mt-1 text-center truncate w-full">
-              {user?.email}
-            </p>
+      {/* Main Profile Info Card */}
+      <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm overflow-hidden">
+        {/* Banner area / Profile Summary */}
+        <div className="bg-brand-green/5 dark:bg-[#152016] px-6 py-6 border-b border-brand-green/10 dark:border-[#222222] flex flex-col sm:flex-row items-center gap-5">
+          <div className="w-14 h-14 bg-brand-green text-white dark:bg-brand-cyan dark:text-brand-blue rounded-[20px] flex items-center justify-center text-xl font-black uppercase shadow-sm ring-4 ring-brand-green/10 dark:ring-brand-cyan/15 shrink-0">
+            {userInitial}
           </div>
-
-          <div className="bg-brand-blue/5 dark:bg-brand-cyan/5 rounded-3xl border border-brand-blue/10 dark:border-brand-cyan/10 p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <ShieldCheck className="w-5 h-5 text-brand-blue dark:text-brand-cyan" />
-              <h3 className="font-bold text-sm text-brand-blue dark:text-[#F7F7F7]">Account Security</h3>
+          <div className="text-center sm:text-left flex-1 min-w-0">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-0.5">
+              <h2 className="text-base font-heading font-bold text-brand-blue dark:text-[#F7F7F7] truncate">
+                {user?.displayName || 'Anonymous User'}
+              </h2>
+              <span className="px-2 py-0.5 bg-brand-green/10 dark:bg-brand-cyan/15 text-brand-green dark:text-brand-cyan rounded-full text-[8px] font-black uppercase tracking-widest">
+                Premium
+              </span>
             </div>
-            <p className="text-xs font-medium text-brand-blue/50 dark:text-[#A0A0A0] leading-relaxed">
-              Your account is protected by industry-standard encryption. We never share your data with third parties.
+            <p className="text-[11px] text-neutral-400 font-semibold truncate">
+              {user?.email}
             </p>
           </div>
         </div>
 
-        {/* Right: Details & Editing */}
-        <div className="md:col-span-2 space-y-8">
-          <section>
-            <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Personal Information</h2>
-            <div className="bg-white dark:bg-[#111111] rounded-[32px] border border-brand-blue/5 dark:border-[#222222] shadow-sm overflow-hidden">
-              <form onSubmit={handleUpdateName} className="p-6 space-y-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-2 ml-1">
-                      Full Name
-                    </label>
-                    <div className="relative group">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-blue/20 dark:text-[#55555E] group-focus-within:text-brand-blue dark:group-focus-within:text-brand-cyan transition-colors" />
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Your display name"
-                        className="w-full pl-12 pr-4 py-3.5 bg-neutral-50 dark:bg-[#1A1A1E] border border-brand-blue/5 dark:border-white/5 rounded-2xl text-sm font-bold text-brand-blue dark:text-white outline-none focus:ring-2 ring-brand-blue/10 dark:ring-brand-cyan/10 transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-2 ml-1">
-                      Email Address
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-blue/20 dark:text-[#55555E]" />
-                      <input
-                        type="email"
-                        disabled
-                        value={user?.email || ''}
-                        className="w-full pl-12 pr-4 py-3.5 bg-neutral-100/50 dark:bg-[#15151A] border border-brand-blue/5 dark:border-white/5 rounded-2xl text-sm font-bold text-brand-blue/40 dark:text-[#666666] cursor-not-allowed"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={isUpdating || name === user?.displayName}
-                    className="flex items-center gap-2 px-6 py-3 bg-brand-blue dark:bg-brand-cyan text-white dark:text-brand-blue rounded-xl font-bold hover:brightness-110 transition-all disabled:opacity-50 text-xs uppercase tracking-widest shadow-lg shadow-brand-blue/20 dark:shadow-brand-cyan/10"
-                  >
-                    <Save className="w-4 h-4" />
-                    {isUpdating ? 'Saving...' : 'Save Changes'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </section>
-
-          <section className="space-y-4">
-            <div className="bg-rose-50 dark:bg-rose-500/5 border border-rose-100 dark:border-rose-500/10 rounded-[32px] p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h3 className="font-bold text-sm text-rose-600 dark:text-rose-400">Sign Out</h3>
-                <p className="text-xs text-rose-500/70 dark:text-rose-400/70 mt-1">Log out of your account on this device</p>
+        {/* Input Form */}
+        <form onSubmit={handleUpdateName} className="p-6 space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">
+                Full Name
+              </label>
+              <div className="relative group">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-300 dark:text-neutral-600 group-focus-within:text-brand-green transition-colors" />
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your display name"
+                  className="w-full pl-11 pr-4 py-3 bg-neutral-50 dark:bg-[#1A1A1E] border border-neutral-100 dark:border-white/5 rounded-xl text-xs font-bold text-brand-blue dark:text-white outline-none focus:ring-2 focus:ring-brand-green/10 dark:focus:ring-brand-cyan/10 focus:border-brand-green transition-all"
+                />
               </div>
-              <button
-                onClick={async () => {
-                  try {
-                    await logout();
-                  } catch (e) {
-                    console.error('Logout failed', e);
-                  }
-                }}
-                className="px-6 py-3 bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 hover:bg-rose-200 dark:hover:bg-rose-500/30 rounded-xl font-bold transition-all text-xs uppercase tracking-widest w-full sm:w-auto"
-              >
-                Log Out
-              </button>
             </div>
 
-            <div className="bg-rose-100 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-[32px] p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h3 className="font-bold text-sm text-rose-700 dark:text-rose-500">Delete Account</h3>
-                <p className="text-xs text-rose-600/70 dark:text-rose-500/70 mt-1">Permanently delete your account and all data</p>
+            <div>
+              <label className="block text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-300 dark:text-neutral-600" />
+                <input
+                  type="email"
+                  disabled
+                  value={user?.email || ''}
+                  className="w-full pl-11 pr-4 py-3 bg-neutral-100/50 dark:bg-[#15151A] border border-neutral-100 dark:border-white/5 rounded-xl text-xs font-bold text-neutral-400 dark:text-neutral-500 cursor-not-allowed"
+                />
               </div>
-              <button
-                disabled={isUpdating}
-                onClick={async () => {
-                  const confirmDelete = window.confirm(
-                    'DANGER: This will permanently delete your account, including all your settings, transactions, and preferences from both this device and the cloud. This action CANNOT be undone.\n\nAre you absolutely sure?'
-                  );
-                  if (!confirmDelete) return;
+            </div>
+          </div>
 
-                  setIsUpdating(true);
-                  try {
-                    if (!user) return;
-                    const uid = user.uid;
-                    // 1. Delete from Firestore concurrently
-                    const { collection, getDocs, deleteDoc, doc } = await import('firebase/firestore');
-                    const { firestoreDb } = await import('../lib/firebase');
-                    const { db } = await import('../models/db');
-                    
-                    const tableNames = db.tables.map(t => t.name);
+          <div className="flex justify-end pt-1">
+            <button
+              type="submit"
+              disabled={isUpdating || name === user?.displayName}
+              className="flex items-center gap-1.5 px-5 py-2.5 bg-brand-green text-white rounded-xl font-black uppercase tracking-widest text-[9px] hover:brightness-110 active:scale-95 disabled:opacity-50 transition-all shadow-lg shadow-brand-green/10"
+            >
+              <Save className="w-3.5 h-3.5" />
+              {isUpdating ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </div>
 
-                    await Promise.all(tableNames.map(async (table) => {
-                      try {
-                        const qs = await getDocs(collection(firestoreDb, `users/${uid}/${table}`));
-                        const deletePromises = qs.docs.map(d => deleteDoc(d.ref));
-                        await Promise.all(deletePromises);
-                      } catch (err) {
-                        console.error(`Failed to delete table ${table}`, err);
-                      }
-                    }));
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {/* Security Info Card */}
+        <div className="bg-brand-green/5 dark:bg-[#111612] rounded-[24px] border border-brand-green/10 dark:border-brand-green/5 p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <ShieldCheck className="w-4 h-4 text-brand-green" />
+              <h3 className="font-bold text-[10px] text-brand-blue dark:text-[#F7F7F7] uppercase tracking-widest">Account Security</h3>
+            </div>
+            <p className="text-[10px] font-semibold text-neutral-400/80 leading-relaxed">
+              Your financial connection is encrypted. Data remains fully synced with Google cloud and cached locally for swift offline access.
+            </p>
+          </div>
+        </div>
 
-                    // Delete the user root folder/document itself
+        {/* Actions Card (Sign Out / Delete merged) */}
+        <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] p-5 shadow-sm flex flex-col justify-between divide-y divide-neutral-100 dark:divide-[#222222]">
+          {/* Sign Out Row */}
+          <div className="pb-3.5 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="font-bold text-xs text-brand-blue dark:text-[#F7F7F7]">Sign Out</h3>
+              <p className="text-[9px] text-neutral-400 font-semibold mt-0.5">Disconnect device session</p>
+            </div>
+            <button
+              onClick={async () => {
+                try {
+                  await logout();
+                } catch (e) {
+                  console.error('Logout failed', e);
+                }
+              }}
+              className="px-4 py-2 border border-neutral-200 dark:border-[#333333] hover:bg-neutral-50 dark:hover:bg-[#222222] text-neutral-600 dark:text-neutral-400 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+            >
+              Log Out
+            </button>
+          </div>
+
+          {/* Delete Row */}
+          <div className="pt-3.5 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="font-bold text-xs text-brand-red">Delete Account</h3>
+              <p className="text-[9px] text-brand-red/60 font-semibold mt-0.5">Purge profile & databases</p>
+            </div>
+            <button
+              disabled={isUpdating}
+              onClick={async () => {
+                const confirmDelete = window.confirm(
+                  'DANGER: This will permanently delete your account, including all your settings, transactions, and preferences from both this device and the cloud. This action CANNOT be undone.\n\nAre you absolutely sure?'
+                );
+                if (!confirmDelete) return;
+
+                setIsUpdating(true);
+                try {
+                  if (!user) return;
+                  const uid = user.uid;
+                  // 1. Delete from Firestore concurrently
+                  const { collection, getDocs, deleteDoc, doc } = await import('firebase/firestore');
+                  const { firestoreDb } = await import('../lib/firebase');
+                  const { db } = await import('../models/db');
+                  
+                  const tableNames = db.tables.map(t => t.name);
+
+                  await Promise.all(tableNames.map(async (table) => {
                     try {
-                      await deleteDoc(doc(firestoreDb, 'users', uid));
+                      const qs = await getDocs(collection(firestoreDb, `users/${uid}/${table}`));
+                      const deletePromises = qs.docs.map(d => deleteDoc(d.ref));
+                      await Promise.all(deletePromises);
                     } catch (err) {
-                      console.error('Failed to delete user root doc', err);
+                      console.error(`Failed to delete table ${table}`, err);
                     }
+                  }));
 
-                    // 2. Stop sync to prevent any writes while deleting
-                    const { stopSync } = await import('../lib/syncEngine');
-                    stopSync();
+                  // Delete the user root folder/document itself
+                  try {
+                    await deleteDoc(doc(firestoreDb, 'users', uid));
+                  } catch (err) {
+                    console.error('Failed to delete user root doc', err);
+                  }
 
-                    // 3. Clear local data safely before unmounting
-                    await Promise.all(db.tables.map(table => table.clear()));
-                    localStorage.removeItem(`onboardingComplete_${uid}`);
-                    localStorage.removeItem(`tutorialComplete_${uid}`);
+                  // 2. Stop sync to prevent any writes while deleting
+                  const { stopSync } = await import('../lib/syncEngine');
+                  stopSync();
 
-                    // 4. Delete the Auth user last. 
-                    // This triggers onAuthStateChanged, redirects to /login, and unmounts components.
-                    await deleteAccount();
-                    
-                  } catch (e: any) {
-                    if (e.code === 'auth/requires-recent-login') {
-                      try {
-                        const { EmailAuthProvider, reauthenticateWithCredential } = await import('firebase/auth');
-                        const { auth } = await import('../lib/firebase');
-                        
-                        const providerId = auth.currentUser?.providerData[0]?.providerId;
-                        
-                        if (providerId === 'password') {
-                          const pwd = window.prompt("Security requirement: Please enter your password to confirm account deletion:");
-                          if (!pwd) {
-                            setIsUpdating(false);
-                            return;
-                          }
-                          const credential = EmailAuthProvider.credential(user.email!, pwd);
-                          await reauthenticateWithCredential(auth.currentUser!, credential);
-                          
-                          // Retry deletion after successful re-auth
-                          await deleteAccount();
-                        } else {
-                          // For Google or other providers where popups often fail on Mobile PWA:
-                          alert("For security purposes, you must verify your identity to delete your account. You will be logged out now. Please log back in and try deleting your account again.");
-                          logout();
+                  // 3. Clear local data safely before unmounting
+                  await Promise.all(db.tables.map(table => table.clear()));
+                  localStorage.removeItem(`onboardingComplete_${uid}`);
+                  localStorage.removeItem(`tutorialComplete_${uid}`);
+
+                  // 4. Delete the Auth user last. 
+                  await deleteAccount();
+                  
+                } catch (e: any) {
+                  if (e.code === 'auth/requires-recent-login') {
+                    try {
+                      const { EmailAuthProvider, reauthenticateWithCredential } = await import('firebase/auth');
+                      const { auth } = await import('../lib/firebase');
+                      
+                      const providerId = auth.currentUser?.providerData[0]?.providerId;
+                      
+                      if (providerId === 'password') {
+                        const pwd = window.prompt("Security requirement: Please enter your password to confirm account deletion:");
+                        if (!pwd) {
+                          setIsUpdating(false);
                           return;
                         }
-                      } catch (reauthError: any) {
-                        showMessage('error', reauthError.message || 'Authentication failed. Please log out and log back in.');
+                        const credential = EmailAuthProvider.credential(user.email!, pwd);
+                        await reauthenticateWithCredential(auth.currentUser!, credential);
+                        
+                        // Retry deletion after successful re-auth
+                        await deleteAccount();
+                      } else {
+                        alert("For security purposes, you must verify your identity to delete your account. You will be logged out now. Please log back in and try deleting your account again.");
+                        logout();
+                        return;
                       }
-                    } else {
-                      showMessage('error', e.message || 'Failed to delete account');
+                    } catch (reauthError: any) {
+                      showMessage('error', reauthError.message || 'Authentication failed. Please log out and log back in.');
                     }
-                  } finally {
-                    setIsUpdating(false);
+                  } else {
+                    showMessage('error', e.message || 'Failed to delete account');
                   }
-                }}
-                className="px-6 py-3 bg-rose-600 dark:bg-rose-600 text-white hover:bg-rose-700 dark:hover:bg-rose-700 rounded-xl font-bold transition-all text-xs uppercase tracking-widest w-full sm:w-auto disabled:opacity-50"
-              >
-                {isUpdating ? 'Deleting...' : 'Delete Account'}
-              </button>
-            </div>
-          </section>
+                } finally {
+                  setIsUpdating(false);
+                }
+              }}
+              className="px-4 py-2 bg-brand-red text-white hover:brightness-110 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+            >
+              {isUpdating ? 'Deleting...' : 'Delete'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
