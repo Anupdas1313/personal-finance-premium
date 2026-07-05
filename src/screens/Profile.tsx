@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, ShieldCheck, CheckCircle2, AlertTriangle, Save } from 'lucide-react';
+import { User, Mail, ShieldCheck, CheckCircle2, AlertTriangle, Save, ChevronDown } from 'lucide-react';
 import { cn } from '../logic/utils';
 
 export default function Profile() {
   const { user, updateProfileName, logout, deleteAccount } = useAuth();
   const [name, setName] = useState(user?.displayName || '');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDangerExpanded, setIsDangerExpanded] = useState(false);
+  const [confirmDeleteCheckbox, setConfirmDeleteCheckbox] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   const showMessage = (type: 'success' | 'error', text: string) => {
@@ -160,98 +162,126 @@ export default function Profile() {
             </button>
           </div>
 
-          {/* Delete Row */}
-          <div className="pt-3.5 flex items-center justify-between gap-3">
-            <div>
-              <h3 className="font-bold text-xs text-brand-red">Delete Account</h3>
-              <p className="text-[9px] text-brand-red/60 font-semibold mt-0.5">Purge profile & databases</p>
-            </div>
+          {/* Danger Zone Collapsible Row */}
+          <div className="pt-3.5">
             <button
-              disabled={isUpdating}
-              onClick={async () => {
-                const confirmDelete = window.confirm(
-                  'DANGER: This will permanently delete your account, including all your settings, transactions, and preferences from both this device and the cloud. This action CANNOT be undone.\n\nAre you absolutely sure?'
-                );
-                if (!confirmDelete) return;
-
-                setIsUpdating(true);
-                try {
-                  if (!user) return;
-                  const uid = user.uid;
-                  // 1. Delete from Firestore concurrently
-                  const { collection, getDocs, deleteDoc, doc } = await import('firebase/firestore');
-                  const { firestoreDb } = await import('../lib/firebase');
-                  const { db } = await import('../models/db');
-                  
-                  const tableNames = db.tables.map(t => t.name);
-
-                  await Promise.all(tableNames.map(async (table) => {
-                    try {
-                      const qs = await getDocs(collection(firestoreDb, `users/${uid}/${table}`));
-                      const deletePromises = qs.docs.map(d => deleteDoc(d.ref));
-                      await Promise.all(deletePromises);
-                    } catch (err) {
-                      console.error(`Failed to delete table ${table}`, err);
-                    }
-                  }));
-
-                  // Delete the user root folder/document itself
-                  try {
-                    await deleteDoc(doc(firestoreDb, 'users', uid));
-                  } catch (err) {
-                    console.error('Failed to delete user root doc', err);
-                  }
-
-                  // 2. Stop sync to prevent any writes while deleting
-                  const { stopSync } = await import('../lib/syncEngine');
-                  stopSync();
-
-                  // 3. Clear local data safely before unmounting
-                  await Promise.all(db.tables.map(table => table.clear()));
-                  localStorage.removeItem(`onboardingComplete_${uid}`);
-                  localStorage.removeItem(`tutorialComplete_${uid}`);
-
-                  // 4. Delete the Auth user last. 
-                  await deleteAccount();
-                  
-                } catch (e: any) {
-                  if (e.code === 'auth/requires-recent-login') {
-                    try {
-                      const { EmailAuthProvider, reauthenticateWithCredential } = await import('firebase/auth');
-                      const { auth } = await import('../lib/firebase');
-                      
-                      const providerId = auth.currentUser?.providerData[0]?.providerId;
-                      
-                      if (providerId === 'password') {
-                        const pwd = window.prompt("Security requirement: Please enter your password to confirm account deletion:");
-                        if (!pwd) {
-                          setIsUpdating(false);
-                          return;
-                        }
-                        const credential = EmailAuthProvider.credential(user.email!, pwd);
-                        await reauthenticateWithCredential(auth.currentUser!, credential);
-                        
-                        // Retry deletion after successful re-auth
-                        await deleteAccount();
-                      } else {
-                        alert("For security purposes, you must verify your identity to delete your account. You will be logged out now. Please log back in and try deleting your account again.");
-                        logout();
-                        return;
-                      }
-                    } catch (reauthError: any) {
-                      showMessage('error', reauthError.message || 'Authentication failed. Please log out and log back in.');
-                    }
-                  } else {
-                    showMessage('error', e.message || 'Failed to delete account');
-                  }
-                } finally {
-                  setIsUpdating(false);
-                }
-              }}
-              className="px-4 py-2 bg-brand-red text-white hover:brightness-110 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+              type="button"
+              onClick={() => setIsDangerExpanded(!isDangerExpanded)}
+              className="flex items-center justify-between w-full text-left focus:outline-none"
             >
-              {isUpdating ? 'Deleting...' : 'Delete'}
+              <div>
+                <h3 className="font-bold text-xs text-brand-red">Danger Zone</h3>
+                <p className="text-[9px] text-neutral-400 font-semibold mt-0.5">Destructive account operations</p>
+              </div>
+              <ChevronDown className={cn("w-4 h-4 text-neutral-400 transition-transform duration-200", isDangerExpanded && "transform rotate-180")} />
             </button>
+
+            {isDangerExpanded && (
+              <div className="mt-4 pt-4 border-t border-brand-red/10 space-y-4 animate-in slide-in-from-top duration-300">
+                <div className="p-3 bg-brand-red/5 rounded-xl border border-brand-red/10 text-[10px] text-brand-red/80 font-semibold leading-relaxed">
+                  Deleting your account will permanently purge your profile, active configurations, and all transactions from both this device and the cloud. This action is irreversible.
+                </div>
+
+                <label className="flex items-start gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={confirmDeleteCheckbox}
+                    onChange={(e) => setConfirmDeleteCheckbox(e.target.checked)}
+                    className="mt-0.5 rounded border-neutral-300 text-brand-red focus:ring-brand-red/20 w-3.5 h-3.5"
+                  />
+                  <span className="text-[9px] text-neutral-500 font-semibold leading-snug">
+                    I understand this will permanently delete all my financial data.
+                  </span>
+                </label>
+
+                <button
+                  disabled={isUpdating || !confirmDeleteCheckbox}
+                  onClick={async () => {
+                    const confirmDelete = window.confirm(
+                      'DANGER: This will permanently delete your account, including all your settings, transactions, and preferences from both this device and the cloud. This action CANNOT be undone.\n\nAre you absolutely sure?'
+                    );
+                    if (!confirmDelete) return;
+
+                    setIsUpdating(true);
+                    try {
+                      if (!user) return;
+                      const uid = user.uid;
+                      // 1. Delete from Firestore concurrently
+                      const { collection, getDocs, deleteDoc, doc } = await import('firebase/firestore');
+                      const { firestoreDb } = await import('../lib/firebase');
+                      const { db } = await import('../models/db');
+                      
+                      const tableNames = db.tables.map(t => t.name);
+
+                      await Promise.all(tableNames.map(async (table) => {
+                        try {
+                          const qs = await getDocs(collection(firestoreDb, `users/${uid}/${table}`));
+                          const deletePromises = qs.docs.map(d => deleteDoc(d.ref));
+                          await Promise.all(deletePromises);
+                        } catch (err) {
+                          console.error(`Failed to delete table ${table}`, err);
+                        }
+                      }));
+
+                      // Delete the user root folder/document itself
+                      try {
+                        await deleteDoc(doc(firestoreDb, 'users', uid));
+                      } catch (err) {
+                        console.error('Failed to delete user root doc', err);
+                      }
+
+                      // 2. Stop sync to prevent any writes while deleting
+                      const { stopSync } = await import('../lib/syncEngine');
+                      stopSync();
+
+                      // 3. Clear local data safely before unmounting
+                      await Promise.all(db.tables.map(table => table.clear()));
+                      localStorage.removeItem(`onboardingComplete_${uid}`);
+                      localStorage.removeItem(`tutorialComplete_${uid}`);
+
+                      // 4. Delete the Auth user last. 
+                      await deleteAccount();
+                      
+                    } catch (e: any) {
+                      if (e.code === 'auth/requires-recent-login') {
+                        try {
+                          const { EmailAuthProvider, reauthenticateWithCredential } = await import('firebase/auth');
+                          const { auth } = await import('../lib/firebase');
+                          
+                          const providerId = auth.currentUser?.providerData[0]?.providerId;
+                          
+                          if (providerId === 'password') {
+                            const pwd = window.prompt("Security requirement: Please enter your password to confirm account deletion:");
+                            if (!pwd) {
+                              setIsUpdating(false);
+                              return;
+                            }
+                            const credential = EmailAuthProvider.credential(user.email!, pwd);
+                            await reauthenticateWithCredential(auth.currentUser!, credential);
+                            
+                            // Retry deletion after successful re-auth
+                            await deleteAccount();
+                          } else {
+                            alert("For security purposes, you must verify your identity to delete your account. You will be logged out now. Please log back in and try deleting your account again.");
+                            logout();
+                            return;
+                          }
+                        } catch (reauthError: any) {
+                          showMessage('error', reauthError.message || 'Authentication failed. Please log out and log back in.');
+                        }
+                      } else {
+                        showMessage('error', e.message || 'Failed to delete account');
+                      }
+                    } finally {
+                      setIsUpdating(false);
+                    }
+                  }}
+                  className="w-full py-2 bg-brand-red disabled:opacity-40 disabled:hover:brightness-100 text-white hover:brightness-110 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                >
+                  {isUpdating ? 'Deleting Account...' : 'Permanently Delete Account'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
