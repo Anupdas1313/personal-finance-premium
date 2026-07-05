@@ -170,7 +170,7 @@ export default function Profile() {
               className="flex items-center justify-between w-full text-left focus:outline-none"
             >
               <div>
-                <h3 className="font-bold text-xs text-brand-red">Danger Zone</h3>
+                <h3 className="font-bold text-xs text-brand-red">Data & Privacy Options</h3>
                 <p className="text-[9px] text-neutral-400 font-semibold mt-0.5">Destructive account operations</p>
               </div>
               <ChevronDown className={cn("w-4 h-4 text-neutral-400 transition-transform duration-200", isDangerExpanded && "transform rotate-180")} />
