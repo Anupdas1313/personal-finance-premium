@@ -2,20 +2,26 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction } from '../models/db';
-import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark, Download, FileText, CheckCircle2, History, Calendar, ChevronDown, Printer, MoreHorizontal, Scissors, Filter } from 'lucide-react';
+import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark, Download, FileText, CheckCircle2, History, Calendar, ChevronDown, Printer, MoreHorizontal, Scissors, Filter, Search, ArrowUpDown, ArrowRightLeft, X } from 'lucide-react';
 import { BankLogo } from '../components/BankLogo';
 import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
 import { format, startOfDay, parseISO, endOfMonth, startOfMonth, subMonths, endOfDay, startOfWeek, endOfWeek, startOfYear, endOfYear, addMonths, subWeeks, addWeeks, subDays, addDays, subYears, addYears } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAuth } from '../context/AuthContext';
-import { useCurrency } from '../hooks/useCurrency';
+import { useCurrency, useCurrencyFormatter } from '../hooks/useCurrency';
+import { cn } from '../logic/utils';
 
 export default function Accounts() {
-  const currency = useCurrency();
+  const { currency, hideDecimals, formatAmount } = useCurrencyFormatter();
   const { user } = useAuth();
   const navigate = useNavigate();
   const accounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
+  const userSettings = useLiveQuery(() => db.userSettings.toArray(), [user?.uid]) || [];
+  const isPrivacyMode = userSettings.find(s => s.key === 'privacy_mode')?.value === true;
+  const [revealBalances, setRevealBalances] = useState(false);
+  const shouldBlur = isPrivacyMode && !revealBalances;
   const [isAdding, setIsAdding] = useState(false);
   const [editingAccountId, setEditingAccountId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -26,7 +32,28 @@ export default function Accounts() {
   const [startingBalanceDate, setStartingBalanceDate] = useState(new Date().toISOString().split('T')[0]);
   const [accountType, setAccountType] = useState<'BANK' | 'CASH' | 'CREDIT_CARD'>('BANK');
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
+  const [creditLimit, setCreditLimit] = useState('');
+  const [statementDate, setStatementDate] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [isReorderOpen, setIsReorderOpen] = useState(false);
+  const [isTransferOpen, setIsTransferOpen] = useState(false);
   
+  const getDaysLeftToPay = (dueDay: number) => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const today = startOfDay(now);
+    
+    let target = new Date(currentYear, currentMonth, dueDay);
+    if (target.getTime() < today.getTime()) {
+      target = new Date(currentYear, currentMonth + 1, dueDay);
+    }
+    
+    const diffTime = target.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
   const allTransactions = useLiveQuery(() => db.transactions.toArray(), [user?.uid]) || [];
   const allClosings = useLiveQuery(() => db.accountClosings.toArray(), [user?.uid]) || [];
 
@@ -88,21 +115,35 @@ export default function Accounts() {
 
     setIsSaving(true);
     try {
+      const creditCardFields = accountType === 'CREDIT_CARD' ? {
+        creditLimit: parseFloat(creditLimit) || 0,
+        statementDate: parseInt(statementDate) || 0,
+        dueDate: parseInt(dueDate) || 0
+      } : {
+        creditLimit: undefined,
+        statementDate: undefined,
+        dueDate: undefined
+      };
+
       if (editingAccountId) {
         await db.accounts.update(editingAccountId, {
           bankName,
           accountLast4,
           startingBalance: parseFloat(startingBalance.toString().replace(/,/g, '')) || 0,
           startingBalanceDate: new Date(startingBalanceDate),
-          type: accountType
+          type: accountType,
+          ...creditCardFields
         });
       } else {
+        const maxOrder = accounts.reduce((max, a) => Math.max(max, a.sortOrder || 0), 0);
         await db.accounts.add({
           bankName,
           accountLast4,
           startingBalance: parseFloat(startingBalance.toString().replace(/,/g, '')) || 0,
           startingBalanceDate: new Date(startingBalanceDate),
-          type: accountType
+          type: accountType,
+          sortOrder: maxOrder + 1,
+          ...creditCardFields
         });
       }
 
@@ -124,6 +165,9 @@ export default function Accounts() {
     setStartingBalance('');
     setStartingBalanceDate(new Date().toISOString().split('T')[0]);
     setAccountType('BANK');
+    setCreditLimit('');
+    setStatementDate('');
+    setDueDate('');
     setIsAdding(false);
     setEditingAccountId(null);
   };
@@ -134,6 +178,9 @@ export default function Accounts() {
     setStartingBalance(account.startingBalance.toString());
     setStartingBalanceDate(account.startingBalanceDate ? new Date(account.startingBalanceDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
     setAccountType(account.type || 'BANK');
+    setCreditLimit(account.creditLimit ? account.creditLimit.toString() : '');
+    setStatementDate(account.statementDate ? account.statementDate.toString() : '');
+    setDueDate(account.dueDate ? account.dueDate.toString() : '');
     setEditingAccountId(account.id);
     setIsAdding(true);
   };
@@ -189,13 +236,16 @@ export default function Accounts() {
           <p className="text-[8px] font-black text-neutral-400 uppercase tracking-widest hidden sm:block">Institutional Wealth</p>
         </div>
 
-        <div className="flex-1 flex flex-wrap items-center gap-x-6 gap-y-2">
+        <div className="flex-1 flex flex-wrap items-center gap-x-6 gap-y-2" onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
           <div className="flex items-center gap-2 group">
             <Landmark className="w-3.5 h-3.5 text-brand-blue dark:text-brand-cyan opacity-40 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-center gap-1.5">
               <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Portfolio</span>
-              <p className="text-sm font-heading font-black text-brand-blue dark:text-white tracking-tighter">
-                {currency}{totalNetWorth.toLocaleString('en-IN')}
+              <p className={cn(
+                "text-sm font-heading font-black text-brand-blue dark:text-white tracking-tighter transition-all duration-300",
+                shouldBlur && "blur-[5px] select-none cursor-pointer"
+              )}>
+                {formatAmount(totalNetWorth)}
               </p>
             </div>
           </div>
@@ -206,8 +256,11 @@ export default function Accounts() {
             <Wallet className="w-3.5 h-3.5 text-brand-green opacity-40 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-center gap-1.5">
               <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Liquid</span>
-              <p className="text-sm font-heading font-black text-brand-green tracking-tighter">
-                {currency}{totalLiquid.toLocaleString('en-IN')}
+              <p className={cn(
+                "text-sm font-heading font-black text-brand-green tracking-tighter transition-all duration-300",
+                shouldBlur && "blur-[5px] select-none cursor-pointer"
+              )}>
+                {formatAmount(totalLiquid)}
               </p>
             </div>
           </div>
@@ -218,14 +271,17 @@ export default function Accounts() {
             <CreditCard className="w-3.5 h-3.5 text-rose-500 opacity-40 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-center gap-1.5">
               <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Liabilities</span>
-              <p className="text-sm font-heading font-black text-rose-500 tracking-tighter">
-                {currency}{totalLiabilities.toLocaleString('en-IN')}
+              <p className={cn(
+                "text-sm font-heading font-black text-rose-500 tracking-tighter transition-all duration-300",
+                shouldBlur && "blur-[5px] select-none cursor-pointer"
+              )}>
+                {formatAmount(totalLiabilities)}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <div className="relative group">
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-neutral-400" />
             <input 
@@ -233,12 +289,28 @@ export default function Accounts() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Filter..."
-              className="pl-8 pr-3 py-2 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 rounded-xl text-[10px] font-bold outline-none focus:ring-2 focus:ring-brand-blue/10 dark:focus:ring-white/5 transition-all w-full md:w-40"
+              className="pl-8 pr-3 py-2 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 rounded-xl text-[10px] font-bold outline-none focus:ring-2 focus:ring-brand-blue/10 dark:focus:ring-white/5 transition-all w-full md:w-32"
             />
           </div>
           <button
+            onClick={() => setIsTransferOpen(true)}
+            className="flex items-center gap-1 px-3 py-2 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 text-brand-blue dark:text-white rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 transition-all font-bold uppercase tracking-wider text-[9px]"
+            title="Quick Transfer"
+          >
+            <ArrowRightLeft className="w-3.5 h-3.5 text-brand-green mr-0.5 shrink-0" />
+            <span>Transfer</span>
+          </button>
+          <button
+            onClick={() => setIsReorderOpen(true)}
+            className="flex items-center gap-1 px-3 py-2 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 text-brand-blue dark:text-white rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 transition-all font-bold uppercase tracking-wider text-[9px]"
+            title="Arrange Accounts"
+          >
+            <ArrowUpDown className="w-3.5 h-3.5 text-brand-cyan mr-0.5 shrink-0" />
+            <span>Arrange</span>
+          </button>
+          <button
             onClick={() => setIsAdding(!isAdding)}
-            className="flex items-center gap-1.5 px-5 py-2 bg-brand-green text-white dark:text-brand-blue rounded-xl hover:brightness-110 active:scale-95 transition-all font-black uppercase tracking-widest text-[9px] shadow-lg shadow-brand-green/10"
+            className="flex items-center gap-1.5 px-4 py-2 bg-brand-green text-white dark:text-brand-blue rounded-xl hover:brightness-110 active:scale-95 transition-all font-black uppercase tracking-widest text-[9px] shadow-lg shadow-brand-green/10 animate-fade-in"
           >
             {isAdding && !editingAccountId ? <Plus className="w-3 h-3 rotate-45" /> : <Plus className="w-3 h-3" />}
             {isAdding && !editingAccountId ? 'Close' : 'Add Account'}
@@ -348,6 +420,47 @@ export default function Accounts() {
                   required
                 />
               </div>
+              {accountType === 'CREDIT_CARD' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-[0.2em]">Credit Limit ({currency})</label>
+                    <input
+                      type="number"
+                      value={creditLimit}
+                      onChange={(e) => setCreditLimit(e.target.value)}
+                      placeholder="e.g., 100000"
+                      className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan focus:border-brand-blue outline-none transition-shadow text-brand-blue font-bold"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-[0.2em]">Statement Date (Day)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      value={statementDate}
+                      onChange={(e) => setStatementDate(e.target.value)}
+                      placeholder="e.g., 15"
+                      className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan focus:border-brand-blue outline-none transition-shadow text-brand-blue font-bold"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-[0.2em]">Payment Due Date (Day)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                      placeholder="e.g., 5"
+                      className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan focus:border-brand-blue outline-none transition-shadow text-brand-blue font-bold"
+                      required
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 pt-6 border-t border-[#EBEBEB] dark:border-[#222222]">
@@ -410,53 +523,119 @@ export default function Accounts() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {accList
+                {[...accList]
+                  .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
                   .filter(a => searchQuery === '' || a.bankName.toLowerCase().includes(searchQuery.toLowerCase()) || a.accountLast4.includes(searchQuery))
                   .map(account => {
                     const info = accountBreakdown[account.id!];
                     const currentBalance = info?.currentBalance || 0;
                     const incomeToExpenseRatio = info ? (info.inflow > 0 ? Math.min((info.outflow / info.inflow) * 100, 100) : (info.outflow > 0 ? 100 : 0)) : 0;
                     
+                    const isBank = account.type === 'BANK';
+                    const isCash = account.type === 'CASH';
+                    const isCc = account.type === 'CREDIT_CARD';
+                    
                     return (
-                      <div key={account.id} onClick={() => setSelectedAccountId(account.id!)} className="group relative bg-brand-green/5 dark:bg-[#111111] rounded-[32px] border border-brand-green/10 dark:border-white/5 shadow-sm hover:shadow-2xl transition-all cursor-pointer overflow-hidden flex flex-col">
-                        <div className={`h-1.5 w-full ${account.type === 'BANK' ? 'bg-brand-green' : account.type === 'CASH' ? 'bg-brand-green' : 'bg-brand-green'} opacity-40`} />
+                      <div 
+                        key={account.id} 
+                        onClick={() => setSelectedAccountId(account.id!)} 
+                        className="group relative bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm hover:shadow-md hover:border-brand-green/20 dark:hover:border-white/10 transition-all cursor-pointer overflow-hidden flex flex-col"
+                      >
+                        <div className={`h-1.5 w-full ${isBank ? 'bg-indigo-500' : isCash ? 'bg-brand-green' : 'bg-rose-500'} opacity-75`} />
                         <div className="p-6 flex flex-col flex-1">
                           <div className="flex justify-between items-start mb-6">
                             <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 bg-white dark:bg-white/5 rounded-[20px] flex items-center justify-center p-2.5 border border-brand-green/10 shadow-sm">
+                              <div className="w-12 h-12 bg-neutral-50 dark:bg-white/5 rounded-[20px] flex items-center justify-center p-2.5 border border-neutral-100 dark:border-white/5 shadow-sm shrink-0">
                                 <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
                               </div>
                               <div className="min-w-0">
-                                 <h3 className="text-[13px] font-heading font-black text-neutral-800 dark:text-white tracking-tight uppercase truncate">{account.bankName}</h3>
-                                 <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">{account.type === 'CASH' ? 'Liquid Cash' : `**** ${account.accountLast4}`}</span>
+                                <h3 className="text-[13px] font-heading font-black text-brand-blue dark:text-white tracking-tight uppercase truncate">{account.bankName}</h3>
+                                <p className="font-mono text-[9px] tracking-wider text-neutral-400 dark:text-[#A0A0A0] font-semibold mt-0.5">
+                                  {isCash ? 'CASH PORTFOLIO' : `••••   ${account.accountLast4}`}
+                                </p>
+                                {isCc && account.dueDate && (() => {
+                                  const daysLeft = getDaysLeftToPay(account.dueDate);
+                                  const isUrgent = daysLeft <= 5;
+                                  return (
+                                    <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider mt-1 ${
+                                      isUrgent 
+                                        ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' 
+                                        : 'bg-neutral-100 dark:bg-white/5 text-neutral-400 dark:text-neutral-500'
+                                    }`}>
+                                      <span>Due in {daysLeft} {daysLeft === 1 ? 'day' : 'days'}</span>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             </div>
-                            <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                               <button onClick={() => handleEdit(account)} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-brand-green transition-all"><Pencil className="w-3.5 h-3.5" /></button>
-                               <button onClick={() => handleDelete(account.id!)} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-brand-red transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+                            
+                            <div className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
+                              <button 
+                                onClick={() => {
+                                  navigate(`/?add=true&accountId=${account.id}`);
+                                }} 
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-green hover:bg-neutral-50 dark:hover:bg-white/5 transition-all"
+                                title="Quick Transaction"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </button>
+                              <button onClick={() => handleEdit(account)} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-white/5 transition-all"><Pencil className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => handleDelete(account.id!)} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-red hover:bg-neutral-50 dark:hover:bg-white/5 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
                             </div>
                           </div>
+
                           <div className="mb-6">
-                            <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1">Account Balance</p>
-                            <p className={`text-3xl font-heading font-black tracking-tighter ${currentBalance >= 0 ? (account.type === 'CREDIT_CARD' ? 'text-brand-blue dark:text-white' : 'text-brand-green') : 'text-brand-red'} dark:text-brand-cyan mb-2`}>
-                              {currency}{currentBalance.toLocaleString('en-IN')}
+                            <p className="text-[9px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-widest mb-1">
+                              {isCc ? 'Outstanding Balance' : 'Account Balance'}
                             </p>
-                            <div className="h-1.5 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden">
-                               <div className={`h-full ${incomeToExpenseRatio > 80 ? 'bg-rose-500' : 'bg-brand-green'}`} style={{ width: `${incomeToExpenseRatio}%` }} />
-                            </div>
+                            <p 
+                              className={cn(
+                                "text-3xl font-heading font-black tracking-tighter transition-all duration-300",
+                                currentBalance >= 0 ? (isCc ? 'text-brand-blue dark:text-white' : 'text-brand-green') : 'text-brand-red',
+                                shouldBlur && "blur-[7px] select-none cursor-pointer"
+                              )}
+                              onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}
+                            >
+                              {formatAmount(currentBalance)}
+                            </p>
+                            {isCc && account.creditLimit ? (() => {
+                              const used = Math.abs(currentBalance);
+                              const limit = account.creditLimit;
+                              const utilizationPercent = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
+                              return (
+                                <div className="space-y-1">
+                                  <div className="h-1.5 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden">
+                                    <div className={`h-full ${utilizationPercent > 80 ? 'bg-rose-500' : 'bg-amber-500'}`} style={{ width: `${utilizationPercent}%` }} />
+                                  </div>
+                                  <div className="flex justify-between text-[7px] font-bold text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-wider" onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
+                                    <span className={cn(shouldBlur && "blur-[4px] select-none")}>Used: {formatAmount(used)}</span>
+                                    <span className={cn(shouldBlur && "blur-[4px] select-none")}>Limit: {formatAmount(limit)}</span>
+                                  </div>
+                                </div>
+                              );
+                            })() : (
+                              <div className="h-1.5 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden">
+                                <div className={`h-full ${incomeToExpenseRatio > 80 ? 'bg-rose-500' : 'bg-brand-green'}`} style={{ width: `${incomeToExpenseRatio}%` }} />
+                              </div>
+                            )}
                           </div>
+
                           <div className="pt-4 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between mt-auto">
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-4" onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
                               <div className="flex flex-col">
-                                <span className="text-[7px] font-black text-neutral-400 uppercase">In</span>
-                                <span className="text-[10px] font-black text-emerald-500">{currency}{(info?.inflow || 0).toLocaleString()}</span>
+                                <span className="text-[7px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase">Inflow</span>
+                                <span className={cn("text-[10px] font-black text-emerald-500 transition-all duration-300", shouldBlur && "blur-[4px] select-none")}>{formatAmount(info?.inflow || 0)}</span>
                               </div>
                               <div className="flex flex-col">
-                                <span className="text-[7px] font-black text-neutral-400 uppercase">Out</span>
-                                <span className="text-[10px] font-black text-rose-500">{currency}{(info?.outflow || 0).toLocaleString()}</span>
+                                <span className="text-[7px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase">Outflow</span>
+                                <span className={cn("text-[10px] font-black text-rose-500 transition-all duration-300", shouldBlur && "blur-[4px] select-none")}>{formatAmount(info?.outflow || 0)}</span>
                               </div>
                             </div>
-                            <button onClick={e => { e.stopPropagation(); setSelectedAccountId(account.id!); }} className="w-9 h-9 rounded-2xl bg-brand-green text-white flex items-center justify-center">
+                            <button 
+                              onClick={e => { e.stopPropagation(); setSelectedAccountId(account.id!); }} 
+                              className="w-9 h-9 rounded-2xl bg-brand-green dark:bg-brand-green/20 text-white dark:text-brand-green flex items-center justify-center transition-all hover:brightness-105"
+                              title="Statement History"
+                            >
                               <History className="w-4 h-4" />
                             </button>
                           </div>
@@ -472,6 +651,14 @@ export default function Accounts() {
 
       {selectedAccountId && (
          <AccountStatementDetail accountId={selectedAccountId} onClose={() => setSelectedAccountId(null)} />
+      )}
+
+      {isReorderOpen && (
+        <AccountsReorderModal onClose={() => setIsReorderOpen(false)} />
+      )}
+
+      {isTransferOpen && (
+        <QuickTransferModal onClose={() => setIsTransferOpen(false)} />
       )}
     </div>
   );
@@ -511,6 +698,9 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [isProcessingPartition, setIsProcessingPartition] = useState(false);
   const [showPartitionSuccess, setShowPartitionSuccess] = useState(false);
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'CREDIT' | 'DEBIT'>('ALL');
 
   const { startDateLimit, endDateLimit } = useMemo(() => {
     let start = 0;
@@ -560,6 +750,21 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     });
   }, [account, transactions, granularity, referenceDate, customRange]);
 
+  const filteredStatementData = useMemo(() => {
+    return statementData.filter(tx => {
+      if (typeFilter !== 'ALL' && tx.type !== typeFilter) return false;
+      if (searchTerm) {
+        const q = searchTerm.toLowerCase();
+        const noteMatch = tx.note?.toLowerCase().includes(q);
+        const catMatch = tx.category?.toLowerCase().includes(q);
+        const partyMatch = tx.party?.toLowerCase().includes(q);
+        const tagMatch = tx.expenseType?.toLowerCase().includes(q);
+        if (!noteMatch && !catMatch && !partyMatch && !tagMatch) return false;
+      }
+      return true;
+    });
+  }, [statementData, typeFilter, searchTerm]);
+
   const totalCredit = statementData.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
   const totalDebit = statementData.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
 
@@ -577,6 +782,18 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     : actualTotalBalance;
 
   const openingBalanceForView = currentViewStateBalance - totalCredit + totalDebit;
+
+  const chartData = useMemo(() => {
+    if (statementData.length === 0) {
+      return [{ date: 'Start', Balance: openingBalanceForView }];
+    }
+    const sorted = [...statementData].sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+    const pts = sorted.map(tx => ({
+      date: format(new Date(tx.dateTime), 'dd MMM'),
+      Balance: tx.runningBalance
+    }));
+    return [{ date: 'Start', Balance: openingBalanceForView }, ...pts];
+  }, [statementData, openingBalanceForView]);
 
   const downloadCSV = () => {
     if (!account) return;
@@ -704,7 +921,9 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             <div>
               <h2 className="text-[11px] font-semibold text-brand-blue dark:text-[#F7F7F7] uppercase tracking-widest leading-none mb-0.5">{account.bankName}</h2>
               <div className="flex items-center gap-1">
-                <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest leading-none">{account.accountLast4}</p>
+                <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest leading-none">
+                  {account.type === 'CASH' ? 'CASH' : `•••• ${account.accountLast4}`}
+                </p>
                 <div className="w-0.5 h-0.5 rounded-full bg-neutral-300" />
                 <p className="text-[8px] font-semibold text-brand-blue/60 dark:text-white/60 uppercase">{currency}{actualTotalBalance.toLocaleString()}</p>
               </div>
@@ -727,6 +946,48 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             ))}
           </div>
         )}
+
+        {/* Search & Flow Filters Row */}
+        <div className="mt-2 flex flex-col sm:flex-row gap-2 items-center">
+          {/* Search Input */}
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+            <input
+              type="text"
+              placeholder="Search notes, category, tags..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full h-8 pl-8 pr-8 bg-white dark:bg-[#111111] border border-neutral-200 dark:border-white/5 rounded-xl text-[10px] font-bold outline-none focus:ring-2 focus:ring-brand-blue/15 dark:focus:ring-white/5 transition-all text-brand-blue dark:text-white"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-white"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+          
+          {/* Flow Tabs */}
+          <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-0.5 rounded-xl shrink-0 w-full sm:w-auto">
+            {(['ALL', 'CREDIT', 'DEBIT'] as const).map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setTypeFilter(f)}
+                className={`flex-1 sm:flex-initial px-3 h-7 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                  typeFilter === f
+                    ? 'bg-white dark:bg-[#333333] text-brand-blue dark:text-white shadow-sm'
+                    : 'text-neutral-400 hover:text-neutral-500'
+                }`}
+              >
+                {f === 'CREDIT' ? 'Inflow' : f === 'DEBIT' ? 'Outflow' : 'All'}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="mt-2 flex flex-col gap-1.5">
           <div className="bg-white dark:bg-[#111111] px-2 py-1.5 rounded-xl shadow-sm border border-neutral-100 dark:border-white/5 flex items-center justify-between">
@@ -760,17 +1021,17 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               {isProcessingPartition ? (
                 <>
                   <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Calculating...</span>
+                  <span>Reconciling...</span>
                 </>
               ) : showPartitionSuccess ? (
                 <>
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Settled!</span>
+                  <span>Closed!</span>
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="w-3 h-3" />
-                  <span>New Start Balance</span>
+                  <span>Close Period</span>
                 </>
               )}
             </button>
@@ -797,6 +1058,56 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         </div>
       </div>
 
+      {chartData.length > 1 && (
+        <div className="px-4 py-3 bg-neutral-50 dark:bg-[#0C0C0F] border-b border-neutral-200 dark:border-[#222222] shrink-0">
+          <div className="h-28 w-full bg-white dark:bg-[#111111] rounded-xl border border-neutral-100 dark:border-white/5 p-2 shadow-inner">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={account.type === 'CREDIT_CARD' ? '#f43f5e' : '#10b981'} stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor={account.type === 'CREDIT_CARD' ? '#f43f5e' : '#10b981'} stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#888888" 
+                  fontSize={6} 
+                  tickLine={false} 
+                  axisLine={false}
+                />
+                <YAxis 
+                  stroke="#888888" 
+                  fontSize={6} 
+                  tickLine={false} 
+                  axisLine={false}
+                  tickFormatter={(v) => `${currency}${v.toLocaleString()}`}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    background: 'rgba(0,0,0,0.85)', 
+                    border: 'none', 
+                    borderRadius: '8px', 
+                    fontSize: '7px', 
+                    color: '#fff' 
+                  }}
+                  labelStyle={{ fontWeight: 'black', color: '#10b981' }}
+                  formatter={(v: any) => [`${currency}${parseFloat(v).toLocaleString()}`, 'Balance']}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="Balance" 
+                  stroke={account.type === 'CREDIT_CARD' ? '#f43f5e' : '#10b981'} 
+                  strokeWidth={1.5}
+                  fillOpacity={1} 
+                  fill="url(#colorBalance)" 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
         <table className="w-full border-collapse">
           <thead className="sticky top-0 bg-white dark:bg-[#0C0C0F] z-10 border-b border-neutral-100 dark:border-[#222222]">
@@ -818,10 +1129,13 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               <td className="px-2 py-2 text-right whitespace-nowrap"><span className="text-[10px] font-black text-brand-blue/70 dark:text-white/60 tracking-tighter">{currency}{account.startingBalance.toLocaleString()}</span></td>
             </tr>
 
-            {statementData.map((tx, idx) => {
+            {filteredStatementData.map((tx, idx) => {
               // Find any partitions that occurred between the previous transaction and this one
               const txTime = new Date(tx.dateTime).getTime();
-              const prevTxTime = idx > 0 ? new Date(statementData[idx-1].dateTime).getTime() : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
+              const originalIdx = statementData.findIndex(t => t.id === tx.id);
+              const prevTxTime = originalIdx > 0 
+                ? new Date(statementData[originalIdx - 1].dateTime).getTime() 
+                : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
               
               const matchingClosings = closings.filter(c => {
                 const cTime = new Date(c.closingDate).getTime();
@@ -846,8 +1160,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
 
             {/* Handle Partitions that happened AFTER the last transaction in the current view */}
             {(() => {
-                const lastTxTimeInView = statementData.length > 0 
-                    ? new Date(statementData[statementData.length - 1].dateTime).getTime() 
+                const lastTxTimeInView = filteredStatementData.length > 0 
+                    ? new Date(filteredStatementData[filteredStatementData.length - 1].dateTime).getTime() 
                     : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
                 
                 const trailingClosings = closings.filter(c => {
@@ -861,6 +1175,277 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             })()}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+// ── ACCOUNTS REORDER MODAL ──────────────────────────────────────────────────
+function AccountsReorderModal({ onClose }: { onClose: () => void }) {
+  const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
+  const [localAccounts, setLocalAccounts] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (accounts.length > 0) {
+      setLocalAccounts(
+        [...accounts].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+      );
+    }
+  }, [accounts]);
+
+  const moveItem = (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= localAccounts.length) return;
+
+    const newItems = [...localAccounts];
+    const temp = newItems[index];
+    newItems[index] = newItems[targetIndex];
+    newItems[targetIndex] = temp;
+
+    // Recalculate order values
+    const reindexed = newItems.map((item, idx) => ({
+      ...item,
+      sortOrder: idx + 1,
+    }));
+    setLocalAccounts(reindexed);
+  };
+
+  const handleSave = async () => {
+    try {
+      for (const acc of localAccounts) {
+        if (acc.id) {
+          await db.accounts.update(acc.id, { sortOrder: acc.sortOrder });
+        }
+      }
+      onClose();
+    } catch (err) {
+      console.error('Failed to save accounts order:', err);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-neutral-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+      <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-2xl p-6 max-w-md w-full mx-4 animate-scale-up">
+        <div className="flex justify-between items-center mb-5 pb-3 border-b border-neutral-50 dark:border-white/5">
+          <h3 className="text-sm font-heading font-black text-brand-blue dark:text-white uppercase tracking-wider">Arrange Accounts Order</h3>
+          <button onClick={onClose} className="text-[10px] font-black text-neutral-400 dark:text-neutral-500 hover:text-brand-red uppercase tracking-wider">Cancel</button>
+        </div>
+
+        {localAccounts.length === 0 ? (
+          <p className="text-[10px] text-center text-neutral-400 py-10 uppercase tracking-widest font-bold">No accounts found</p>
+        ) : (
+          <div className="space-y-2 max-h-[300px] overflow-y-auto no-scrollbar pr-1">
+            {localAccounts.map((acc, idx) => {
+              const isBank = acc.type === 'BANK';
+              const isCash = acc.type === 'CASH';
+              return (
+                <div key={acc.id} className="flex items-center justify-between p-3 rounded-xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center p-1.5 shadow-sm shrink-0">
+                      <BankLogo bankName={acc.bankName} type={acc.type} className="w-full h-full object-contain" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-black text-neutral-800 dark:text-white truncate uppercase tracking-tight leading-none mb-0.5">{acc.bankName}</p>
+                      <p className="text-[8px] font-bold text-neutral-400 font-mono">
+                        {isCash ? 'CASH' : `•••• ${acc.accountLast4}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button 
+                      onClick={() => moveItem(idx, 'up')}
+                      disabled={idx === 0}
+                      className="w-7 h-7 rounded-lg bg-white dark:bg-white/5 flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:bg-neutral-100 disabled:opacity-30 disabled:hover:bg-transparent"
+                    >
+                      <Plus className="w-3.5 h-3.5 rotate-180" style={{ transform: 'scaleY(-1)' }} />
+                    </button>
+                    <button 
+                      onClick={() => moveItem(idx, 'down')}
+                      disabled={idx === localAccounts.length - 1}
+                      className="w-7 h-7 rounded-lg bg-white dark:bg-white/5 flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:bg-neutral-100 disabled:opacity-30 disabled:hover:bg-transparent"
+                    >
+                      <Plus className="w-3.5 h-3.5 rotate-180" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-neutral-50 dark:border-white/5">
+          <button onClick={onClose} className="px-4 py-2 text-[10px] font-bold text-neutral-400 hover:text-neutral-500 uppercase">Cancel</button>
+          <button onClick={handleSave} className="px-5 py-2 bg-brand-green text-white dark:text-brand-blue rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg shadow-brand-green/10">Save Order</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── QUICK TRANSFER WIZARD ───────────────────────────────────────────────────
+function QuickTransferModal({ onClose }: { onClose: () => void }) {
+  const currency = useCurrency();
+  const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
+  const [fromAccountId, setFromAccountId] = useState('');
+  const [toAccountId, setToAccountId] = useState('');
+  const [amount, setAmount] = useState('');
+  const [note, setNote] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  // Default select accounts
+  useEffect(() => {
+    if (accounts.length > 0) {
+      setFromAccountId(accounts[0].id!.toString());
+      if (accounts.length > 1) {
+        setToAccountId(accounts[1].id!.toString());
+      }
+    }
+  }, [accounts]);
+
+  const handleTransfer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fromAccountId || !toAccountId || !amount) return;
+    if (fromAccountId === toAccountId) {
+      setError('Source and destination accounts cannot be the same.');
+      return;
+    }
+    const amountVal = parseFloat(amount) || 0;
+    if (amountVal <= 0) {
+      setError('Please enter a valid transfer amount.');
+      return;
+    }
+
+    setIsSaving(true);
+    setError('');
+
+    try {
+      const fromAcc = accounts.find(a => a.id === Number(fromAccountId));
+      const toAcc = accounts.find(a => a.id === Number(toAccountId));
+      if (!fromAcc || !toAcc) throw new Error('Selected accounts not found');
+
+      const isTodaySelected = date === new Date().toISOString().split('T')[0];
+      const finalDateTime = isTodaySelected ? new Date() : new Date(date);
+
+      // Create linked DEBIT and CREDIT transactions
+      const debitId = await db.transactions.add({
+        accountId: Number(fromAccountId),
+        amount: amountVal,
+        type: 'DEBIT',
+        dateTime: finalDateTime,
+        note: note || `Transfer to ${toAcc.bankName}`,
+        category: 'Transfer',
+        party: toAcc.bankName
+      });
+
+      const creditId = await db.transactions.add({
+        accountId: Number(toAccountId),
+        amount: amountVal,
+        type: 'CREDIT',
+        dateTime: finalDateTime,
+        note: note || `Transfer from ${fromAcc.bankName}`,
+        category: 'Transfer',
+        party: fromAcc.bankName,
+        linkedTransactionId: debitId
+      });
+
+      await db.transactions.update(debitId, { linkedTransactionId: creditId });
+      onClose();
+    } catch (err) {
+      console.error(err);
+      setError('An error occurred during transfer.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-neutral-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+      <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-2xl p-6 max-w-md w-full mx-4 animate-scale-up">
+        <div className="flex justify-between items-center mb-5 pb-3 border-b border-neutral-50 dark:border-white/5">
+          <h3 className="text-sm font-heading font-black text-brand-blue dark:text-white uppercase tracking-wider">Quick Inter-Account Transfer</h3>
+          <button onClick={onClose} className="text-[10px] font-black text-neutral-400 dark:text-neutral-500 hover:text-brand-red uppercase tracking-wider">Cancel</button>
+        </div>
+
+        <form onSubmit={handleTransfer} className="space-y-4">
+          {error && (
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[10px] font-bold uppercase tracking-wider">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-[8px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-widest mb-1.5">Source Account (Transfer From)</label>
+            <select
+              value={fromAccountId}
+              onChange={e => setFromAccountId(e.target.value)}
+              className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-[#333333] rounded-xl text-[11px] font-bold outline-none text-brand-blue dark:text-white"
+              required
+            >
+              {accounts.map(a => (
+                <option key={a.id} value={a.id} className="text-black">{a.bankName} (•• {a.accountLast4})</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[8px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-widest mb-1.5">Destination Account (Transfer To)</label>
+            <select
+              value={toAccountId}
+              onChange={e => setToAccountId(e.target.value)}
+              className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-[#333333] rounded-xl text-[11px] font-bold outline-none text-brand-blue dark:text-white"
+              required
+            >
+              {accounts.map(a => (
+                <option key={a.id} value={a.id} className="text-black" disabled={a.id!.toString() === fromAccountId}>{a.bankName} (•• {a.accountLast4})</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[8px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-widest mb-1.5">Amount ({currency})</label>
+              <input
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-[#333333] rounded-xl text-[11px] font-bold outline-none text-brand-blue dark:text-white"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-[8px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-widest mb-1.5">Date</label>
+              <input
+                type="date"
+                value={date}
+                onChange={e => setDate(e.target.value)}
+                className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-[#333333] rounded-xl text-[11px] font-bold outline-none text-brand-blue dark:text-white"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[8px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-widest mb-1.5">Remarks / Optional Notes</label>
+            <input
+              type="text"
+              placeholder="e.g., Credit card bill payment, Wallet refill"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-[#333333] rounded-xl text-[11px] font-bold outline-none text-brand-blue dark:text-white"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-neutral-50 dark:border-white/5">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-[10px] font-bold text-neutral-400 hover:text-neutral-500 uppercase">Cancel</button>
+            <button type="submit" disabled={isSaving} className="px-5 py-2 bg-brand-green text-white dark:text-brand-blue rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg shadow-brand-green/10">
+              {isSaving ? 'Processing...' : 'Execute Transfer'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

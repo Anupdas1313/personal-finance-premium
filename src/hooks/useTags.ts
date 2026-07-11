@@ -13,10 +13,14 @@ export function useTags() {
   const dbTags = useLiveQuery(
     async () => {
       const tags = await db.tags.toArray();
-      return tags.map(t => t.name);
+      // Sort by sortOrder first, then fallback to id
+      tags.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || (a.id ?? 0) - (b.id ?? 0));
+      return tags;
     },
     [user?.uid]
   ) || [];
+
+  const tags = React.useMemo(() => dbTags.map(t => t.name), [dbTags]);
 
   React.useEffect(() => {
     async function initTags() {
@@ -25,7 +29,7 @@ export function useTags() {
       try {
         const count = await db.tags.count();
         if (count === 0) {
-          const initial = DEFAULT_TAGS.map(name => ({ name }));
+          const initial = DEFAULT_TAGS.map((name, index) => ({ name, sortOrder: index }));
           await db.tags.bulkPut(initial);
         }
       } catch (e) {
@@ -40,14 +44,15 @@ export function useTags() {
 
   const addTag = async (tag: string) => {
     const trimmed = tag.trim();
-    if (!trimmed || dbTags.includes(trimmed)) return false;
+    if (!trimmed || tags.includes(trimmed)) return false;
 
-    await db.tags.add({ name: trimmed });
+    const count = await db.tags.count();
+    await db.tags.add({ name: trimmed, sortOrder: count });
     return true;
   };
 
   const removeTag = async (tag: string) => {
-    if (dbTags.length <= 1) return false;
+    if (tags.length <= 1) return false;
     const t = await db.tags.where('name').equals(tag).first();
     if (t?.id) {
       await db.tags.delete(t.id);
@@ -57,9 +62,27 @@ export function useTags() {
 
   const resetTags = async () => {
     await db.tags.clear();
-    const initial = DEFAULT_TAGS.map(name => ({ name }));
+    const initial = DEFAULT_TAGS.map((name, index) => ({ name, sortOrder: index }));
     await db.tags.bulkAdd(initial);
   };
 
-  return { tags: dbTags, addTag, removeTag, resetTags }
+  const updateTagOrder = async (orderedTags: typeof dbTags) => {
+    await db.transaction('rw', db.tags, async () => {
+      for (let i = 0; i < orderedTags.length; i++) {
+        const t = orderedTags[i];
+        if (t.id) {
+          await db.tags.update(t.id, { sortOrder: i });
+        }
+      }
+    });
+  };
+
+  return { 
+    tags, 
+    rawTags: dbTags, 
+    addTag, 
+    removeTag, 
+    resetTags,
+    updateTagOrder
+  };
 }

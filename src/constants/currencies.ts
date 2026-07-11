@@ -22,7 +22,6 @@ export const CURRENCY_OPTIONS: CurrencyInfo[] = [
   { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar', country: 'Singapore' },
   { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone', country: 'Norway' },
   { code: 'MXN', symbol: '$', name: 'Mexican Peso', country: 'Mexico' },
-  { code: 'INR', symbol: '₹', name: 'Indian Rupee', country: 'India' },
   { code: 'RUB', symbol: '₽', name: 'Russian Ruble', country: 'Russia' },
   { code: 'ZAR', symbol: 'R', name: 'South African Rand', country: 'South Africa' },
   { code: 'TRY', symbol: '₺', name: 'Turkish Lira', country: 'Turkey' },

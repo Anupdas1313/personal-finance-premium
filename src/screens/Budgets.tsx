@@ -5,10 +5,11 @@ import { useAuth } from '../context/AuthContext';
 import { Target, Plus, X, AlertCircle, Edit2, Trash2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { useCategories } from '../hooks/useCategories';
-import { useCurrency } from '../hooks/useCurrency';
+import { useCurrency, useCurrencyFormatter } from '../hooks/useCurrency';
+import { useMemo } from 'react';
 
 export default function Budgets() {
-  const currency = useCurrency();
+  const { currency, formatAmount } = useCurrencyFormatter();
   const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const monthStr = format(currentMonth, 'yyyy-MM');
@@ -22,8 +23,19 @@ export default function Budgets() {
   const [budgetAmount, setBudgetAmount] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
+  const budgetStartDaySetting = useLiveQuery(
+    () => db.userSettings.where('key').equals('budget_start_day').first(),
+    [user?.uid]
+  );
+  const budgetStartDay = budgetStartDaySetting?.value || 1;
+
+  const monthStart = useMemo(() => {
+    return new Date(currentMonth.getFullYear(), currentMonth.getMonth(), budgetStartDay, 0, 0, 0);
+  }, [currentMonth, budgetStartDay]);
+
+  const monthEnd = useMemo(() => {
+    return new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, budgetStartDay - 1, 23, 59, 59);
+  }, [currentMonth, budgetStartDay]);
 
   const monthExpenses = transactions.filter(tx => 
     tx.type === 'DEBIT' && isWithinInterval(new Date(tx.dateTime), { start: monthStart, end: monthEnd })
@@ -70,12 +82,23 @@ export default function Budgets() {
     }
   };
 
-  // Track by category (not expenseType) so budgets match correctly
-  const groupedExpenses = monthExpenses.reduce((acc, tx) => {
-    const cat = tx.category || 'Other';
-    acc[cat] = (acc[cat] || 0) + Number(tx.amount);
-    return acc;
-  }, {} as Record<string, number>);
+  const budgetSpentMap = useMemo(() => {
+    const map = new Map<number, number>();
+    budgets.forEach(b => map.set(b.id!, 0));
+
+    monthExpenses.forEach(tx => {
+      const amount = Number(tx.amount) || 0;
+      if (tx.linkedBudgetId && map.has(tx.linkedBudgetId)) {
+        map.set(tx.linkedBudgetId, map.get(tx.linkedBudgetId)! + amount);
+      } else {
+        const matchingBudget = budgets.find(b => b.category === (tx.category || 'Other'));
+        if (matchingBudget) {
+          map.set(matchingBudget.id!, map.get(matchingBudget.id!)! + amount);
+        }
+      }
+    });
+    return map;
+  }, [monthExpenses, budgets]);
 
   return (
     <div className="space-y-6">
@@ -121,7 +144,7 @@ export default function Budgets() {
         ) : (
           <div className="space-y-6">
             {budgets.map(budget => {
-              const spent = groupedExpenses[budget.category] || 0;
+              const spent = budgetSpentMap.get(budget.id!) || 0;
               const percentage = Math.min((spent / budget.amount) * 100, 100);
               const isOverBudget = spent > budget.amount;
 
@@ -149,9 +172,9 @@ export default function Budgets() {
                   <div className="flex justify-between items-end mb-2">
                     <p className="text-brand-blue/40 dark:text-[#A0A0A0] text-sm font-medium">
                       <span className={`font-semibold text-lg ${isOverBudget ? 'text-brand-red' : 'text-brand-blue dark:text-[#F7F7F7]'}`}>
-                        {currency}{spent.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
+                        {formatAmount(spent)}
                       </span>
-                      {' '} / {currency}{budget.amount.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
+                      {' '} / {formatAmount(budget.amount)}
                     </p>
                     <p className="text-sm font-semibold text-brand-blue dark:text-[#F7F7F7]">
                       {percentage.toFixed(0)}%

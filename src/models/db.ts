@@ -7,6 +7,10 @@ export interface Account {
   startingBalance: number;
   startingBalanceDate?: Date;
   type?: 'BANK' | 'CASH' | 'CREDIT_CARD';
+  creditLimit?: number;
+  statementDate?: number;
+  dueDate?: number;
+  sortOrder?: number;
 }
 
 export interface Category {
@@ -18,6 +22,7 @@ export interface Category {
 export interface Tag {
   id?: number;
   name: string;
+  sortOrder?: number;
 }
 
 export interface Transaction {
@@ -35,6 +40,7 @@ export interface Transaction {
   isPersonalExpense?: boolean;
   expenseType?: string;
   linkedTransactionId?: number;
+  linkedBudgetId?: number;
 }
 
 export interface Budget {
@@ -180,6 +186,19 @@ export class FinanceDatabase extends Dexie {
     this.version(14).stores({
       accounts: '++id, bankName, accountLast4',
       transactions: '++id, accountId, type, dateTime, category',
+      monthlyClosings: '++id, &month',
+      budgets: '++id, category, month, [category+month]',
+      parties: '++id, name, type',
+      ledgerTransactions: '++id, partyId, type, dateTime',
+      accountClosings: '++id, accountId, closingDate',
+      categories: '++id, &name',
+      tags: '++id, &name',
+      recurringTemplates: '++id, nextRunDate, isActive',
+      userSettings: '++id, &key'
+    });
+    this.version(15).stores({
+      accounts: '++id, bankName, accountLast4',
+      transactions: '++id, accountId, type, dateTime, category, linkedBudgetId',
       monthlyClosings: '++id, &month',
       budgets: '++id, category, month, [category+month]',
       parties: '++id, name, type',

@@ -1,13 +1,15 @@
 import { useState, useRef } from 'react';
 import { cn } from '../logic/utils';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 import { db } from '../models/db';
-import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as SettingsIcon, X, Moon, Sun, Monitor, Palette, Tag, ShieldAlert, Coins, Sliders, CalendarClock, Database } from 'lucide-react';
+import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as SettingsIcon, X, Moon, Sun, Monitor, Palette, Tag, ShieldAlert, Coins, Sliders, CalendarClock, Database, ArrowUpDown, GripVertical, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
 import { useTheme } from '../components/ThemeProvider';
 import { useCurrency } from '../hooks/useCurrency';
 import { RecurringBillsManager } from '../components/RecurringBillsManager';
+import { CURRENCY_OPTIONS, CurrencyInfo } from '../constants/currencies';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState<'preferences' | 'organization' | 'automation' | 'data'>('preferences');
@@ -16,12 +18,50 @@ export default function Settings() {
   const [isClearing, setIsClearing] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [newCategory, setNewCategory] = useState('');
+  const [isReorderOpen, setIsReorderOpen] = useState(false);
+  const [selectedSwapIndex, setSelectedSwapIndex] = useState<number | null>(null);
+  const [isTagReorderOpen, setIsTagReorderOpen] = useState(false);
+  const [selectedTagSwapIndex, setSelectedTagSwapIndex] = useState<number | null>(null);
+  const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
+  const [isTagsExpanded, setIsTagsExpanded] = useState(false);
+  const [isThemeExpanded, setIsThemeExpanded] = useState(false);
+  const [isCurrencyExpanded, setIsCurrencyExpanded] = useState(false);
+  const [isPrivacyExpanded, setIsPrivacyExpanded] = useState(false);
+  const [isDecimalsExpanded, setIsDecimalsExpanded] = useState(false);
+  const [isDefaultAccountExpanded, setIsDefaultAccountExpanded] = useState(false);
+  const [isBudgetCycleExpanded, setIsBudgetCycleExpanded] = useState(false);
   
   const { categories, rawCategories, addCategory, removeCategory, resetCategories, updateCategoryOrder } = useCategories();
-  const { tags, addTag, removeTag, resetTags } = useTags();
+  const { tags, rawTags, addTag, removeTag, resetTags, updateTagOrder } = useTags();
   const { theme, setTheme } = useTheme();
   const currency = useCurrency();
+  const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
+  const countrySetting = useLiveQuery(
+    () => db.userSettings.where('key').equals('currency_country').first()
+  );
+  const activeCountry = countrySetting?.value || (currency === '₹' ? 'India' : currency === '€' ? 'Eurozone' : currency === '£' ? 'United Kingdom' : 'United States');
   
+  const privacySetting = useLiveQuery(
+    () => db.userSettings.where('key').equals('privacy_mode').first()
+  );
+  const isPrivacyMode = privacySetting?.value === true;
+
+  const hideDecimalsSetting = useLiveQuery(
+    () => db.userSettings.where('key').equals('hide_decimals').first()
+  );
+  const isHideDecimals = hideDecimalsSetting?.value === true;
+
+  const defaultAccountSetting = useLiveQuery(
+    () => db.userSettings.where('key').equals('default_account_id').first()
+  );
+  const defaultAccountId = defaultAccountSetting?.value || '';
+
+  const budgetStartDaySetting = useLiveQuery(
+    () => db.userSettings.where('key').equals('budget_start_day').first()
+  );
+  const budgetStartDay = budgetStartDaySetting?.value || 1;
+  
+  const [currencySearchQuery, setCurrencySearchQuery] = useState('');
   const [newTag, setNewTag] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,33 +86,131 @@ export default function Settings() {
     await updateCategoryOrder(reordered);
   };
 
-  const handleMoveCategory = async (index: number, direction: -1 | 1) => {
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= rawCategories.length) return;
-
-    const reordered = [...rawCategories];
-    const temp = reordered[index];
-    reordered[index] = reordered[targetIndex];
-    reordered[targetIndex] = temp;
-
-    await updateCategoryOrder(reordered);
+  const handleSwapCategory = async (index: number) => {
+    if (selectedSwapIndex === null) {
+      setSelectedSwapIndex(index);
+    } else {
+      if (selectedSwapIndex !== index) {
+        const reordered = [...rawCategories];
+        const temp = reordered[index];
+        reordered[index] = reordered[selectedSwapIndex];
+        reordered[selectedSwapIndex] = temp;
+        await updateCategoryOrder(reordered);
+      }
+      setSelectedSwapIndex(null);
+    }
   };
 
-  const handleUpdateCurrency = async (newVal: string) => {
-    try {
-      const existing = await db.userSettings.where('key').equals('currency').first();
-      if (existing) {
-        await db.userSettings.update(existing.id!, { value: newVal });
-      } else {
-        await db.userSettings.add({ key: 'currency', value: newVal });
+  const handleTagDragStart = (e: React.DragEvent, index: number) => {
+    e.dataTransfer.setData('text/tag-plain', index.toString());
+  };
+
+  const handleTagDrop = async (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    const draggedIndex = parseInt(e.dataTransfer.getData('text/tag-plain'), 10);
+    if (isNaN(draggedIndex) || draggedIndex === targetIndex) return;
+
+    const reordered = [...rawTags];
+    const [draggedItem] = reordered.splice(draggedIndex, 1);
+    reordered.splice(targetIndex, 0, draggedItem);
+
+    await updateTagOrder(reordered);
+  };
+
+  const handleSwapTag = async (index: number) => {
+    if (selectedTagSwapIndex === null) {
+      setSelectedTagSwapIndex(index);
+    } else {
+      if (selectedTagSwapIndex !== index) {
+        const reordered = [...rawTags];
+        const temp = reordered[index];
+        reordered[index] = reordered[selectedTagSwapIndex];
+        reordered[selectedTagSwapIndex] = temp;
+        await updateTagOrder(reordered);
       }
-      showMessage('success', 'Currency format updated successfully');
+      setSelectedTagSwapIndex(null);
+    }
+  };
+
+  const handleUpdateCountry = async (opt: CurrencyInfo) => {
+    try {
+      // Update currency symbol
+      const existingSymbol = await db.userSettings.where('key').equals('currency').first();
+      if (existingSymbol) {
+        await db.userSettings.update(existingSymbol.id!, { value: opt.symbol });
+      } else {
+        await db.userSettings.add({ key: 'currency', value: opt.symbol });
+      }
+
+      // Update currency country
+      const existingCountry = await db.userSettings.where('key').equals('currency_country').first();
+      if (existingCountry) {
+        await db.userSettings.update(existingCountry.id!, { value: opt.country });
+      } else {
+        await db.userSettings.add({ key: 'currency_country', value: opt.country });
+      }
+      showMessage('success', `Currency updated to ${opt.name} (${opt.symbol})`);
     } catch (err) {
       console.error(err);
       showMessage('error', 'Failed to update currency settings');
     }
   };
+  const handleTogglePrivacy = async () => {
+    try {
+      const existing = await db.userSettings.where('key').equals('privacy_mode').first();
+      if (existing) {
+        await db.userSettings.update(existing.id!, { value: !isPrivacyMode });
+      } else {
+        await db.userSettings.add({ key: 'privacy_mode', value: !isPrivacyMode });
+      }
+      showMessage('success', `Privacy Mode ${!isPrivacyMode ? 'enabled' : 'disabled'}`);
+    } catch (err) {
+      showMessage('error', 'Failed to update privacy settings');
+    }
+  };
 
+  const handleToggleDecimals = async () => {
+    try {
+      const existing = await db.userSettings.where('key').equals('hide_decimals').first();
+      if (existing) {
+        await db.userSettings.update(existing.id!, { value: !isHideDecimals });
+      } else {
+        await db.userSettings.add({ key: 'hide_decimals', value: !isHideDecimals });
+      }
+      showMessage('success', `Decimals format updated`);
+    } catch (err) {
+      showMessage('error', 'Failed to update formatting settings');
+    }
+  };
+
+  const handleUpdateDefaultAccount = async (acctId: string | number) => {
+    try {
+      const val = acctId === '' ? '' : Number(acctId);
+      const existing = await db.userSettings.where('key').equals('default_account_id').first();
+      if (existing) {
+        await db.userSettings.update(existing.id!, { value: val });
+      } else {
+        await db.userSettings.add({ key: 'default_account_id', value: val });
+      }
+      showMessage('success', `Default transaction account updated`);
+    } catch (err) {
+      showMessage('error', 'Failed to update default account');
+    }
+  };
+
+  const handleUpdateBudgetStartDay = async (day: number) => {
+    try {
+      const existing = await db.userSettings.where('key').equals('budget_start_day').first();
+      if (existing) {
+        await db.userSettings.update(existing.id!, { value: day });
+      } else {
+        await db.userSettings.add({ key: 'budget_start_day', value: day });
+      }
+      showMessage('success', `Budget cycle starts on day ${day} of the month`);
+    } catch (err) {
+      showMessage('error', 'Failed to update budget cycle settings');
+    }
+  };
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 5000);
@@ -258,8 +396,13 @@ export default function Settings() {
             <section>
               <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Appearance</h2>
               <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm overflow-hidden">
-                <div className="p-5">
-                  <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7] mb-6">
+                {/* Collapsible Header */}
+                <button
+                  type="button"
+                  onClick={() => setIsThemeExpanded(!isThemeExpanded)}
+                  className="w-full p-5 flex items-center justify-between text-left hover:bg-neutral-50/50 dark:hover:bg-[#151518] transition-colors"
+                >
+                  <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
                     <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
                       <Palette className="w-4 h-4 text-brand-blue dark:text-inherit" />
                     </div>
@@ -268,51 +411,59 @@ export default function Settings() {
                       <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Toggle light, dark, or system mode aesthetics</p>
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setTheme('light')}
-                      className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all text-xs font-bold",
-                        theme === 'light' 
-                          ? "border-brand-green bg-brand-green/5 text-brand-green" 
-                          : "border-transparent bg-neutral-50 dark:bg-[#1A1A1E] text-neutral-400 hover:bg-neutral-100"
-                      )}
-                    >
-                      <Sun className="w-4 h-4" />
-                      <span>Light Mode</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setTheme('dark')}
-                      className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all text-xs font-bold",
-                        theme === 'dark' 
-                          ? "border-brand-green bg-brand-green/10 text-brand-green dark:text-[#F7F7F7]" 
-                          : "border-transparent bg-neutral-50 dark:bg-[#1A1A1E] text-neutral-400 hover:bg-neutral-100"
-                      )}
-                    >
-                      <Moon className="w-4 h-4" />
-                      <span>Dark Mode</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setTheme('system')}
-                      className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all text-xs font-bold",
-                        theme === 'system' 
-                          ? "border-brand-green bg-brand-green/10 text-brand-green dark:text-[#F7F7F7]" 
-                          : "border-transparent bg-neutral-50 dark:bg-[#1A1A1E] text-neutral-400 hover:bg-neutral-100"
-                      )}
-                    >
-                      <Monitor className="w-4 h-4" />
-                      <span>System Settings</span>
-                    </button>
+                  <div className="text-neutral-400 mr-1">
+                    {isThemeExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </div>
-                </div>
+                </button>
+
+                {/* Collapsible Body */}
+                {isThemeExpanded && (
+                  <div className="border-t border-neutral-100 dark:border-[#222222] p-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setTheme('light')}
+                        className={cn(
+                          "flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all text-xs font-bold",
+                          theme === 'light' 
+                            ? "border-brand-green bg-brand-green/5 text-brand-green" 
+                            : "border-transparent bg-neutral-50 dark:bg-[#1A1A1E] text-neutral-400 hover:bg-neutral-100"
+                        )}
+                      >
+                        <Sun className="w-4 h-4" />
+                        <span>Light Mode</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setTheme('dark')}
+                        className={cn(
+                          "flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all text-xs font-bold",
+                          theme === 'dark' 
+                            ? "border-brand-green bg-brand-green/10 text-brand-green dark:text-[#F7F7F7]" 
+                            : "border-transparent bg-neutral-50 dark:bg-[#1A1A1E] text-neutral-400 hover:bg-neutral-100"
+                        )}
+                      >
+                        <Moon className="w-4 h-4" />
+                        <span>Dark Mode</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setTheme('system')}
+                        className={cn(
+                          "flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all text-xs font-bold",
+                          theme === 'system' 
+                            ? "border-brand-green bg-brand-green/10 text-brand-green dark:text-[#F7F7F7]" 
+                            : "border-transparent bg-neutral-50 dark:bg-[#1A1A1E] text-neutral-400 hover:bg-neutral-100"
+                        )}
+                      >
+                        <Monitor className="w-4 h-4" />
+                        <span>System Settings</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </section>
 
@@ -320,41 +471,268 @@ export default function Settings() {
             <section>
               <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Currency Settings</h2>
               <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm overflow-hidden">
-                <div className="p-5">
-                  <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7] mb-6">
+                {/* Collapsible Header */}
+                <button
+                  type="button"
+                  onClick={() => setIsCurrencyExpanded(!isCurrencyExpanded)}
+                  className="w-full p-5 flex items-center justify-between text-left hover:bg-neutral-50/50 dark:hover:bg-[#151518] transition-colors"
+                >
+                  <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
                     <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
                       <Coins className="w-4 h-4 text-brand-blue dark:text-inherit" />
                     </div>
                     <div>
                       <p className="font-bold text-sm text-brand-blue dark:text-[#F7F7F7]">Primary Currency</p>
-                      <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Select the default prefix for financial calculations</p>
+                      <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Selected country: {activeCountry}</p>
                     </div>
                   </div>
+                  <div className="text-neutral-400 mr-1">
+                    {isCurrencyExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </div>
+                </button>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {[
-                      { symbol: '$', label: 'USD ($)' },
-                      { symbol: '₹', label: 'INR (₹)' },
-                      { symbol: '€', label: 'EUR (€)' },
-                      { symbol: '£', label: 'GBP (£)' },
-                    ].map((item) => (
+                {/* Collapsible Body */}
+                {isCurrencyExpanded && (
+                  <div className="border-t border-neutral-100 dark:border-[#222222] p-5 flex flex-col">
+                    <div className="relative mb-4">
+                      <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        placeholder="Search country or currency..."
+                        value={currencySearchQuery}
+                        onChange={e => setCurrencySearchQuery(e.target.value)}
+                        className="w-full bg-neutral-50 dark:bg-[#1A1A1E] border border-neutral-100 dark:border-[#222222] focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-2xl pl-10 pr-4 py-3 text-xs outline-none transition-all placeholder:text-neutral-400 text-neutral-900 dark:text-[#F7F7F7]"
+                      />
+                    </div>
+
+                    <div className="overflow-y-auto pr-1 space-y-2 max-h-64 scrollbar-thin">
+                      {CURRENCY_OPTIONS.filter(opt =>
+                        opt.country.toLowerCase().includes(currencySearchQuery.toLowerCase()) || 
+                        opt.name.toLowerCase().includes(currencySearchQuery.toLowerCase()) ||
+                        opt.code.toLowerCase().includes(currencySearchQuery.toLowerCase())
+                      ).map(opt => {
+                        const isSelected = activeCountry === opt.country;
+                        return (
+                          <button
+                            key={opt.country + opt.code}
+                            type="button"
+                            onClick={() => handleUpdateCountry(opt)}
+                            className={cn(
+                              "w-full p-4 rounded-2xl border transition-all text-left flex items-center justify-between",
+                              isSelected 
+                                ? "bg-brand-green border-brand-green text-white shadow-md shadow-brand-green/10"
+                                : "bg-neutral-50 dark:bg-[#1A1A1E] border-transparent text-neutral-700 dark:text-[#F7F7F7] hover:bg-neutral-100 dark:hover:bg-[#22222A]"
+                            )}
+                          >
+                            <div>
+                              <div className="font-bold text-xs">{opt.country}</div>
+                              <div className={cn("text-[9px] font-medium mt-0.5", isSelected ? "text-white/80" : "text-neutral-400")}>
+                                {opt.name} ({opt.code})
+                              </div>
+                            </div>
+                            <div className={cn("text-base font-black", isSelected ? "text-white" : "text-brand-green")}>
+                              {opt.symbol}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Privacy Settings */}
+            <section>
+              <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Privacy & Security</h2>
+              <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm overflow-hidden">
+                {/* Collapsible Header */}
+                <button
+                  type="button"
+                  onClick={() => setIsPrivacyExpanded(!isPrivacyExpanded)}
+                  className="w-full p-5 flex items-center justify-between text-left hover:bg-neutral-50/50 dark:hover:bg-[#151518] transition-colors"
+                >
+                  <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
+                    <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
+                      <ShieldAlert className="w-4 h-4 text-brand-blue dark:text-inherit" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-brand-blue dark:text-[#F7F7F7]">Privacy Mode</p>
+                      <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Status: {isPrivacyMode ? 'Enabled (Balances Hidden)' : 'Disabled'}</p>
+                    </div>
+                  </div>
+                  <div className="text-neutral-400 mr-1">
+                    {isPrivacyExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </div>
+                </button>
+
+                {/* Collapsible Body */}
+                {isPrivacyExpanded && (
+                  <div className="border-t border-neutral-100 dark:border-[#222222] p-5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-xs text-brand-blue dark:text-[#F7F7F7]">Hide Balances</p>
+                        <p className="text-[10px] text-neutral-400 mt-1">Blurs total values and balances on Dashboard and Accounts. Tap to temporarily reveal.</p>
+                      </div>
                       <button
-                        key={item.symbol}
                         type="button"
-                        onClick={() => handleUpdateCurrency(item.symbol)}
+                        onClick={handleTogglePrivacy}
                         className={cn(
-                          "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all gap-1.5",
-                          currency === item.symbol
-                            ? "border-brand-green bg-brand-green/5 text-brand-green dark:text-[#F7F7F7]"
-                            : "border-transparent bg-neutral-50 dark:bg-[#1A1A1E] text-neutral-400 hover:bg-neutral-100"
+                          "w-12 h-6 rounded-full transition-all duration-300 relative outline-none",
+                          isPrivacyMode ? "bg-brand-green" : "bg-neutral-200 dark:bg-[#2B2B36]"
                         )}
                       >
-                        <span className="text-xl font-black">{item.symbol}</span>
-                        <span className="text-[10px] font-bold uppercase tracking-widest">{item.label}</span>
+                        <span 
+                          className={cn(
+                            "w-5 h-5 rounded-full bg-white absolute top-0.5 transition-all shadow-md",
+                            isPrivacyMode ? "left-6.5" : "left-0.5"
+                          )}
+                        />
                       </button>
-                    ))}
+                    </div>
                   </div>
-                </div>
+                )}
+              </div>
+            </section>
+
+            {/* Decimal Formatting */}
+            <section>
+              <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Number Formatting</h2>
+              <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm overflow-hidden">
+                {/* Collapsible Header */}
+                <button
+                  type="button"
+                  onClick={() => setIsDecimalsExpanded(!isDecimalsExpanded)}
+                  className="w-full p-5 flex items-center justify-between text-left hover:bg-neutral-50/50 dark:hover:bg-[#151518] transition-colors"
+                >
+                  <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
+                    <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
+                      <Sliders className="w-4 h-4 text-brand-blue dark:text-inherit" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-brand-blue dark:text-[#F7F7F7]">Precision & Decimals</p>
+                      <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Status: {isHideDecimals ? 'Hide Decimals ($150)' : 'Show Decimals ($150.00)'}</p>
+                    </div>
+                  </div>
+                  <div className="text-neutral-400 mr-1">
+                    {isDecimalsExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </div>
+                </button>
+
+                {/* Collapsible Body */}
+                {isDecimalsExpanded && (
+                  <div className="border-t border-neutral-100 dark:border-[#222222] p-5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-xs text-brand-blue dark:text-[#F7F7F7]">Hide Decimal Formats</p>
+                        <p className="text-[10px] text-neutral-400 mt-1">Rounds decimal amounts to integers globally across reports and balances.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleToggleDecimals}
+                        className={cn(
+                          "w-12 h-6 rounded-full transition-all duration-300 relative outline-none",
+                          isHideDecimals ? "bg-brand-green" : "bg-neutral-200 dark:bg-[#2B2B36]"
+                        )}
+                      >
+                        <span 
+                          className={cn(
+                            "w-5 h-5 rounded-full bg-white absolute top-0.5 transition-all shadow-md",
+                            isHideDecimals ? "left-6.5" : "left-0.5"
+                          )}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Smart Defaults */}
+            <section>
+              <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Automation</h2>
+              <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm overflow-hidden">
+                {/* Collapsible Header */}
+                <button
+                  type="button"
+                  onClick={() => setIsDefaultAccountExpanded(!isDefaultAccountExpanded)}
+                  className="w-full p-5 flex items-center justify-between text-left hover:bg-neutral-50/50 dark:hover:bg-[#151518] transition-colors"
+                >
+                  <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
+                    <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
+                      <Database className="w-4 h-4 text-brand-blue dark:text-inherit" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-brand-blue dark:text-[#F7F7F7]">Smart Defaults</p>
+                      <p className="text-[10px] font-medium text-neutral-400 mt-0.5">
+                        Default Card/Account: {defaultAccountId ? (accounts.find(a => a.id === defaultAccountId)?.bankName || 'Selected') : 'First Account in List'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-neutral-400 mr-1">
+                    {isDefaultAccountExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </div>
+                </button>
+
+                {/* Collapsible Body */}
+                {isDefaultAccountExpanded && (
+                  <div className="border-t border-neutral-100 dark:border-[#222222] p-5">
+                    <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-wider mb-2">Default Transaction Account</label>
+                    <select
+                      value={defaultAccountId}
+                      onChange={e => handleUpdateDefaultAccount(e.target.value)}
+                      className="w-full bg-neutral-50 dark:bg-[#1A1A1E] border border-neutral-100 dark:border-[#222222] text-neutral-800 dark:text-[#F7F7F7] focus:border-brand-green rounded-xl px-4 py-3 text-xs outline-none transition-all"
+                    >
+                      <option value="">First Account in List (Default)</option>
+                      {accounts.map(acc => (
+                        <option key={acc.id} value={acc.id}>{acc.bankName} {acc.accountLast4 ? `(..${acc.accountLast4})` : ''}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Budget Cycle Start Day */}
+            <section>
+              <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Cycle Settings</h2>
+              <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm overflow-hidden">
+                {/* Collapsible Header */}
+                <button
+                  type="button"
+                  onClick={() => setIsBudgetCycleExpanded(!isBudgetCycleExpanded)}
+                  className="w-full p-5 flex items-center justify-between text-left hover:bg-neutral-50/50 dark:hover:bg-[#151518] transition-colors"
+                >
+                  <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
+                    <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
+                      <CalendarClock className="w-4 h-4 text-brand-blue dark:text-inherit" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-brand-blue dark:text-[#F7F7F7]">Budgeting Cycle</p>
+                      <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Monthly period starts on day {budgetStartDay}</p>
+                    </div>
+                  </div>
+                  <div className="text-neutral-400 mr-1">
+                    {isBudgetCycleExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </div>
+                </button>
+
+                {/* Collapsible Body */}
+                {isBudgetCycleExpanded && (
+                  <div className="border-t border-neutral-100 dark:border-[#222222] p-5">
+                    <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-wider mb-2">Month Start Day (Payday)</label>
+                    <select
+                      value={budgetStartDay}
+                      onChange={e => handleUpdateBudgetStartDay(Number(e.target.value))}
+                      className="w-full bg-neutral-50 dark:bg-[#1A1A1E] border border-neutral-100 dark:border-[#222222] text-neutral-800 dark:text-[#F7F7F7] focus:border-brand-green rounded-xl px-4 py-3 text-xs outline-none transition-all"
+                    >
+                      {Array.from({ length: 28 }, (_, i) => i + 1).map(day => (
+                        <option key={day} value={day}>Day {day} of the month</option>
+                      ))}
+                    </select>
+                    <p className="text-[9px] text-neutral-400 mt-2">Shifts the monthly budget calculator queries to start on this date relative to salary cycles.</p>
+                  </div>
+                )}
               </div>
             </section>
           </div>
@@ -365,159 +743,172 @@ export default function Settings() {
             {/* Category manager */}
             <section>
               <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Category Manager</h2>
-              <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm overflow-hidden divide-y divide-neutral-100 dark:divide-[#222222]">
-                <div className="p-5 flex flex-col gap-5">
+              <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm overflow-hidden">
+                {/* Collapsible Header */}
+                <button
+                  type="button"
+                  onClick={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
+                  className="w-full p-5 flex items-center justify-between text-left hover:bg-neutral-50/50 dark:hover:bg-[#151518] transition-colors"
+                >
                   <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
                     <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
                       <Tag className="w-4 h-4 text-brand-blue dark:text-inherit" />
                     </div>
                     <div>
                       <p className="font-bold text-sm text-brand-blue dark:text-[#F7F7F7]">Custom Categories</p>
-                      <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Manage transaction classification categories</p>
+                      <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Manage transaction classification categories ({categories.length} active)</p>
                     </div>
                   </div>
+                  <div className="text-neutral-400 mr-1">
+                    {isCategoriesExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </div>
+                </button>
 
-                  <div className="space-y-4">
-                    <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-wider pl-1">
-                      Drag rows or use ▲ ▼ buttons to reorder categories.
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {rawCategories.map((category, index) => (
-                        <div
-                          key={category.id}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, index)}
-                          onDragOver={handleDragOver}
-                          onDrop={(e) => handleDrop(e, index)}
-                          className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-[#1A1A1E] border border-neutral-100 dark:border-white/5 rounded-xl text-xs font-bold text-brand-blue dark:text-white cursor-grab active:cursor-grabbing hover:bg-neutral-100 dark:hover:bg-[#222222] transition-colors group"
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-neutral-300 dark:text-neutral-600 cursor-grab group-hover:text-brand-green select-none">☰</span>
-                            <span className="truncate">{category.name}</span>
-                          </div>
-
-                          <div className="flex items-center gap-1 shrink-0">
-                            <button
-                              type="button"
-                              disabled={index === 0}
-                              onClick={() => handleMoveCategory(index, -1)}
-                              className="p-1 text-[10px] text-neutral-400 hover:text-brand-green hover:bg-neutral-200 dark:hover:bg-[#2c2c2f] rounded disabled:opacity-20 transition-colors"
-                              title="Move Up"
-                            >
-                              ▲
-                            </button>
-                            <button
-                              type="button"
-                              disabled={index === rawCategories.length - 1}
-                              onClick={() => handleMoveCategory(index, 1)}
-                              className="p-1 text-[10px] text-neutral-400 hover:text-brand-green hover:bg-neutral-200 dark:hover:bg-[#2c2c2f] rounded disabled:opacity-20 transition-colors"
-                              title="Move Down"
-                            >
-                              ▼
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => removeCategory(category.name)}
-                              className="p-1 text-neutral-300 hover:text-brand-red ml-1.5 transition-colors"
-                              title="Remove"
-                            >
+                {/* Collapsible Body */}
+                {isCategoriesExpanded && (
+                  <div className="p-5 border-t border-neutral-100 dark:border-[#222222] flex flex-col gap-5 animate-in fade-in slide-in-from-top-4 duration-200">
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {categories.map((category) => (
+                          <div key={category} className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-50 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] rounded-full text-xs font-semibold border border-neutral-100 dark:border-[#333333] shadow-sm">
+                            {category}
+                            <button type="button" onClick={() => removeCategory(category)} className="text-brand-blue/20 dark:text-[#666666] hover:text-brand-red transition-colors">
                               <X className="w-3.5 h-3.5" />
                             </button>
                           </div>
+                        ))}
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-3 items-center">
+                        <form onSubmit={handleAddCategory} className="flex flex-1 gap-2 w-full">
+                          <input
+                            type="text"
+                            value={newCategory}
+                            onChange={(e) => setNewCategory(e.target.value)}
+                            placeholder="E.g., Pet Supplies"
+                            className="flex-1 px-4 py-2.5 bg-neutral-50 dark:bg-[#1A1A1A] border border-neutral-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/20 transition-all text-xs font-semibold text-brand-blue dark:text-[#F7F7F7]"
+                          />
+                          <button
+                            type="submit"
+                            disabled={!newCategory.trim()}
+                            className="px-5 py-2.5 bg-brand-green text-white rounded-xl font-bold hover:brightness-110 transition-all disabled:opacity-50 text-[9px] uppercase tracking-widest shadow-lg shadow-brand-green/10"
+                          >
+                            Add
+                          </button>
+                        </form>
+
+                        <div className="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setIsReorderOpen(true)}
+                            className="flex items-center gap-1.5 px-4 py-2.5 border border-brand-green/20 hover:bg-brand-green/5 text-brand-green rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                          >
+                            <ArrowUpDown className="w-3.5 h-3.5" />
+                            Arrange Order
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm('Are you sure you want to restore default categories?')) {
+                                resetCategories();
+                                showMessage('success', 'Categories reset to default');
+                              }
+                            }}
+                            className="px-4 py-2.5 text-[9px] font-black text-neutral-400 hover:text-brand-blue dark:hover:text-[#F7F7F7] hover:bg-neutral-50 rounded-xl transition-all uppercase tracking-widest"
+                          >
+                            Restore Defaults
+                          </button>
                         </div>
-                      ))}
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <form onSubmit={handleAddCategory} className="flex flex-1 gap-2">
-                        <input
-                          type="text"
-                          value={newCategory}
-                          onChange={(e) => setNewCategory(e.target.value)}
-                          placeholder="E.g., Pet Supplies"
-                          className="flex-1 px-4 py-2.5 bg-neutral-50 dark:bg-[#1A1A1A] border border-neutral-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/20 transition-all text-xs font-semibold text-brand-blue dark:text-[#F7F7F7]"
-                        />
-                        <button
-                          type="submit"
-                          disabled={!newCategory.trim()}
-                          className="px-5 py-2.5 bg-brand-green text-white rounded-xl font-bold hover:brightness-110 transition-all disabled:opacity-50 text-[9px] uppercase tracking-widest shadow-lg shadow-brand-green/10"
-                        >
-                          Add
-                        </button>
-                      </form>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (window.confirm('Are you sure you want to restore default categories?')) {
-                            resetCategories();
-                            showMessage('success', 'Categories reset to default');
-                          }
-                        }}
-                        className="px-4 py-2.5 text-[9px] font-black text-neutral-400 hover:text-brand-blue dark:hover:text-[#F7F7F7] hover:bg-neutral-50 rounded-xl transition-all uppercase tracking-widest"
-                      >
-                        Restore Defaults
-                      </button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
+              </div>
+            </section>
 
-                {/* Tag manager */}
-                <div className="p-5 flex flex-col gap-5">
+            {/* Tag manager */}
+            <section>
+              <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Tag Manager</h2>
+              <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm overflow-hidden">
+                {/* Collapsible Header */}
+                <button
+                  type="button"
+                  onClick={() => setIsTagsExpanded(!isTagsExpanded)}
+                  className="w-full p-5 flex items-center justify-between text-left hover:bg-neutral-50/50 dark:hover:bg-[#151518] transition-colors"
+                >
                   <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
                     <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
                       <Tag className="w-4 h-4 text-brand-blue dark:text-inherit" />
                     </div>
                     <div>
                       <p className="font-bold text-sm text-brand-blue dark:text-[#F7F7F7]">Transaction Tags</p>
-                      <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Customize global index hashtag labels</p>
+                      <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Customize global index hashtag labels ({tags.length} active)</p>
                     </div>
                   </div>
+                  <div className="text-neutral-400 mr-1">
+                    {isTagsExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </div>
+                </button>
 
-                  <div className="space-y-4">
-                    <div className="flex flex-wrap gap-2">
-                      {tags.map((tag) => (
-                        <div key={tag} className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-50 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] rounded-full text-xs font-semibold border border-neutral-100 dark:border-[#333333] shadow-sm">
-                          #{tag}
-                          <button type="button" onClick={() => removeTag(tag)} className="text-brand-blue/20 dark:text-[#666666] hover:text-brand-red transition-colors">
-                            <X className="w-3.5 h-3.5" />
+                {/* Collapsible Body */}
+                {isTagsExpanded && (
+                  <div className="p-5 border-t border-neutral-100 dark:border-[#222222] flex flex-col gap-5 animate-in fade-in slide-in-from-top-4 duration-200">
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap gap-2">
+                        {tags.map((tag) => (
+                          <div key={tag} className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-50 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] rounded-full text-xs font-semibold border border-neutral-100 dark:border-[#333333] shadow-sm">
+                            #{tag}
+                            <button type="button" onClick={() => removeTag(tag)} className="text-brand-blue/20 dark:text-[#666666] hover:text-brand-red transition-colors">
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-3 items-center">
+                        <form onSubmit={handleAddTag} className="flex flex-1 gap-2 w-full">
+                          <input
+                            type="text"
+                            value={newTag}
+                            onChange={(e) => setNewTag(e.target.value)}
+                            placeholder="E.g., Business, Urgent"
+                            className="flex-1 px-4 py-2.5 bg-neutral-50 dark:bg-[#1A1A1A] border border-neutral-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/20 transition-all text-xs font-semibold text-brand-blue dark:text-[#F7F7F7]"
+                          />
+                          <button
+                            type="submit"
+                            disabled={!newTag.trim()}
+                            className="px-5 py-2.5 bg-brand-green text-white rounded-xl font-bold hover:brightness-110 transition-all disabled:opacity-50 text-[9px] uppercase tracking-widest shadow-lg shadow-brand-green/10"
+                          >
+                            Add
+                          </button>
+                        </form>
+
+                        <div className="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setIsTagReorderOpen(true)}
+                            className="flex items-center gap-1.5 px-4 py-2.5 border border-brand-green/20 hover:bg-brand-green/5 text-brand-green rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                          >
+                            <ArrowUpDown className="w-3.5 h-3.5" />
+                            Arrange Order
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm('Are you sure you want to restore default tags?')) {
+                                resetTags();
+                                showMessage('success', 'Tags reset to default');
+                              }
+                            }}
+                            className="px-4 py-2.5 text-[9px] font-black text-neutral-400 hover:text-brand-blue dark:hover:text-[#F7F7F7] hover:bg-neutral-50 rounded-xl transition-all uppercase tracking-widest"
+                          >
+                            Restore Defaults
                           </button>
                         </div>
-                      ))}
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <form onSubmit={handleAddTag} className="flex flex-1 gap-2">
-                        <input
-                          type="text"
-                          value={newTag}
-                          onChange={(e) => setNewTag(e.target.value)}
-                          placeholder="E.g., Business, Urgent"
-                          className="flex-1 px-4 py-2.5 bg-neutral-50 dark:bg-[#1A1A1A] border border-neutral-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/20 transition-all text-xs font-semibold text-brand-blue dark:text-[#F7F7F7]"
-                        />
-                        <button
-                          type="submit"
-                          disabled={!newTag.trim()}
-                          className="px-5 py-2.5 bg-brand-green text-white rounded-xl font-bold hover:brightness-110 transition-all disabled:opacity-50 text-[9px] uppercase tracking-widest shadow-lg shadow-brand-green/10"
-                        >
-                          Add
-                        </button>
-                      </form>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (window.confirm('Are you sure you want to restore default tags?')) {
-                            resetTags();
-                            showMessage('success', 'Tags reset to default');
-                          }
-                        }}
-                        className="px-4 py-2.5 text-[9px] font-black text-neutral-400 hover:text-brand-blue dark:hover:text-[#F7F7F7] hover:bg-neutral-50 rounded-xl transition-all uppercase tracking-widest"
-                      >
-                        Restore Defaults
-                      </button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </section>
           </div>
@@ -609,6 +1000,158 @@ export default function Settings() {
           </div>
         )}
       </div>
+
+      {/* REORDER CATEGORIES MODAL OVERLAY */}
+      {isReorderOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#111111] w-full max-w-md rounded-[32px] border border-neutral-100 dark:border-[#222222] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh]">
+            
+            {/* Modal Header */}
+            <div className="p-6 border-b border-neutral-100 dark:border-[#222222] flex items-center justify-between">
+              <div>
+                <h3 className="font-heading font-black text-base text-brand-blue dark:text-white tracking-tight flex items-center gap-2">
+                  <ArrowUpDown className="w-4 h-4 text-brand-green" />
+                  Arrange Categories
+                </h3>
+                <p className="text-[9px] text-neutral-400 font-bold mt-0.5">Drag & drop or tap two items to swap their positions</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsReorderOpen(false);
+                  setSelectedSwapIndex(null);
+                }}
+                className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-[#222222] hover:bg-neutral-200 dark:hover:bg-[#333333] flex items-center justify-center text-neutral-500 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-2 flex-1 scrollbar-none">
+              {rawCategories.map((category, index) => {
+                const isSelected = selectedSwapIndex === index;
+                return (
+                  <div
+                    key={category.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, index)}
+                    onClick={() => handleSwapCategory(index)}
+                    className={cn(
+                      "flex items-center justify-between p-3.5 rounded-xl text-xs font-bold transition-all border cursor-pointer select-none group",
+                      isSelected
+                        ? "border-brand-green bg-brand-green/5 text-brand-green ring-2 ring-brand-green/20"
+                        : "border-neutral-100 dark:border-white/5 bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white hover:bg-neutral-100 dark:hover:bg-[#222222]"
+                    )}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-neutral-300 dark:text-neutral-600 group-hover:text-brand-green select-none shrink-0"><GripVertical className="w-3.5 h-3.5" /></span>
+                      <span className="truncate">{category.name}</span>
+                    </div>
+                    {isSelected && (
+                      <span className="text-[7px] font-black uppercase tracking-widest bg-brand-green/10 px-2 py-0.5 rounded-full">
+                        Swap Source
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-5 bg-neutral-50 dark:bg-[#151515] border-t border-neutral-100 dark:border-[#222222] flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsReorderOpen(false);
+                  setSelectedSwapIndex(null);
+                }}
+                className="px-6 py-2 bg-brand-green text-white rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all text-[9px] uppercase tracking-widest shadow-lg shadow-brand-green/10"
+              >
+                Save & Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REORDER TAGS MODAL OVERLAY */}
+      {isTagReorderOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#111111] w-full max-w-md rounded-[32px] border border-neutral-100 dark:border-[#222222] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh]">
+            
+            {/* Modal Header */}
+            <div className="p-6 border-b border-neutral-100 dark:border-[#222222] flex items-center justify-between">
+              <div>
+                <h3 className="font-heading font-black text-base text-brand-blue dark:text-white tracking-tight flex items-center gap-2">
+                  <ArrowUpDown className="w-4 h-4 text-brand-green" />
+                  Arrange Tags
+                </h3>
+                <p className="text-[9px] text-neutral-400 font-bold mt-0.5">Drag & drop or tap two items to swap their positions</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsTagReorderOpen(false);
+                  setSelectedTagSwapIndex(null);
+                }}
+                className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-[#222222] hover:bg-neutral-200 dark:hover:bg-[#333333] flex items-center justify-center text-neutral-500 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-2 flex-1 scrollbar-none">
+              {rawTags.map((tag, index) => {
+                const isSelected = selectedTagSwapIndex === index;
+                return (
+                  <div
+                    key={tag.id}
+                    draggable
+                    onDragStart={(e) => handleTagDragStart(e, index)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleTagDrop(e, index)}
+                    onClick={() => handleSwapTag(index)}
+                    className={cn(
+                      "flex items-center justify-between p-3.5 rounded-xl text-xs font-bold transition-all border cursor-pointer select-none group",
+                      isSelected
+                        ? "border-brand-green bg-brand-green/5 text-brand-green ring-2 ring-brand-green/20"
+                        : "border-neutral-100 dark:border-white/5 bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white hover:bg-neutral-100 dark:hover:bg-[#222222]"
+                    )}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-neutral-300 dark:text-neutral-600 group-hover:text-brand-green select-none shrink-0"><GripVertical className="w-3.5 h-3.5" /></span>
+                      <span className="truncate">#{tag.name}</span>
+                    </div>
+                    {isSelected && (
+                      <span className="text-[7px] font-black uppercase tracking-widest bg-brand-green/10 px-2 py-0.5 rounded-full">
+                        Swap Source
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-5 bg-neutral-50 dark:bg-[#151515] border-t border-neutral-100 dark:border-[#222222] flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsTagReorderOpen(false);
+                  setSelectedTagSwapIndex(null);
+                }}
+                className="px-6 py-2 bg-brand-green text-white rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all text-[9px] uppercase tracking-widest shadow-lg shadow-brand-green/10"
+              >
+                Save & Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

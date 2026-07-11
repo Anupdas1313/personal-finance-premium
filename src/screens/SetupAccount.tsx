@@ -4,8 +4,6 @@ import { db } from '../models/db';
 import { Landmark, ArrowRight, Loader2, Tag, Globe, X, Plus, Sparkles, Send, Bot, CheckCircle2, ChevronRight, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTags } from '../hooks/useTags';
-import { useCategories } from '../hooks/useCategories';
 import { cn } from '../logic/utils';
 import { CURRENCY_OPTIONS, CurrencyInfo } from '../constants/currencies';
 
@@ -17,6 +15,9 @@ export default function SetupAccount() {
 
   // Step 1: Profile & Currency
   const [profileName, setProfileName] = useState(user?.displayName || '');
+  const [selectedCurrency, setSelectedCurrency] = useState(
+    CURRENCY_OPTIONS.find(c => c.code === 'USD') || CURRENCY_OPTIONS[0]
+  );
   const [currency, setCurrency] = useState('$');
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -27,8 +28,12 @@ export default function SetupAccount() {
   const [type, setType] = useState<'BANK' | 'CASH' | 'CREDIT_CARD'>('BANK');
 
   // Step 3 & 5: Classification
-  const { tags, addTag, removeTag } = useTags();
-  const { categories, addCategory, removeCategory } = useCategories();
+  const [selectedTags, setSelectedTags] = useState<string[]>([
+    'Personal', 'Household', 'Miscellaneous', 'Want', 'Need'
+  ]);
+  const [selectedCats, setSelectedCats] = useState<string[]>([
+    'Food', 'Transport', 'Rent', 'Shopping', 'Bills', 'Entertainment', 'Salary', 'Groceries', 'Travel', 'Health', 'Other'
+  ]);
   const [newTag, setNewTag] = useState('');
   const [newCat, setNewCat] = useState('');
 
@@ -49,9 +54,12 @@ export default function SetupAccount() {
   };
 
   const completeSetup = async () => {
+    // Prevent duplicate submissions
+    if (isSaving) return;
     setIsSaving(true);
     try {
       await saveUserSetting('currency', currency);
+      await saveUserSetting('currency_country', selectedCurrency.country);
       const balance = parseFloat(startingBalance);
       
       await db.accounts.add({
@@ -61,11 +69,19 @@ export default function SetupAccount() {
         startingBalanceDate: new Date(),
         type
       });
+      
+      // Save tags and categories customized during onboarding
+      await db.tags.clear();
+      await db.tags.bulkAdd(selectedTags.map((name, index) => ({ name, sortOrder: index })));
 
+      await db.categories.clear();
+      await db.categories.bulkAdd(selectedCats.map((name, index) => ({ name, sortOrder: index })));
+
+      // Set localStorage FIRST so ProtectedRoute sees it immediately on navigation
       if (user) {
         localStorage.setItem(`onboardingComplete_${user.uid}`, 'true');
-        await saveUserSetting('setupComplete', true);
       }
+      await saveUserSetting('setupComplete', true);
 
       navigate('/', { replace: true });
     } catch (error) {
@@ -162,29 +178,35 @@ export default function SetupAccount() {
                     </div>
 
                     <div className="flex-1 overflow-y-auto pr-1 space-y-1.5">
-                      {filteredCurrencies.map(opt => (
-                        <button
-                          key={opt.country + opt.code}
-                          type="button"
-                          onClick={() => setCurrency(opt.symbol)}
-                          className={cn(
-                            "w-full p-3.5 rounded-xl border flex items-center justify-between transition-all text-left",
-                            currency === opt.symbol 
-                              ? "bg-brand-green border-brand-green text-white shadow-md"
-                              : "bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50"
-                          )}
-                        >
-                          <div>
-                            <div className="font-semibold text-[15px]">{opt.country}</div>
-                            <div className={cn("text-xs font-medium", currency === opt.symbol ? "text-white/80" : "text-neutral-500")}>
-                              {opt.name} ({opt.code})
+                      {filteredCurrencies.map(opt => {
+                        const isSelected = selectedCurrency.code === opt.code && selectedCurrency.country === opt.country;
+                        return (
+                          <button
+                            key={opt.country + opt.code}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCurrency(opt);
+                              setCurrency(opt.symbol);
+                            }}
+                            className={cn(
+                              "w-full p-3.5 rounded-xl border flex items-center justify-between transition-all text-left",
+                              isSelected 
+                                ? "bg-brand-green border-brand-green text-white shadow-md"
+                                : "bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+                            )}
+                          >
+                            <div>
+                              <div className="font-semibold text-[15px]">{opt.country}</div>
+                              <div className={cn("text-xs font-medium", isSelected ? "text-white/80" : "text-neutral-500")}>
+                                {opt.name} ({opt.code})
+                              </div>
                             </div>
-                          </div>
-                          <div className={cn("text-xl font-bold", currency === opt.symbol ? "text-white" : "text-brand-green")}>
-                            {opt.symbol}
-                          </div>
-                        </button>
-                      ))}
+                            <div className={cn("text-xl font-bold", isSelected ? "text-white" : "text-brand-green")}>
+                              {opt.symbol}
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -329,10 +351,14 @@ export default function SetupAccount() {
               <div className="flex-1 overflow-y-auto pr-1">
                 <p className="text-[14px] text-neutral-500 mb-3">We've added standard tags for you. Add more if you like!</p>
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {tags.map(tag => (
+                  {selectedTags.map(tag => (
                     <div key={tag} className="flex items-center gap-2 px-3 py-1.5 bg-white border border-neutral-200 text-neutral-800 rounded-lg text-[13px] font-semibold shadow-sm">
                       #{tag}
-                      <button onClick={() => removeTag(tag)} className="text-neutral-400 hover:text-rose-500 transition-colors">
+                      <button 
+                        type="button" 
+                        onClick={() => setSelectedTags(selectedTags.filter(t => t !== tag))} 
+                        className="text-neutral-400 hover:text-rose-500 transition-colors"
+                      >
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -342,7 +368,11 @@ export default function SetupAccount() {
                 <form 
                   onSubmit={(e) => {
                     e.preventDefault();
-                    if (addTag(newTag)) setNewTag('');
+                    const trimmed = newTag.trim();
+                    if (trimmed && !selectedTags.includes(trimmed)) {
+                      setSelectedTags([...selectedTags, trimmed]);
+                      setNewTag('');
+                    }
                   }} 
                   className="flex gap-2"
                 >
@@ -464,10 +494,14 @@ export default function SetupAccount() {
 
               <div className="flex-1 overflow-y-auto pr-1">
                 <div className="flex flex-wrap gap-2 mb-5">
-                  {categories.map(cat => (
+                  {selectedCats.map(cat => (
                     <div key={cat} className="flex items-center gap-2 px-3 py-1.5 bg-white border border-neutral-200 text-neutral-800 rounded-lg text-[13px] font-semibold shadow-sm">
                       {cat}
-                      <button onClick={() => removeCategory(cat)} className="text-neutral-400 hover:text-rose-500 transition-colors">
+                      <button 
+                        type="button" 
+                        onClick={() => setSelectedCats(selectedCats.filter(c => c !== cat))} 
+                        className="text-neutral-400 hover:text-rose-500 transition-colors"
+                      >
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -477,7 +511,11 @@ export default function SetupAccount() {
                 <form 
                   onSubmit={(e) => {
                     e.preventDefault();
-                    if (addCategory(newCat)) setNewCat('');
+                    const trimmed = newCat.trim();
+                    if (trimmed && !selectedCats.includes(trimmed)) {
+                      setSelectedCats([...selectedCats, trimmed]);
+                      setNewCat('');
+                    }
                   }} 
                   className="flex gap-2"
                 >

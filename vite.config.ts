@@ -13,7 +13,7 @@ export default defineConfig(({mode}) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['icon.svg'],
+        includeAssets: ['icon.svg', 'pwa-192.png', 'pwa-512.png', 'apple-touch-icon.png'],
         workbox: {
           maximumFileSizeToCacheInBytes: 5000000
         },
@@ -21,16 +21,30 @@ export default defineConfig(({mode}) => {
           name: 'Expensify',
           short_name: 'Expensify',
           description: 'Premium offline-first expense tracker and financial dashboard',
-          theme_color: '#ffffff',
+          theme_color: '#00A86B',
           background_color: '#ffffff',
           display: 'standalone',
+          start_url: '.',
+          scope: '.',
           orientation: 'portrait',
           icons: [
             {
-              src: 'icon.svg',
+              src: 'pwa-192.png',
+              sizes: '192x192',
+              type: 'image/png',
+              purpose: 'any'
+            },
+            {
+              src: 'pwa-512.png',
               sizes: '512x512',
-              type: 'image/svg+xml',
-              purpose: 'any maskable'
+              type: 'image/png',
+              purpose: 'any'
+            },
+            {
+              src: 'pwa-512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable'
             }
           ]
         }

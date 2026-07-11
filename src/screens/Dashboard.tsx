@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../models/db';
 import { ArrowUpRight, ArrowDownRight, Wallet, Plus, X, AlertCircle, CheckCircle2, Search, ChevronDown, Landmark, Smartphone, ArrowLeft, Calendar, Clock, Calculator, MoreHorizontal, User, AlignLeft, Hash, Paperclip, Save, ChevronRight, CreditCard, Coins, PlaneTakeoff, Eye, EyeOff, Wand2, BarChart3 } from 'lucide-react';
 
-import { format, startOfMonth, startOfYear, isToday, isYesterday, startOfDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfYear, isToday, isYesterday, startOfDay } from 'date-fns';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -20,10 +20,11 @@ import { IndusIndLogo } from '../components/IndusIndLogo';
 import { UnionBankLogo } from '../components/UnionBankLogo';
 import { BankLogo } from '../components/BankLogo';
 import TutorialOverlay from '../components/TutorialOverlay';
-import { useCurrency } from '../hooks/useCurrency';
+import { useCurrency, useCurrencyFormatter } from '../hooks/useCurrency';
+import { cn } from '../logic/utils';
 
 export default function Dashboard() {
-  const currency = useCurrency();
+  const { currency, hideDecimals, formatAmount } = useCurrencyFormatter();
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -37,6 +38,23 @@ export default function Dashboard() {
   const [isAddingManual, setIsAddingManual] = useState(searchParams.get('add') === 'true');
   const [showTutorial, setShowTutorial] = useState(false);
   const userSettings = useLiveQuery(() => db.userSettings.toArray(), [user?.uid]);
+  const isPrivacyMode = userSettings?.find(s => s.key === 'privacy_mode')?.value === true;
+  const defaultAccountId = userSettings?.find(s => s.key === 'default_account_id')?.value;
+  const [revealBalances, setRevealBalances] = useState(false);
+  const shouldBlur = isPrivacyMode && !revealBalances;
+
+  const handleTogglePrivacyMode = async () => {
+    try {
+      const existing = await db.userSettings.where('key').equals('privacy_mode').first();
+      if (existing) {
+        await db.userSettings.update(existing.id!, { value: !isPrivacyMode });
+      } else {
+        await db.userSettings.add({ key: 'privacy_mode', value: !isPrivacyMode });
+      }
+    } catch (err) {
+      console.error('Failed to toggle privacy mode:', err);
+    }
+  };
 
   const [activeSlide, setActiveSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -81,6 +99,7 @@ export default function Dashboard() {
           setPaymentMethod(tx.paymentMethod as any || 'UPI');
           setUpiApp((tx as any).upiApp || 'GPay');
           setExpenseType(tx.expenseType || '');
+          setSelectedBudgetId(tx.linkedBudgetId || 'auto');
           setEntryMode('MANUAL');
           setIsAddingManual(true);
           setEditingTransactionId(Number(editId));
@@ -111,6 +130,10 @@ export default function Dashboard() {
     } else if (searchParams.get('add') === 'true') {
       setIsAddingManual(true);
       setTransactionDate(new Date().toISOString().slice(0, 16));
+      const paramAccountId = searchParams.get('accountId');
+      if (paramAccountId) {
+        setSelectedAccountId(Number(paramAccountId));
+      }
     }
   }, [searchParams]);
 
@@ -145,6 +168,36 @@ export default function Dashboard() {
   const [entryMode, setEntryMode] = useState<'MANUAL' | 'CHAT'>('CHAT');
   const [editingTransactionId, setEditingTransactionId] = useState<number | null>(null);
 
+  const currentMonthStr = format(new Date(transactionDate), 'yyyy-MM');
+  const activeMonthBudgets = useLiveQuery(() => db.budgets.where('month').equals(currentMonthStr).toArray(), [currentMonthStr, user?.uid]) || [];
+  const [selectedBudgetId, setSelectedBudgetId] = useState<number | 'auto'>('auto');
+
+  useEffect(() => {
+    if (activeMonthBudgets.length > 0) {
+      const matchingBudget = activeMonthBudgets.find(b => b.category === category);
+      if (matchingBudget) {
+        setSelectedBudgetId(matchingBudget.id!);
+      } else {
+        setSelectedBudgetId('auto');
+      }
+    }
+  }, [category, activeMonthBudgets]);
+
+  const selectedBudget = activeMonthBudgets.find(b => b.id === selectedBudgetId);
+  const selectedBudgetSpent = useLiveQuery(async () => {
+    if (!selectedBudget) return 0;
+    const start = startOfMonth(new Date(transactionDate));
+    const end = endOfMonth(new Date(transactionDate));
+    const txs = await db.transactions.where('dateTime').between(start, end).toArray();
+    return txs.reduce((sum, tx) => {
+      if (tx.type !== 'DEBIT') return sum;
+      if (tx.linkedBudgetId) {
+        return tx.linkedBudgetId === selectedBudget.id ? sum + Number(tx.amount) : sum;
+      }
+      return tx.category === selectedBudget.category ? sum + Number(tx.amount) : sum;
+    }, 0);
+  }, [selectedBudget, transactionDate]) || 0;
+
   // Set default expense type once tags load
   useEffect(() => {
     if (tags.length > 0 && !expenseType) {
@@ -152,15 +205,15 @@ export default function Dashboard() {
     }
   }, [tags]);
 
-  // Auto-select first account when accounts load and none selected
+  // Auto-select preferred or first account when accounts load and none selected
   useEffect(() => {
     if (accounts.length > 0 && !selectedAccountId) {
-      const firstAcc = accounts[0];
-      setSelectedAccountId(firstAcc.id!);
-      if ((firstAcc as any).type === 'CASH') setPaymentMethod('Cash');
-      else if ((firstAcc as any).type === 'CREDIT_CARD') setPaymentMethod('Credit Card');
+      const preferredAcc = accounts.find(a => Number(a.id) === Number(defaultAccountId)) || accounts[0];
+      setSelectedAccountId(preferredAcc.id!);
+      if ((preferredAcc as any).type === 'CASH') setPaymentMethod('Cash');
+      else if ((preferredAcc as any).type === 'CREDIT_CARD') setPaymentMethod('Credit Card');
     }
-  }, [accounts, selectedAccountId]);
+  }, [accounts, selectedAccountId, defaultAccountId]);
 
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [isSaving, setIsSaving] = useState(false);
@@ -292,6 +345,7 @@ export default function Dashboard() {
           upiApp: currentPaymentMethod === 'UPI' ? currentUpiApp : undefined,
           party: currentPartyName,
           expenseType: currentExpenseType,
+          linkedBudgetId: selectedBudgetId === 'auto' ? undefined : Number(selectedBudgetId),
           linkedTransactionId: undefined // ensure link is cleared
         };
 
@@ -324,6 +378,7 @@ export default function Dashboard() {
         setUpiApp('GPay');
         setExpenseType(tags[0] || '');
         setEditingTransactionId(null);
+        setSelectedBudgetId('auto');
       }, 800);
     } catch (error) {
       setIsSaving(false);
@@ -492,9 +547,18 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-      <div className="text-right">
-        <p className={`font-heading font-black text-sm tracking-tighter ${acc.currentBalance < 0 ? 'text-brand-red' : 'text-brand-green'}`}>
-          {currency}{acc.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
+      <div className="text-right" onClick={(e) => {
+        if (isPrivacyMode) {
+          e.stopPropagation();
+          setRevealBalances(!revealBalances);
+        }
+      }}>
+        <p className={cn(
+          "font-heading font-black text-sm tracking-tighter transition-all duration-300",
+          acc.currentBalance < 0 ? 'text-brand-red' : 'text-brand-green',
+          shouldBlur && "blur-[5px] select-none cursor-pointer"
+        )}>
+          {formatAmount(acc.currentBalance)}
         </p>
         <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest leading-none mt-0.5">Balance</p>
       </div>
@@ -511,6 +575,15 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleTogglePrivacyMode}
+            title={isPrivacyMode ? "Show Balances" : "Hide Balances"}
+            className="p-2 bg-neutral-100 dark:bg-[#222226] text-neutral-600 dark:text-neutral-300 rounded-full hover:bg-neutral-200 dark:hover:bg-[#2B2B32] transition-colors flex items-center justify-center cursor-pointer outline-none"
+          >
+            {isPrivacyMode ? <EyeOff className="w-5 h-5 text-rose-500" /> : <Eye className="w-5 h-5" />}
+          </button>
+          
           <div
             title={user?.displayName || 'Guest User'}
             className="w-10 h-10 rounded-full bg-gradient-to-br from-[#1A237E] to-[#4A4ABF] flex items-center justify-center text-white select-none shadow-lg cursor-pointer border-2 border-white dark:border-[#1A1A1E]"
@@ -546,11 +619,14 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="relative z-10 flex justify-between items-center mb-5 px-1">
+        <div className="relative z-10 flex justify-between items-center mb-5 px-1" onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
           <div className="flex-1">
             <p className="text-[13px] font-semibold text-rose-500 mb-1">Outflow</p>
-            <p className="text-xl font-bold text-neutral-900 tracking-tight">
-              {currency}{totalSpending.toLocaleString('en-IN')}
+            <p className={cn(
+              "text-xl font-bold text-neutral-900 tracking-tight transition-all duration-300",
+              shouldBlur && "blur-[6px] select-none cursor-pointer"
+            )}>
+              {formatAmount(totalSpending)}
             </p>
           </div>
           
@@ -558,23 +634,32 @@ export default function Dashboard() {
 
           <div className="flex-1">
             <p className="text-[13px] font-semibold text-brand-green mb-1">Inflow</p>
-            <p className="text-xl font-bold text-neutral-900 tracking-tight">
-              {currency}{totalIncome.toLocaleString('en-IN')}
+            <p className={cn(
+              "text-xl font-bold text-neutral-900 tracking-tight transition-all duration-300",
+              shouldBlur && "blur-[6px] select-none cursor-pointer"
+            )}>
+              {formatAmount(totalIncome)}
             </p>
           </div>
         </div>
 
-        <div className="relative z-10 bg-neutral-50 border border-neutral-200 rounded-2xl p-3 flex justify-between items-center">
+        <div className="relative z-10 bg-neutral-50 border border-neutral-200 rounded-2xl p-3 flex justify-between items-center" onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
           <div className="flex flex-col">
             <p className="text-[13px] font-semibold text-neutral-500 leading-none mb-1">Total Liquidity</p>
             {timeFilter !== 'All Time' && (
-              <p className={`text-[11px] font-semibold ${monthDelta >= 0 ? 'text-brand-green' : 'text-rose-500'} tracking-tight`}>
-                {monthDelta >= 0 ? '↑' : '↓'} {currency}{Math.abs(monthDelta).toLocaleString('en-IN')}
+              <p className={cn(
+                `text-[11px] font-semibold tracking-tight transition-all duration-300 ${monthDelta >= 0 ? 'text-brand-green' : 'text-rose-500'}`,
+                shouldBlur && "blur-[4px] select-none cursor-pointer"
+              )}>
+                {monthDelta >= 0 ? '↑' : '↓'} {formatAmount(Math.abs(monthDelta))}
               </p>
             )}
           </div>
-          <p className={`text-lg font-bold tracking-tight text-neutral-900`}>
-            {currency}{totalWealth.toLocaleString('en-IN')}
+          <p className={cn(
+            "text-lg font-bold tracking-tight text-neutral-900 transition-all duration-300",
+            shouldBlur && "blur-[6px] select-none cursor-pointer"
+          )}>
+            {formatAmount(totalWealth)}
           </p>
         </div>
       </div>
@@ -597,15 +682,15 @@ export default function Dashboard() {
             className="w-full flex-1 flex flex-col justify-between"
           >
             {activeSlide === 0 && (
-              <>
+              <div onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <h3 className="text-[13px] font-semibold text-brand-green mb-1">Daily Insights</h3>
                     <p className="text-sm font-semibold text-neutral-800 leading-tight">
                       {todaySpending > yesterdaySpending ? (
-                        <>You've spent <span className="text-rose-500 font-bold">{currency}{(todaySpending - yesterdaySpending).toLocaleString('en-IN')} more</span> than yesterday at this time.</>
+                        <>You've spent <span className={cn("text-rose-500 font-bold transition-all duration-300", shouldBlur && "blur-[5px] select-none")}>{formatAmount(todaySpending - yesterdaySpending)} more</span> than yesterday at this time.</>
                       ) : (
-                        <>You've spent <span className="text-brand-green font-bold">{currency}{(yesterdaySpending - todaySpending).toLocaleString('en-IN')} less</span> than yesterday at this time.</>
+                        <>You've spent <span className={cn("text-brand-green font-bold transition-all duration-300", shouldBlur && "blur-[5px] select-none")}>{formatAmount(yesterdaySpending - todaySpending)} less</span> than yesterday at this time.</>
                       )}
                     </p>
                   </div>
@@ -616,27 +701,27 @@ export default function Dashboard() {
                 <div className="flex items-center gap-4 mt-auto">
                   <div>
                     <p className="text-[12px] font-medium text-neutral-500">Today</p>
-                    <p className="text-xs font-bold text-neutral-800">{currency}{todaySpending.toLocaleString('en-IN')}</p>
+                    <p className={cn("text-xs font-bold text-neutral-800 transition-all duration-300", shouldBlur && "blur-[4px] select-none")}>{formatAmount(todaySpending)}</p>
                   </div>
                   <div className="w-px h-6 bg-neutral-200"></div>
                   <div>
                     <p className="text-[12px] font-medium text-neutral-500">Yesterday (to this hour)</p>
-                    <p className="text-xs font-bold text-neutral-800">{currency}{yesterdaySpending.toLocaleString('en-IN')}</p>
+                    <p className={cn("text-xs font-bold text-neutral-800 transition-all duration-300", shouldBlur && "blur-[4px] select-none")}>{formatAmount(yesterdaySpending)}</p>
                   </div>
                 </div>
-              </>
+              </div>
             )}
 
             {activeSlide === 1 && (
-              <>
+              <div onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <h3 className="text-[13px] font-semibold text-brand-green mb-1">Weekly Insights</h3>
                     <p className="text-sm font-semibold text-neutral-800 leading-tight">
                       {thisWeekSpending > lastWeekSpending ? (
-                        <>You've spent <span className="text-rose-500 font-bold">{currency}{(thisWeekSpending - lastWeekSpending).toLocaleString('en-IN')} more</span> than the previous 7 days.</>
+                        <>You've spent <span className={cn("text-rose-500 font-bold transition-all duration-300", shouldBlur && "blur-[5px] select-none")}>{formatAmount(thisWeekSpending - lastWeekSpending)} more</span> than the previous 7 days.</>
                       ) : (
-                        <>You've spent <span className="text-brand-green font-bold">{currency}{(lastWeekSpending - thisWeekSpending).toLocaleString('en-IN')} less</span> than the previous 7 days.</>
+                        <>You've spent <span className={cn("text-brand-green font-bold transition-all duration-300", shouldBlur && "blur-[5px] select-none")}>{formatAmount(lastWeekSpending - thisWeekSpending)} less</span> than the previous 7 days.</>
                       )}
                     </p>
                   </div>
@@ -647,27 +732,27 @@ export default function Dashboard() {
                 <div className="flex items-center gap-4 mt-auto">
                   <div>
                     <p className="text-[12px] font-medium text-neutral-500">This Week</p>
-                    <p className="text-xs font-bold text-neutral-800">{currency}{thisWeekSpending.toLocaleString('en-IN')}</p>
+                    <p className={cn("text-xs font-bold text-neutral-800 transition-all duration-300", shouldBlur && "blur-[4px] select-none")}>{formatAmount(thisWeekSpending)}</p>
                   </div>
                   <div className="w-px h-6 bg-neutral-200"></div>
                   <div>
                     <p className="text-[12px] font-medium text-neutral-500">Previous Week</p>
-                    <p className="text-xs font-bold text-neutral-800">{currency}{lastWeekSpending.toLocaleString('en-IN')}</p>
+                    <p className={cn("text-xs font-bold text-neutral-800 transition-all duration-300", shouldBlur && "blur-[4px] select-none")}>{formatAmount(lastWeekSpending)}</p>
                   </div>
                 </div>
-              </>
+              </div>
             )}
 
             {activeSlide === 2 && (
-              <>
+              <div onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <h3 className="text-[13px] font-semibold text-brand-green mb-1">Monthly Insights</h3>
                     <p className="text-sm font-semibold text-neutral-800 leading-tight">
                       {thisMonthSpendingToDate > lastMonthSpendingToDate ? (
-                        <>You've spent <span className="text-rose-500 font-bold">{currency}{(thisMonthSpendingToDate - lastMonthSpendingToDate).toLocaleString('en-IN')} more</span> than last month at this time.</>
+                        <>You've spent <span className={cn("text-rose-500 font-bold transition-all duration-300", shouldBlur && "blur-[5px] select-none")}>{formatAmount(thisMonthSpendingToDate - lastMonthSpendingToDate)} more</span> than last month at this time.</>
                       ) : (
-                        <>You've spent <span className="text-brand-green font-bold">{currency}{(lastMonthSpendingToDate - thisMonthSpendingToDate).toLocaleString('en-IN')} less</span> than last month at this time.</>
+                        <>You've spent <span className={cn("text-brand-green font-bold transition-all duration-300", shouldBlur && "blur-[5px] select-none")}>{formatAmount(lastMonthSpendingToDate - thisMonthSpendingToDate)} less</span> than last month at this time.</>
                       )}
                     </p>
                   </div>
@@ -678,15 +763,15 @@ export default function Dashboard() {
                 <div className="flex items-center gap-4 mt-auto">
                   <div>
                     <p className="text-[12px] font-medium text-neutral-500">This Month</p>
-                    <p className="text-xs font-bold text-neutral-800">{currency}{thisMonthSpendingToDate.toLocaleString('en-IN')}</p>
+                    <p className={cn("text-xs font-bold text-neutral-800 transition-all duration-300", shouldBlur && "blur-[4px] select-none")}>{formatAmount(thisMonthSpendingToDate)}</p>
                   </div>
                   <div className="w-px h-6 bg-neutral-200"></div>
                   <div>
                     <p className="text-[12px] font-medium text-neutral-500">Last Month (to this day)</p>
-                    <p className="text-xs font-bold text-neutral-800">{currency}{lastMonthSpendingToDate.toLocaleString('en-IN')}</p>
+                    <p className={cn("text-xs font-bold text-neutral-800 transition-all duration-300", shouldBlur && "blur-[4px] select-none")}>{formatAmount(lastMonthSpendingToDate)}</p>
                   </div>
                 </div>
-              </>
+              </div>
             )}
           </motion.div>
         </AnimatePresence>
@@ -725,8 +810,8 @@ export default function Dashboard() {
                      </div>
                      <span className="text-[13px] font-semibold text-neutral-700">Checking & Savings</span>
                    </div>
-                   <span className="text-xs font-bold text-neutral-900 tracking-tight">
-                     {currency}{groupedAccounts['BANK'].reduce((sum, a) => sum + (a.currentBalance || 0), 0).toLocaleString('en-IN')}
+                   <span className={cn("text-xs font-bold text-neutral-900 tracking-tight transition-all duration-300", shouldBlur && "blur-[5px] select-none cursor-pointer")} onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
+                     {formatAmount(groupedAccounts['BANK'].reduce((sum, a) => sum + (a.currentBalance || 0), 0))}
                    </span>
                 </div>
                 <div className="px-1 pb-1">
@@ -745,8 +830,8 @@ export default function Dashboard() {
                      </div>
                      <span className="text-[13px] font-semibold text-neutral-700">Credit Lines</span>
                    </div>
-                   <span className="text-xs font-bold text-neutral-900 tracking-tight">
-                     {currency}{groupedAccounts['CREDIT_CARD'].reduce((sum, a) => sum + (a.currentBalance || 0), 0).toLocaleString('en-IN')}
+                   <span className={cn("text-xs font-bold text-neutral-900 tracking-tight transition-all duration-300", shouldBlur && "blur-[5px] select-none cursor-pointer")} onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
+                     {formatAmount(groupedAccounts['CREDIT_CARD'].reduce((sum, a) => sum + (a.currentBalance || 0), 0))}
                    </span>
                 </div>
                 <div className="px-1 pb-1">
@@ -765,8 +850,8 @@ export default function Dashboard() {
                      </div>
                      <span className="text-[13px] font-semibold text-neutral-700">Cash & Wallets</span>
                    </div>
-                   <span className="text-xs font-bold text-neutral-900 tracking-tight">
-                     {currency}{groupedAccounts['CASH'].reduce((sum, a) => sum + (a.currentBalance || 0), 0).toLocaleString('en-IN')}
+                   <span className={cn("text-xs font-bold text-neutral-900 tracking-tight transition-all duration-300", shouldBlur && "blur-[5px] select-none cursor-pointer")} onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
+                     {formatAmount(groupedAccounts['CASH'].reduce((sum, a) => sum + (a.currentBalance || 0), 0))}
                    </span>
                 </div>
                 <div className="px-1 pb-1">
@@ -940,6 +1025,44 @@ export default function Dashboard() {
                     ))}
                   </div>
                 </div>
+
+                {/* 5.5 Budget Allocation */}
+                {type === 'DEBIT' && activeMonthBudgets.length > 0 && (
+                  <div className="bg-[#F9FBFF] dark:bg-[#111111] rounded-2xl border border-brand-blue/5 dark:border-white/5 p-3 space-y-2 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">Draw From Budget</span>
+                      <select 
+                        value={selectedBudgetId} 
+                        onChange={(e) => setSelectedBudgetId(e.target.value === 'auto' ? 'auto' : Number(e.target.value))}
+                        className="bg-transparent text-[10px] font-bold text-brand-green dark:text-brand-green outline-none border-b border-brand-green/20 dark:border-brand-green/20 pb-0.5 cursor-pointer"
+                      >
+                        <option value="auto">Auto-match by Category</option>
+                        {activeMonthBudgets.map(b => (
+                          <option key={b.id} value={b.id}>{b.category} ({currency}{b.amount})</option>
+                        ))}
+                      </select>
+                    </div>
+                    {selectedBudget && (
+                      <div className="px-1 space-y-1">
+                        <div className="flex justify-between items-end text-[9px] font-bold">
+                          <span className="text-neutral-500">{selectedBudget.category} Budget</span>
+                          <span className={(selectedBudgetSpent + (Number(amount) || 0)) > selectedBudget.amount ? 'text-brand-red' : 'text-brand-green'}>
+                            {currency}{(selectedBudgetSpent + (Number(amount) || 0)).toLocaleString()} / {currency}{selectedBudget.amount.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-neutral-200 dark:bg-white/10 rounded-full overflow-hidden flex">
+                          <div className="h-full bg-brand-green dark:bg-brand-green opacity-40 transition-all duration-300" style={{ width: `${Math.min((selectedBudgetSpent / selectedBudget.amount) * 100, 100)}%` }} />
+                          {(Number(amount) || 0) > 0 && (
+                            <div className={`h-full transition-all duration-300 ${((selectedBudgetSpent + Number(amount)) > selectedBudget.amount) ? 'bg-brand-red' : 'bg-brand-green'}`} style={{ width: `${Math.min(((Number(amount) || 0) / selectedBudget.amount) * 100, 100 - Math.min((selectedBudgetSpent / selectedBudget.amount) * 100, 100))}%` }} />
+                          )}
+                        </div>
+                        {((selectedBudgetSpent + (Number(amount) || 0)) > selectedBudget.amount) && (
+                          <p className="text-[8px] font-bold text-brand-red uppercase tracking-widest pt-0.5">⚠️ Breaches budget by {currency}{((selectedBudgetSpent + (Number(amount) || 0)) - selectedBudget.amount).toLocaleString()}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* 6. Payment Method — Intelligence Layer */}
                 <div className="bg-[#F9FBFF] dark:bg-[#111111] rounded-2xl border border-brand-blue/5 dark:border-white/5 p-2 space-y-2 shadow-sm">
