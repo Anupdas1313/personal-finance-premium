@@ -467,23 +467,24 @@ export default function Budgets() {
                   {/* 1. MASTER POOL OVERVIEW WITH DONUT */}
                   <SectionCard>
                     <SectionTitle 
-                      icon={<Wallet className="w-4 h-4" />} 
+                      icon={<Wallet className="w-4 h-4 text-brand-green" />} 
                       label="Monthly Pool" 
                       action={
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 bg-neutral-50 dark:bg-[#1A1A1F] p-1 rounded-2xl border border-neutral-100 dark:border-[#222222]">
                           <button 
                             onClick={() => navigate(`/budgets/customize/${monthStr}`)}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-neutral-50 dark:bg-[#1C1C24] text-brand-blue/60 dark:text-[#CCCCCC] hover:text-brand-blue dark:hover:text-white rounded-xl border border-brand-blue/5 dark:border-white/5 text-[10px] font-semibold uppercase tracking-[0.2em] transition-all active:scale-95"
+                            className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-white dark:hover:bg-white/5 text-brand-blue/60 dark:text-[#CCCCCC] hover:text-brand-blue dark:hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-[0.1em] transition-all duration-150 active:scale-95"
                           >
                             <Settings className="w-3.5 h-3.5" />
-                            Filters
+                            <span>Customize</span>
                           </button>
+                          <div className="w-[1px] h-4 bg-neutral-200 dark:bg-[#333333]" />
                           <button 
                             onClick={() => { setPoolInput(masterBudgetAmt ? masterBudgetAmt.toString() : ''); setIsPoolModalOpen(true); }}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-neutral-50 dark:bg-[#1C1C24] text-brand-blue/60 dark:text-[#CCCCCC] hover:text-brand-blue dark:hover:text-white rounded-xl border border-brand-blue/5 dark:border-white/5 text-[10px] font-semibold uppercase tracking-[0.2em] transition-all active:scale-95"
+                            className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-white dark:hover:bg-white/5 text-brand-blue/60 dark:text-[#CCCCCC] hover:text-brand-blue dark:hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-[0.1em] transition-all duration-150 active:scale-95"
                           >
                             <Pencil className="w-3.5 h-3.5" />
-                            Edit
+                            <span>Edit</span>
                           </button>
                         </div>
                       } 
@@ -493,9 +494,9 @@ export default function Budgets() {
                       {/* Pool amount + Donut side by side */}
                       <div className="flex items-center gap-6">
                         <div className="flex-1">
-                          <div className="flex items-end gap-3 mb-3 px-1">
-                            <h2 className="text-3xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">{fmt(masterBudgetAmt)}</h2>
-                            <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5">Total Funds</span>
+                          <div className="flex flex-col mb-4">
+                            <span className="text-[9px] font-black text-neutral-400 dark:text-neutral-500 uppercase tracking-widest leading-none mb-1.5">Total Pool Funds</span>
+                            <h2 className="text-4xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tight">{fmt(masterBudgetAmt)}</h2>
                           </div>
 
                           <div className="grid grid-cols-3 gap-2">
