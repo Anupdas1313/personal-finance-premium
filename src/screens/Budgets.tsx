@@ -150,6 +150,17 @@ export default function Budgets() {
     setIsPoolModalOpen(false);
   };
 
+  const handleDeletePool = async () => {
+    if (!masterPool || !masterPool.id) return;
+    const confirmation = window.prompt(
+      "To delete this monthly pool, type 'DELETE'.\n\nNote: This will reset your total monthly pool to 0, but your category envelopes will not be deleted."
+    );
+    if (confirmation?.trim().toUpperCase() === 'DELETE') {
+      await db.monthlyBudgets.delete(masterPool.id);
+      setIsPoolModalOpen(false);
+    }
+  };
+
   const handleSaveEnvelope = async () => {
     const amt = Number(envAmount);
     if (!envCategory || isNaN(amt) || amt <= 0) return;
@@ -647,9 +658,22 @@ export default function Budgets() {
               <input type="number" value={poolInput} onChange={e => setPoolInput(e.target.value)} className="w-full bg-neutral-50 dark:bg-[#1A1A1E] border border-neutral-100 dark:border-[#222222] rounded-xl py-3 pl-10 pr-4 text-xs font-bold text-brand-blue dark:text-[#F7F7F7] focus:outline-none focus:border-brand-green transition-colors" placeholder="0" autoFocus />
             </div>
             
-            <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-brand-blue/5 dark:border-white/5">
-              <button onClick={() => setIsPoolModalOpen(false)} className="px-6 py-3 text-brand-blue/40 hover:text-brand-blue dark:text-white/40 dark:hover:text-white font-semibold rounded-xl transition-colors uppercase text-[10px] tracking-[0.2em]">Cancel</button>
-              <button onClick={handleSavePool} className="px-6 py-3 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-semibold rounded-xl hover:bg-brand-green/90 transition-all shadow-lg shadow-brand-green/20 uppercase text-[10px] tracking-[0.2em]">Commit</button>
+            <div className="mt-8 flex items-center justify-between pt-6 border-t border-brand-blue/5 dark:border-white/5">
+              {masterPool && masterPool.id ? (
+                <button
+                  type="button"
+                  onClick={handleDeletePool}
+                  className="px-4 py-3 text-brand-red/60 hover:text-brand-red font-semibold rounded-xl transition-colors uppercase text-[10px] tracking-[0.2em]"
+                >
+                  Delete
+                </button>
+              ) : (
+                <div />
+              )}
+              <div className="flex gap-3">
+                <button onClick={() => setIsPoolModalOpen(false)} className="px-6 py-3 text-brand-blue/40 hover:text-brand-blue dark:text-white/40 dark:hover:text-white font-semibold rounded-xl transition-colors uppercase text-[10px] tracking-[0.2em]">Cancel</button>
+                <button onClick={handleSavePool} className="px-6 py-3 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-semibold rounded-xl hover:bg-brand-green/90 transition-all shadow-lg shadow-brand-green/20 uppercase text-[10px] tracking-[0.2em]">Commit</button>
+              </div>
             </div>
           </div>
         </div>
