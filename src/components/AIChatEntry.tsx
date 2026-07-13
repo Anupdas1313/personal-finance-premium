@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Send, Bot, CheckCircle2, Sparkles, Landmark, Lightbulb,
   ChevronRight, Hash, AppWindow, Pencil, Mic, MicOff, X,
-  RotateCcw, Clock, Zap, TrendingUp, Camera, Image as ImageIcon, User
+  RotateCcw, Clock, Zap, TrendingUp, Camera, Image as ImageIcon, User,
+  Target
 } from 'lucide-react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { format, subDays, subWeeks } from 'date-fns';
 import { CATEGORY_ICONS } from '../constants';
 import { db } from '../models/db';
@@ -19,7 +21,7 @@ interface AIChatEntryProps {
 }
 
 type ChatStage = 'IDLE' | 'ASK_AMOUNT' | 'ASK_TYPE' | 'ASK_BANK' | 'ASK_PAYMENT_METHOD'
-  | 'ASK_UPI_APP' | 'ASK_CATEGORY' | 'ASK_TAG' | 'ASK_PAYEE' | 'ASK_NOTE' | 'ASK_DATE' | 'PREVIEW';
+  | 'ASK_UPI_APP' | 'ASK_CATEGORY' | 'ASK_TAG' | 'ASK_PAYEE' | 'ASK_NOTE' | 'ASK_DATE' | 'ASK_BUDGET' | 'PREVIEW';
 
 interface ChatMessage {
   role: 'user' | 'ai';
@@ -655,17 +657,29 @@ const usePersonalLearning = () => {
 export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags, isSaving, showSuccess }) => {
   const currency = useCurrency();
   const { categories: appCategories } = useCategories();
+
+  const [pendingTx, setPendingTx] = useState<any>({
+    type: '', amount: '', category: '', selectedAccountId: '', toAccountId: '',
+    paymentMethod: '', upiApp: '', expenseType: '', party: '', note: '',
+    transactionDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"), _dateConfirmed: false, _isPredicted: false, _confidence: 0
+  });
+
+  const transactionMonthStr = pendingTx.transactionDate 
+    ? format(new Date(pendingTx.transactionDate), 'yyyy-MM')
+    : format(new Date(), 'yyyy-MM');
+
+  const dbBudgets = useLiveQuery(
+    () => db.budgets.where('month').equals(transactionMonthStr).toArray(),
+    [transactionMonthStr]
+  ) || [];
+  const envelopeBudgets = React.useMemo(() => dbBudgets.filter(b => b.type !== 'CUSTOM'), [dbBudgets]);
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'ai', content: "Hi! 👋 Describe your expense naturally — I'll fill everything in.\n\nTry: *\"paid 500 to Zomato via GPay from HDFC yesterday for dinner\"*\nOr say *\"same\"* to repeat your last entry." }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [stage, setStage] = useState<ChatStage>('IDLE');
-  const [pendingTx, setPendingTx] = useState<any>({
-    type: '', amount: '', category: '', selectedAccountId: '', toAccountId: '',
-    paymentMethod: '', upiApp: '', expenseType: '', party: '', note: '',
-    transactionDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"), _dateConfirmed: false, _isPredicted: false, _confidence: 0
-  });
   const [multiQueue, setMultiQueue] = useState<string[]>([]);
   const [autocomplete, setAutocomplete] = useState<any[]>([]);
   const [lastSaved, setLastSaved] = useState<any>(null);
@@ -757,6 +771,17 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       setStage('ASK_TAG'); addAIMessage("Tag this as:", tags);
     } else if (!tx.note && tx.note !== '-') {
       setStage('ASK_NOTE'); addAIMessage("Add a short remark (Optional):", ['Skip']);
+    } else if (tx.type === 'DEBIT' && tx.linkedBudgetId === undefined) {
+      setStage('ASK_BUDGET');
+      const categoryBud = envelopeBudgets.find(b => b.category.toLowerCase() === tx.category.toLowerCase());
+      const options = [
+        ...(categoryBud ? [`${CATEGORY_ICONS[categoryBud.category] || '📦'} ${categoryBud.category}`] : []),
+        ...envelopeBudgets
+          .filter(b => b.category.toLowerCase() !== tx.category.toLowerCase())
+          .map(b => `${CATEGORY_ICONS[b.category] || '📦'} ${b.category}`),
+        'None'
+      ];
+      addAIMessage("Select a budget envelope for this transaction:", options);
     } else if (!tx._dateConfirmed) {
       setStage('ASK_DATE'); addAIMessage("When did this happen?", ['Today', 'Yesterday', '2 days ago', '3 days ago']);
     } else {
@@ -910,6 +935,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
           paymentMethod: last.paymentMethod, upiApp: last.upiApp || '',
           category: last.category, expenseType: last.expenseType || '', party: last.party || '',
           note: last.note, transactionDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+          linkedBudgetId: last.linkedBudgetId,
           _dateConfirmed: true, _isPredicted: false, _confidence: 90
         };
         setPendingTx(cloned);
@@ -1017,10 +1043,24 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       const { date } = parseDate(userMsg);
       updated.transactionDate = date; updated._dateConfirmed = true;
       setPendingTx(updated); checkNextStep(updated);
+    } else if (stage === 'ASK_BUDGET') {
+      if (t === 'none' || t === 'skip') {
+        updated.linkedBudgetId = null;
+      } else {
+        const cleanName = userMsg.replace(/^(🏦|💵|💳|📦|🍕|🍔|🍜|🥘|☕|🍩|🍱|🍛|🥗|🍺|🧁|🚗|🛵|🚌|🚕|🛺|✈️|🚂|🏨|🗺️|🛒|🥦|🥛|🛍️|👗|sneaker|👟|💄|💊|🏥|🏋️|🩺|📺|💡|🔌|📚|🎓|📖|🎬|🎮|🎵|🎭|🏠|🏡|💰|📈|💹|🙏|⛪|🕌|🛕)\s*/, '').trim();
+        const selectedBud = envelopeBudgets.find(b => b.category.toLowerCase() === cleanName.toLowerCase());
+        if (selectedBud) {
+          updated.linkedBudgetId = selectedBud.id;
+        } else {
+          updated.linkedBudgetId = null;
+        }
+      }
+      setPendingTx(updated); checkNextStep(updated);
     }
-  }, [input, pendingTx, stage, accounts, tags, recentTx, smartDefaults, payeeMemory, multiQueue, messages, appCategories]);
+  }, [input, pendingTx, stage, accounts, tags, recentTx, smartDefaults, payeeMemory, multiQueue, messages, appCategories, envelopeBudgets]);
 
   const applyParsed = (p: ReturnType<typeof parseUniversal>, updated: any) => {
+    const isDebit = p.type === 'DEBIT' || updated.type === 'DEBIT';
     const newTx = {
       ...updated,
       ...(p.amount && { amount: p.amount }),
@@ -1033,6 +1073,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       ...(p.tag && { expenseType: p.tag }),
       ...(p.parsedPayee && { party: p.parsedPayee }),
       ...(p.parsedNote && { note: p.parsedNote }),
+      linkedBudgetId: isDebit ? undefined : null,
       transactionDate: p.date || updated.transactionDate,
       _dateConfirmed: p.dateConfirmed || updated._dateConfirmed,
       _isPredicted: p.isPredicted,
@@ -1051,6 +1092,19 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     if (field === 'payee') { updated.party = ''; setStage('ASK_PAYEE'); addAIMessage(updated.type === 'CREDIT' ? "Who paid you? (or source of income)" : updated.type === 'TRANSFER' ? "Who did you send this to?" : "Who did you pay? (or where did you spend?)", ['Skip']); }
     if (field === 'remark') { updated.note = ''; setStage('ASK_NOTE'); addAIMessage("Correct Remark:"); }
     if (field === 'date') { updated._dateConfirmed = false; setStage('ASK_DATE'); addAIMessage("When did this happen?", ['Today', 'Yesterday', '2 days ago', '3 days ago']); }
+    if (field === 'budget') {
+      updated.linkedBudgetId = undefined;
+      setStage('ASK_BUDGET');
+      const categoryBud = envelopeBudgets.find(b => b.category.toLowerCase() === updated.category.toLowerCase());
+      const options = [
+        ...(categoryBud ? [`${CATEGORY_ICONS[categoryBud.category] || '📦'} ${categoryBud.category}`] : []),
+        ...envelopeBudgets
+          .filter(b => b.category.toLowerCase() !== updated.category.toLowerCase())
+          .map(b => `${CATEGORY_ICONS[b.category] || '📦'} ${b.category}`),
+        'None'
+      ];
+      addAIMessage("Select a budget envelope for this transaction:", options);
+    }
     setPendingTx(updated);
   };
 
@@ -1065,6 +1119,9 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     const finalTx = { ...tx };
     if (finalTx.party === '-') finalTx.party = '';
     if (finalTx.note === '-') finalTx.note = '';
+    if (finalTx.linkedBudgetId === null) {
+      delete finalTx.linkedBudgetId;
+    }
     
     setLastSaved(finalTx);
     onSave(finalTx);
@@ -1086,6 +1143,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       paymentMethod: tx.paymentMethod, upiApp: tx.upiApp || '',
       category: tx.category, expenseType: tx.expenseType || '', party: tx.party || '',
       note: tx.note, transactionDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+      linkedBudgetId: tx.linkedBudgetId,
       _dateConfirmed: true, _isPredicted: false, _confidence: 90
     };
     setPendingTx(cloned); setStage('PREVIEW');
@@ -1198,6 +1256,14 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
                 { icon: <User className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Payee', value: pendingTx.party || '—', field: 'payee' },
                 { icon: <Hash className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Tag', value: `#${pendingTx.expenseType || '—'}`, field: 'tag' },
                 { icon: <Lightbulb className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Note', value: pendingTx.note || '—', field: 'remark' },
+                ...(pendingTx.type === 'DEBIT' ? [{
+                  icon: <Target className="w-3 h-3 text-neutral-400 shrink-0" />,
+                  label: 'Envelope',
+                  value: pendingTx.linkedBudgetId 
+                    ? envelopeBudgets.find(b => b.id === pendingTx.linkedBudgetId)?.category || '—'
+                    : 'None',
+                  field: 'budget'
+                }] : []),
               ].map(({ icon, label, value, field }) => (
                 <div key={label} onClick={() => field && handleEdit(field)}
                   className={`bg-white dark:bg-white/5 p-2 rounded-xl flex items-center gap-2 border border-transparent transition-colors relative group ${field ? 'cursor-pointer hover:border-brand-green/20 hover:bg-neutral-50 dark:hover:bg-white/5' : ''}`}>

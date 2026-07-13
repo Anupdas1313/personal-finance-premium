@@ -438,7 +438,9 @@ export default function Dashboard() {
           upiApp: currentPaymentMethod === 'UPI' ? currentUpiApp : undefined,
           party: currentPartyName,
           expenseType: currentExpenseType,
-          linkedBudgetId: selectedBudgetId === 'auto' ? undefined : Number(selectedBudgetId),
+          linkedBudgetId: txData && 'linkedBudgetId' in txData
+            ? (txData.linkedBudgetId ? Number(txData.linkedBudgetId) : undefined)
+            : (selectedBudgetId === 'auto' ? undefined : Number(selectedBudgetId)),
           linkedTransactionId: undefined // ensure link is cleared
         };
 
