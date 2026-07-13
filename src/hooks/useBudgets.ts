@@ -189,7 +189,12 @@ export function useBudgets(monthStr: string, currentMonth: Date): UseBudgetsRetu
         .reduce((s, tx) => s + Number(tx.amount), 0);
     }
     return expenses
-      .filter(tx => tx.category === budget.category)
+      .filter(tx => {
+        if (tx.linkedBudgetId) {
+          return tx.linkedBudgetId === budget.id;
+        }
+        return tx.category === budget.category;
+      })
       .reduce((s, tx) => s + Number(tx.amount), 0);
   };
 
