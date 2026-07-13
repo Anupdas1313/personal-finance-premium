@@ -48,6 +48,15 @@ export interface Budget {
   category: string;
   amount: number;
   month: string; // 'YYYY-MM'
+  type?: 'ENVELOPE' | 'CUSTOM';
+}
+
+export interface MonthlyBudget {
+  id?: number;
+  month: string; // 'YYYY-MM'
+  totalAmount: number;
+  linkedAccountIds?: number[];
+  linkedTags?: string[];
 }
 
 export interface RecurringTemplate {
@@ -110,6 +119,17 @@ export interface AccountClosing {
   totalOutflow: number;
 }
 
+export interface WishlistItem {
+  id?: number;
+  name: string;
+  price: number;
+  link?: string;
+  priority: number;
+  status: 'ACTIVE' | 'BOUGHT' | 'ELIMINATED';
+  dateAdded: Date;
+  dateResolved?: Date;
+}
+
 export class FinanceDatabase extends Dexie {
   accounts!: Table<Account, number>;
   transactions!: Table<Transaction, number>;
@@ -122,6 +142,8 @@ export class FinanceDatabase extends Dexie {
   tags!: Table<Tag, number>;
   recurringTemplates!: Table<RecurringTemplate, number>;
   userSettings!: Table<UserSetting, number>;
+  wishlist!: Table<WishlistItem, number>;
+  monthlyBudgets!: Table<MonthlyBudget, number>;
 
   constructor(dbName: string = 'FinanceDatabase_Local') {
     super(dbName);
@@ -208,6 +230,37 @@ export class FinanceDatabase extends Dexie {
       tags: '++id, &name',
       recurringTemplates: '++id, nextRunDate, isActive',
       userSettings: '++id, &key'
+    });
+
+    this.version(16).stores({
+      accounts: '++id, bankName, accountLast4',
+      transactions: '++id, accountId, type, dateTime, category, linkedBudgetId',
+      monthlyClosings: '++id, &month',
+      budgets: '++id, category, month, [category+month]',
+      parties: '++id, name, type',
+      ledgerTransactions: '++id, partyId, type, dateTime',
+      accountClosings: '++id, accountId, closingDate',
+      categories: '++id, &name',
+      tags: '++id, &name',
+      recurringTemplates: '++id, nextRunDate, isActive',
+      userSettings: '++id, &key',
+      wishlist: '++id, name, price, status, dateAdded'
+    });
+
+    this.version(17).stores({
+      accounts: '++id, bankName, accountLast4',
+      transactions: '++id, accountId, type, dateTime, category, linkedBudgetId',
+      monthlyClosings: '++id, &month',
+      budgets: '++id, category, month, [category+month]',
+      parties: '++id, name, type',
+      ledgerTransactions: '++id, partyId, type, dateTime',
+      accountClosings: '++id, accountId, closingDate',
+      categories: '++id, &name',
+      tags: '++id, &name',
+      recurringTemplates: '++id, nextRunDate, isActive',
+      userSettings: '++id, &key',
+      wishlist: '++id, name, price, status, dateAdded',
+      monthlyBudgets: '++id, &month'
     });
 
     // Auto-generate globally unique numeric IDs for all tables to prevent sync collisions

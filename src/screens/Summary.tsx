@@ -3,13 +3,28 @@ import { db } from '../models/db';
 import { useAuth } from '../context/AuthContext';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { useState, useMemo, Component, type ReactNode } from 'react';
-import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, PieChart as PieIcon, Tag, Store, Layers, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, PieChart as PieIcon, Tag, Store, Layers, AlertTriangle, CreditCard, BarChart2 } from 'lucide-react';
 import { CATEGORY_ICONS } from '../constants';
 import { useCurrency } from '../hooks/useCurrency';
 import { cn } from '../logic/utils';
 
-// Cleaner, modern color palette
-const COLORS = ['#00A86B', '#34D399', '#6EE7B7', '#A7F3D0', '#10B981', '#059669', '#047857', '#064E3B'];
+// ── Color palette matching the app's brand-green primary ─────────────────────
+const CAT_COLORS = [
+  '#00A86B', '#1A237E', '#D4AF37', '#E53935', '#82EEFD',
+  '#6366F1', '#F59E0B', '#EC4899', '#14B8A6', '#84CC16',
+];
+
+const TAG_COLORS = [
+  '#1A237E', '#00A86B', '#D4AF37', '#E53935', '#6366F1',
+];
+
+const PAY_COLORS: Record<string, string> = {
+  UPI: '#6366F1',
+  Bank: '#00A86B',
+  'Credit Card': '#E53935',
+  Cash: '#D4AF37',
+  'Bank Transfer': '#1A237E',
+};
 
 // ── Error Boundary ──────────────────────────────────────────────────────────
 class SummaryErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: string }> {
@@ -24,11 +39,11 @@ class SummaryErrorBoundary extends Component<{ children: ReactNode }, { hasError
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center">
-          <AlertTriangle className="w-10 h-10 text-rose-500 mb-3" />
-          <h2 className="text-lg font-bold text-neutral-900 mb-2">Something went wrong</h2>
-          <p className="text-sm text-neutral-500 mb-4 max-w-xs">{this.state.error}</p>
+          <AlertTriangle className="w-10 h-10 text-brand-red mb-3" />
+          <h2 className="text-sm font-bold text-brand-blue dark:text-[#F7F7F7] mb-2">Something went wrong</h2>
+          <p className="text-[10px] text-neutral-400 mb-4 max-w-xs">{this.state.error}</p>
           <button onClick={() => this.setState({ hasError: false, error: '' })}
-            className="px-5 py-2.5 bg-brand-green text-white rounded-xl text-sm font-semibold shadow-sm">
+            className="px-5 py-2.5 bg-brand-green text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-md shadow-brand-green/10">
             Try Again
           </button>
         </div>
@@ -38,24 +53,15 @@ class SummaryErrorBoundary extends Component<{ children: ReactNode }, { hasError
   }
 }
 
-// ── Helper: safe timestamp extraction ────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────
 function getTxTimestamp(dateTime: any): number {
   try {
     if (!dateTime) return 0;
     if (typeof dateTime === 'number') return dateTime;
-    if (dateTime instanceof Date) {
-      const t = dateTime.getTime();
-      return isNaN(t) ? 0 : t;
-    }
-    if (typeof dateTime === 'string') {
-      const d = new Date(dateTime.trim().replace(' ', 'T'));
-      const t = d.getTime();
-      return isNaN(t) ? 0 : t;
-    }
+    if (dateTime instanceof Date) { const t = dateTime.getTime(); return isNaN(t) ? 0 : t; }
+    if (typeof dateTime === 'string') { const d = new Date(dateTime.trim().replace(' ', 'T')); const t = d.getTime(); return isNaN(t) ? 0 : t; }
     return 0;
-  } catch {
-    return 0;
-  }
+  } catch { return 0; }
 }
 
 function safeNum(val: any): number {
@@ -63,79 +69,93 @@ function safeNum(val: any): number {
   return isNaN(n) ? 0 : n;
 }
 
-// ── Mini Donut (pure SVG, no recharts) ───────────────────────────────────────
-function MiniDonut({ data, colors, size = 160 }: { data: { name: string; value: number }[]; colors: string[]; size?: number }) {
+// ── Mini Donut (pure SVG) ─────────────────────────────────────────────────────
+function MiniDonut({ data, colors, size = 140 }: { data: { name: string; value: number }[]; colors: string[]; size?: number }) {
   const total = data.reduce((s, d) => s + d.value, 0);
   if (total === 0) return null;
   const r = size / 2;
-  const innerR = r * 0.65;
-  const cx = r;
-  const cy = r;
+  const innerR = r * 0.62;
+  const cx = r; const cy = r;
   let cumAngle = -90;
 
   const arcs = data.map((d, i) => {
-    const pct = d.value / total;
-    const angle = pct * 360;
+    const angle = (d.value / total) * 360;
     const startAngle = cumAngle;
     cumAngle += angle;
     const endAngle = cumAngle;
-
     const startRad = (startAngle * Math.PI) / 180;
     const endRad = (endAngle * Math.PI) / 180;
     const largeArc = angle > 180 ? 1 : 0;
-
-    const x1 = cx + r * Math.cos(startRad);
-    const y1 = cy + r * Math.sin(startRad);
-    const x2 = cx + r * Math.cos(endRad);
-    const y2 = cy + r * Math.sin(endRad);
-    const ix1 = cx + innerR * Math.cos(endRad);
-    const iy1 = cy + innerR * Math.sin(endRad);
-    const ix2 = cx + innerR * Math.cos(startRad);
-    const iy2 = cy + innerR * Math.sin(startRad);
-
-    const pathD = [
-      `M ${x1} ${y1}`,
-      `A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`,
-      `L ${ix1} ${iy1}`,
-      `A ${innerR} ${innerR} 0 ${largeArc} 0 ${ix2} ${iy2}`,
-      'Z',
-    ].join(' ');
-
-    return <path key={i} d={pathD} fill={colors[i % colors.length]} stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" />;
+    const x1 = cx + r * Math.cos(startRad); const y1 = cy + r * Math.sin(startRad);
+    const x2 = cx + r * Math.cos(endRad); const y2 = cy + r * Math.sin(endRad);
+    const ix1 = cx + innerR * Math.cos(endRad); const iy1 = cy + innerR * Math.sin(endRad);
+    const ix2 = cx + innerR * Math.cos(startRad); const iy2 = cy + innerR * Math.sin(startRad);
+    const pathD = [`M ${x1} ${y1}`, `A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`, `L ${ix1} ${iy1}`, `A ${innerR} ${innerR} 0 ${largeArc} 0 ${ix2} ${iy2}`, 'Z'].join(' ');
+    return <path key={i} d={pathD} fill={colors[i % colors.length]} stroke="transparent" strokeWidth="1.5" />;
   });
 
+  return <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>{arcs}</svg>;
+}
+
+// ── Empty State ──────────────────────────────────────────────────────────────
+function EmptyState({ icon, msg }: { icon: ReactNode; msg: string }) {
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {arcs}
-    </svg>
+    <div className="flex flex-col items-center justify-center py-10 opacity-40">
+      <div className="w-12 h-12 bg-neutral-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-3">
+        {icon}
+      </div>
+      <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">{msg}</p>
+    </div>
   );
 }
 
-// ── Mini Bar Chart (pure SVG, no recharts) ───────────────────────────────────
-function MiniBarChart({ data }: { data: { month: string; income: number; expenses: number }[] }) {
-  const maxVal = Math.max(...data.map(d => Math.max(d.income, d.expenses)), 1);
-  const barW = 14;
-  const gap = 4;
-  const groupW = barW * 2 + gap;
-  const chartH = 140;
-  const chartW = data.length * (groupW + 16);
-
+// ── Section Card wrapper ──────────────────────────────────────────────────────
+function SectionCard({ children }: { children: ReactNode }) {
   return (
-    <div className="w-full overflow-x-auto pb-2 scrollbar-hide">
-      <svg width={chartW} height={chartH + 30} viewBox={`0 0 ${chartW} ${chartH + 30}`} className="mx-auto block">
-        {data.map((d, i) => {
-          const x = i * (groupW + 16) + 8;
-          const incH = (d.income / maxVal) * chartH;
-          const expH = (d.expenses / maxVal) * chartH;
-          return (
-            <g key={i}>
-              <rect x={x} y={chartH - incH} width={barW} height={incH} rx={4} fill="#00A86B" opacity={0.8} />
-              <rect x={x + barW + gap} y={chartH - expH} width={barW} height={expH} rx={4} fill="#F43F5E" opacity={0.9} />
-              <text x={x + groupW / 2} y={chartH + 20} textAnchor="middle" fontSize={11} fontWeight={600} fill="#737373">{d.month}</text>
-            </g>
-          );
-        })}
-      </svg>
+    <div className="bg-white dark:bg-[#111111] p-5 rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm">
+      {children}
+    </div>
+  );
+}
+
+// ── Section title ─────────────────────────────────────────────────────────────
+function SectionTitle({ icon, label }: { icon: ReactNode; label: string }) {
+  return (
+    <div className="flex items-center gap-3 mb-5">
+      <div className="p-2 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
+        <span className="text-brand-blue dark:text-[#F7F7F7]">{icon}</span>
+      </div>
+      <div>
+        <p className="font-bold text-sm text-brand-blue dark:text-[#F7F7F7]">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Progress row ─────────────────────────────────────────────────────────────
+function ProgressRow({ label, amount, pct, color, icon, rank, fmt }:
+  { label: string; amount: number; pct: number; color: string; icon?: string; rank?: number; fmt: (n: number) => string }) {
+  return (
+    <div className="p-3.5 rounded-2xl border border-neutral-100 dark:border-[#222222] bg-neutral-50 dark:bg-[#1A1A1A]/50">
+      <div className="flex items-center justify-between mb-2.5">
+        <div className="flex items-center gap-2 min-w-0">
+          {rank !== undefined && (
+            <span className="w-5 h-5 rounded-full bg-brand-blue/5 dark:bg-white/10 text-neutral-400 text-[10px] font-bold flex items-center justify-center shrink-0">{rank}</span>
+          )}
+          {icon && <span className="text-[13px] shrink-0">{icon}</span>}
+          <span className="text-xs font-bold text-brand-blue dark:text-[#F7F7F7] truncate">{label}</span>
+        </div>
+        <div className="flex items-center gap-2.5 shrink-0 ml-3">
+          <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">{Math.round(pct)}%</span>
+          <span className="text-xs font-bold text-brand-blue dark:text-[#F7F7F7]">{fmt(amount)}</span>
+        </div>
+      </div>
+      <div className="w-full bg-neutral-100 dark:bg-[#222222] rounded-full h-1.5 overflow-hidden">
+        <div
+          className="h-1.5 rounded-full transition-all duration-500"
+          style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }}
+        />
+      </div>
     </div>
   );
 }
@@ -159,21 +179,13 @@ function SummaryContent() {
   const prevMonthEndTs = prevMonthEnd.getTime();
 
   const monthTxs = useMemo(() => {
-    try {
-      return transactions.filter(tx => {
-        const t = getTxTimestamp(tx.dateTime);
-        return t >= monthStartTs && t <= monthEndTs;
-      });
-    } catch { return []; }
+    try { return transactions.filter(tx => { const t = getTxTimestamp(tx.dateTime); return t >= monthStartTs && t <= monthEndTs; }); }
+    catch { return []; }
   }, [transactions, monthStartTs, monthEndTs]);
 
   const prevMonthTxs = useMemo(() => {
-    try {
-      return transactions.filter(tx => {
-        const t = getTxTimestamp(tx.dateTime);
-        return t >= prevMonthStartTs && t <= prevMonthEndTs;
-      });
-    } catch { return []; }
+    try { return transactions.filter(tx => { const t = getTxTimestamp(tx.dateTime); return t >= prevMonthStartTs && t <= prevMonthEndTs; }); }
+    catch { return []; }
   }, [transactions, prevMonthStartTs, prevMonthEndTs]);
 
   const expenses = useMemo(() => monthTxs.filter(tx => tx.type === 'DEBIT' && tx.category !== 'Transfer'), [monthTxs]);
@@ -187,19 +199,20 @@ function SummaryContent() {
   const prevTotalIncome = useMemo(() => prevIncome.reduce((s, tx) => s + safeNum(tx.amount), 0), [prevIncome]);
 
   const savings = totalIncome - totalExpense;
-  const savingsRateNum = totalIncome > 0 ? Math.round((savings / totalIncome) * 100) : 0;
-  const savingsRate = isNaN(savingsRateNum) ? 0 : savingsRateNum;
+  const savingsRateRaw = totalIncome > 0 ? Math.round((savings / totalIncome) * 100) : 0;
+  const savingsRate = isNaN(savingsRateRaw) ? 0 : savingsRateRaw;
 
   const expenseChangePct = prevTotalExpense > 0 ? ((totalExpense - prevTotalExpense) / prevTotalExpense) * 100 : null;
   const incomeChangePct = prevTotalIncome > 0 ? ((totalIncome - prevTotalIncome) / prevTotalIncome) * 100 : null;
 
-  // ── Aggregations ──
-  const { pieData, tagData, accData, partyData } = useMemo(() => {
+  // ── Aggregations ──────────────────────────────────────────────────────────
+  const { pieData, tagData, accData, partyData, payMethodData } = useMemo(() => {
     try {
       const byCategory: Record<string, number> = {};
       const byTag: Record<string, number> = {};
       const byAccount: Record<string, number> = {};
       const byParty: Record<string, number> = {};
+      const byPayMethod: Record<string, number> = {};
 
       for (const tx of expenses) {
         const amt = safeNum(tx.amount);
@@ -207,10 +220,8 @@ function SummaryContent() {
         if (tx.expenseType) byTag[tx.expenseType] = (byTag[tx.expenseType] || 0) + amt;
         const accName = accounts.find(a => a.id === tx.accountId)?.bankName || 'Unknown';
         byAccount[accName] = (byAccount[accName] || 0) + amt;
-        if (tx.party && typeof tx.party === 'string') {
-          const pName = tx.party.trim();
-          if (pName) byParty[pName] = (byParty[pName] || 0) + amt;
-        }
+        if (tx.party && typeof tx.party === 'string') { const p = tx.party.trim(); if (p) byParty[p] = (byParty[p] || 0) + amt; }
+        if (tx.paymentMethod) byPayMethod[tx.paymentMethod] = (byPayMethod[tx.paymentMethod] || 0) + amt;
       }
 
       const toSorted = (obj: Record<string, number>) =>
@@ -218,241 +229,210 @@ function SummaryContent() {
 
       return {
         pieData: toSorted(byCategory),
-        tagData: toSorted(byTag).slice(0, 5),
+        tagData: toSorted(byTag).slice(0, 6),
         accData: toSorted(byAccount),
-        partyData: toSorted(byParty).slice(0, 5),
+        partyData: toSorted(byParty).slice(0, 6),
+        payMethodData: toSorted(byPayMethod),
       };
     } catch {
-      return { pieData: [], tagData: [], accData: [], partyData: [] };
+      return { pieData: [], tagData: [], accData: [], partyData: [], payMethodData: [] };
     }
   }, [expenses, accounts]);
 
-  // ── 6-month bar data ──
-  const barData = useMemo(() => {
-    try {
-      return Array.from({ length: 6 }, (_, i) => {
-        const m = subMonths(new Date(), 5 - i);
-        const msTs = startOfMonth(m).getTime();
-        const meTs = endOfMonth(m).getTime();
-        const txs = transactions.filter(tx => {
-          const t = getTxTimestamp(tx.dateTime);
-          return t >= msTs && t <= meTs;
-        });
-        return {
-          month: format(m, 'MMM'),
-          income: txs.filter(tx => tx.type === 'CREDIT' && tx.category !== 'Transfer').reduce((s, tx) => s + safeNum(tx.amount), 0),
-          expenses: txs.filter(tx => tx.type === 'DEBIT' && tx.category !== 'Transfer').reduce((s, tx) => s + safeNum(tx.amount), 0),
-        };
-      });
-    } catch {
-      return [];
-    }
-  }, [transactions]);
-
-  const avg6MonthExpense = barData.length > 0 ? barData.reduce((s, d) => s + d.expenses, 0) / barData.length : 0;
   const isCurrentMonth = format(currentMonth, 'yyyy-MM') === format(new Date(), 'yyyy-MM');
   const monthName = format(currentMonth, 'MMMM');
 
-  let trendInsight = 'Keep tracking your expenses to see long-term trends.';
-  if (avg6MonthExpense > 0 && totalExpense > avg6MonthExpense) {
-    trendInsight = `You've spent ${Math.round(((totalExpense - avg6MonthExpense) / avg6MonthExpense) * 100)}% more this month compared to your 6-month average.`;
-  } else if (avg6MonthExpense > 0 && totalExpense < avg6MonthExpense) {
-    trendInsight = `Great job! Your spending is ${Math.round(((avg6MonthExpense - totalExpense) / avg6MonthExpense) * 100)}% lower than your 6-month average.`;
-  }
-
-  const fmtAmt = (n: number) => `{currency}${Math.abs(n).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
   const currencySymbol = useCurrency();
-
-  const formatWithCurrency = (n: number) => `${currencySymbol}${Math.abs(n).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+  const fmt = (n: number) => `${currencySymbol}${Math.abs(n).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 
   return (
-    <div className="space-y-5 max-w-4xl mx-auto pb-24 px-4 bg-neutral-50 min-h-screen pt-4">
+    <div className="space-y-6 max-w-2xl mx-auto pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
       {/* ── HEADER ── */}
-      <div className="flex items-center justify-between pb-2">
-        <div>
-          <h1 className="text-2xl font-extrabold text-neutral-900 tracking-tight leading-none">Analytics</h1>
-          <p className="text-[14px] font-medium text-neutral-500 mt-1">Financial Insights</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-brand-green/5 dark:bg-[#111612] text-brand-green dark:text-brand-cyan rounded-2xl border border-brand-green/10 dark:border-brand-green/5">
+            <BarChart2 className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">Analytics</h1>
+            <p className="text-neutral-400 font-bold mt-0.5 uppercase tracking-widest text-[8px]">Monthly Insights & Visual Breakdown</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-2xl shadow-sm border border-neutral-200">
-          <button onClick={() => setCurrentMonth(m => subMonths(m, 1))}
-            className="w-8 h-8 flex items-center justify-center bg-neutral-50 hover:bg-neutral-100 text-neutral-600 rounded-xl transition-all active:scale-95">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <span className="font-bold text-neutral-800 text-[14px] min-w-[70px] text-center">
-            {format(currentMonth, 'MMM yyyy')}
+
+        <div className="flex items-center gap-4 bg-white dark:bg-[#111111] px-4 py-2 rounded-[20px] shadow-sm border border-neutral-100 dark:border-[#222222] w-full sm:w-auto justify-between sm:justify-start">
+          <button
+            onClick={() => setCurrentMonth(m => subMonths(m, 1))}
+            className="text-neutral-400 hover:text-neutral-600 dark:hover:text-[#F7F7F7] font-bold px-1 transition-colors"
+          >&lt;</button>
+          <span className="font-bold text-brand-blue dark:text-[#F7F7F7] min-w-[120px] text-center uppercase tracking-widest text-[9px]">
+            {format(currentMonth, 'MMMM yyyy')}
           </span>
           <button
             onClick={() => setCurrentMonth(m => { const next = new Date(m.getFullYear(), m.getMonth() + 1, 1); return next > new Date() ? m : next; })}
             disabled={isCurrentMonth}
-            className="w-8 h-8 flex items-center justify-center bg-neutral-50 hover:bg-neutral-100 text-neutral-600 rounded-xl transition-all active:scale-95 disabled:opacity-30">
-            <ChevronRight className="w-5 h-5" />
-          </button>
+            className="text-neutral-400 hover:text-neutral-600 dark:hover:text-[#F7F7F7] font-bold px-1 transition-colors disabled:opacity-30"
+          >&gt;</button>
         </div>
       </div>
 
-      {/* ── 1. AT A GLANCE ── */}
-      <div className="bg-brand-green rounded-3xl p-6 shadow-md relative overflow-hidden text-white">
-        <div className="absolute top-0 right-0 w-48 h-48 bg-white/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      {/* ── HERO BANNER ── */}
+      <div className="bg-brand-green rounded-[24px] p-5 shadow-sm relative overflow-hidden text-white">
+        <div className="absolute top-0 right-0 w-40 h-40 bg-white/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="relative z-10">
-          <h2 className="text-white font-bold text-[17px] leading-relaxed">
-            In {monthName}, you earned <span className="font-extrabold">{formatWithCurrency(totalIncome)}</span> and spent <span className="font-extrabold">{formatWithCurrency(totalExpense)}</span>.
+          <p className="text-white/60 text-[9px] font-bold uppercase tracking-widest mb-2">{monthName} Overview</p>
+          <h2 className="text-white font-heading font-bold text-[20px] leading-snug tracking-tight">
+            Earned <span className="font-extrabold">{fmt(totalIncome)}</span>
+            <span className="text-white/50 font-normal"> · </span>
+            Spent <span className="font-extrabold">{fmt(totalExpense)}</span>
           </h2>
+          <p className="text-white/80 font-semibold text-[12px] mt-1">
+            {savings >= 0 ? `Saved ${fmt(savings)}` : `Deficit ${fmt(Math.abs(savings))}`}
+            {savingsRate !== 0 && <span className="ml-1 text-white/60">· {savingsRate}% rate</span>}
+          </p>
         </div>
       </div>
 
       {/* ── KPI ROW ── */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white p-4 rounded-3xl border border-neutral-100 shadow-sm flex flex-col justify-center">
-          <p className="text-[13px] font-semibold text-neutral-500 mb-1">Income</p>
-          <p className="text-[18px] font-bold text-neutral-900 tracking-tight">{formatWithCurrency(totalIncome)}</p>
-          {incomeChangePct !== null && (
-            <div className={`flex items-center gap-1 text-[12px] font-semibold mt-1 ${incomeChangePct >= 0 ? 'text-brand-green' : 'text-rose-500'}`}>
-              {incomeChangePct >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-              {Math.abs(Math.round(incomeChangePct))}%
-            </div>
-          )}
-        </div>
-        <div className="bg-white p-4 rounded-3xl border border-neutral-100 shadow-sm flex flex-col justify-center">
-          <p className="text-[13px] font-semibold text-neutral-500 mb-1">Spent</p>
-          <p className="text-[18px] font-bold text-neutral-900 tracking-tight">{formatWithCurrency(totalExpense)}</p>
-          {expenseChangePct !== null && (
-            <div className={`flex items-center gap-1 text-[12px] font-semibold mt-1 ${expenseChangePct <= 0 ? 'text-brand-green' : 'text-rose-500'}`}>
-              {expenseChangePct <= 0 ? <TrendingDown className="w-3.5 h-3.5" /> : <TrendingUp className="w-3.5 h-3.5" />}
-              {Math.abs(Math.round(expenseChangePct))}%
-            </div>
-          )}
-        </div>
+        {[
+          { label: 'Income', value: totalIncome, pct: incomeChangePct, good: (p: number) => p >= 0 },
+          { label: 'Spent', value: totalExpense, pct: expenseChangePct, good: (p: number) => p <= 0 },
+        ].map(kpi => (
+          <div key={kpi.label} className="bg-white dark:bg-[#111111] p-4 rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm">
+            <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{kpi.label}</p>
+            <p className="text-[20px] font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">{fmt(kpi.value)}</p>
+            {kpi.pct !== null && (
+              <div className={cn('flex items-center gap-1 text-[10px] font-semibold mt-1', kpi.good(kpi.pct) ? 'text-brand-green' : 'text-brand-red')}>
+                {kpi.good(kpi.pct) ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                {Math.abs(Math.round(kpi.pct))}% vs last month
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
-      {/* ── 2. CATEGORIES DONUT ── */}
-      <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-brand-green/10 flex items-center justify-center text-brand-green"><PieIcon className="w-5 h-5" /></div>
-          <h2 className="text-[16px] font-bold text-neutral-900">Spending by Category</h2>
-        </div>
+      {/* ── 1. SPENDING BY CATEGORY ── */}
+      <SectionCard>
+        <SectionTitle icon={<PieIcon className="w-4 h-4" />} label="Spending by Category" />
         {pieData.length > 0 ? (
-          <div className="flex flex-col items-center">
-            <div className="relative mb-6">
-              <MiniDonut data={pieData} colors={COLORS} size={180} />
+          <div className="flex flex-col sm:flex-row items-center gap-5">
+            {/* Donut */}
+            <div className="relative shrink-0">
+              <MiniDonut data={pieData} colors={CAT_COLORS} size={140} />
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-[12px] font-medium text-neutral-400">Total</span>
-                <span className="text-[18px] font-bold text-neutral-900 tracking-tight">{formatWithCurrency(totalExpense)}</span>
+                <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Total</span>
+                <span className="text-[15px] font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">{fmt(totalExpense)}</span>
               </div>
             </div>
-            <div className="w-full space-y-3">
-              {pieData.slice(0, 5).map((d, i) => (
-                <div key={d.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="w-3 h-3 rounded-full shrink-0 shadow-sm" style={{ background: COLORS[i % COLORS.length] }} />
-                    <span className="text-[14px] font-semibold text-neutral-700">{CATEGORY_ICONS[d.name] || '📦'} {d.name}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[13px] font-medium text-neutral-400">{totalExpense > 0 ? Math.round((d.value / totalExpense) * 100) : 0}%</span>
-                    <span className="text-[14px] font-bold text-neutral-900">{formatWithCurrency(d.value)}</span>
-                  </div>
-                </div>
+            {/* Rows */}
+            <div className="flex-1 w-full space-y-2.5">
+              {pieData.map((d, i) => (
+                <ProgressRow
+                  key={d.name}
+                  label={d.name}
+                  amount={d.value}
+                  pct={totalExpense > 0 ? (d.value / totalExpense) * 100 : 0}
+                  color={CAT_COLORS[i % CAT_COLORS.length]}
+                  icon={CATEGORY_ICONS[d.name] || '📦'}
+                  fmt={fmt}
+                />
               ))}
             </div>
           </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center opacity-50 py-12">
-            <PieIcon className="w-10 h-10 mb-3 text-neutral-400" />
-            <p className="text-[14px] font-medium text-neutral-500">No spending data</p>
-          </div>
-        )}
-      </div>
+        ) : <EmptyState icon={<PieIcon className="w-6 h-6 text-neutral-400" />} msg="No spending data this month" />}
+      </SectionCard>
 
-      {/* ── 3. ACCOUNTS ── */}
-      <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-brand-green/10 flex items-center justify-center text-brand-green"><Layers className="w-5 h-5" /></div>
-          <h2 className="text-[16px] font-bold text-neutral-900">Spending by Account</h2>
-        </div>
-        {accData.length > 0 ? (
-          <div className="space-y-4">
-            {accData.map((d) => {
-              const pct = totalExpense > 0 ? (d.value / totalExpense) * 100 : 0;
-              return (
-                <div key={d.name} className="bg-neutral-50 p-4 rounded-2xl">
-                  <div className="flex justify-between items-end mb-3">
-                    <span className="text-[14px] font-semibold text-neutral-800 truncate pr-2">{d.name}</span>
-                    <span className="text-[14px] font-bold text-neutral-900 tracking-tight shrink-0">{formatWithCurrency(d.value)}</span>
-                  </div>
-                  <div className="h-2 bg-neutral-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-brand-green rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+      {/* ── 2. SPENDING BY TAG ── */}
+      <SectionCard>
+        <SectionTitle icon={<Tag className="w-4 h-4" />} label="Spending by Tag" />
+        {tagData.length > 0 ? (
+          <div className="space-y-2.5">
+            {tagData.map((d, i) => (
+              <div key={d.name} className="p-3.5 rounded-2xl border border-neutral-100 dark:border-[#222222] bg-neutral-50 dark:bg-[#1A1A1A]/50">
+                <div className="flex items-center justify-between mb-2.5">
+                  <span
+                    className="text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider"
+                    style={{ backgroundColor: `${TAG_COLORS[i % TAG_COLORS.length]}15`, color: TAG_COLORS[i % TAG_COLORS.length] }}
+                  >
+                    #{d.name}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">
+                      {totalExpense > 0 ? Math.round((d.value / totalExpense) * 100) : 0}%
+                    </span>
+                    <span className="text-xs font-bold text-brand-blue dark:text-[#F7F7F7]">{fmt(d.value)}</span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center opacity-50 py-12">
-            <Layers className="w-10 h-10 mb-3 text-neutral-400" />
-            <p className="text-[14px] font-medium text-neutral-500">No account data</p>
-          </div>
-        )}
-      </div>
-
-      {/* ── 4. TOP TAGS ── */}
-      <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500"><Tag className="w-5 h-5" /></div>
-          <h2 className="text-[16px] font-bold text-neutral-900">Top Tags</h2>
-        </div>
-        {tagData.length > 0 ? (
-          <div className="space-y-3">
-            {tagData.map((d) => (
-              <div key={d.name} className="flex items-center justify-between w-full bg-neutral-50 p-3.5 rounded-2xl">
-                <span className="text-[13px] font-semibold text-neutral-600 bg-white px-2 py-1 rounded-lg border border-neutral-200 shadow-sm">#{d.name}</span>
-                <span className="text-[14px] font-bold text-neutral-900">{formatWithCurrency(d.value)}</span>
+                <div className="w-full bg-neutral-100 dark:bg-[#222222] rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="h-1.5 rounded-full transition-all duration-500"
+                    style={{ width: `${totalExpense > 0 ? Math.min((d.value / totalExpense) * 100, 100) : 0}%`, backgroundColor: TAG_COLORS[i % TAG_COLORS.length] }}
+                  />
+                </div>
               </div>
             ))}
           </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center opacity-50 py-12">
-            <Tag className="w-10 h-10 mb-3 text-neutral-400" />
-            <p className="text-[14px] font-medium text-neutral-500">No tags used</p>
+        ) : <EmptyState icon={<Tag className="w-6 h-6 text-neutral-400" />} msg="No tags used this month" />}
+      </SectionCard>
+
+      {/* ── 3. SPENDING BY ACCOUNT ── */}
+      <SectionCard>
+        <SectionTitle icon={<Layers className="w-4 h-4" />} label="Spending by Account" />
+        {accData.length > 0 ? (
+          <div className="space-y-2.5">
+            {accData.map((d, i) => (
+              <ProgressRow
+                key={d.name}
+                label={d.name}
+                amount={d.value}
+                pct={totalExpense > 0 ? (d.value / totalExpense) * 100 : 0}
+                color={CAT_COLORS[(i + 1) % CAT_COLORS.length]}
+                fmt={fmt}
+              />
+            ))}
           </div>
-        )}
-      </div>
+        ) : <EmptyState icon={<Layers className="w-6 h-6 text-neutral-400" />} msg="No account data this month" />}
+      </SectionCard>
+
+      {/* ── 4. PAYMENT METHOD ── */}
+      {payMethodData.length > 0 && (
+        <SectionCard>
+          <SectionTitle icon={<CreditCard className="w-4 h-4" />} label="Payment Methods" />
+          <div className="space-y-2.5">
+            {payMethodData.map((d) => (
+              <ProgressRow
+                key={d.name}
+                label={d.name}
+                amount={d.value}
+                pct={totalExpense > 0 ? (d.value / totalExpense) * 100 : 0}
+                color={PAY_COLORS[d.name] || '#1A237E'}
+                fmt={fmt}
+              />
+            ))}
+          </div>
+        </SectionCard>
+      )}
 
       {/* ── 5. TOP PAYEES ── */}
-      <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500"><Store className="w-5 h-5" /></div>
-          <h2 className="text-[16px] font-bold text-neutral-900">Top Payees</h2>
-        </div>
+      <SectionCard>
+        <SectionTitle icon={<Store className="w-4 h-4" />} label="Top Payees" />
         {partyData.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {partyData.map((d, i) => (
-              <div key={d.name} className="flex items-center justify-between w-full p-3 bg-neutral-50 rounded-2xl">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-6 h-6 rounded-full bg-white text-rose-500 border border-neutral-200 flex items-center justify-center text-[11px] font-bold shrink-0 shadow-sm">{i + 1}</div>
-                  <span className="text-[14px] font-semibold text-neutral-700 truncate pr-2">{d.name}</span>
-                </div>
-                <span className="text-[14px] font-bold text-neutral-900 shrink-0">{formatWithCurrency(d.value)}</span>
-              </div>
+              <ProgressRow
+                key={d.name}
+                label={d.name}
+                amount={d.value}
+                pct={totalExpense > 0 ? (d.value / totalExpense) * 100 : 0}
+                color="#E53935"
+                rank={i + 1}
+                fmt={fmt}
+              />
             ))}
           </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center opacity-50 py-12">
-            <Store className="w-10 h-10 mb-3 text-neutral-400" />
-            <p className="text-[14px] font-medium text-neutral-500">No payee data</p>
-          </div>
-        )}
-      </div>
-
-      {/* ── 6. TRENDS ── */}
-      <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm p-6">
-        <h2 className="text-[16px] font-bold text-neutral-900 mb-2">6-Month Big Picture</h2>
-        <p className="text-[14px] font-medium text-neutral-500 mb-6 leading-relaxed">{trendInsight}</p>
-        {barData.length > 0 && <MiniBarChart data={barData} />}
-        <div className="flex items-center justify-center gap-6 mt-6 pt-4 border-t border-neutral-100">
-          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#00A86B]" /><span className="text-[13px] font-semibold text-neutral-600">Income</span></div>
-          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#F43F5E]" /><span className="text-[13px] font-semibold text-neutral-600">Expenses</span></div>
-        </div>
-      </div>
+        ) : <EmptyState icon={<Store className="w-6 h-6 text-neutral-400" />} msg="No payee data this month" />}
+      </SectionCard>
 
     </div>
   );

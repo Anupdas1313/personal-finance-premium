@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, Link, Outlet } from 'react-router-dom';
-import { LayoutDashboard, BarChart3, Landmark, PieChart, Target, Settings, Plus, MoreHorizontal, BookOpen, FileText, User } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Landmark, PieChart, Target, Settings, Plus, MoreHorizontal, BookOpen, FileText, User, ShoppingBag } from 'lucide-react';
 
 import { cn } from '../logic/utils';
 
@@ -20,6 +20,7 @@ export default function Layout() {
     { name: 'Budgets', path: '/budgets', icon: Target },
     { name: 'Reports', path: '/reports', icon: FileText },
     { name: 'Ledger', path: '/ledger', icon: BookOpen },
+    { name: 'Wishlist', path: '/wishlist', icon: ShoppingBag },
     { name: 'Settings', path: '/settings', icon: Settings },
     { name: 'Profile', path: '/profile', icon: User },
   ];

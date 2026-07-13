@@ -1,17 +1,15 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction } from '../models/db';
 import { useAuth } from '../context/AuthContext';
 import {
   format, startOfMonth, endOfMonth, subMonths, startOfDay, endOfDay,
-  startOfWeek, endOfWeek, subWeeks, subDays, eachDayOfInterval,
-  differenceInDays, addDays
+  subDays, eachDayOfInterval, differenceInDays
 } from 'date-fns';
 import {
   Download, FileText, Printer, ChevronDown, Filter,
-  TrendingUp, TrendingDown, Zap, Search, ArrowLeftRight,
-  Lightbulb, CalendarDays, BarChart3, Tag, RefreshCw
+  TrendingUp, TrendingDown, Search, ArrowLeftRight, Tag, RefreshCw
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -20,8 +18,9 @@ import { useTags } from '../hooks/useTags';
 import { useCurrency } from '../hooks/useCurrency';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, BarChart, Bar
+  XAxis, YAxis, CartesianGrid, BarChart, Bar
 } from 'recharts';
+import { cn } from '../logic/utils';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CHART_COLORS = ['#00A86B', '#1A237E', '#D4AF37', '#82EEFD', '#E53935', '#3B3B98', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
@@ -48,19 +47,16 @@ type DatePreset = { label: string; getRange: () => { start: string; end: string 
 const DATE_PRESETS: DatePreset[] = [
   { label: 'Today', getRange: () => { const d = format(new Date(), 'yyyy-MM-dd'); return { start: d, end: d }; } },
   { label: 'Yesterday', getRange: () => { const d = format(subDays(new Date(), 1), 'yyyy-MM-dd'); return { start: d, end: d }; } },
-  { label: 'This Week', getRange: () => ({ start: format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'), end: format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd') }) },
-  { label: 'Last Week', getRange: () => { const lw = subWeeks(new Date(), 1); return { start: format(startOfWeek(lw, { weekStartsOn: 1 }), 'yyyy-MM-dd'), end: format(endOfWeek(lw, { weekStartsOn: 1 }), 'yyyy-MM-dd') }; } },
   { label: 'This Month', getRange: () => ({ start: format(startOfMonth(new Date()), 'yyyy-MM-dd'), end: format(endOfMonth(new Date()), 'yyyy-MM-dd') }) },
   { label: 'Last Month', getRange: () => { const lm = subMonths(new Date(), 1); return { start: format(startOfMonth(lm), 'yyyy-MM-dd'), end: format(endOfMonth(lm), 'yyyy-MM-dd') }; } },
   { label: 'Last 3 Mo', getRange: () => ({ start: format(startOfMonth(subMonths(new Date(), 2)), 'yyyy-MM-dd'), end: format(endOfMonth(new Date()), 'yyyy-MM-dd') }) },
   { label: 'Last 6 Mo', getRange: () => ({ start: format(startOfMonth(subMonths(new Date(), 5)), 'yyyy-MM-dd'), end: format(endOfMonth(new Date()), 'yyyy-MM-dd') }) },
   { label: 'This FY', getRange: () => ({ start: format(getFYStart(new Date()), 'yyyy-MM-dd'), end: format(getFYEnd(new Date()), 'yyyy-MM-dd') }) },
-  { label: 'Last FY', getRange: () => { const prev = subMonths(getFYStart(new Date()), 1); return { start: format(getFYStart(prev), 'yyyy-MM-dd'), end: format(getFYEnd(prev), 'yyyy-MM-dd') }; } },
 ];
 
 // ─── Insights Generator ──────────────────────────────────────────────────────
 interface Insight { icon: string; text: string; color: string }
-const generateInsights = (txs: Transaction[], prevTxs: Transaction[]): Insight[] => {
+const generateInsights = (txs: Transaction[], prevTxs: Transaction[], currency: string): Insight[] => {
   const insights: Insight[] = [];
   if (txs.length === 0) return insights;
 
@@ -74,7 +70,7 @@ const generateInsights = (txs: Transaction[], prevTxs: Transaction[]): Insight[]
     const biggest = debits.reduce((a, b) => a.amount > b.amount ? a : b);
     insights.push({
       icon: '💸', color: 'rose',
-      text: `Biggest expense: {currency}${biggest.amount.toLocaleString('en-IN')} to ${biggest.party || biggest.category} on ${format(new Date(biggest.dateTime), 'dd MMM')}`
+      text: `Biggest expense: ${currency}${biggest.amount.toLocaleString('en-IN')} to ${biggest.party || biggest.category} on ${format(new Date(biggest.dateTime), 'dd MMM')}`
     });
   }
 
@@ -83,7 +79,7 @@ const generateInsights = (txs: Transaction[], prevTxs: Transaction[]): Insight[]
     const avg = Math.round(totalExpense / debits.length);
     insights.push({
       icon: '📊', color: 'blue',
-      text: `${debits.length} expenses averaging {currency}${avg.toLocaleString('en-IN')} each`
+      text: `${debits.length} expenses averaging ${currency}${avg.toLocaleString('en-IN')} each`
     });
   }
 
@@ -107,25 +103,9 @@ const generateInsights = (txs: Transaction[], prevTxs: Transaction[]): Insight[]
     });
   }
 
-  // Category change vs previous period
-  if (prevTxs.length > 0 && debits.length > 0) {
-    const prevDebits = prevTxs.filter(t => t.type === 'DEBIT');
-    const prevTotal = prevDebits.reduce((s, t) => s + t.amount, 0);
-    if (prevTotal > 0) {
-      const change = ((totalExpense - prevTotal) / prevTotal * 100).toFixed(0);
-      insights.push({
-        icon: Number(change) > 0 ? '📈' : '📉', color: Number(change) > 0 ? 'rose' : 'emerald',
-        text: Number(change) > 0
-          ? `Spending up ${change}% vs previous period`
-          : `Spending down ${Math.abs(Number(change))}% vs previous period`
-      });
-    }
-  }
-
   return insights.slice(0, 4);
 };
 
-// ─── Main Component ──────────────────────────────────────────────────────────
 export default function Reports() {
   const currency = useCurrency();
   const { user } = useAuth();
@@ -152,7 +132,6 @@ export default function Reports() {
   const [comparisonMode, setComparisonMode] = useState(false);
   const [activeChart, setActiveChart] = useState<'category' | 'daily' | 'tags'>('category');
 
-  // Derived: accounts grouped by type for sub-filter
   const bankAccounts = useMemo(() => accounts.filter(a => (a.type || 'BANK') === 'BANK'), [accounts]);
   const creditCards = useMemo(() => accounts.filter(a => a.type === 'CREDIT_CARD'), [accounts]);
   const cashAccounts = useMemo(() => accounts.filter(a => a.type === 'CASH'), [accounts]);
@@ -161,14 +140,12 @@ export default function Reports() {
     if (accountIdParam) setSelectedAccountId(accountIdParam);
   }, [accountIdParam]);
 
-  // Apply preset
   const applyPreset = (preset: DatePreset) => {
     const range = preset.getRange();
     setDateRange(range);
     setActivePreset(preset.label);
   };
 
-  // ── Comparison Period ──
   const comparisonRange = useMemo(() => {
     const start = new Date(dateRange.start);
     const end = new Date(dateRange.end);
@@ -181,10 +158,8 @@ export default function Reports() {
     };
   }, [dateRange]);
 
-  // ── Data Queries ──
   const allTransactions = useLiveQuery(() => db.transactions.toArray(), [user?.uid]) || [];
 
-  // Extract unique UPI apps from transactions
   const uniqueUpiApps = useMemo(() => {
     const apps = new Set<string>();
     allTransactions.forEach(t => { if (t.upiApp) apps.add(t.upiApp); });
@@ -194,12 +169,10 @@ export default function Reports() {
   const filteredTransactions = useMemo(() => {
     let txs = [...allTransactions];
 
-    // Account
     if (selectedAccountId !== 'ALL') {
       txs = txs.filter(t => t.accountId === Number(selectedAccountId));
     }
 
-    // Date Range
     const start = startOfDay(new Date(dateRange.start)).getTime();
     const end = endOfDay(new Date(dateRange.end)).getTime();
     txs = txs.filter(t => {
@@ -207,25 +180,18 @@ export default function Reports() {
       return time >= start && time <= end;
     });
 
-    // Type
     if (transactionType !== 'ALL') txs = txs.filter(t => t.type === transactionType);
-    // Category
     if (selectedCategory !== 'ALL') txs = txs.filter(t => t.category === selectedCategory);
-    // Payment Channel
     if (selectedMethod !== 'ALL') {
       txs = txs.filter(t => t.paymentMethod === selectedMethod);
     }
-    // UPI App sub-filter
     if (selectedUpiApp !== 'ALL') {
       txs = txs.filter(t => t.upiApp === selectedUpiApp);
     }
-    // Account sub-filter (which account the money was deducted from)
     if (selectedMethodAccount !== 'ALL') {
       txs = txs.filter(t => t.accountId === Number(selectedMethodAccount));
     }
-    // Tag
     if (selectedTag !== 'ALL') txs = txs.filter(t => t.expenseType === selectedTag);
-    // Payee
     if (payeeSearch.trim()) {
       const q = payeeSearch.toLowerCase();
       txs = txs.filter(t => (t.party || '').toLowerCase().includes(q) || (t.note || '').toLowerCase().includes(q));
@@ -234,7 +200,6 @@ export default function Reports() {
     return txs.sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
   }, [allTransactions, selectedAccountId, dateRange, selectedCategory, selectedMethod, selectedUpiApp, selectedMethodAccount, selectedTag, transactionType, payeeSearch]);
 
-  // Comparison transactions
   const comparisonTransactions = useMemo(() => {
     if (!comparisonMode) return [];
     let txs = [...allTransactions];
@@ -249,7 +214,6 @@ export default function Reports() {
     return txs;
   }, [comparisonMode, allTransactions, selectedAccountId, comparisonRange, transactionType, selectedCategory, selectedMethod, selectedTag]);
 
-  // ── Computed Values ──
   const totals = useMemo(() => filteredTransactions.reduce((acc, tx) => {
     if (tx.type === 'CREDIT') acc.income += tx.amount;
     else if (tx.type === 'DEBIT') acc.expense += tx.amount;
@@ -262,7 +226,6 @@ export default function Reports() {
     return acc;
   }, { income: 0, expense: 0 }), [comparisonTransactions]);
 
-  // Running balance (chronological)
   const txsWithBalance = useMemo(() => {
     const sorted = [...filteredTransactions].sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
     let balance = 0;
@@ -270,17 +233,15 @@ export default function Reports() {
       if (tx.type === 'CREDIT') balance += tx.amount;
       else balance -= tx.amount;
       return { ...tx, runningBalance: balance };
-    }).reverse(); // back to newest-first for display
+    }).reverse();
   }, [filteredTransactions]);
 
-  // Category breakdown
   const categoryData = useMemo(() => {
     const map: Record<string, number> = {};
     filteredTransactions.filter(t => t.type === 'DEBIT').forEach(t => { map[t.category] = (map[t.category] || 0) + t.amount; });
     return Object.entries(map).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   }, [filteredTransactions]);
 
-  // Comparison category data
   const compCategoryData = useMemo(() => {
     if (!comparisonMode) return {};
     const map: Record<string, number> = {};
@@ -288,7 +249,6 @@ export default function Reports() {
     return map;
   }, [comparisonMode, comparisonTransactions]);
 
-  // Daily spend data
   const dailyData = useMemo(() => {
     try {
       const start = new Date(dateRange.start);
@@ -304,7 +264,6 @@ export default function Reports() {
     } catch { return []; }
   }, [filteredTransactions, dateRange]);
 
-  // Tag breakdown
   const tagData = useMemo(() => {
     const map: Record<string, { debit: number; credit: number }> = {};
     filteredTransactions.forEach(t => {
@@ -316,28 +275,23 @@ export default function Reports() {
     return Object.entries(map).map(([name, v]) => ({ name, expense: v.debit, income: v.credit }));
   }, [filteredTransactions]);
 
-  // Unique payees
   const uniquePayees = useMemo(() => {
     const set = new Set<string>();
     allTransactions.forEach(t => { if (t.party) set.add(t.party); });
     return Array.from(set).sort();
   }, [allTransactions]);
 
-  // Insights
-  const insights = useMemo(() => generateInsights(filteredTransactions, comparisonTransactions), [filteredTransactions, comparisonTransactions]);
+  const insights = useMemo(() => generateInsights(filteredTransactions, comparisonTransactions, currency), [filteredTransactions, comparisonTransactions, currency]);
 
-  // ── Percentage change helper ──
   const pctChange = (current: number, previous: number) => {
     if (previous === 0) return current > 0 ? 100 : 0;
     return ((current - previous) / previous * 100);
   };
 
-  // ── Export Functions ──
   const exportPDF = () => {
     const doc = new jsPDF();
     const pageW = doc.internal.pageSize.getWidth();
 
-    // Header bar
     doc.setFillColor(26, 35, 126);
     doc.rect(0, 0, pageW, 32, 'F');
     doc.setTextColor(255, 255, 255);
@@ -347,7 +301,6 @@ export default function Reports() {
     doc.text(`Generated: ${format(new Date(), 'dd MMM yyyy, h:mm a')}`, 14, 22);
     doc.text('Personal Finance Premium', pageW - 14, 22, { align: 'right' });
 
-    // Filter summary
     doc.setTextColor(100);
     doc.setFontSize(8);
     let y = 40;
@@ -357,18 +310,16 @@ export default function Reports() {
     if (payeeSearch) doc.text(`Payee Filter: "${payeeSearch}"`, 14, y + 10);
     y += payeeSearch ? 18 : 13;
 
-    // Stats boxes
     doc.setFontSize(9);
     doc.setTextColor(0);
     const boxW = (pageW - 42) / 3;
-    // Income
     doc.setFillColor(236, 253, 245);
     doc.roundedRect(14, y, boxW, 18, 2, 2, 'F');
     doc.setTextColor(5, 150, 105);
     doc.text('TOTAL INCOME', 18, y + 6);
     doc.setFontSize(11);
     doc.text(`${currency} ${totals.income.toLocaleString()}`, 18, y + 14);
-    // Expense
+
     doc.setFillColor(254, 242, 242);
     doc.roundedRect(14 + boxW + 7, y, boxW, 18, 2, 2, 'F');
     doc.setTextColor(220, 38, 38);
@@ -376,7 +327,7 @@ export default function Reports() {
     doc.text('TOTAL EXPENSE', 14 + boxW + 11, y + 6);
     doc.setFontSize(11);
     doc.text(`${currency} ${totals.expense.toLocaleString()}`, 14 + boxW + 11, y + 14);
-    // Net
+
     doc.setFillColor(238, 242, 255);
     doc.roundedRect(14 + (boxW + 7) * 2, y, boxW, 18, 2, 2, 'F');
     doc.setTextColor(26, 35, 126);
@@ -386,7 +337,6 @@ export default function Reports() {
     doc.text(`${currency} ${(totals.income - totals.expense).toLocaleString()}`, 14 + (boxW + 7) * 2 + 4, y + 14);
     y += 26;
 
-    // Category mini bar chart in PDF
     if (categoryData.length > 0) {
       doc.setFontSize(9);
       doc.setTextColor(0);
@@ -409,7 +359,6 @@ export default function Reports() {
       y += 4;
     }
 
-    // Transaction table with running balance
     autoTable(doc, {
       startY: y,
       head: [['Date', 'Particulars', 'Category', 'Tag', 'Method', 'Debit', 'Credit', 'Balance']],
@@ -421,14 +370,14 @@ export default function Reports() {
         (tx.paymentMethod || '—').toUpperCase(),
         tx.type === 'DEBIT' ? tx.amount.toLocaleString() : '',
         tx.type === 'CREDIT' ? tx.amount.toLocaleString() : '',
-        (tx.runningBalance >= 0 ? '' : '-') + '{currency}' + Math.abs(tx.runningBalance).toLocaleString(),
+        (tx.runningBalance >= 0 ? '' : '-') + currency + Math.abs(tx.runningBalance).toLocaleString(),
       ]),
-      foot: [['', '', '', '', 'TOTALS', totals.expense.toLocaleString(), totals.income.toLocaleString(), '{currency}' + (totals.income - totals.expense).toLocaleString()]],
+      foot: [['', '', '', '', 'TOTALS', totals.expense.toLocaleString(), totals.income.toLocaleString(), currency + (totals.income - totals.expense).toLocaleString()]],
       theme: 'grid',
       headStyles: { fillColor: [26, 35, 126], fontSize: 7, cellPadding: 2 },
       footStyles: { fillColor: [240, 240, 250], textColor: [26, 35, 126], fontStyle: 'bold', fontSize: 7 },
       styles: { fontSize: 6.5, cellPadding: 1.5 },
-      didDrawPage: (data: any) => {
+      didDrawPage: () => {
         const pg = doc.internal.pages.length - 1;
         doc.setFontSize(7);
         doc.setTextColor(180);
@@ -463,58 +412,68 @@ export default function Reports() {
     a.click();
   };
 
-  // ── Render ──
   return (
-    <div className="space-y-5 max-w-4xl mx-auto pb-8">
-      {/* ── Header ── */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-heading font-semibold text-brand-blue dark:text-white tracking-tight">Reports</h1>
-          <p className="text-brand-blue/50 dark:text-[#A0A0A0] font-semibold mt-1 uppercase text-[10px] tracking-[0.2em]">Advanced Financial Manifest & Export</p>
+    <div className="space-y-6 max-w-2xl mx-auto pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      
+      {/* ── HEADER ── */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-brand-blue/5 dark:bg-brand-blue/10 text-brand-blue dark:text-brand-cyan rounded-2xl border border-brand-blue/10 dark:border-brand-blue/5">
+            <FileText className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">Reports</h1>
+            <p className="text-neutral-400 font-bold mt-0.5 uppercase tracking-widest text-[8px]">Advanced Financial Manifest & Export</p>
+          </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <button onClick={() => setComparisonMode(!comparisonMode)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-semibold text-[10px] uppercase border transition-all tracking-[0.1em] ${
+            className={cn(
+              "flex-1 sm:flex-initial px-3 py-1.5 border rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
               comparisonMode
-                ? 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/20'
-                : 'bg-neutral-100 dark:bg-[#1A1A1A] text-brand-blue dark:text-white border-neutral-200 dark:border-white/5 hover:bg-neutral-200'
-            }`}>
-            <ArrowLeftRight className="w-3.5 h-3.5" /> Compare
+                ? "bg-purple-500 text-white border-purple-500 shadow-md shadow-purple-500/10"
+                : "border-neutral-200 dark:border-[#333333] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-[#222222]"
+            )}
+          >
+            <ArrowLeftRight className="w-3 h-3 inline mr-1" /> Compare
           </button>
           <button onClick={exportCSV}
-            className="flex items-center gap-2 px-5 py-2.5 bg-neutral-100 dark:bg-[#1A1A1A] text-brand-blue dark:text-white rounded-xl font-semibold text-[10px] uppercase border border-neutral-200 dark:border-white/5 hover:bg-neutral-200 transition-all tracking-[0.1em]">
-            <Printer className="w-3.5 h-3.5" /> CSV
+            className="flex-1 sm:flex-initial px-3 py-1.5 border border-neutral-200 dark:border-[#333333] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-[#222222] rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+          >
+            <Printer className="w-3 h-3 inline mr-1" /> CSV
           </button>
           <button onClick={exportPDF}
-            className="flex items-center gap-2 px-5 py-2.5 bg-brand-blue text-white rounded-xl font-semibold text-[10px] uppercase shadow-lg shadow-brand-blue/20 hover:scale-105 transition-all tracking-[0.1em]">
-            <Download className="w-3.5 h-3.5" /> PDF
+            className="flex-1 sm:flex-initial px-4 py-1.5 bg-brand-green text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-brand-green/10"
+          >
+            <Download className="w-3 h-3 inline mr-1" /> PDF
           </button>
         </div>
-      </header>
+      </div>
 
       {/* ── Quick Date Presets ── */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
         {DATE_PRESETS.map(preset => (
           <button key={preset.label} onClick={() => applyPreset(preset)}
-            className={`flex-shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider border transition-all whitespace-nowrap ${
+            className={cn(
+              "flex-shrink-0 px-3.5 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all whitespace-nowrap",
               activePreset === preset.label
-                ? 'bg-brand-blue text-white border-brand-blue shadow-md shadow-brand-blue/20 scale-105'
-                : 'bg-white dark:bg-[#111111] text-brand-blue/60 dark:text-[#A0A0A0] border-neutral-100 dark:border-[#222222] hover:border-brand-cyan hover:text-brand-blue dark:hover:text-white'
-            }`}>
+                ? "bg-brand-green border-brand-green text-white shadow-sm shadow-brand-green/10"
+                : "bg-white dark:bg-[#111111] text-neutral-400 border-neutral-100 dark:border-[#222222] hover:text-neutral-600 dark:hover:text-neutral-200"
+            )}>
             {preset.label}
           </button>
         ))}
       </div>
 
       {/* ── Control Panel ── */}
-      <div className="bg-white dark:bg-[#111111] p-5 rounded-[28px] border border-neutral-100 dark:border-[#222222] shadow-[0_8px_40px_rgba(26,35,126,0.05)]">
+      <div className="bg-white dark:bg-[#111111] p-5 rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {/* Account */}
           <div className="space-y-1.5">
-            <label className="text-[9px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">Account</label>
+            <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">Account</label>
             <div className="relative">
               <select value={selectedAccountId} onChange={(e) => { setSelectedAccountId(e.target.value); setActivePreset(''); }}
-                className="w-full appearance-none bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-[11px] font-semibold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all">
+                className="w-full appearance-none bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all">
                 <option value="ALL">All Accounts</option>
                 {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.bankName} (****{acc.accountLast4})</option>)}
               </select>
@@ -524,25 +483,25 @@ export default function Reports() {
 
           {/* Date Start */}
           <div className="space-y-1.5">
-            <label className="text-[9px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">From</label>
+            <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">From</label>
             <input type="date" value={dateRange.start} onChange={(e) => { setDateRange(prev => ({ ...prev, start: e.target.value })); setActivePreset('Custom'); }}
-              className="w-full bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-[11px] font-semibold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all" />
+              className="w-full bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all" />
           </div>
 
           {/* Date End */}
           <div className="space-y-1.5">
-            <label className="text-[9px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">To</label>
+            <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">To</label>
             <input type="date" value={dateRange.end} onChange={(e) => { setDateRange(prev => ({ ...prev, end: e.target.value })); setActivePreset('Custom'); }}
-              className="w-full bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-[11px] font-semibold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all" />
+              className="w-full bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all" />
           </div>
 
           {/* Type */}
           <div className="space-y-1.5">
-            <label className="text-[9px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">Flow</label>
-            <div className="flex bg-neutral-50 dark:bg-[#060608] p-1 rounded-xl border border-neutral-100 dark:border-white/5">
+            <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">Flow</label>
+            <div className="flex bg-neutral-50 dark:bg-[#1A1A1E] p-1 rounded-xl border border-neutral-100 dark:border-white/5">
               {(['ALL', 'DEBIT', 'CREDIT'] as const).map(t => (
                 <button key={t} onClick={() => setTransactionType(t)}
-                  className={`flex-1 py-2 rounded-lg text-[9px] font-black tracking-widest transition-all ${
+                  className={`flex-1 py-1.5 rounded-lg text-[9px] font-black tracking-widest transition-all cursor-pointer ${
                     transactionType === t ? 'bg-white dark:bg-white/10 shadow-sm text-brand-blue dark:text-white' : 'text-neutral-400'
                   }`}>{t}</button>
               ))}
@@ -551,10 +510,10 @@ export default function Reports() {
 
           {/* Category */}
           <div className="space-y-1.5">
-            <label className="text-[9px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">Category</label>
+            <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">Category</label>
             <div className="relative">
               <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full appearance-none bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-[11px] font-semibold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all">
+                className="w-full appearance-none bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all">
                 <option value="ALL">All Categories</option>
                 {categories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -564,10 +523,10 @@ export default function Reports() {
 
           {/* Method (Cascading) */}
           <div className="space-y-1.5">
-            <label className="text-[9px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">Payment Channel</label>
+            <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">Payment Channel</label>
             <div className="relative">
               <select value={selectedMethod} onChange={(e) => { setSelectedMethod(e.target.value); setSelectedUpiApp('ALL'); setSelectedMethodAccount('ALL'); }}
-                className="w-full appearance-none bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-[11px] font-semibold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all">
+                className="w-full appearance-none bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all">
                 <option value="ALL">All Channels</option>
                 <option value="UPI">📱 UPI</option>
                 <option value="Bank Transfer">🏦 Bank Transfer</option>
@@ -581,10 +540,10 @@ export default function Reports() {
           {/* UPI App (only when UPI selected) */}
           {selectedMethod === 'UPI' && (
             <div className="space-y-1.5">
-              <label className="text-[9px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">UPI App</label>
+              <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">UPI App</label>
               <div className="relative">
                 <select value={selectedUpiApp} onChange={(e) => setSelectedUpiApp(e.target.value)}
-                  className="w-full appearance-none bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-[11px] font-semibold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all">
+                  className="w-full appearance-none bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all">
                   <option value="ALL">All UPI Apps</option>
                   {uniqueUpiApps.map(app => <option key={app} value={app}>{app}</option>)}
                 </select>
@@ -596,12 +555,12 @@ export default function Reports() {
           {/* Deducted From Account (contextual based on channel) */}
           {selectedMethod !== 'ALL' && (
             <div className="space-y-1.5">
-              <label className="text-[9px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">
+              <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">
                 {selectedMethod === 'UPI' ? 'Linked Bank A/C' : selectedMethod === 'Credit Card' ? 'Which Card' : selectedMethod === 'Bank Transfer' ? 'Which Bank' : 'Cash A/C'}
               </label>
               <div className="relative">
                 <select value={selectedMethodAccount} onChange={(e) => setSelectedMethodAccount(e.target.value)}
-                  className="w-full appearance-none bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-[11px] font-semibold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all">
+                  className="w-full appearance-none bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all">
                   <option value="ALL">
                     {selectedMethod === 'UPI' ? 'All Linked Banks' : selectedMethod === 'Credit Card' ? 'All Cards' : selectedMethod === 'Bank Transfer' ? 'All Banks' : 'All Cash A/Cs'}
                   </option>
@@ -616,10 +575,10 @@ export default function Reports() {
 
           {/* Tag */}
           <div className="space-y-1.5">
-            <label className="text-[9px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">Classifier Tag</label>
+            <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">Classifier Tag</label>
             <div className="relative">
               <select value={selectedTag} onChange={(e) => setSelectedTag(e.target.value)}
-                className="w-full appearance-none bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-[11px] font-semibold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all">
+                className="w-full appearance-none bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all">
                 <option value="ALL">All Tags</option>
                 {tags.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
@@ -629,13 +588,13 @@ export default function Reports() {
 
           {/* Payee Search */}
           <div className="space-y-1.5">
-            <label className="text-[9px] font-semibold text-neutral-400 uppercase tracking-[0.2em] ml-1">Payee / Party</label>
+            <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">Payee / Party</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
               <input type="text" value={payeeSearch} onChange={(e) => setPayeeSearch(e.target.value)}
                 placeholder="Search payee..."
                 list="payee-suggestions"
-                className="w-full bg-neutral-50 dark:bg-[#060608] text-brand-blue dark:text-white pl-8 pr-3 py-2.5 rounded-xl text-[11px] font-semibold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-cyan transition-all placeholder:text-neutral-300" />
+                className="w-full bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white pl-8 pr-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all placeholder:text-neutral-300" />
               <datalist id="payee-suggestions">
                 {uniquePayees.slice(0, 20).map(p => <option key={p} value={p} />)}
               </datalist>
@@ -647,25 +606,25 @@ export default function Reports() {
         {(selectedCategory !== 'ALL' || selectedTag !== 'ALL' || selectedMethod !== 'ALL' || selectedUpiApp !== 'ALL' || selectedMethodAccount !== 'ALL' || payeeSearch || transactionType !== 'ALL') && (
           <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-neutral-100 dark:border-[#222222]">
             <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest py-1">Active:</span>
-            {selectedCategory !== 'ALL' && <span className="px-2 py-0.5 bg-brand-blue/5 dark:bg-white/5 text-brand-blue dark:text-white rounded-full text-[9px] font-bold">{selectedCategory} ×</span>}
-            {selectedTag !== 'ALL' && <span className="px-2 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-full text-[9px] font-bold">#{selectedTag} ×</span>}
+            {selectedCategory !== 'ALL' && <span className="px-2 py-0.5 bg-neutral-100 dark:bg-[#222222] text-neutral-500 rounded-full text-[9px] font-bold">{selectedCategory} ×</span>}
+            {selectedTag !== 'ALL' && <span className="px-2 py-0.5 bg-neutral-100 dark:bg-[#222222] text-neutral-500 rounded-full text-[9px] font-bold">#{selectedTag} ×</span>}
             {selectedMethod !== 'ALL' && (
-              <span className="px-2 py-0.5 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 rounded-full text-[9px] font-bold">
+              <span className="px-2 py-0.5 bg-neutral-100 dark:bg-[#222222] text-neutral-500 rounded-full text-[9px] font-bold">
                 {selectedMethod} ×
               </span>
             )}
             {selectedUpiApp !== 'ALL' && (
-              <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-full text-[9px] font-bold">
+              <span className="px-2 py-0.5 bg-neutral-100 dark:bg-[#222222] text-neutral-500 rounded-full text-[9px] font-bold">
                 App: {selectedUpiApp} ×
               </span>
             )}
             {selectedMethodAccount !== 'ALL' && (
-              <span className="px-2 py-0.5 bg-teal-500/10 text-teal-600 dark:text-teal-400 rounded-full text-[9px] font-bold">
+              <span className="px-2 py-0.5 bg-neutral-100 dark:bg-[#222222] text-neutral-500 rounded-full text-[9px] font-bold">
                 A/C: {accounts.find(a => a.id === Number(selectedMethodAccount))?.bankName || selectedMethodAccount} ×
               </span>
             )}
-            {payeeSearch && <span className="px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-full text-[9px] font-bold">"{payeeSearch}" ×</span>}
-            {transactionType !== 'ALL' && <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full text-[9px] font-bold">{transactionType} ×</span>}
+            {payeeSearch && <span className="px-2 py-0.5 bg-neutral-100 dark:bg-[#222222] text-neutral-500 rounded-full text-[9px] font-bold">"{payeeSearch}" ×</span>}
+            {transactionType !== 'ALL' && <span className="px-2 py-0.5 bg-neutral-100 dark:bg-[#222222] text-neutral-500 rounded-full text-[9px] font-bold">{transactionType} ×</span>}
             <button onClick={() => { setSelectedCategory('ALL'); setSelectedTag('ALL'); setSelectedMethod('ALL'); setSelectedUpiApp('ALL'); setSelectedMethodAccount('ALL'); setPayeeSearch(''); setTransactionType('ALL'); }}
               className="px-2 py-0.5 text-[9px] font-bold text-rose-500 hover:text-rose-600 flex items-center gap-0.5"><RefreshCw className="w-2.5 h-2.5" /> Clear</button>
           </div>
@@ -675,9 +634,9 @@ export default function Reports() {
       {/* ── Stats Summary ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {/* Income */}
-        <div className="bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-500/20">
-          <p className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em] mb-1">Total Income</p>
-          <p className="text-xl font-heading font-semibold text-emerald-700 dark:text-white tracking-tight">{currency}{totals.income.toLocaleString('en-IN')}</p>
+        <div className="bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-[24px] border border-emerald-100 dark:border-emerald-500/20">
+          <p className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-1">Total Income</p>
+          <p className="text-xl font-heading font-black text-emerald-700 dark:text-white tracking-tighter">{currency}{totals.income.toLocaleString('en-IN')}</p>
           {comparisonMode && compTotals.income > 0 && (
             <div className={`flex items-center gap-1 mt-1 text-[9px] font-bold ${pctChange(totals.income, compTotals.income) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
               {pctChange(totals.income, compTotals.income) >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
@@ -686,9 +645,9 @@ export default function Reports() {
           )}
         </div>
         {/* Expense */}
-        <div className="bg-rose-50 dark:bg-rose-500/10 p-4 rounded-2xl border border-rose-100 dark:border-rose-500/20">
-          <p className="text-[9px] font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-[0.2em] mb-1">Total Expense</p>
-          <p className="text-xl font-heading font-semibold text-rose-700 dark:text-white tracking-tight">{currency}{totals.expense.toLocaleString('en-IN')}</p>
+        <div className="bg-rose-50 dark:bg-rose-500/10 p-4 rounded-[24px] border border-rose-100 dark:border-rose-500/20">
+          <p className="text-[9px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-widest mb-1">Total Expense</p>
+          <p className="text-xl font-heading font-black text-rose-700 dark:text-white tracking-tighter">{currency}{totals.expense.toLocaleString('en-IN')}</p>
           {comparisonMode && compTotals.expense > 0 && (
             <div className={`flex items-center gap-1 mt-1 text-[9px] font-bold ${pctChange(totals.expense, compTotals.expense) <= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
               {pctChange(totals.expense, compTotals.expense) <= 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
@@ -697,9 +656,9 @@ export default function Reports() {
           )}
         </div>
         {/* Net */}
-        <div className="bg-brand-blue p-4 rounded-2xl shadow-xl shadow-brand-blue/10">
-          <p className="text-[9px] font-semibold text-white/50 uppercase tracking-[0.2em] mb-1">Net Position</p>
-          <p className="text-xl font-heading font-semibold text-white tracking-tight">{currency}{(totals.income - totals.expense).toLocaleString('en-IN')}</p>
+        <div className="bg-brand-blue p-4 rounded-[24px] shadow-xl shadow-brand-blue/10 text-white">
+          <p className="text-[9px] font-bold text-white/50 uppercase tracking-widest mb-1">Net Position</p>
+          <p className="text-xl font-heading font-black text-white tracking-tighter">{currency}{(totals.income - totals.expense).toLocaleString('en-IN')}</p>
           {comparisonMode && (
             <p className="text-[9px] font-bold text-white/40 mt-1">
               Prev: {currency}{(compTotals.income - compTotals.expense).toLocaleString('en-IN')}
@@ -714,7 +673,7 @@ export default function Reports() {
           {insights.map((ins, i) => (
             <div key={i} className="flex items-start gap-3 bg-white dark:bg-[#111111] p-3.5 rounded-2xl border border-neutral-100 dark:border-[#222222]">
               <span className="text-lg flex-shrink-0">{ins.icon}</span>
-              <p className="text-[11px] font-semibold text-brand-blue/70 dark:text-[#C0C0C0] leading-relaxed">{ins.text}</p>
+              <p className="text-[10px] font-semibold text-neutral-400/80 leading-relaxed">{ins.text}</p>
             </div>
           ))}
         </div>
@@ -722,12 +681,12 @@ export default function Reports() {
 
       {/* ── Analytics Charts ── */}
       {filteredTransactions.length > 0 && (
-        <div className="bg-white dark:bg-[#111111] rounded-[28px] border border-neutral-100 dark:border-[#222222] shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm overflow-hidden">
           <div className="flex items-center justify-between p-4 pb-0">
-            <h2 className="text-xs font-heading font-black text-brand-blue dark:text-white uppercase tracking-[0.15em] flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-brand-green" /> Analytics
+            <h2 className="text-xs font-bold text-brand-blue dark:text-[#F7F7F7] uppercase tracking-widest flex items-center gap-2">
+              <span className="p-2 bg-neutral-100 dark:bg-[#222222] rounded-xl"><Filter className="w-3.5 h-3.5 text-brand-green" /></span> Analytics
             </h2>
-            <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-0.5 rounded-xl">
+            <div className="flex bg-neutral-100 dark:bg-[#1A1A1E] p-0.5 rounded-xl">
               {([['category', 'Category'], ['daily', 'Daily'], ['tags', 'Tags']] as const).map(([key, label]) => (
                 <button key={key} onClick={() => setActiveChart(key)}
                   className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
@@ -748,7 +707,7 @@ export default function Reports() {
                         {categoryData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                       </Pie>
                       <Tooltip contentStyle={{ background: '#111', border: '1px solid #222', borderRadius: 12, fontSize: 11 }}
-                        formatter={(v: number) => [`{currency}${v.toLocaleString('en-IN')}`, '']} />
+                        formatter={(v: number) => [`${currency}${v.toLocaleString('en-IN')}`, '']} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -761,7 +720,7 @@ export default function Reports() {
                       <div key={d.name} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: CHART_COLORS[i % CHART_COLORS.length] }} />
-                          <span className="text-[11px] font-semibold text-brand-blue/60 dark:text-[#A0A0A0]">
+                          <span className="text-[10px] font-bold text-neutral-400">
                             {CATEGORY_ICONS[d.name] || '📦'} {d.name}
                           </span>
                         </div>
@@ -771,8 +730,8 @@ export default function Reports() {
                               {change > 0 ? '↑' : '↓'}{Math.abs(change).toFixed(0)}%
                             </span>
                           )}
-                          <span className="text-[9px] text-neutral-400">{pct}%</span>
-                          <span className="text-[11px] font-black text-brand-blue dark:text-white">{currency}{d.value.toLocaleString('en-IN')}</span>
+                          <span className="text-[9px] text-neutral-400 font-bold">{pct}%</span>
+                          <span className="text-xs font-bold text-brand-blue dark:text-white">{currency}{d.value.toLocaleString('en-IN')}</span>
                         </div>
                       </div>
                     );
@@ -783,22 +742,16 @@ export default function Reports() {
 
             {/* Daily Spend */}
             {activeChart === 'daily' && dailyData.length > 0 && (
-              <div className="h-[240px]">
+              <div className="h-[240px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={dailyData}>
-                    <defs>
-                      <linearGradient id="dailyGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#E53935" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#E53935" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
+                  <BarChart data={dailyData} barSize={16}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                    <XAxis dataKey="date" tick={{ fontSize: 8, fill: '#A0A0A0', fontWeight: 700 }} axisLine={false} tickLine={false} interval={Math.max(0, Math.floor(dailyData.length / 8))} />
-                    <YAxis tick={{ fontSize: 8, fill: '#A0A0A0' }} axisLine={false} tickLine={false} tickFormatter={v => `{currency}${(v / 1000).toFixed(0)}k`} />
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#A0A0A0', fontWeight: 700 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 8, fill: '#A0A0A0' }} axisLine={false} tickLine={false} tickFormatter={v => `${currency}${(v / 1000).toFixed(0)}k`} />
                     <Tooltip contentStyle={{ background: '#111', border: '1px solid #222', borderRadius: 12, fontSize: 11 }}
-                      formatter={(v: number) => [`{currency}${v.toLocaleString('en-IN')}`, 'Spent']} />
-                    <Area type="monotone" dataKey="amount" stroke="#E53935" strokeWidth={2} fill="url(#dailyGrad)" />
-                  </AreaChart>
+                      formatter={(v: number) => [`${currency}${v.toLocaleString('en-IN')}`, '']} />
+                    <Bar dataKey="amount" fill="#E53935" radius={[4, 4, 0, 0]} />
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             )}
@@ -810,9 +763,9 @@ export default function Reports() {
                   <BarChart data={tagData} barSize={16} barGap={4}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                     <XAxis dataKey="name" tick={{ fontSize: 9, fill: '#A0A0A0', fontWeight: 700 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 8, fill: '#A0A0A0' }} axisLine={false} tickLine={false} tickFormatter={v => `{currency}${(v / 1000).toFixed(0)}k`} />
+                    <YAxis tick={{ fontSize: 8, fill: '#A0A0A0' }} axisLine={false} tickLine={false} tickFormatter={v => `${currency}${(v / 1000).toFixed(0)}k`} />
                     <Tooltip contentStyle={{ background: '#111', border: '1px solid #222', borderRadius: 12, fontSize: 11 }}
-                      formatter={(v: number) => [`{currency}${v.toLocaleString('en-IN')}`, '']} />
+                      formatter={(v: number) => [`${currency}${v.toLocaleString('en-IN')}`, '']} />
                     <Bar dataKey="expense" fill="#E53935" radius={[4, 4, 0, 0]} name="Expense" />
                     <Bar dataKey="income" fill="#00A86B" radius={[4, 4, 0, 0]} name="Income" />
                   </BarChart>
@@ -829,8 +782,8 @@ export default function Reports() {
 
       {/* ── Comparison Mode: Category Side-by-Side ── */}
       {comparisonMode && categoryData.length > 0 && (
-        <div className="bg-white dark:bg-[#111111] rounded-[28px] border border-purple-200 dark:border-purple-500/20 shadow-sm p-5">
-          <h3 className="text-xs font-heading font-black text-purple-600 dark:text-purple-400 uppercase tracking-[0.15em] mb-4 flex items-center gap-2">
+        <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-purple-200 dark:border-purple-500/20 shadow-sm p-5">
+          <h3 className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-widest mb-4 flex items-center gap-2">
             <ArrowLeftRight className="w-4 h-4" /> Period Comparison by Category
           </h3>
           <div className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest mb-3 flex justify-between">
@@ -843,7 +796,7 @@ export default function Reports() {
               const change = prevVal > 0 ? pctChange(cat.value, prevVal) : (cat.value > 0 ? 100 : 0);
               return (
                 <div key={cat.name} className="flex items-center gap-3">
-                  <span className="text-[11px] font-semibold text-brand-blue/60 dark:text-[#A0A0A0] w-24 truncate flex items-center gap-1">
+                  <span className="text-[10px] font-bold text-neutral-400 w-24 truncate flex items-center gap-1">
                     {CATEGORY_ICONS[cat.name] || '📦'} {cat.name}
                   </span>
                   <div className="flex-1 flex items-center gap-2">
@@ -867,10 +820,10 @@ export default function Reports() {
       )}
 
       {/* ── Manifest Table ── */}
-      <div className="bg-white dark:bg-[#0C0C0C] rounded-[32px] border border-neutral-100 dark:border-[#1A1A1E] overflow-hidden shadow-sm">
-        <div className="px-6 py-4 border-b border-neutral-100 dark:border-[#1A1A1E] flex justify-between items-center">
-          <h3 className="text-xs font-heading font-semibold text-brand-blue dark:text-white uppercase tracking-[0.2em] flex items-center gap-2">
-            <FileText className="w-4 h-4 text-brand-green" />
+      <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] overflow-hidden shadow-sm">
+        <div className="px-5 py-4 border-b border-neutral-100 dark:border-[#222222] flex justify-between items-center">
+          <h3 className="text-xs font-bold text-brand-blue dark:text-white uppercase tracking-widest flex items-center gap-2">
+            <span className="p-2 bg-neutral-100 dark:bg-[#222222] rounded-xl"><FileText className="w-3.5 h-3.5 text-brand-green" /></span>
             Report Manifest
             <span className="bg-neutral-100 dark:bg-[#222222] text-neutral-500 px-2 py-0.5 rounded-full text-[9px] font-semibold ml-2">
               {filteredTransactions.length} Items
@@ -882,75 +835,74 @@ export default function Reports() {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-neutral-50 dark:bg-[#111111] border-b border-neutral-100 dark:border-[#222222]">
-                <th className="px-4 py-3 text-[8px] font-semibold text-neutral-400 uppercase tracking-[0.2em]">Date</th>
-                <th className="px-4 py-3 text-[8px] font-semibold text-neutral-400 uppercase tracking-[0.2em]">Particulars</th>
-                <th className="px-4 py-3 text-[8px] font-semibold text-neutral-400 uppercase tracking-[0.2em] hidden md:table-cell">Category</th>
-                <th className="px-4 py-3 text-[8px] font-semibold text-neutral-400 uppercase tracking-[0.2em] hidden lg:table-cell">Tag</th>
-                <th className="px-4 py-3 text-[8px] font-semibold text-neutral-400 uppercase tracking-[0.2em] text-right">Debit</th>
-                <th className="px-4 py-3 text-[8px] font-semibold text-neutral-400 uppercase tracking-[0.2em] text-right">Credit</th>
-                <th className="px-4 py-3 text-[8px] font-semibold text-neutral-400 uppercase tracking-[0.2em] text-right">Balance</th>
+                <th className="px-4 py-3.5 text-[8px] font-bold text-neutral-400 uppercase tracking-widest">Date</th>
+                <th className="px-4 py-3.5 text-[8px] font-bold text-neutral-400 uppercase tracking-widest">Particulars</th>
+                <th className="px-4 py-3.5 text-[8px] font-bold text-neutral-400 uppercase tracking-widest hidden md:table-cell">Category</th>
+                <th className="px-4 py-3.5 text-[8px] font-bold text-neutral-400 uppercase tracking-widest hidden lg:table-cell">Tag</th>
+                <th className="px-4 py-3.5 text-[8px] font-bold text-neutral-400 uppercase tracking-widest text-right">Debit</th>
+                <th className="px-4 py-3.5 text-[8px] font-bold text-neutral-400 uppercase tracking-widest text-right">Credit</th>
+                <th className="px-4 py-3.5 text-[8px] font-bold text-neutral-400 uppercase tracking-widest text-right">Balance</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-50 dark:divide-[#1A1A1A]">
+            <tbody className="divide-y divide-neutral-50 dark:divide-[#1A1A1E]">
               {txsWithBalance.map(tx => (
                 <tr key={tx.id} className="hover:bg-neutral-50 dark:hover:bg-[#151515] transition-colors">
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <p className="text-[11px] font-semibold text-brand-blue dark:text-white tracking-tight">{format(new Date(tx.dateTime), 'dd MMM yy')}</p>
-                    <p className="text-[8px] text-neutral-400 font-semibold uppercase tracking-[0.1em]">{format(new Date(tx.dateTime), 'h:mm a')}</p>
+                    <p className="text-xs font-bold text-brand-blue dark:text-white tracking-tight">{format(new Date(tx.dateTime), 'dd MMM yy')}</p>
+                    <p className="text-[8px] text-neutral-400 font-bold uppercase tracking-wider">{format(new Date(tx.dateTime), 'h:mm a')}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <p className="text-[11px] font-semibold text-brand-blue dark:text-white uppercase truncate max-w-[160px] tracking-tight">{tx.party || tx.category}</p>
+                    <p className="text-xs font-bold text-brand-blue dark:text-white uppercase truncate max-w-[160px] tracking-tight">{tx.party || tx.category}</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[7px] px-1.5 py-0.5 rounded bg-brand-blue/5 dark:bg-[#222222] text-brand-blue/40 dark:text-[#A0A0A0] font-semibold uppercase tracking-[0.1em]">
+                      <span className="text-[8px] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-[#222222] text-neutral-400 font-bold uppercase tracking-wider">
                         {tx.paymentMethod || '—'}
                       </span>
-                      {tx.note && <span className="text-[7px] text-neutral-300 dark:text-neutral-600 truncate max-w-[80px]">{tx.note}</span>}
+                      {tx.note && <span className="text-[9px] text-neutral-400 truncate max-w-[80px]">{tx.note}</span>}
                     </div>
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
-                    <span className="text-[10px] font-semibold text-brand-blue/50 dark:text-[#A0A0A0]">{CATEGORY_ICONS[tx.category] || '📦'} {tx.category}</span>
+                    <span className="text-xs font-bold text-neutral-400">{CATEGORY_ICONS[tx.category] || '📦'} {tx.category}</span>
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell">
                     {tx.expenseType && (
-                      <span className="text-[9px] font-semibold text-neutral-400 flex items-center gap-1">
-                        <Tag className="w-2.5 h-2.5" /> {tx.expenseType}
+                      <span className="text-xs font-bold text-neutral-400 flex items-center gap-1">
+                        <Tag className="w-3 h-3 text-neutral-400" /> {tx.expenseType}
                       </span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     {tx.type === 'DEBIT' ? (
-                      <span className="text-[11px] font-heading font-semibold text-rose-500 tracking-tight">{currency}{tx.amount.toLocaleString('en-IN')}</span>
+                      <span className="text-xs font-heading font-bold text-rose-500 tracking-tight">{currency}{tx.amount.toLocaleString('en-IN')}</span>
                     ) : <span className="text-neutral-200 dark:text-neutral-700">—</span>}
                   </td>
                   <td className="px-4 py-3 text-right">
                     {tx.type === 'CREDIT' ? (
-                      <span className="text-[11px] font-heading font-semibold text-emerald-500 tracking-tight">{currency}{tx.amount.toLocaleString('en-IN')}</span>
+                      <span className="text-xs font-heading font-bold text-emerald-500 tracking-tight">{currency}{tx.amount.toLocaleString('en-IN')}</span>
                     ) : <span className="text-neutral-200 dark:text-neutral-700">—</span>}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <span className={`text-[10px] font-heading font-bold tracking-tight ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-rose-500'}`}>
+                    <span className={`text-xs font-heading font-bold tracking-tight ${tx.runningBalance >= 0 ? 'text-brand-blue dark:text-white' : 'text-rose-500'}`}>
                       {tx.runningBalance >= 0 ? '' : '-'}{currency}{Math.abs(tx.runningBalance).toLocaleString('en-IN')}
                     </span>
                   </td>
                 </tr>
               ))}
 
-              {/* Totals footer */}
               {txsWithBalance.length > 0 && (
-                <tr className="bg-neutral-50 dark:bg-[#0A0A0A] border-t-2 border-brand-blue/10 dark:border-white/10">
-                  <td colSpan={2} className="px-4 py-3">
+                <tr className="bg-neutral-50 dark:bg-[#0D0D11] border-t-2 border-neutral-100 dark:border-[#222222]">
+                  <td colSpan={2} className="px-4 py-3.5">
                     <span className="text-[10px] font-black text-brand-blue dark:text-white uppercase tracking-widest">Totals</span>
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell" />
                   <td className="px-4 py-3 hidden lg:table-cell" />
                   <td className="px-4 py-3 text-right">
-                    <span className="text-[12px] font-heading font-black text-rose-600 tracking-tight">{currency}{totals.expense.toLocaleString('en-IN')}</span>
+                    <span className="text-sm font-heading font-black text-rose-600 tracking-tight">{currency}{totals.expense.toLocaleString('en-IN')}</span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <span className="text-[12px] font-heading font-black text-emerald-600 tracking-tight">{currency}{totals.income.toLocaleString('en-IN')}</span>
+                    <span className="text-sm font-heading font-black text-emerald-600 tracking-tight">{currency}{totals.income.toLocaleString('en-IN')}</span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <span className={`text-[12px] font-heading font-black tracking-tight ${(totals.income - totals.expense) >= 0 ? 'text-brand-blue dark:text-white' : 'text-rose-600'}`}>
+                    <span className={`text-sm font-heading font-black tracking-tight ${(totals.income - totals.expense) >= 0 ? 'text-brand-blue dark:text-white' : 'text-rose-600'}`}>
                       {currency}{(totals.income - totals.expense).toLocaleString('en-IN')}
                     </span>
                   </td>
@@ -960,9 +912,9 @@ export default function Reports() {
               {filteredTransactions.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-20 text-center">
-                    <div className="flex flex-col items-center opacity-20">
-                      <Filter className="w-12 h-12 mb-4" />
-                      <p className="text-xs font-semibold uppercase tracking-[0.3em]">Refine your filters to generate report</p>
+                    <div className="flex flex-col items-center opacity-25">
+                      <Filter className="w-12 h-12 mb-4 text-neutral-400" />
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Refine your filters to generate report</p>
                     </div>
                   </td>
                 </tr>

@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../models/db';
-import { ArrowUpRight, ArrowDownRight, Wallet, Plus, X, AlertCircle, CheckCircle2, Search, ChevronDown, Landmark, Smartphone, ArrowLeft, Calendar, Clock, Calculator, MoreHorizontal, User, AlignLeft, Hash, Paperclip, Save, ChevronRight, CreditCard, Coins, PlaneTakeoff, Eye, EyeOff, Wand2, BarChart3 } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Wallet, Plus, X, AlertCircle, CheckCircle2, Search, ChevronDown, Landmark, Smartphone, ArrowLeft, Calendar, Clock, Calculator, MoreHorizontal, User, AlignLeft, Hash, Paperclip, Save, ChevronRight, CreditCard, Coins, PlaneTakeoff, Eye, EyeOff, Wand2, BarChart3, Target } from 'lucide-react';
 
 import { format, startOfMonth, endOfMonth, startOfYear, isToday, isYesterday, startOfDay } from 'date-fns';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
+import { useBudgets } from '../hooks/useBudgets';
 
 import { CATEGORY_ICONS, CATEGORY_COLORS } from '../constants';
 
@@ -22,6 +23,98 @@ import { BankLogo } from '../components/BankLogo';
 import TutorialOverlay from '../components/TutorialOverlay';
 import { useCurrency, useCurrencyFormatter } from '../hooks/useCurrency';
 import { cn } from '../logic/utils';
+
+// ── Budget Health Widget ────────────────────────────────────────────────────
+function BudgetHealthWidget({ formatAmount, shouldBlur }: { formatAmount: (n: number) => string; shouldBlur: boolean }) {
+  const now = new Date();
+  const currentMonthStr = format(startOfMonth(now), 'yyyy-MM');
+  const {
+    masterBudgetAmt, envelopeBudgets, totalAllocated, totalSpent, unallocated, getCardData,
+  } = useBudgets(currentMonthStr, now);
+
+  // Don't render if no budgets are set up
+  if (masterBudgetAmt === 0 && envelopeBudgets.length === 0) return null;
+
+  const remaining = masterBudgetAmt - totalSpent;
+  const pctUsed = masterBudgetAmt > 0 ? Math.min((totalSpent / masterBudgetAmt) * 100, 100) : 0;
+  const barColor = pctUsed >= 100 ? '#E53935' : pctUsed >= 80 ? '#F59E0B' : '#00A86B';
+
+  // Top 2 envelopes closest to limit
+  const topEnvelopes = envelopeBudgets
+    .map(b => getCardData(b, false))
+    .sort((a, b) => b.pct - a.pct)
+    .slice(0, 2);
+
+  return (
+    <div className="bg-white dark:bg-[#0F0F12] rounded-[24px] border border-neutral-200 dark:border-[#1E1E24] p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-brand-green/10 flex items-center justify-center">
+            <Target className="w-3.5 h-3.5 text-brand-green" />
+          </div>
+          <h3 className="text-[13px] font-semibold text-neutral-700 dark:text-[#F7F7F7]">Budget Health</h3>
+        </div>
+        <Link to="/budgets" className="text-[10px] font-black text-brand-green bg-brand-green/5 px-2.5 py-1 rounded-lg uppercase tracking-widest hover:bg-brand-green/10 transition-all">
+          View All
+        </Link>
+      </div>
+
+      {/* Progress bar */}
+      <div className="mb-3">
+        <div className="flex justify-between items-end mb-1.5">
+          <span className={cn(
+            "text-xs font-bold tracking-tight transition-all duration-300",
+            shouldBlur && "blur-[4px] select-none"
+          )}>
+            <span className="text-neutral-500 dark:text-neutral-400">{formatAmount(totalSpent)}</span>
+            <span className="text-neutral-300 dark:text-neutral-600 mx-1">/</span>
+            <span className="text-neutral-700 dark:text-[#F7F7F7]">{formatAmount(masterBudgetAmt)}</span>
+          </span>
+          <span className={cn(
+            "text-[10px] font-bold",
+            remaining < 0 ? "text-rose-500" : "text-brand-green"
+          )}>
+            {remaining >= 0 ? `${formatAmount(remaining)} left` : `${formatAmount(Math.abs(remaining))} over`}
+          </span>
+        </div>
+        <div className="w-full h-2 bg-neutral-100 dark:bg-[#1A1A1E] rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-700 ease-out"
+            style={{ width: `${pctUsed}%`, backgroundColor: barColor }}
+          />
+        </div>
+      </div>
+
+      {/* Top envelopes */}
+      {topEnvelopes.length > 0 && (
+        <div className="space-y-2">
+          {topEnvelopes.map(card => (
+            <div key={card.budget.id} className="flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-sm">{CATEGORY_ICONS[card.budget.category] || '📦'}</span>
+                <span className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-300 truncate">{card.budget.category}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-16 h-1 bg-neutral-100 dark:bg-[#222] rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${card.pct}%`, backgroundColor: card.barColor }}
+                  />
+                </div>
+                <span className={cn(
+                  "text-[10px] font-bold w-8 text-right",
+                  card.isOver ? "text-rose-500" : card.isWarning ? "text-amber-500" : "text-neutral-400"
+                )}>
+                  {Math.round(card.pct)}%
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const { currency, hideDecimals, formatAmount } = useCurrencyFormatter();
@@ -786,6 +879,9 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
+
+      {/* Budget Health Widget */}
+      <BudgetHealthWidget formatAmount={formatAmount} shouldBlur={shouldBlur} />
 
       {/* Improved Partitioned Portfolio */}
       <div className="space-y-4 mb-10">

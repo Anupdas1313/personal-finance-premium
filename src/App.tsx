@@ -8,10 +8,12 @@ import Summary from './screens/Summary';
 import TransactionTable from './screens/TransactionTable';
 import Settings from './screens/Settings';
 import Budgets from './screens/Budgets';
+import BudgetCustomize from './screens/BudgetCustomize';
 import Ledger from './screens/Ledger';
 import PartyLedger from './screens/PartyLedger';
 import Reports from './screens/Reports';
 import Profile from './screens/Profile';
+import Wishlist from './screens/Wishlist';
 import Auth from './screens/Auth';
 import Welcome from './screens/Welcome';
 import SetupAccount from './screens/SetupAccount';
@@ -170,10 +172,12 @@ export default function App() {
                 <Route path="accounts" element={<Accounts />} />
                 <Route path="summary" element={<Summary />} />
                 <Route path="budgets" element={<Budgets />} />
+                <Route path="budgets/customize/:month" element={<BudgetCustomize />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="ledger" element={<Ledger />} />
                 <Route path="ledger/:id" element={<PartyLedger />} />
                 <Route path="settings" element={<Settings />} />
+                <Route path="wishlist" element={<Wishlist />} />
                 <Route path="profile" element={<Profile />} />
               </Route>
 

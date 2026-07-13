@@ -35,7 +35,8 @@ export function startSync(uid: string | null, db: FinanceDatabase) {
   const tables = [
     'accounts', 'transactions', 'monthlyClosings', 'budgets', 
     'parties', 'ledgerTransactions', 'accountClosings', 
-    'categories', 'tags', 'recurringTemplates', 'userSettings'
+    'categories', 'tags', 'recurringTemplates', 'userSettings',
+    'monthlyBudgets'
   ];
 
   tables.forEach(tableName => {
