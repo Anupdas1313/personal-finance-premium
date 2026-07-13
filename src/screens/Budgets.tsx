@@ -498,17 +498,22 @@ export default function Budgets() {
                             <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5">Total Funds</span>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-neutral-50 dark:bg-[#1A1A1E]/50 p-3 rounded-2xl border border-neutral-100 dark:border-[#222222]">
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="bg-neutral-50 dark:bg-[#1A1A1E]/50 p-2.5 rounded-2xl border border-neutral-100 dark:border-[#222222]">
+                              <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Spent</p>
+                              <p className="text-[13px] font-black text-brand-blue dark:text-[#F7F7F7] tracking-tight">{fmt(totalSpent)}</p>
+                            </div>
+
+                            <div className="bg-neutral-50 dark:bg-[#1A1A1E]/50 p-2.5 rounded-2xl border border-neutral-100 dark:border-[#222222]">
                               <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Allocated</p>
-                              <p className="text-base font-black text-brand-blue dark:text-[#F7F7F7] tracking-tight">{fmt(totalAllocated)}</p>
+                              <p className="text-[13px] font-black text-brand-blue dark:text-[#F7F7F7] tracking-tight">{fmt(totalAllocated)}</p>
                             </div>
                             
-                            <div className={cn("p-3 rounded-2xl border", unallocated < 0 ? "bg-brand-red/5 border-brand-red/20" : "bg-neutral-50 dark:bg-[#1A1A1E]/50 border-neutral-100 dark:border-[#222222]")}>
+                            <div className={cn("p-2.5 rounded-2xl border", unallocated < 0 ? "bg-brand-red/5 border-brand-red/20" : "bg-neutral-50 dark:bg-[#1A1A1E]/50 border-neutral-100 dark:border-[#222222]")}>
                               <p className={cn("text-[9px] font-bold uppercase tracking-widest mb-1", unallocated < 0 ? "text-brand-red" : "text-neutral-400")}>
                                 Unallocated
                               </p>
-                              <p className={cn("text-base font-black tracking-tight", unallocated < 0 ? "text-brand-red" : "text-brand-green")}>
+                              <p className={cn("text-[13px] font-black tracking-tight", unallocated < 0 ? "text-brand-red" : "text-brand-green")}>
                                 {unallocated < 0 ? '-' : ''}{fmt(Math.abs(unallocated))}
                               </p>
                             </div>
