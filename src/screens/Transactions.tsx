@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -51,19 +51,34 @@ export default function Transactions() {
   const { tags } = useTags();
   const navigate = useNavigate();
 
+  const [searchParams] = useSearchParams();
+  const initialCategory = searchParams.get('category') || 'ALL';
+  const initialSearch = searchParams.get('search') || '';
+  const initialGranularity = (searchParams.get('granularity') as 'MONTH' | 'YEAR' | 'ALL' | 'CUSTOM') || 'ALL';
+  
+  const initialDate = useMemo(() => {
+    const monthParam = searchParams.get('month'); // 'YYYY-MM'
+    if (monthParam) {
+      const parts = monthParam.split('-');
+      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, 15);
+      return isNaN(d.getTime()) ? new Date() : d;
+    }
+    return new Date();
+  }, [searchParams]);
+
   // ── View ──────────────────────────────────────────────────────
-  const [granularity, setGranularity] = useState<'MONTH' | 'YEAR' | 'ALL' | 'CUSTOM'>('ALL');
-  const [referenceDate, setReferenceDate] = useState(new Date());
+  const [granularity, setGranularity] = useState<'MONTH' | 'YEAR' | 'ALL' | 'CUSTOM'>(initialGranularity);
+  const [referenceDate, setReferenceDate] = useState(initialDate);
   const [customRange, setCustomRange] = useState({
     start: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
     end: format(endOfMonth(new Date()), 'yyyy-MM-dd'),
   });
 
   // ── Filters ───────────────────────────────────────────────────
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'CREDIT' | 'DEBIT' | 'TRANSFER'>('ALL');
   const [sourceTypeFilter, setSourceTypeFilter] = useState<'ALL' | 'BANK' | 'CREDIT_CARD' | 'CASH'>('ALL');
-  const [categoryFilter, setCategoryFilter] = useState('ALL');
+  const [categoryFilter, setCategoryFilter] = useState(initialCategory);
   const [accountFilter, setAccountFilter] = useState<number | 'ALL'>('ALL');
   const [tagFilter, setTagFilter] = useState('ALL');
   const [methodFilter, setMethodFilter] = useState('ALL');
@@ -103,13 +118,25 @@ export default function Transactions() {
       if (accountFilter !== 'ALL' && Number(tx.accountId) !== Number(accountFilter)) return false;
       if (tagFilter !== 'ALL' && tx.expenseType !== tagFilter) return false;
       if (methodFilter !== 'ALL' && tx.paymentMethod !== methodFilter && (tx as any).upiApp !== methodFilter) return false;
+      
+      const budgetIdParam = searchParams.get('budgetId');
+      if (budgetIdParam) {
+        const targetBudgetId = Number(budgetIdParam);
+        if (tx.linkedBudgetId) {
+          if (tx.linkedBudgetId !== targetBudgetId) return false;
+        } else {
+          const budgetCategory = searchParams.get('category');
+          if (budgetCategory && tx.category !== budgetCategory) return false;
+        }
+      }
+
       if (searchTerm) {
         const q = searchTerm.toLowerCase();
         if (!tx.note?.toLowerCase().includes(q) && !tx.party?.toLowerCase().includes(q) && !tx.category?.toLowerCase().includes(q)) return false;
       }
       return true;
     });
-  }, [currentTxs, sourceTypeFilter, typeFilter, categoryFilter, accountFilter, tagFilter, methodFilter, searchTerm, accounts]);
+  }, [currentTxs, sourceTypeFilter, typeFilter, categoryFilter, accountFilter, tagFilter, methodFilter, searchTerm, accounts, searchParams]);
 
   const totals = useMemo(() =>
     filteredTxs.reduce((acc, tx) => {

@@ -307,9 +307,19 @@ export default function Budgets() {
     const { spent, available, pct, isOver, isWarning, barColor, daysRemaining, perDay } = card;
     const allocated = Number(b.amount);
 
+    const handleCardClick = (e: React.MouseEvent) => {
+      // Avoid navigating if clicking Edit, Delete, or action elements
+      if ((e.target as HTMLElement).closest('button')) return;
+      navigate(`/transactions?category=${encodeURIComponent(b.category)}&budgetId=${b.id}&granularity=MONTH&month=${monthStr}`);
+    };
+
     return (
-      <div key={b.id} className="p-4 rounded-2xl border border-neutral-100 dark:border-[#222222] bg-neutral-50 dark:bg-[#1A1A1E]/50 group relative">
-        <div className="absolute top-3 right-3 flex gap-2">
+      <div 
+        key={b.id} 
+        onClick={handleCardClick}
+        className="p-4 rounded-2xl border border-neutral-100 dark:border-[#222222] bg-neutral-50 dark:bg-[#1A1A1E]/50 group relative cursor-pointer hover:border-brand-green/30 hover:shadow-md transition-all duration-200 active:scale-[0.99]"
+      >
+        <div className="absolute top-3 right-3 flex gap-2 z-10">
           <button onClick={() => openEditBudget(b)} className="p-1.5 text-brand-blue/40 dark:text-white/40 hover:text-brand-blue dark:hover:text-white transition-colors bg-transparent rounded-lg">
             <Pencil className="w-3.5 h-3.5" />
           </button>
