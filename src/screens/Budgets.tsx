@@ -297,12 +297,12 @@ export default function Budgets() {
     const allocated = Number(b.amount);
 
     return (
-      <div key={b.id} className="p-4 rounded-2xl border border-neutral-100 dark:border-[#222222] bg-neutral-50 dark:bg-[#1A1A1A]/50 group relative">
-        <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onClick={() => openEditBudget(b)} className="p-1.5 text-neutral-400 hover:text-neutral-600 dark:text-[#A0A0A0] dark:hover:text-[#F7F7F7] bg-white dark:bg-[#222] rounded-lg shadow-sm border border-neutral-100 dark:border-white/5">
+      <div key={b.id} className="p-4 rounded-2xl border border-neutral-100 dark:border-[#222222] bg-neutral-50 dark:bg-[#1A1A1E]/50 group relative">
+        <div className="absolute top-3 right-3 flex gap-2">
+          <button onClick={() => openEditBudget(b)} className="p-1.5 text-brand-blue/40 dark:text-white/40 hover:text-brand-blue dark:hover:text-white transition-colors bg-transparent rounded-lg">
             <Pencil className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => b.id && handleDeleteBudget(b.id)} className="p-1.5 text-brand-red/60 hover:text-brand-red bg-white dark:bg-[#222] rounded-lg shadow-sm border border-neutral-100 dark:border-white/5">
+          <button onClick={() => b.id && handleDeleteBudget(b.id)} className="p-1.5 text-brand-red/40 hover:text-brand-red transition-colors bg-transparent rounded-lg">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -363,10 +363,10 @@ export default function Budgets() {
             <button
               onClick={handleCopyToNextMonth}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-2 rounded-[20px] text-[9px] font-black uppercase tracking-widest transition-all shadow-sm border",
+                "flex items-center gap-1.5 px-4 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-[0.2em] transition-all shadow-sm border",
                 copyStatus === 'success'
                   ? "bg-brand-green/10 text-brand-green border-brand-green/20"
-                  : "bg-white dark:bg-[#111111] text-neutral-500 dark:text-neutral-400 border-neutral-100 dark:border-[#222222] hover:bg-neutral-50 dark:hover:bg-[#1A1A1E]"
+                  : "bg-white dark:bg-[#111111] text-brand-blue/60 dark:text-white/60 border-brand-blue/5 dark:border-[#222222] hover:bg-neutral-50 dark:hover:bg-[#1A1A1E]"
               )}
             >
               <Copy className="w-3.5 h-3.5" />
@@ -375,12 +375,12 @@ export default function Budgets() {
           )}
 
           {/* Month Navigation */}
-          <div className="flex items-center gap-4 bg-white dark:bg-[#111111] px-4 py-2 rounded-[20px] shadow-sm border border-neutral-100 dark:border-[#222222] flex-1 sm:flex-none justify-between sm:justify-start">
-            <button onClick={() => setCurrentMonth(m => budgetStartDay === 1 ? subMonths(m, 1) : getPrevBudgetMonth(m, budgetStartDay))} className="text-neutral-400 hover:text-neutral-600 dark:hover:text-[#F7F7F7] font-bold px-1 transition-colors">&lt;</button>
-            <span className="font-bold text-brand-blue dark:text-[#F7F7F7] min-w-[120px] text-center uppercase tracking-widest text-[9px]">
+          <div className="flex items-center gap-4 bg-white dark:bg-[#111111] px-4 py-2 rounded-[24px] shadow-sm border border-brand-blue/5 dark:border-[#222222] flex-1 sm:flex-none justify-between sm:justify-start">
+            <button onClick={() => setCurrentMonth(m => budgetStartDay === 1 ? subMonths(m, 1) : getPrevBudgetMonth(m, budgetStartDay))} className="text-brand-blue/40 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-[#F7F7F7] font-semibold px-1 transition-colors">&lt;</button>
+            <span className="font-semibold text-brand-blue dark:text-[#F7F7F7] min-w-[120px] text-center uppercase tracking-[0.2em] text-[10px]">
               {monthName}
             </span>
-            <button onClick={() => setCurrentMonth(m => budgetStartDay === 1 ? addMonths(m, 1) : getNextBudgetMonth(m, budgetStartDay))} className="text-neutral-400 hover:text-neutral-600 dark:hover:text-[#F7F7F7] font-bold px-1 transition-colors">&gt;</button>
+            <button onClick={() => setCurrentMonth(m => budgetStartDay === 1 ? addMonths(m, 1) : getNextBudgetMonth(m, budgetStartDay))} className="text-brand-blue/40 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-[#F7F7F7] font-semibold px-1 transition-colors">&gt;</button>
           </div>
         </div>
       </div>
@@ -478,16 +478,16 @@ export default function Budgets() {
                         <div className="flex items-center gap-2">
                           <button 
                             onClick={() => navigate(`/budgets/customize/${monthStr}`)}
-                            className="px-3 py-1.5 border border-neutral-200 dark:border-[#333333] hover:bg-neutral-50 dark:hover:bg-[#222222] text-neutral-600 dark:text-neutral-400 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                            className="flex items-center gap-1 px-3 py-1.5 bg-neutral-50 dark:bg-[#1C1C24] text-brand-blue/60 dark:text-[#CCCCCC] hover:text-brand-blue dark:hover:text-white rounded-xl border border-brand-blue/5 dark:border-white/5 text-[10px] font-semibold uppercase tracking-[0.2em] transition-all active:scale-95"
                           >
-                            <Settings className="w-3 h-3 inline mr-1" />
-                            Customize
+                            <Settings className="w-3.5 h-3.5" />
+                            Filters
                           </button>
                           <button 
                             onClick={() => { setPoolInput(masterBudgetAmt ? masterBudgetAmt.toString() : ''); setIsPoolModalOpen(true); }}
-                            className="px-3 py-1.5 border border-neutral-200 dark:border-[#333333] hover:bg-neutral-50 dark:hover:bg-[#222222] text-neutral-600 dark:text-neutral-400 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                            className="flex items-center gap-1 px-3 py-1.5 bg-neutral-50 dark:bg-[#1C1C24] text-brand-blue/60 dark:text-[#CCCCCC] hover:text-brand-blue dark:hover:text-white rounded-xl border border-brand-blue/5 dark:border-white/5 text-[10px] font-semibold uppercase tracking-[0.2em] transition-all active:scale-95"
                           >
-                            <Pencil className="w-3 h-3 inline mr-1" />
+                            <Pencil className="w-3.5 h-3.5" />
                             Edit
                           </button>
                         </div>
@@ -578,8 +578,8 @@ export default function Budgets() {
                       icon={<Briefcase className="w-4 h-4" />} 
                       label="Envelopes" 
                       action={
-                        <button onClick={openNewEnvelope} className="flex items-center gap-1 px-3 py-1.5 bg-brand-green/10 text-brand-green hover:bg-brand-green/20 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-sm">
-                          <Plus className="w-3.5 h-3.5" /> New
+                        <button onClick={openNewEnvelope} className="flex items-center gap-1.5 px-4 py-2 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl hover:bg-brand-green/90 transition-all font-semibold text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-brand-green/10">
+                          <Plus className="w-4 h-4" /> Define
                         </button>
                       }
                     />
@@ -617,8 +617,8 @@ export default function Budgets() {
                       icon={<Star className="w-4 h-4" />} 
                       label="Custom Goals & Budgets" 
                       action={
-                        <button onClick={openNewCustom} className="flex items-center gap-1 px-3 py-1.5 bg-brand-green/10 text-brand-green hover:bg-brand-green/20 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-sm">
-                          <Plus className="w-3.5 h-3.5" /> New
+                        <button onClick={openNewCustom} className="flex items-center gap-1.5 px-4 py-2 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] rounded-xl hover:bg-brand-green/90 transition-all font-semibold text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-brand-green/10">
+                          <Plus className="w-4 h-4" /> Define
                         </button>
                       }
                     />
@@ -663,9 +663,9 @@ export default function Budgets() {
               <input type="number" value={poolInput} onChange={e => setPoolInput(e.target.value)} className="w-full bg-neutral-50 dark:bg-[#1A1A1E] border border-neutral-100 dark:border-[#222222] rounded-xl py-3 pl-10 pr-4 text-xs font-bold text-brand-blue dark:text-[#F7F7F7] focus:outline-none focus:border-brand-green transition-colors" placeholder="0" autoFocus />
             </div>
             
-            <div className="flex gap-3">
-              <button onClick={() => setIsPoolModalOpen(false)} className="flex-1 py-2.5 text-[9px] font-black uppercase tracking-widest text-neutral-500 hover:bg-neutral-50 dark:hover:bg-[#1A1A1E] border border-neutral-200 dark:border-[#333] rounded-xl transition-all">Cancel</button>
-              <button onClick={handleSavePool} className="flex-1 py-2.5 text-[9px] font-black uppercase tracking-widest text-white bg-brand-green hover:brightness-110 active:scale-95 rounded-xl shadow-sm transition-all shadow-brand-green/10">Save</button>
+            <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-brand-blue/5 dark:border-white/5">
+              <button onClick={() => setIsPoolModalOpen(false)} className="px-6 py-3 text-brand-blue/40 hover:text-brand-blue dark:text-white/40 dark:hover:text-white font-semibold rounded-xl transition-colors uppercase text-[10px] tracking-[0.2em]">Cancel</button>
+              <button onClick={handleSavePool} className="px-6 py-3 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-semibold rounded-xl hover:bg-brand-green/90 transition-all shadow-lg shadow-brand-green/20 uppercase text-[10px] tracking-[0.2em]">Commit</button>
             </div>
           </div>
         </div>
@@ -694,9 +694,9 @@ export default function Budgets() {
               </div>
             </div>
             
-            <div className="flex gap-3">
-              <button onClick={() => setIsEnvModalOpen(false)} className="flex-1 py-2.5 text-[9px] font-black uppercase tracking-widest text-neutral-500 hover:bg-neutral-50 dark:hover:bg-[#1A1A1E] border border-neutral-200 dark:border-[#333] rounded-xl transition-all">Cancel</button>
-              <button onClick={handleSaveEnvelope} className="flex-1 py-2.5 text-[9px] font-black uppercase tracking-widest text-white bg-brand-green hover:brightness-110 active:scale-95 rounded-xl shadow-sm transition-all shadow-brand-green/10">Save Envelope</button>
+            <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-brand-blue/5 dark:border-white/5">
+              <button onClick={() => setIsEnvModalOpen(false)} className="px-6 py-3 text-brand-blue/40 hover:text-brand-blue dark:text-white/40 dark:hover:text-white font-semibold rounded-xl transition-colors uppercase text-[10px] tracking-[0.2em]">Cancel</button>
+              <button onClick={handleSaveEnvelope} className="px-6 py-3 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-semibold rounded-xl hover:bg-brand-green/90 transition-all shadow-lg shadow-brand-green/20 uppercase text-[10px] tracking-[0.2em]">{editingEnvId ? 'Update' : 'Commit'}</button>
             </div>
           </div>
         </div>
@@ -723,9 +723,9 @@ export default function Budgets() {
               </div>
             </div>
             
-            <div className="flex gap-3">
-              <button onClick={() => setIsCustomModalOpen(false)} className="flex-1 py-2.5 text-[9px] font-black uppercase tracking-widest text-neutral-500 hover:bg-neutral-50 dark:hover:bg-[#1A1A1E] border border-neutral-200 dark:border-[#333] rounded-xl transition-all">Cancel</button>
-              <button onClick={handleSaveCustom} className="flex-1 py-2.5 text-[9px] font-black uppercase tracking-widest text-white bg-brand-green hover:brightness-110 active:scale-95 rounded-xl shadow-sm transition-all shadow-brand-green/10">Save Budget</button>
+            <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-brand-blue/5 dark:border-white/5">
+              <button onClick={() => setIsCustomModalOpen(false)} className="px-6 py-3 text-brand-blue/40 hover:text-brand-blue dark:text-white/40 dark:hover:text-white font-semibold rounded-xl transition-colors uppercase text-[10px] tracking-[0.2em]">Cancel</button>
+              <button onClick={handleSaveCustom} className="px-6 py-3 bg-brand-green dark:bg-[#F7F7F7] text-white dark:text-[#111111] font-semibold rounded-xl hover:bg-brand-green/90 transition-all shadow-lg shadow-brand-green/20 uppercase text-[10px] tracking-[0.2em]">{editingEnvId ? 'Update' : 'Commit'}</button>
             </div>
           </div>
         </div>
