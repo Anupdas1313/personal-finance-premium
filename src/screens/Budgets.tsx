@@ -78,11 +78,11 @@ function DonutChart({ spent, allocatedUnspent, unallocated, size = 120 }: { spen
           strokeDashoffset={allocOffset}
           style={{ transition: 'stroke-dasharray 0.8s ease, stroke-dashoffset 0.8s ease' }}
         />
-        {/* Spent — red */}
+        {/* Spent — green */}
         <circle
           cx={center} cy={center} r={radius}
           fill="none" stroke="currentColor"
-          className="text-brand-red"
+          className="text-brand-green"
           strokeWidth={8} strokeLinecap="round"
           strokeDasharray={`${spentDash} ${circumference - spentDash}`}
           strokeDashoffset={spentOffset}
@@ -515,7 +515,7 @@ export default function Budgets() {
                                 <div className="w-2.5 h-2.5 rounded-full bg-brand-red" />
                                 <span className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Spent</span>
                               </div>
-                              <span className="text-xs font-black text-brand-blue dark:text-[#F7F7F7]">{fmt(totalSpent)}</span>
+                              <span className="text-xs font-black text-brand-red">{fmt(totalSpent)}</span>
                             </div>
 
                             <div className="flex items-center justify-between">
