@@ -503,30 +503,37 @@ export default function Budgets() {
                     <div className="flex flex-col gap-4">
                       {/* Pool amount + Donut side by side */}
                       <div className="flex items-center gap-6">
-                        <div className="flex-1">
-                          <div className="flex flex-col mb-4">
-                            <span className="text-[9px] font-black text-neutral-400 dark:text-neutral-500 uppercase tracking-widest leading-none mb-1.5">Total Pool Funds</span>
+                        <div className="flex-1 space-y-3">
+                          <div className="flex flex-col">
+                            <span className="text-[9px] font-black text-neutral-400 dark:text-neutral-500 uppercase tracking-widest leading-none mb-1">Total Pool Funds</span>
                             <h2 className="text-4xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tight">{fmt(masterBudgetAmt)}</h2>
                           </div>
 
-                          <div className="grid grid-cols-3 gap-2">
-                            <div className="bg-neutral-50 dark:bg-[#1A1A1E]/50 p-2.5 rounded-2xl border border-neutral-100 dark:border-[#222222]">
-                              <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Spent</p>
-                              <p className="text-[13px] font-black text-brand-blue dark:text-[#F7F7F7] tracking-tight">{fmt(totalSpent)}</p>
+                          <div className="space-y-2 pt-2 border-t border-neutral-100 dark:border-white/5">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-2.5 h-2.5 rounded-full bg-brand-green" />
+                                <span className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Spent</span>
+                              </div>
+                              <span className="text-xs font-black text-brand-blue dark:text-[#F7F7F7]">{fmt(totalSpent)}</span>
                             </div>
 
-                            <div className="bg-neutral-50 dark:bg-[#1A1A1E]/50 p-2.5 rounded-2xl border border-neutral-100 dark:border-[#222222]">
-                              <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Allocated</p>
-                              <p className="text-[13px] font-black text-brand-blue dark:text-[#F7F7F7] tracking-tight">{fmt(totalAllocated)}</p>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-2.5 h-2.5 rounded-full bg-brand-blue/30 dark:bg-brand-blue/40" />
+                                <span className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Allocated</span>
+                              </div>
+                              <span className="text-xs font-black text-brand-blue dark:text-[#F7F7F7]">{fmt(totalAllocated)}</span>
                             </div>
-                            
-                            <div className={cn("p-2.5 rounded-2xl border", unallocated < 0 ? "bg-brand-red/5 border-brand-red/20" : "bg-neutral-50 dark:bg-[#1A1A1E]/50 border-neutral-100 dark:border-[#222222]")}>
-                              <p className={cn("text-[9px] font-bold uppercase tracking-widest mb-1", unallocated < 0 ? "text-brand-red" : "text-neutral-400")}>
-                                Unallocated
-                              </p>
-                              <p className={cn("text-[13px] font-black tracking-tight", unallocated < 0 ? "text-brand-red" : "text-brand-green")}>
+
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <div className={cn("w-2.5 h-2.5 rounded-full", unallocated < 0 ? "bg-brand-red animate-pulse" : "bg-neutral-200 dark:bg-[#333333]")} />
+                                <span className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Unallocated</span>
+                              </div>
+                              <span className={cn("text-xs font-black", unallocated < 0 ? "text-brand-red" : "text-brand-green")}>
                                 {unallocated < 0 ? '-' : ''}{fmt(Math.abs(unallocated))}
-                              </p>
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -553,24 +560,6 @@ export default function Budgets() {
                             unallocated={Math.max(unallocated, 0)}
                             size={100}
                           />
-                        </div>
-                      )}
-
-                      {/* Donut Legend */}
-                      {masterBudgetAmt > 0 && (
-                        <div className="flex items-center justify-center gap-4 pt-1">
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-brand-green" />
-                            <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest">Spent</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-brand-blue/30 dark:bg-brand-blue/40" />
-                            <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest">Allocated</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-neutral-200 dark:bg-[#222222]" />
-                            <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest">Free</span>
-                          </div>
                         </div>
                       )}
 
