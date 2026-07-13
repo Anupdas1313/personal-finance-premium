@@ -19,26 +19,9 @@ import { startOfMonth, endOfMonth, addMonths, subMonths, differenceInDays, forma
 function getBudgetPeriod(referenceDate: Date, startDay: number) {
   const year = referenceDate.getFullYear();
   const month = referenceDate.getMonth(); // 0-indexed
-  const day = referenceDate.getDate();
 
-  let periodStart: Date;
-  let periodEnd: Date;
-
-  if (startDay === 1) {
-    // Standard calendar month — fast path
-    periodStart = startOfMonth(referenceDate);
-    periodEnd = endOfMonth(referenceDate);
-  } else if (day >= startDay) {
-    // We're in the period that starts this month
-    periodStart = new Date(year, month, startDay, 0, 0, 0, 0);
-    const nextMonth = addMonths(periodStart, 1);
-    periodEnd = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), startDay - 1, 23, 59, 59, 999);
-  } else {
-    // We're in the period that started last month
-    const lastMonth = new Date(year, month - 1, startDay, 0, 0, 0, 0);
-    periodStart = lastMonth;
-    periodEnd = new Date(year, month, startDay - 1, 23, 59, 59, 999);
-  }
+  const periodStart = new Date(year, month, startDay, 0, 0, 0, 0);
+  const periodEnd = new Date(year, month + 1, startDay - 1, 23, 59, 59, 999);
 
   return { periodStart, periodEnd };
 }
@@ -150,11 +133,12 @@ export function useBudgets(monthStr: string, currentMonth: Date): UseBudgetsRetu
 
   const monthTxs = useMemo(() => {
     return transactions.filter(tx => {
-      let t = 0;
-      if (typeof tx.dateTime === 'number') t = tx.dateTime;
-      else if (tx.dateTime instanceof Date) t = tx.dateTime.getTime();
-      else if (typeof tx.dateTime === 'string') t = new Date((tx.dateTime as string).trim().replace(' ', 'T')).getTime();
-      return t >= periodStartTs && t <= periodEndTs;
+      try {
+        const t = new Date(tx.dateTime).getTime();
+        return !isNaN(t) && t >= periodStartTs && t <= periodEndTs;
+      } catch {
+        return false;
+      }
     });
   }, [transactions, periodStartTs, periodEndTs]);
 
