@@ -358,27 +358,6 @@ export default function Budgets() {
         </div>
         
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          {/* Copy to Next Month Button */}
-          {!isEmpty && (
-            <button
-              onClick={handleCopyToNextMonth}
-              title="Copy to Next Month"
-              className={cn(
-                "p-3 rounded-2xl border transition-all active:scale-95 flex items-center justify-center relative",
-                copyStatus === 'success'
-                  ? "bg-brand-green/10 text-brand-green border-brand-green/20"
-                  : "bg-white dark:bg-[#111111] text-brand-blue/60 dark:text-white/60 border-brand-blue/5 dark:border-[#222222] hover:bg-neutral-50 dark:hover:bg-[#1A1A1E]"
-              )}
-            >
-              <Copy className="w-4 h-4" />
-              {copyStatus === 'success' && (
-                <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-brand-green text-white text-[8px] font-bold px-2 py-0.5 rounded shadow-sm whitespace-nowrap animate-in fade-in slide-in-from-top-1">
-                  Copied!
-                </span>
-              )}
-            </button>
-          )}
-
           {/* Month Navigation */}
           <div className="flex items-center gap-4 bg-white dark:bg-[#111111] px-4 py-2 rounded-[24px] shadow-sm border border-brand-blue/5 dark:border-[#222222] flex-1 sm:flex-none justify-between sm:justify-start">
             <button onClick={() => setCurrentMonth(m => budgetStartDay === 1 ? subMonths(m, 1) : getPrevBudgetMonth(m, budgetStartDay))} className="text-brand-blue/40 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-[#F7F7F7] font-semibold px-1 transition-colors">&lt;</button>
