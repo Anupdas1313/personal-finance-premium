@@ -470,20 +470,20 @@ export default function Budgets() {
                       icon={<Wallet className="w-4 h-4 text-brand-green" />} 
                       label="Monthly Pool" 
                       action={
-                        <div className="flex items-center gap-1.5 bg-neutral-50 dark:bg-[#1A1A1F] p-1 rounded-2xl border border-neutral-100 dark:border-[#222222]">
+                        <div className="flex items-center gap-1 bg-neutral-50 dark:bg-[#1A1A1F] p-0.5 rounded-xl border border-neutral-100 dark:border-[#222222]">
                           <button 
                             onClick={() => navigate(`/budgets/customize/${monthStr}`)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-white dark:hover:bg-white/5 text-brand-blue/60 dark:text-[#CCCCCC] hover:text-brand-blue dark:hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-[0.1em] transition-all duration-150 active:scale-95"
+                            className="flex items-center gap-1 px-2.5 py-1 hover:bg-white dark:hover:bg-white/5 text-brand-blue/60 dark:text-[#CCCCCC] hover:text-brand-blue dark:hover:text-white rounded-lg text-[9px] font-bold uppercase tracking-[0.05em] transition-all duration-150 active:scale-95"
                           >
-                            <Settings className="w-3.5 h-3.5" />
+                            <Settings className="w-3 h-3" />
                             <span>Customize</span>
                           </button>
-                          <div className="w-[1px] h-4 bg-neutral-200 dark:bg-[#333333]" />
+                          <div className="w-[1px] h-3 bg-neutral-200 dark:bg-[#333333]" />
                           <button 
                             onClick={() => { setPoolInput(masterBudgetAmt ? masterBudgetAmt.toString() : ''); setIsPoolModalOpen(true); }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-white dark:hover:bg-white/5 text-brand-blue/60 dark:text-[#CCCCCC] hover:text-brand-blue dark:hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-[0.1em] transition-all duration-150 active:scale-95"
+                            className="flex items-center gap-1 px-2.5 py-1 hover:bg-white dark:hover:bg-white/5 text-brand-blue/60 dark:text-[#CCCCCC] hover:text-brand-blue dark:hover:text-white rounded-lg text-[9px] font-bold uppercase tracking-[0.05em] transition-all duration-150 active:scale-95"
                           >
-                            <Pencil className="w-3.5 h-3.5" />
+                            <Pencil className="w-3 h-3" />
                             <span>Edit</span>
                           </button>
                         </div>
