@@ -362,15 +362,20 @@ export default function Budgets() {
           {!isEmpty && (
             <button
               onClick={handleCopyToNextMonth}
+              title="Copy to Next Month"
               className={cn(
-                "flex items-center gap-1.5 px-4 py-2 rounded-xl text-[10px] font-semibold uppercase tracking-[0.2em] transition-all shadow-sm border",
+                "p-3 rounded-2xl border transition-all active:scale-95 flex items-center justify-center relative",
                 copyStatus === 'success'
                   ? "bg-brand-green/10 text-brand-green border-brand-green/20"
                   : "bg-white dark:bg-[#111111] text-brand-blue/60 dark:text-white/60 border-brand-blue/5 dark:border-[#222222] hover:bg-neutral-50 dark:hover:bg-[#1A1A1E]"
               )}
             >
-              <Copy className="w-3.5 h-3.5" />
-              {copyStatus === 'success' ? 'Copied!' : 'Copy to Next Month'}
+              <Copy className="w-4 h-4" />
+              {copyStatus === 'success' && (
+                <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-brand-green text-white text-[8px] font-bold px-2 py-0.5 rounded shadow-sm whitespace-nowrap animate-in fade-in slide-in-from-top-1">
+                  Copied!
+                </span>
+              )}
             </button>
           )}
 
