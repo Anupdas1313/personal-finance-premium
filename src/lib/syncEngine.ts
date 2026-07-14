@@ -32,18 +32,23 @@ export function startSync(uid: string | null, db: FinanceDatabase) {
 
   if (!uid) return;
 
+  const mode = localStorage.getItem('appMode') === 'BUSINESS' ? 'BUSINESS' : 'PERSONAL';
+  const pathPrefix = `users/${uid}/${mode}`;
+
   const tables = [
     'accounts', 'transactions', 'monthlyClosings', 'budgets', 
     'parties', 'ledgerTransactions', 'accountClosings', 
     'categories', 'tags', 'recurringTemplates', 'userSettings',
-    'monthlyBudgets'
+    'monthlyBudgets', 'inventory', 'sales', 'saleItems', 'wishlist'
   ];
 
   tables.forEach(tableName => {
+    // Some tables might not exist if they are not in the db object (though our DB schema has all of them now)
     const table = db.table(tableName);
+    if (!table) return;
 
     // 1. Listen to Firestore changes and update Dexie
-    const unsub = onSnapshot(collection(firestoreDb, `users/${uid}/${tableName}`), (snapshot) => {
+    const unsub = onSnapshot(collection(firestoreDb, `${pathPrefix}_${tableName}`), (snapshot) => {
       snapshot.docChanges().forEach(async (change) => {
         const id = Number(change.doc.id);
         const syncKey = `${tableName}-${id}`;
@@ -81,7 +86,7 @@ export function startSync(uid: string | null, db: FinanceDatabase) {
           if (objWithId[key] === undefined) delete objWithId[key];
         });
         
-        setDoc(doc(firestoreDb, `users/${uid}/${tableName}`, String(id)), objWithId).catch(console.error);
+        setDoc(doc(firestoreDb, `${pathPrefix}_${tableName}`, String(id)), objWithId).catch(console.error);
       };
     });
 
@@ -95,14 +100,14 @@ export function startSync(uid: string | null, db: FinanceDatabase) {
          else updatedObj[key as keyof typeof updatedObj] = mods[key];
       }
       
-      setDoc(doc(firestoreDb, `users/${uid}/${tableName}`, String(primKey)), updatedObj).catch(console.error);
+      setDoc(doc(firestoreDb, `${pathPrefix}_${tableName}`, String(primKey)), updatedObj).catch(console.error);
     });
 
     table.hook('deleting', function (primKey, obj) {
       const syncKey = `${tableName}-${primKey}`;
       if (syncingKeys.has(syncKey)) return;
       
-      deleteDoc(doc(firestoreDb, `users/${uid}/${tableName}`, String(primKey))).catch(console.error);
+      deleteDoc(doc(firestoreDb, `${pathPrefix}_${tableName}`, String(primKey))).catch(console.error);
     });
   });
 }

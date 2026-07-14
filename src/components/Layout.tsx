@@ -4,23 +4,36 @@ import { LayoutDashboard, BarChart3, Landmark, PieChart, Target, Settings, Plus,
 
 import { cn } from '../logic/utils';
 
+import { useAppMode } from '../context/AppModeContext';
 
 export default function Layout() {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { appMode, toggleAppMode } = useAppMode();
 
-  const mainNavItems = [
+  const mainNavItems = appMode === 'PERSONAL' ? [
     { name: 'Home', path: '/', icon: LayoutDashboard },
     { name: 'Transactions', path: '/transactions', icon: BarChart3 },
     { name: 'Accounts', path: '/accounts', icon: Landmark },
+  ] : [
+    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+    { name: 'Sales', path: '/sales', icon: BarChart3 },
+    { name: 'Inventory', path: '/inventory', icon: ShoppingBag },
   ];
 
-  const moreNavItems = [
+  const moreNavItems = appMode === 'PERSONAL' ? [
     { name: 'Summary', path: '/summary', icon: PieChart },
     { name: 'Budgets', path: '/budgets', icon: Target },
     { name: 'Reports', path: '/reports', icon: FileText },
     { name: 'Ledger', path: '/ledger', icon: BookOpen },
     { name: 'Wishlist', path: '/wishlist', icon: ShoppingBag },
+    { name: 'Settings', path: '/settings', icon: Settings },
+    { name: 'Profile', path: '/profile', icon: User },
+  ] : [
+    { name: 'Summary', path: '/summary', icon: PieChart },
+    { name: 'Accounts', path: '/accounts', icon: Landmark },
+    { name: 'Expenses', path: '/transactions', icon: BarChart3 },
+    { name: 'Reports', path: '/reports', icon: FileText },
     { name: 'Settings', path: '/settings', icon: Settings },
     { name: 'Profile', path: '/profile', icon: User },
   ];
@@ -57,6 +70,18 @@ export default function Layout() {
               </Link>
             );
           })}
+
+          <button
+            onClick={toggleAppMode}
+            className="w-full mt-4 flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors bg-brand-blue/5 dark:bg-brand-blue/10 text-brand-blue dark:text-[#F7F7F7] hover:bg-brand-blue/10 dark:hover:bg-[#15151A]"
+          >
+            <div className="flex items-center gap-3">
+              <span className="w-5 h-5 flex items-center justify-center bg-brand-blue text-white rounded-md text-[10px] font-bold">
+                {appMode === 'PERSONAL' ? 'P' : 'B'}
+              </span>
+              Switch to {appMode === 'PERSONAL' ? 'Business' : 'Personal'}
+            </div>
+          </button>
 
           <Link
             to="/?add=true"
@@ -164,6 +189,20 @@ export default function Layout() {
           >
             <div className="w-12 h-1.5 bg-neutral-200 dark:bg-white/10 rounded-full mx-auto mb-4" />
             <h3 className="text-xs font-heading font-semibold text-brand-blue/60 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">Options</h3>
+
+            <div className="mb-4">
+              <button
+                onClick={() => { toggleAppMode(); setIsMobileMenuOpen(false); }}
+                className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-colors bg-brand-blue/5 dark:bg-brand-blue/10 text-brand-blue dark:text-[#F7F7F7] active:scale-95"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="w-6 h-6 flex items-center justify-center bg-brand-blue text-white rounded-md text-xs font-bold">
+                    {appMode === 'PERSONAL' ? 'P' : 'B'}
+                  </span>
+                  Switch to {appMode === 'PERSONAL' ? 'Business' : 'Personal'}
+                </div>
+              </button>
+            </div>
 
             <div className="space-y-1">
               {moreNavItems.map((item) => {

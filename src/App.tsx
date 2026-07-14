@@ -21,7 +21,11 @@ import PwaInstallPromoter from './components/PwaInstallPromoter';
 
 import { ThemeProvider } from './components/ThemeProvider';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { AppModeProvider, useAppMode } from './context/AppModeContext';
 import { useRecurringEngine } from './logic/useRecurringEngine';
+import BusinessDashboard from './screens/BusinessDashboard';
+import Inventory from './screens/Inventory';
+import Sales from './screens/Sales';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './models/db';
 
@@ -125,6 +129,70 @@ function LoadingWrapper({ children }: { children: React.ReactNode }) {
   return <div className="contents">{children}</div>;
 }
 
+function AppRoutes() {
+  const { appMode } = useAppMode();
+  
+  return (
+    <Routes>
+      {/* Public route */}
+      <Route path="/auth" element={<Auth />} />
+
+      {/* Onboarding routes */}
+      <Route path="/welcome" element={
+        <ProtectedRoute requireSetup={false}>
+          <Welcome />
+        </ProtectedRoute>
+      } />
+      <Route path="/setup-account" element={
+        <ProtectedRoute requireSetup={false}>
+          <SetupAccount />
+        </ProtectedRoute>
+      } />
+
+      {/* Protected routes wrapped in Layout */}
+      <Route path="/" element={
+        <ProtectedRoute>
+          <Layout />
+        </ProtectedRoute>
+      }>
+        {appMode === 'PERSONAL' ? (
+          <>
+            <Route index element={<Dashboard />} />
+            <Route path="budgets" element={<Budgets />} />
+            <Route path="budgets/customize/:month" element={<BudgetCustomize />} />
+            <Route path="ledger" element={<Ledger />} />
+            <Route path="ledger/:id" element={<PartyLedger />} />
+            <Route path="wishlist" element={<Wishlist />} />
+          </>
+        ) : (
+          <>
+            <Route index element={<BusinessDashboard />} />
+            <Route path="inventory" element={<Inventory />} />
+            <Route path="sales" element={<Sales />} />
+          </>
+        )}
+        
+        {/* Shared Routes */}
+        <Route path="transactions" element={<Transactions />} />
+        <Route path="accounts" element={<Accounts />} />
+        <Route path="summary" element={<Summary />} />
+        <Route path="reports" element={<Reports />} />
+        <Route path="settings" element={<Settings />} />
+        <Route path="profile" element={<Profile />} />
+      </Route>
+
+      {/* Protected routes without Layout */}
+      <Route path="/transactions/table" element={
+        <ProtectedRoute>
+          <TransactionTable />
+        </ProtectedRoute>
+      } />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
 export default function App() {
   React.useEffect(() => {
     // Request persistent storage to ensure the browser doesn't evict local Dexie databases under storage pressure.
@@ -141,58 +209,16 @@ export default function App() {
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="app-theme">
-      <AuthProvider>
-        <HashRouter>
-          <LoadingWrapper>
-            <PwaInstallPromoter />
-            <Routes>
-              {/* Public route */}
-              <Route path="/auth" element={<Auth />} />
-
-              {/* Onboarding routes */}
-              <Route path="/welcome" element={
-                <ProtectedRoute requireSetup={false}>
-                  <Welcome />
-                </ProtectedRoute>
-              } />
-              <Route path="/setup-account" element={
-                <ProtectedRoute requireSetup={false}>
-                  <SetupAccount />
-                </ProtectedRoute>
-              } />
-
-              {/* Protected routes wrapped in Layout */}
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }>
-                <Route index element={<Dashboard />} />
-                <Route path="transactions" element={<Transactions />} />
-                <Route path="accounts" element={<Accounts />} />
-                <Route path="summary" element={<Summary />} />
-                <Route path="budgets" element={<Budgets />} />
-                <Route path="budgets/customize/:month" element={<BudgetCustomize />} />
-                <Route path="reports" element={<Reports />} />
-                <Route path="ledger" element={<Ledger />} />
-                <Route path="ledger/:id" element={<PartyLedger />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="wishlist" element={<Wishlist />} />
-                <Route path="profile" element={<Profile />} />
-              </Route>
-
-              {/* Protected routes without Layout */}
-              <Route path="/transactions/table" element={
-                <ProtectedRoute>
-                  <TransactionTable />
-                </ProtectedRoute>
-              } />
-
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </LoadingWrapper>
-        </HashRouter>
-      </AuthProvider>
+      <AppModeProvider>
+        <AuthProvider>
+          <HashRouter>
+            <LoadingWrapper>
+              <PwaInstallPromoter />
+              <AppRoutes />
+            </LoadingWrapper>
+          </HashRouter>
+        </AuthProvider>
+      </AppModeProvider>
     </ThemeProvider>
   );
 }

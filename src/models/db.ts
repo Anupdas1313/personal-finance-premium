@@ -130,6 +130,35 @@ export interface WishlistItem {
   dateResolved?: Date;
 }
 
+export interface InventoryItem {
+  id?: number;
+  name: string;
+  sku: string;
+  stockQuantity: number;
+  costPrice: number;
+  sellingPrice: number;
+  lastUpdated: Date;
+}
+
+export interface Sale {
+  id?: number;
+  customerId: number;
+  date: Date;
+  totalAmount: number;
+  status: 'PENDING' | 'PAID';
+  paymentMethod?: 'Cash' | 'Bank' | 'UPI' | 'Other';
+  note?: string;
+}
+
+export interface SaleItem {
+  id?: number;
+  saleId: number;
+  skuId: number;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
 export class FinanceDatabase extends Dexie {
   accounts!: Table<Account, number>;
   transactions!: Table<Transaction, number>;
@@ -144,8 +173,11 @@ export class FinanceDatabase extends Dexie {
   userSettings!: Table<UserSetting, number>;
   wishlist!: Table<WishlistItem, number>;
   monthlyBudgets!: Table<MonthlyBudget, number>;
+  inventory!: Table<InventoryItem, number>;
+  sales!: Table<Sale, number>;
+  saleItems!: Table<SaleItem, number>;
 
-  constructor(dbName: string = 'FinanceDatabase_Local') {
+  constructor(dbName: string = 'FinanceDatabase_Local_PERSONAL') {
     super(dbName);
     this.version(1).stores({
       accounts: '++id, bankName, accountLast4',
@@ -263,6 +295,25 @@ export class FinanceDatabase extends Dexie {
       monthlyBudgets: '++id, &month'
     });
 
+    this.version(18).stores({
+      accounts: '++id, bankName, accountLast4',
+      transactions: '++id, accountId, type, dateTime, category, linkedBudgetId',
+      monthlyClosings: '++id, &month',
+      budgets: '++id, category, month, [category+month]',
+      parties: '++id, name, type',
+      ledgerTransactions: '++id, partyId, type, dateTime',
+      accountClosings: '++id, accountId, closingDate',
+      categories: '++id, &name',
+      tags: '++id, &name',
+      recurringTemplates: '++id, nextRunDate, isActive',
+      userSettings: '++id, &key',
+      wishlist: '++id, name, price, status, dateAdded',
+      monthlyBudgets: '++id, &month',
+      inventory: '++id, sku',
+      sales: '++id, customerId, status, date',
+      saleItems: '++id, saleId, skuId'
+    });
+
     // Auto-generate globally unique numeric IDs for all tables to prevent sync collisions
     this.tables.forEach(table => {
       table.hook('creating', function (primKey, obj) {
@@ -277,11 +328,11 @@ export class FinanceDatabase extends Dexie {
 }
 
 // Global db instance management
-let activeDB: FinanceDatabase = new FinanceDatabase('FinanceDatabase_Local');
-let currentDBName: string = 'FinanceDatabase_Local';
+let activeDB: FinanceDatabase = new FinanceDatabase('FinanceDatabase_Local_PERSONAL');
+let currentDBName: string = 'FinanceDatabase_Local_PERSONAL';
 
-export const initializeDB = (uid: string | null) => {
-  const dbName = uid ? `FinanceDB_${uid}` : 'FinanceDatabase_Local';
+export const initializeDB = (uid: string | null, mode: 'PERSONAL' | 'BUSINESS' = 'PERSONAL') => {
+  const dbName = uid ? `FinanceDB_${uid}_${mode}` : `FinanceDatabase_Local_${mode}`;
 
   // If already using the correct DB, skip re-init
   if (dbName === currentDBName && activeDB.isOpen()) {

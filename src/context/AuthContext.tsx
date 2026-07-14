@@ -58,7 +58,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } as User;
         
         setUser(mappedUser);
-        const activeDB = initializeDB(mappedUser.uid);
+        const savedMode = localStorage.getItem('appMode');
+        const mode = savedMode === 'BUSINESS' ? 'BUSINESS' : 'PERSONAL';
+        const activeDB = initializeDB(mappedUser.uid, mode);
         startSync(mappedUser.uid, activeDB);
       } else {
         setUser(null);
