@@ -6,7 +6,7 @@ import {
   Target
 } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { format, subDays, subWeeks } from 'date-fns';
+import { format, subDays, subWeeks, subMonths } from 'date-fns';
 import { CATEGORY_ICONS } from '../constants';
 import { db } from '../models/db';
 import { useCategories } from '../hooks/useCategories';
