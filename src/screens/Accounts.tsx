@@ -353,14 +353,17 @@ export default function Accounts() {
       </div>
 
       {isAdding && (
-        <div className="bg-[#F9FBFF] dark:bg-[#111111] p-6 rounded-[24px] shadow-[0_8px_40px_rgba(26,35,126,0.08)] border border-brand-blue/5 dark:border-[#222222]">
-          <h2 className="text-xl font-heading font-semibold text-brand-blue dark:text-[#F7F7F7] mb-5 tracking-tight flex items-center gap-2">
-            <div className="w-2 h-6 bg-brand-green rounded-full"></div>
-            {editingAccountId ? 'Edit Account' : 'New Account'}
-          </h2>
+        <div className="bg-white dark:bg-[#111111] p-5 sm:p-6 rounded-[24px] shadow-sm border border-neutral-100 dark:border-white/5 transition-all">
+          <div className="flex items-center justify-between mb-5 pb-3 border-b border-neutral-50 dark:border-white/5">
+            <h2 className="text-xs font-heading font-black text-brand-blue dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-green"></span>
+              {editingAccountId ? 'Edit Account' : 'New Account'}
+            </h2>
+            <button onClick={resetForm} className="text-[10px] font-black text-neutral-400 dark:text-neutral-500 hover:text-brand-red uppercase tracking-wider transition-colors">Cancel</button>
+          </div>
 
-          <form onSubmit={handleAddAccount} className="space-y-5">
-            <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-1 rounded-xl mb-4">
+          <form onSubmit={handleAddAccount} className="space-y-4">
+            <div className="flex bg-neutral-50 dark:bg-[#1A1A1A] p-0.5 rounded-xl border border-neutral-100 dark:border-white/5">
               {(['BANK', 'CASH', 'CREDIT_CARD'] as const).map((t) => (
                 <button
                   key={t}
@@ -370,24 +373,24 @@ export default function Accounts() {
                     if (t === 'CASH' && !bankName) setBankName('Cash Wallet');
                     if (t === 'CASH' && !accountLast4) setAccountLast4('CASH');
                   }}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
                     accountType === t
-                      ? 'bg-brand-blue text-white shadow-lg scale-105'
-                      : 'text-brand-blue/40 hover:text-brand-blue dark:hover:text-[#F7F7F7]'
+                      ? 'bg-brand-green text-white dark:text-brand-blue shadow-sm'
+                      : 'text-neutral-400 hover:text-neutral-700 dark:hover:text-white'
                   }`}
                 >
-                  {t === 'BANK' && <Landmark className="w-4 h-4" />}
-                  {t === 'CASH' && <Wallet className="w-4 h-4" />}
-                  {t === 'CREDIT_CARD' && <CreditCard className="w-4 h-4" />}
-                  {t.charAt(0) + t.slice(1).toLowerCase().replace('_', ' ')}
+                  {t === 'BANK' && <Landmark className="w-3.5 h-3.5" />}
+                  {t === 'CASH' && <Wallet className="w-3.5 h-3.5" />}
+                  {t === 'CREDIT_CARD' && <CreditCard className="w-3.5 h-3.5" />}
+                  {t.replace('_', ' ')}
                 </button>
               ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-3">
-                <label className="block text-sm font-black text-brand-blue dark:text-[#F7F7F7] mb-1.5 flex justify-between items-center uppercase tracking-wider">
-                  <span>{accountType === 'BANK' ? 'Bank Name' : accountType === 'CASH' ? 'Wallet Name' : 'Card Name'}</span>
+                <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">
+                  {accountType === 'BANK' ? 'Bank Name' : accountType === 'CASH' ? 'Wallet Name' : 'Card Name'}
                 </label>
 
                 <input
@@ -395,45 +398,47 @@ export default function Accounts() {
                   value={bankName}
                   onChange={(e) => setBankName(e.target.value)}
                   placeholder="Enter name"
-                  className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan focus:border-brand-blue outline-none transition-shadow mb-3 text-brand-blue font-bold"
+                  className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all placeholder-neutral-300 dark:placeholder-neutral-600 mb-3"
                   required
                 />
 
                 {accountType === 'BANK' && (
-                  <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 pt-1 -mx-2 px-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2 pt-1 -mx-2 px-2" style={{ WebkitOverflowScrolling: 'touch' }}>
                     {INDIAN_BANKS.map((bank) => (
                       <button
                         key={bank.id}
                         type="button"
                         onClick={() => setBankName(bank.name)}
-                        className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${
+                        className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all ${
                           bankName === bank.name
-                            ? 'bg-brand-blue text-white border-transparent shadow-md scale-105'
-                            : 'bg-white dark:bg-[#1A1A1A] text-brand-blue/60 border-neutral-100 dark:border-[#333333] hover:bg-neutral-50 dark:hover:bg-[#222222]'
+                            ? 'bg-brand-green/10 text-brand-green border-brand-green/20 shadow-sm'
+                            : 'bg-white dark:bg-[#1A1A1A] text-neutral-400 border-neutral-100 dark:border-white/5 hover:bg-neutral-50 dark:hover:bg-[#222222]'
                         }`}
                       >
-                        <div className="w-5 h-5 bg-white rounded-md flex items-center justify-center p-0.5 shadow-sm">
+                        <div className="w-4 h-4 bg-white rounded flex items-center justify-center p-0.5 shadow-xs">
                           <bank.logo className="w-full h-full object-contain" />
                         </div>
-                        <span className="text-[9px] font-black uppercase tracking-wider">{bank.id}</span>
+                        <span className="text-[8px] font-black uppercase tracking-wider">{bank.id}</span>
                       </button>
                     ))}
                   </div>
                 )}
               </div>
+              
               <div>
-                <label className="block text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-[0.2em]">Reference/Last 4</label>
+                <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">Reference/Last 4</label>
                 <input
                   type="text"
                   value={accountLast4}
                   onChange={(e) => setAccountLast4(e.target.value)}
                   placeholder="e.g., 1234"
-                  className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan focus:border-brand-blue outline-none transition-shadow text-brand-blue font-bold"
+                  className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all placeholder-neutral-300 dark:placeholder-neutral-600"
                   required
                 />
               </div>
+              
               <div>
-                <label className="block text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-[0.2em]">
+                <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">
                   {accountType === 'CREDIT_CARD' ? 'Outstanding Balance (Owed)' : `Starting Balance (${currency})`}
                 </label>
                 <input
@@ -442,40 +447,42 @@ export default function Accounts() {
                   onChange={(e) => setStartingBalance(e.target.value)}
                   placeholder="0.00"
                   step="0.01"
-                  className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan focus:border-brand-blue outline-none transition-shadow text-brand-blue font-bold"
+                  className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all placeholder-neutral-300 dark:placeholder-neutral-600"
                   required
                 />
                 {accountType === 'CREDIT_CARD' && (
-                  <p className="text-[10px] text-neutral-400 mt-1.5 leading-tight">
-                    Enter how much you currently owe on this card (e.g. 5000). We will record this as a liability internally.
+                  <p className="text-[9px] font-medium text-neutral-400 dark:text-[#A0A0A0] mt-1.5 leading-normal">
+                    Enter what you owe. Internally stored as a liability.
                   </p>
                 )}
               </div>
+              
               <div>
-                <label className="block text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-[0.2em]">Starting Date</label>
+                <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">Starting Date</label>
                 <input
                   type="date"
                   value={startingBalanceDate}
                   onChange={(e) => setStartingBalanceDate(e.target.value)}
-                  className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan focus:border-brand-blue outline-none transition-shadow text-brand-blue font-bold"
+                  className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all text-neutral-800 dark:text-neutral-200"
                   required
                 />
               </div>
+              
               {accountType === 'CREDIT_CARD' && (
                 <>
                   <div>
-                    <label className="block text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-[0.2em]">Credit Limit ({currency})</label>
+                    <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">Credit Limit ({currency})</label>
                     <input
                       type="number"
                       value={creditLimit}
                       onChange={(e) => setCreditLimit(e.target.value)}
                       placeholder="e.g., 100000"
-                      className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan focus:border-brand-blue outline-none transition-shadow text-brand-blue font-bold"
+                      className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all placeholder-neutral-300 dark:placeholder-neutral-600"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-[0.2em]">Statement Date (Day)</label>
+                    <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">Statement Date (Day)</label>
                     <input
                       type="number"
                       min="1"
@@ -483,12 +490,12 @@ export default function Accounts() {
                       value={statementDate}
                       onChange={(e) => setStatementDate(e.target.value)}
                       placeholder="e.g., 15"
-                      className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan focus:border-brand-blue outline-none transition-shadow text-brand-blue font-bold"
+                      className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all placeholder-neutral-300 dark:placeholder-neutral-600"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-[0.2em]">Payment Due Date (Day)</label>
+                    <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">Payment Due Date (Day)</label>
                     <input
                       type="number"
                       min="1"
@@ -496,7 +503,7 @@ export default function Accounts() {
                       value={dueDate}
                       onChange={(e) => setDueDate(e.target.value)}
                       placeholder="e.g., 5"
-                      className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan focus:border-brand-blue outline-none transition-shadow text-brand-blue font-bold"
+                      className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all placeholder-neutral-300 dark:placeholder-neutral-600"
                       required
                     />
                   </div>
@@ -504,32 +511,32 @@ export default function Accounts() {
               )}
             </div>
 
-            <div className="flex justify-end gap-3 pt-6 border-t border-[#EBEBEB] dark:border-[#222222]">
+            <div className="flex justify-end gap-3 pt-5 border-t border-neutral-50 dark:border-white/5">
               <button 
                 type="button" 
                 onClick={resetForm} 
                 disabled={isSaving}
-                className="px-6 py-3 text-brand-blue dark:text-[#F7F7F7] font-semibold text-sm disabled:opacity-50"
+                className="px-4 py-2 text-[10px] font-bold text-neutral-400 hover:text-neutral-500 uppercase transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button 
                 type="submit" 
                 disabled={isSaving || showSuccess}
-                className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold text-sm transition-all shadow-lg active:scale-95 ${
+                className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm transition-all active:scale-95 ${
                   showSuccess 
-                    ? 'bg-emerald-500 text-white shadow-emerald-500/20' 
-                    : 'bg-brand-green text-white shadow-brand-green/10'
-                } disabled:opacity-70 disabled:grayscale-[0.5]`}
+                    ? 'bg-emerald-500 text-white dark:text-brand-blue shadow-emerald-500/10' 
+                    : 'bg-brand-green text-white dark:text-brand-blue shadow-brand-green/10 hover:brightness-110'
+                } disabled:opacity-70`}
               >
                 {isSaving ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     <span>Saving...</span>
                   </>
                 ) : showSuccess ? (
                   <>
-                    <CheckCircle2 className="w-5 h-5" />
+                    <CheckCircle2 className="w-4 h-4" />
                     <span>Saved!</span>
                   </>
                 ) : (
