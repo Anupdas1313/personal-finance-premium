@@ -270,42 +270,43 @@ export default function Accounts() {
   return (
     <div className="space-y-10 pb-20">
       <div className="flex flex-col gap-4 px-1 mb-6 animate-fade-in">
-        {/* Title */}
-        <div>
-          <h1 className="text-3xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">Accounts</h1>
-          <p className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mt-0.5">Institutional Wealth</p>
+        {/* Title & Top Right Actions */}
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">Accounts</h1>
+            <p className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mt-0.5">Institutional Wealth</p>
+          </div>
+
+          {/* Arrange Accounts Button in Top Right */}
+          <button
+            onClick={() => setIsReorderOpen(true)}
+            className="w-9 h-9 flex items-center justify-center bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 text-neutral-600 dark:text-neutral-300 rounded-full hover:bg-neutral-50 dark:hover:bg-white/5 transition-all shadow-sm shrink-0"
+            title="Arrange Accounts"
+          >
+            <ArrowUpDown className="w-4 h-4 text-brand-cyan" />
+          </button>
         </div>
 
-        {/* Action Pills Toolbar */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Action Pills Toolbar - Equally Spaced */}
+        <div className="flex w-full gap-2">
           {/* Add Account Pill */}
           <button
             onClick={() => setIsAdding(!isAdding)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-brand-green/10 text-brand-green border border-brand-green/20 dark:border-brand-green/30 rounded-full hover:bg-brand-green/20 transition-all font-black uppercase text-[9px] tracking-wider"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-brand-green/10 text-brand-green border border-brand-green/20 dark:border-brand-green/30 rounded-2xl hover:bg-brand-green/20 transition-all font-black uppercase text-[10px] tracking-wider"
             title="Add Account"
           >
-            <Plus className="w-3 h-3" />
+            <Plus className="w-3.5 h-3.5" />
             <span>Add Account</span>
           </button>
 
           {/* Quick Transfer Pill */}
           <button
             onClick={() => setIsTransferOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-neutral-50 dark:bg-white/5 border border-neutral-100 dark:border-white/5 text-neutral-600 dark:text-neutral-300 rounded-full hover:bg-neutral-100 dark:hover:bg-white/10 transition-all font-bold uppercase text-[9px] tracking-wider"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-neutral-50 dark:bg-white/5 border border-neutral-100 dark:border-white/5 text-neutral-600 dark:text-neutral-300 rounded-2xl hover:bg-neutral-100 dark:hover:bg-white/10 transition-all font-bold uppercase text-[10px] tracking-wider"
             title="Quick Transfer"
           >
-            <ArrowRightLeft className="w-3 h-3 text-brand-green" />
+            <ArrowRightLeft className="w-3.5 h-3.5 text-brand-green" />
             <span>Transfer</span>
-          </button>
-
-          {/* Arrange Accounts Pill */}
-          <button
-            onClick={() => setIsReorderOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-neutral-50 dark:bg-white/5 border border-neutral-100 dark:border-white/5 text-neutral-600 dark:text-neutral-300 rounded-full hover:bg-neutral-100 dark:hover:bg-white/10 transition-all font-bold uppercase text-[9px] tracking-wider"
-            title="Arrange Accounts"
-          >
-            <ArrowUpDown className="w-3 h-3 text-brand-cyan" />
-            <span>Arrange</span>
           </button>
         </div>
       </div>
