@@ -345,7 +345,6 @@ export default function Accounts() {
             </p>
           </div>
         </div>
-      </div>
 
       <AnimatePresence>
         {isAdding && (
