@@ -1295,32 +1295,32 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
                     : 'None',
                   field: 'budget'
                 }] : []),
-              ].map(({ icon, label, value, field }) => (
+              ].map(({ label, value, field }) => (
                 <div key={label} onClick={() => field && handleEdit(field)}
-                  className={`bg-white dark:bg-white/5 p-2 rounded-xl flex items-center gap-2 border border-transparent transition-colors relative group ${field ? 'cursor-pointer hover:border-brand-green/20 hover:bg-neutral-50 dark:hover:bg-white/5' : ''}`}>
-                  {field && <div className="absolute top-1.5 right-1.5 opacity-100"><Pencil className="w-2.5 h-2.5 text-brand-green/40 group-hover:text-brand-green transition-colors" /></div>}
-                  {icon}
-                  <div className="flex flex-col overflow-hidden">
-                    <span className="text-[7px] font-black text-neutral-400 uppercase leading-none">{label}</span>
-                    <span className="text-[9px] font-bold text-brand-green dark:text-white truncate">{value}</span>
+                  className={`flex items-center justify-between py-1 px-1.5 rounded-lg transition-colors group ${field ? 'cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5' : ''}`}>
+                  <span className="text-[8px] font-extrabold text-neutral-400 uppercase tracking-widest">{label}</span>
+                  <div className="flex items-center gap-1.5 truncate max-w-[70%]">
+                    <span className="text-[10px] font-bold text-neutral-800 dark:text-neutral-300 truncate">{value}</span>
+                    {field && <Pencil className="w-2.5 h-2.5 text-neutral-300 group-hover:text-brand-green opacity-0 group-hover:opacity-100 transition-all shrink-0" />}
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="flex items-center justify-between px-1 mb-2">
-              <button onClick={() => handleEdit('date')} className="text-[10px] text-neutral-400 flex items-center gap-1 hover:text-brand-green transition-colors">
+            {/* Date Pill & Auto-filled notification */}
+            <div className="flex items-center justify-between px-1 mt-0.5">
+              <button onClick={() => handleEdit('date')} className="text-[9px] font-extrabold uppercase tracking-wider text-neutral-400 flex items-center gap-1 hover:text-brand-green transition-colors">
                 📅 {pendingTx.transactionDate ? format(new Date(pendingTx.transactionDate), 'dd MMM yyyy') : 'Set date'}
-                <Pencil className="w-2.5 h-2.5" />
+                <Pencil className="w-2.5 h-2.5 text-neutral-300 hover:text-brand-green" />
               </button>
               {pendingTx._isPredicted && (
-                <span className="text-[8px] text-brand-green flex items-center gap-1"><TrendingUp className="w-2.5 h-2.5" /> Auto-filled</span>
+                <span className="text-[8px] font-extrabold uppercase tracking-widest text-brand-green flex items-center gap-1"><TrendingUp className="w-2.5 h-2.5" /> Auto-filled</span>
               )}
             </div>
 
             <button onClick={() => handleSaveAndNext(pendingTx)} disabled={isSaving || showSuccess}
-              className={`w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all ${
-                showSuccess ? 'bg-emerald-500 text-white' : 'bg-brand-green text-white shadow-brand-green/30'} disabled:opacity-70`}>
+              className={`w-full py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all ${
+                showSuccess ? 'bg-emerald-500 text-white' : 'bg-brand-green text-white shadow-brand-green/30 dark:shadow-brand-green/20'} disabled:opacity-70`}>
               {isSaving ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /><span>Saving...</span></>
                 : showSuccess ? <><CheckCircle2 className="w-5 h-5" /><span>Saved! {multiQueue.length > 0 ? `(${multiQueue.length} more...)` : ''}</span></>
                   : <><CheckCircle2 className="w-4 h-4" /><span>Save Entry</span></>}
