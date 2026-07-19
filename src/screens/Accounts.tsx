@@ -270,56 +270,54 @@ export default function Accounts() {
 
   return (
     <div className="space-y-10 pb-20">
-      <div className="flex flex-col gap-6 px-1 mb-8">
+      <div className="flex flex-col gap-5 px-1 mb-6 animate-fade-in">
         {/* Title & Primary Actions */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">Accounts</h1>
             <p className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mt-0.5">Institutional Wealth</p>
           </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between w-full">
-          {/* Search Box */}
-          <div className="relative group w-full md:max-w-xs">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-            <input 
-              type="text" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search accounts..."
-              className="pl-10 pr-4 py-2.5 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 rounded-2xl text-xs font-bold outline-none focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 transition-all w-full text-neutral-800 dark:text-neutral-200"
-            />
-          </div>
-
-          {/* Action Buttons Row */}
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <button
-              onClick={() => setIsAdding(!isAdding)}
-              className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-brand-green text-white dark:text-brand-blue rounded-2xl hover:brightness-110 active:scale-95 transition-all font-black uppercase tracking-wider text-[10px] shadow-sm shadow-brand-green/10"
-            >
-              <Plus className="w-3.5 h-3.5 shrink-0" />
-              <span>Add Account</span>
-            </button>
-
+          
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Quick Transfer Button */}
             <button
               onClick={() => setIsTransferOpen(true)}
-              className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 text-neutral-600 dark:text-neutral-300 rounded-2xl hover:bg-neutral-50 dark:hover:bg-white/5 transition-all font-bold uppercase tracking-wider text-[10px]"
+              className="w-9 h-9 flex items-center justify-center bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 text-neutral-600 dark:text-neutral-300 rounded-full hover:bg-neutral-50 dark:hover:bg-white/5 transition-all shadow-sm"
               title="Quick Transfer"
             >
-              <ArrowRightLeft className="w-3.5 h-3.5 text-brand-green shrink-0" />
-              <span>Transfer</span>
+              <ArrowRightLeft className="w-4 h-4 text-brand-green" />
             </button>
 
+            {/* Arrange Accounts Button */}
             <button
               onClick={() => setIsReorderOpen(true)}
-              className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 text-neutral-600 dark:text-neutral-300 rounded-2xl hover:bg-neutral-50 dark:hover:bg-white/5 transition-all font-bold uppercase tracking-wider text-[10px]"
+              className="w-9 h-9 flex items-center justify-center bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 text-neutral-600 dark:text-neutral-300 rounded-full hover:bg-neutral-50 dark:hover:bg-white/5 transition-all shadow-sm"
               title="Arrange Accounts"
             >
-              <ArrowUpDown className="w-3.5 h-3.5 text-brand-cyan shrink-0" />
-              <span>Arrange</span>
+              <ArrowUpDown className="w-4 h-4 text-brand-cyan" />
+            </button>
+
+            {/* Add Account Button */}
+            <button
+              onClick={() => setIsAdding(!isAdding)}
+              className="w-9 h-9 flex items-center justify-center bg-brand-green text-white dark:text-brand-blue rounded-full hover:brightness-110 active:scale-95 transition-all shadow-sm shadow-brand-green/10"
+              title="Add Account"
+            >
+              <Plus className="w-4 h-4" />
             </button>
           </div>
+        </div>
+
+        {/* Search Box - Full Width */}
+        <div className="relative group w-full">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+          <input 
+            type="text" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search accounts..."
+            className="pl-10 pr-4 py-2.5 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 rounded-2xl text-xs font-bold outline-none focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 transition-all w-full text-neutral-800 dark:text-neutral-200 placeholder-neutral-300 dark:placeholder-neutral-500"
+          />
         </div>
 
         {/* Minimalist Stats Panel */}
