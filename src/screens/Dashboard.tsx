@@ -640,11 +640,11 @@ export default function Dashboard() {
   const renderAccountItem = (acc: any) => (
     <div 
       key={acc.id} 
-      className="p-3 mb-1.5 rounded-2xl flex items-center justify-between bg-white/50 dark:bg-white/[0.04] hover:bg-white/80 dark:hover:bg-white/[0.08] transition-all group cursor-pointer border border-transparent hover:border-brand-blue/5 dark:hover:border-white/5 shadow-sm active:scale-[0.99]" 
+      className="p-4 mb-2 rounded-2xl flex items-center justify-between bg-white dark:bg-[#111111] border border-neutral-100/80 dark:border-white/5 hover:border-brand-green/20 dark:hover:border-white/10 transition-all group cursor-pointer shadow-sm active:scale-[0.99]" 
       onClick={() => navigate('/accounts')}
     >
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 bg-white dark:bg-neutral-800 rounded-xl flex items-center justify-center overflow-hidden p-1 shadow-sm border border-[#EBEBEB] dark:border-white/10 shrink-0 group-hover:scale-105 transition-transform">
+        <div className="w-9 h-9 bg-neutral-50 dark:bg-neutral-800 rounded-xl flex items-center justify-center overflow-hidden p-1 shadow-sm border border-[#EBEBEB] dark:border-white/10 shrink-0 group-hover:scale-105 transition-transform">
           <BankLogo bankName={acc.bankName} type={acc.type} className="w-full h-full" />
         </div>
         <div className="min-w-0">
@@ -656,7 +656,6 @@ export default function Dashboard() {
             {acc.currentBalance < 1000 && acc.type !== 'CREDIT_CARD' && (
               <span className="w-1 h-1 rounded-full bg-brand-red animate-pulse"></span>
             )}
-
           </div>
         </div>
       </div>
@@ -673,7 +672,6 @@ export default function Dashboard() {
         )}>
           {formatAmount(acc.currentBalance)}
         </p>
-        <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest leading-none mt-0.5">Balance</p>
       </div>
     </div>
   );
@@ -906,41 +904,39 @@ export default function Dashboard() {
       {/* Improved Partitioned Portfolio */}
       <div className="space-y-4 mb-10">
         <div className="flex items-center justify-between px-1">
-          <h2 className="text-sm font-heading font-black text-brand-blue dark:text-white uppercase tracking-tight flex items-center gap-2">
+          <h2 className="text-base font-heading font-black text-brand-blue dark:text-white tracking-tight flex items-center gap-2">
             Net Worth <span className="w-1.5 h-1.5 rounded-full bg-brand-green"></span>
           </h2>
-          <Link to="/accounts" className="text-[10px] font-black text-brand-green bg-brand-green/5 px-2.5 py-1 rounded-lg uppercase tracking-widest hover:bg-brand-green/10 transition-all">Manage All</Link>
+          <Link to="/accounts" className="text-[10px] font-bold text-[#888] dark:text-neutral-500 hover:text-brand-green transition-all">Manage</Link>
         </div>
 
         {balances.length === 0 ? (
           <div className="bg-white dark:bg-[#0C0C0F] p-8 text-center text-neutral-400 text-xs font-bold uppercase tracking-widest rounded-3xl border border-dashed border-neutral-200 dark:border-white/5">No accounts discovered</div>
         ) : (
-          <div className="grid grid-cols-1 gap-3">
+          <div className="space-y-4">
             {Object.entries(groupedAccounts).map(([type, accList]) => {
               if (accList.length === 0) return null;
-              let title, Icon, bgClass, iconBgClass, iconColorClass;
+              let title;
               if (type === 'BANK') {
-                title = 'Checking & Savings'; Icon = Landmark; bgClass = 'bg-brand-green/5 border-brand-green/10'; iconBgClass = 'bg-brand-green/10'; iconColorClass = 'text-brand-green';
+                title = 'Checking & Savings';
               } else if (type === 'CREDIT_CARD') {
-                title = 'Credit Lines'; Icon = CreditCard; bgClass = 'bg-brand-green/5 border-brand-green/10'; iconBgClass = 'bg-rose-50'; iconColorClass = 'text-rose-500';
+                title = 'Credit Lines';
               } else {
-                title = 'Cash & Wallets'; Icon = Coins; bgClass = 'bg-brand-green/5 border-brand-green/10'; iconBgClass = 'bg-brand-green/10'; iconColorClass = 'text-brand-green';
+                title = 'Cash & Wallets';
               }
+              const total = accList.reduce((sum, a) => sum + ((a as any).currentBalance || 0), 0);
               
               return (
-                <div key={type} className={`${bgClass} rounded-[28px] p-1 border overflow-hidden`}>
-                  <div className="px-4 py-3 flex justify-between items-center bg-white rounded-[24px] mb-1 shadow-sm">
-                     <div className="flex items-center gap-2.5">
-                       <div className={`w-6 h-6 rounded-lg ${iconBgClass} flex items-center justify-center`}>
-                         <Icon className={`w-3.5 h-3.5 ${iconColorClass}`} />
-                       </div>
-                       <span className="text-[13px] font-semibold text-neutral-700">{title}</span>
-                     </div>
-                     <span className={cn("text-xs font-bold text-neutral-900 tracking-tight transition-all duration-300", shouldBlur && "blur-[5px] select-none cursor-pointer")} onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
-                       {formatAmount(accList.reduce((sum, a) => sum + ((a as any).currentBalance || 0), 0))}
-                     </span>
+                <div key={type} className="space-y-2">
+                  {/* Clean Muted Header Row */}
+                  <div className="flex justify-between items-center px-1">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#888] dark:text-neutral-500">{title}</span>
+                    <span className={cn("text-[10px] font-bold text-neutral-500 dark:text-neutral-400 tracking-tight transition-all duration-300", shouldBlur && "blur-[4px] select-none cursor-pointer")} onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
+                      {formatAmount(total)}
+                    </span>
                   </div>
-                  <div className="px-1 pb-1">
+                  {/* Accounts List */}
+                  <div className="space-y-2">
                     {accList.map(renderAccountItem)}
                   </div>
                 </div>
