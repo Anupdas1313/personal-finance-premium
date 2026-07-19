@@ -320,7 +320,7 @@ export default function Accounts() {
           className="grid grid-cols-3 gap-2 sm:gap-6 p-4 sm:p-5 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/5 rounded-2xl sm:rounded-3xl shadow-sm cursor-pointer hover:border-neutral-200 dark:hover:border-white/10 transition-all"
         >
           <div className="flex flex-col gap-0.5 sm:gap-1">
-            <span className="text-[8px] sm:text-[9px] font-black text-neutral-400 uppercase tracking-widest">Portfolio</span>
+            <span className="text-[8px] sm:text-[9px] font-black text-neutral-400 uppercase tracking-widest">Net Worth</span>
             <p className={cn(
               "text-sm sm:text-xl font-heading font-black text-brand-blue dark:text-white tracking-tighter transition-all duration-300",
               shouldBlur && "blur-[5px] select-none"
@@ -330,7 +330,7 @@ export default function Accounts() {
           </div>
           
           <div className="flex flex-col gap-0.5 sm:gap-1 border-x border-neutral-100 dark:border-white/5 px-2 sm:px-6">
-            <span className="text-[8px] sm:text-[9px] font-black text-neutral-400 uppercase tracking-widest">Liquid</span>
+            <span className="text-[8px] sm:text-[9px] font-black text-neutral-400 uppercase tracking-widest">Cash</span>
             <p className={cn(
               "text-sm sm:text-xl font-heading font-black text-brand-green tracking-tighter transition-all duration-300",
               shouldBlur && "blur-[5px] select-none"
@@ -340,7 +340,7 @@ export default function Accounts() {
           </div>
           
           <div className="flex flex-col gap-0.5 sm:gap-1 pl-2 sm:pl-6">
-            <span className="text-[8px] sm:text-[9px] font-black text-neutral-400 uppercase tracking-widest">Liabilities</span>
+            <span className="text-[8px] sm:text-[9px] font-black text-neutral-400 uppercase tracking-widest">Total Debt</span>
             <p className={cn(
               "text-sm sm:text-xl font-heading font-black text-rose-500 tracking-tighter transition-all duration-300",
               shouldBlur && "blur-[5px] select-none"
@@ -614,7 +614,7 @@ export default function Accounts() {
                                     <div className="min-w-0">
                                       <h3 className="text-[13px] font-heading font-black text-brand-blue dark:text-white tracking-tight uppercase truncate">{account.bankName}</h3>
                                       <p className="font-mono text-[9px] tracking-wider text-neutral-400 dark:text-[#A0A0A0] font-semibold mt-0.5">
-                                        {isCash ? 'CASH PORTFOLIO' : `••••   ${account.accountLast4}`}
+                                        {isCash ? 'TOTAL CASH' : `••••   ${account.accountLast4}`}
                                       </p>
                                       {isCc && account.dueDate && (() => {
                                         const daysLeft = getDaysLeftToPay(account.dueDate);
@@ -670,7 +670,7 @@ export default function Accounts() {
                               
                               return (
                                 <div className="space-y-2 mt-3 p-3 bg-neutral-50 dark:bg-white/[0.02] rounded-xl border border-neutral-100 dark:border-white/5" onClick={(e) => { e.stopPropagation(); if (isPrivacyMode) setRevealBalances(!revealBalances); }}>
-                                  <div className="flex justify-between text-[9px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-widest">
+                                  <div className="flex justify-between text-[11px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-widest">
                                     <span className="flex items-center gap-1">
                                       <span className={cn("inline-block w-1.5 h-1.5 rounded-full", pct >= 80 ? 'bg-rose-500' : pct >= 50 ? 'bg-amber-500' : 'bg-brand-green')}></span>
                                       Used: <span className={cn("text-neutral-700 dark:text-neutral-200 font-bold", shouldBlur && "blur-[4px] select-none")}>{formatAmount(used)}</span>
@@ -688,7 +688,7 @@ export default function Accounts() {
                                     />
                                   </div>
                                   
-                                  <div className="flex justify-between items-center text-[8px] font-bold text-neutral-400 uppercase">
+                                  <div className="flex justify-between items-center text-[10px] font-bold text-neutral-400 uppercase">
                                     <span>{Math.round(pct)}% Utilized</span>
                                     <span className={cn("text-neutral-500", shouldBlur && "blur-[3px] select-none")}>Available: {formatAmount(available)}</span>
                                   </div>
@@ -1320,7 +1320,7 @@ function AccountsReorderModal({ onClose }: { onClose: () => void }) {
                       <div className="min-w-0">
                         <p className="text-[10px] font-black text-neutral-800 dark:text-white truncate uppercase tracking-tight leading-none mb-0.5">{acc.bankName}</p>
                         <p className="text-[8px] font-bold text-neutral-400 font-mono">
-                          {isCash ? 'CASH PORTFOLIO' : `•••• ${acc.accountLast4}`}
+                          {isCash ? 'TOTAL CASH' : `•••• ${acc.accountLast4}`}
                         </p>
                       </div>
                     </div>

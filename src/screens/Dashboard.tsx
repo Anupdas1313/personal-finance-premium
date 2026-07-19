@@ -651,7 +651,7 @@ export default function Dashboard() {
           <p className="font-bold text-xs text-[#111111] dark:text-[#F7F7F7] truncate tracking-tight">{acc.bankName}</p>
           <div className="flex items-center gap-1.5">
             <span className="text-[9px] text-neutral-400 dark:text-neutral-500 font-bold uppercase tracking-widest">
-              {acc.type === 'CASH' ? 'Liquid' : `**** ${acc.accountLast4}`}
+              {acc.type === 'CASH' ? 'Cash' : `**** ${acc.accountLast4}`}
             </span>
             {acc.currentBalance < 1000 && acc.type !== 'CREDIT_CARD' && (
               <span className="w-1 h-1 rounded-full bg-brand-red animate-pulse"></span>
@@ -758,7 +758,7 @@ export default function Dashboard() {
 
         <div className="relative z-10 bg-neutral-50 border border-neutral-200 rounded-2xl p-3 flex justify-between items-center" onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
           <div className="flex flex-col">
-            <p className="text-[13px] font-semibold text-neutral-500 leading-none mb-1">Total Liquidity</p>
+            <p className="text-[13px] font-semibold text-neutral-500 leading-none mb-1">Total Cash</p>
             {timeFilter !== 'All Time' && (
               <p className={cn(
                 `text-[11px] font-semibold tracking-tight transition-all duration-300 ${monthDelta >= 0 ? 'text-brand-green' : 'text-rose-500'}`,
@@ -907,7 +907,7 @@ export default function Dashboard() {
       <div className="space-y-4 mb-10">
         <div className="flex items-center justify-between px-1">
           <h2 className="text-sm font-heading font-black text-brand-blue dark:text-white uppercase tracking-tight flex items-center gap-2">
-            Portfolio <span className="w-1.5 h-1.5 rounded-full bg-brand-green"></span>
+            Net Worth <span className="w-1.5 h-1.5 rounded-full bg-brand-green"></span>
           </h2>
           <Link to="/accounts" className="text-[10px] font-black text-brand-green bg-brand-green/5 px-2.5 py-1 rounded-lg uppercase tracking-widest hover:bg-brand-green/10 transition-all">Manage All</Link>
         </div>
