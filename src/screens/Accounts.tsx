@@ -355,251 +355,263 @@ export default function Accounts() {
       <AnimatePresence>
         {isAdding && (
           <motion.div 
-            initial={{ opacity: 0, height: 0, y: -20 }}
-            animate={{ opacity: 1, height: 'auto', y: 0 }}
-            exit={{ opacity: 0, height: 0, y: -20 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="overflow-hidden mb-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed inset-0 bg-[#F9FBFF] dark:bg-[#0C0C0F] z-50 overflow-y-auto"
           >
-            <div className="bg-white dark:bg-[#111111] p-5 sm:p-6 rounded-[24px] shadow-sm border border-neutral-100 dark:border-white/5">
-              <div className="flex items-center justify-between mb-5 pb-3 border-b border-neutral-50 dark:border-white/5">
-                <h2 className="text-xs font-heading font-black text-brand-blue dark:text-white uppercase tracking-wider flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-brand-green"></span>
-                  {editingAccountId ? 'Edit Account Details' : 'Create New Account'}
-                </h2>
-                <button onClick={resetForm} className="text-[10px] font-black text-neutral-400 dark:text-neutral-500 hover:text-brand-red uppercase tracking-wider transition-colors">Cancel</button>
+            <div className="max-w-2xl mx-auto px-4 py-8 sm:py-12">
+              {/* Back Header */}
+              <div className="flex items-center gap-3 mb-8">
+                <button 
+                  onClick={resetForm}
+                  className="p-2 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/5 rounded-full hover:bg-neutral-50 dark:hover:bg-white/10 transition-all text-neutral-600 dark:text-neutral-300"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <div>
+                  <h1 className="text-xl font-heading font-black text-brand-blue dark:text-white uppercase tracking-wider leading-none mb-1">
+                    {editingAccountId ? 'Edit Account' : 'New Account'}
+                  </h1>
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
+                    {editingAccountId ? 'Update your account configuration' : 'Add a new bank, wallet, or card'}
+                  </p>
+                </div>
               </div>
 
-              <form onSubmit={handleAddAccount} className="space-y-5">
-                {/* Switcher */}
-                <div className="flex bg-neutral-50 dark:bg-[#1A1A1A] p-1 rounded-2xl border border-neutral-100 dark:border-white/5">
-                  {(['BANK', 'CASH', 'CREDIT_CARD'] as const).map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => {
-                        setAccountType(t);
-                        if (t === 'CASH' && !bankName) setBankName('Cash Wallet');
-                        if (t === 'CASH' && !accountLast4) setAccountLast4('CASH');
-                      }}
-                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${
-                        accountType === t
-                          ? 'bg-brand-green text-white dark:text-brand-blue shadow-sm'
-                          : 'text-neutral-400 hover:text-neutral-700 dark:hover:text-white'
-                      }`}
-                    >
-                      {t === 'BANK' && <Landmark className="w-3.5 h-3.5" />}
-                      {t === 'CASH' && <Wallet className="w-3.5 h-3.5" />}
-                      {t === 'CREDIT_CARD' && <CreditCard className="w-3.5 h-3.5" />}
-                      {t.replace('_', ' ')}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="space-y-4">
-                  {/* Account Name */}
-                  <div>
-                    <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">
-                      {accountType === 'BANK' ? 'Bank Name' : accountType === 'CASH' ? 'Wallet Name' : 'Card Name'}
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500">
-                        {accountType === 'BANK' && <Landmark className="w-4 h-4 animate-fade-in" />}
-                        {accountType === 'CASH' && <Wallet className="w-4 h-4 animate-fade-in" />}
-                        {accountType === 'CREDIT_CARD' && <CreditCard className="w-4 h-4 animate-fade-in" />}
-                      </div>
-                      <input
-                        type="text"
-                        value={bankName}
-                        onChange={(e) => setBankName(e.target.value)}
-                        placeholder={accountType === 'BANK' ? "e.g., HDFC Bank" : accountType === 'CASH' ? "e.g., Cash Wallet" : "e.g., Amazon Pay ICICI"}
-                        className="w-full pl-10 pr-4 py-3 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all placeholder-neutral-300 dark:placeholder-neutral-600"
-                        required
-                      />
-                    </div>
-
-                    {accountType === 'BANK' && (
-                      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 pt-2 -mx-2 px-2" style={{ WebkitOverflowScrolling: 'touch' }}>
-                        {INDIAN_BANKS.map((bank) => (
-                          <button
-                            key={bank.id}
-                            type="button"
-                            onClick={() => setBankName(bank.name)}
-                            className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full border transition-all duration-200 ${
-                              bankName === bank.name
-                                ? 'bg-brand-green/10 text-brand-green border-brand-green/20'
-                                : 'bg-neutral-50/50 dark:bg-white/5 text-neutral-400 border-neutral-100 dark:border-white/5 hover:bg-neutral-100 dark:hover:bg-white/10'
-                            }`}
-                          >
-                            <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center p-0.5 shadow-sm shrink-0 overflow-hidden">
-                              <bank.logo className="w-full h-full object-contain" />
-                            </div>
-                            <span className="text-[8px] font-black uppercase tracking-wider">{bank.id}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
+              {/* Form Container */}
+              <div className="bg-white dark:bg-[#111111] p-6 sm:p-8 rounded-[28px] shadow-sm border border-neutral-100 dark:border-white/5">
+                <form onSubmit={handleAddAccount} className="space-y-6">
+                  {/* Category Switcher */}
+                  <div className="flex bg-neutral-50 dark:bg-[#1A1A1A] p-1 rounded-2xl border border-neutral-100 dark:border-white/5">
+                    {(['BANK', 'CASH', 'CREDIT_CARD'] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => {
+                          setAccountType(t);
+                          if (t === 'CASH' && !bankName) setBankName('Cash Wallet');
+                          if (t === 'CASH' && !accountLast4) setAccountLast4('CASH');
+                        }}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${
+                          accountType === t
+                            ? 'bg-brand-green text-white dark:text-brand-blue shadow-sm'
+                            : 'text-neutral-400 hover:text-neutral-700 dark:hover:text-white'
+                        }`}
+                      >
+                        {t === 'BANK' && <Landmark className="w-3.5 h-3.5" />}
+                        {t === 'CASH' && <Wallet className="w-3.5 h-3.5" />}
+                        {t === 'CREDIT_CARD' && <CreditCard className="w-3.5 h-3.5" />}
+                        {t.replace('_', ' ')}
+                      </button>
+                    ))}
                   </div>
 
-                  {/* Dynamic Inputs Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Reference / Last 4 */}
+                  <div className="space-y-5">
+                    {/* Account Name */}
                     <div>
-                      <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">Reference / Last 4</label>
+                      <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">
+                        {accountType === 'BANK' ? 'Bank Name' : accountType === 'CASH' ? 'Wallet Name' : 'Card Name'}
+                      </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500">
-                          <Hash className="w-3.5 h-3.5" />
+                          {accountType === 'BANK' && <Landmark className="w-4 h-4" />}
+                          {accountType === 'CASH' && <Wallet className="w-4 h-4" />}
+                          {accountType === 'CREDIT_CARD' && <CreditCard className="w-4 h-4" />}
                         </div>
                         <input
                           type="text"
-                          value={accountLast4}
-                          onChange={(e) => setAccountLast4(e.target.value)}
-                          placeholder="e.g., 1234"
+                          value={bankName}
+                          onChange={(e) => setBankName(e.target.value)}
+                          placeholder={accountType === 'BANK' ? "e.g., HDFC Bank" : accountType === 'CASH' ? "e.g., Cash Wallet" : "e.g., Amazon Pay ICICI"}
                           className="w-full pl-10 pr-4 py-3 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all placeholder-neutral-300 dark:placeholder-neutral-600"
                           required
                         />
                       </div>
-                    </div>
 
-                    {/* Starting / Outstanding Balance */}
-                    <div>
-                      <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">
-                        {accountType === 'CREDIT_CARD' ? 'Outstanding Balance (Owed)' : `Starting Balance (${currency})`}
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500 font-bold text-xs pl-4">
-                          {currency}
+                      {accountType === 'BANK' && (
+                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 pt-2 -mx-2 px-2 mt-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+                          {INDIAN_BANKS.map((bank) => (
+                            <button
+                              key={bank.id}
+                              type="button"
+                              onClick={() => setBankName(bank.name)}
+                              className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full border transition-all duration-200 ${
+                                bankName === bank.name
+                                  ? 'bg-brand-green/10 text-brand-green border-brand-green/20'
+                                  : 'bg-neutral-50/50 dark:bg-white/5 text-neutral-400 border-neutral-100 dark:border-white/5 hover:bg-neutral-100 dark:hover:bg-white/10'
+                              }`}
+                            >
+                              <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center p-0.5 shadow-sm shrink-0 overflow-hidden">
+                                <bank.logo className="w-full h-full object-contain" />
+                              </div>
+                              <span className="text-[8px] font-black uppercase tracking-wider">{bank.id}</span>
+                            </button>
+                          ))}
                         </div>
-                        <input
-                          type="number"
-                          value={startingBalance}
-                          onChange={(e) => setStartingBalance(e.target.value)}
-                          placeholder="0.00"
-                          step="0.01"
-                          className="w-full pl-10 pr-4 py-3 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all placeholder-neutral-300 dark:placeholder-neutral-600 font-mono"
-                          required
-                        />
-                      </div>
-                      {accountType === 'CREDIT_CARD' && (
-                        <p className="text-[9px] font-medium text-neutral-400 dark:text-[#A0A0A0] mt-1.5 leading-normal">
-                          Enter what you owe. Internally stored as a liability.
-                        </p>
                       )}
                     </div>
 
-                    {/* Starting Date */}
-                    <div>
-                      <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">Starting Date</label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500">
-                          <Calendar className="w-3.5 h-3.5" />
+                    {/* Dynamic Inputs Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      {/* Reference / Last 4 */}
+                      <div>
+                        <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">Reference / Last 4</label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500">
+                            <Hash className="w-3.5 h-3.5" />
+                          </div>
+                          <input
+                            type="text"
+                            value={accountLast4}
+                            onChange={(e) => setAccountLast4(e.target.value)}
+                            placeholder="e.g., 1234"
+                            className="w-full pl-10 pr-4 py-3 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all placeholder-neutral-300 dark:placeholder-neutral-600"
+                            required
+                          />
                         </div>
-                        <input
-                          type="date"
-                          value={startingBalanceDate}
-                          onChange={(e) => setStartingBalanceDate(e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all"
-                          required
-                        />
                       </div>
+
+                      {/* Starting / Outstanding Balance */}
+                      <div>
+                        <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">
+                          {accountType === 'CREDIT_CARD' ? 'Outstanding Balance (Owed)' : `Starting Balance (${currency})`}
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500 font-bold text-xs pl-4">
+                            {currency}
+                          </div>
+                          <input
+                            type="number"
+                            value={startingBalance}
+                            onChange={(e) => setStartingBalance(e.target.value)}
+                            placeholder="0.00"
+                            step="0.01"
+                            className="w-full pl-10 pr-4 py-3 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all placeholder-neutral-300 dark:placeholder-neutral-600 font-mono"
+                            required
+                          />
+                        </div>
+                        {accountType === 'CREDIT_CARD' && (
+                          <p className="text-[9px] font-medium text-neutral-400 dark:text-[#A0A0A0] mt-1.5 leading-normal">
+                            Enter what you owe. Internally stored as a liability.
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Starting Date */}
+                      <div>
+                        <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">Starting Date</label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500">
+                            <Calendar className="w-3.5 h-3.5" />
+                          </div>
+                          <input
+                            type="date"
+                            value={startingBalanceDate}
+                            onChange={(e) => setStartingBalanceDate(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      {/* Credit Card Specific Inputs */}
+                      {accountType === 'CREDIT_CARD' && (
+                        <>
+                          <div>
+                            <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">Credit Limit ({currency})</label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500 font-bold text-xs pl-4">
+                                {currency}
+                              </div>
+                              <input
+                                type="number"
+                                value={creditLimit}
+                                onChange={(e) => setCreditLimit(e.target.value)}
+                                placeholder="e.g., 100000"
+                                className="w-full pl-10 pr-4 py-3 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all placeholder-neutral-300 dark:placeholder-neutral-600 font-mono"
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">Statement Date (Day)</label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500">
+                                <Calendar className="w-3.5 h-3.5" />
+                              </div>
+                              <input
+                                type="number"
+                                min="1"
+                                max="31"
+                                value={statementDate}
+                                onChange={(e) => setStatementDate(e.target.value)}
+                                placeholder="e.g., 15"
+                                className="w-full pl-10 pr-4 py-3 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all placeholder-neutral-300 dark:placeholder-neutral-600"
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">Payment Due Date (Day)</label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500">
+                                <Calendar className="w-3.5 h-3.5" />
+                              </div>
+                              <input
+                                type="number"
+                                min="1"
+                                max="31"
+                                value={dueDate}
+                                onChange={(e) => setDueDate(e.target.value)}
+                                placeholder="e.g., 5"
+                                className="w-full pl-10 pr-4 py-3 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all placeholder-neutral-300 dark:placeholder-neutral-600"
+                                required
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
-
-                    {/* Credit Card Specific Inputs */}
-                    {accountType === 'CREDIT_CARD' && (
-                      <>
-                        <div>
-                          <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">Credit Limit ({currency})</label>
-                          <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500 font-bold text-xs pl-4">
-                              {currency}
-                            </div>
-                            <input
-                              type="number"
-                              value={creditLimit}
-                              onChange={(e) => setCreditLimit(e.target.value)}
-                              placeholder="e.g., 100000"
-                              className="w-full pl-10 pr-4 py-3 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all placeholder-neutral-300 dark:placeholder-neutral-600 font-mono"
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">Statement Date (Day)</label>
-                          <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500">
-                              <Calendar className="w-3.5 h-3.5" />
-                            </div>
-                            <input
-                              type="number"
-                              min="1"
-                              max="31"
-                              value={statementDate}
-                              onChange={(e) => setStatementDate(e.target.value)}
-                              placeholder="e.g., 15"
-                              className="w-full pl-10 pr-4 py-3 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all placeholder-neutral-300 dark:placeholder-neutral-600"
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-[10px] font-black text-neutral-400 dark:text-[#A0A0A0] mb-1.5 uppercase tracking-widest">Payment Due Date (Day)</label>
-                          <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500">
-                              <Calendar className="w-3.5 h-3.5" />
-                            </div>
-                            <input
-                              type="number"
-                              min="1"
-                              max="31"
-                              value={dueDate}
-                              onChange={(e) => setDueDate(e.target.value)}
-                              placeholder="e.g., 5"
-                              className="w-full pl-10 pr-4 py-3 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-xl focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30 outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all placeholder-neutral-300 dark:placeholder-neutral-600"
-                              required
-                            />
-                          </div>
-                        </div>
-                      </>
-                    )}
                   </div>
-                </div>
 
-                <div className="flex justify-end gap-3 pt-5 border-t border-neutral-50 dark:border-white/5">
-                  <button 
-                    type="button" 
-                    onClick={resetForm} 
-                    disabled={isSaving}
-                    className="px-4 py-2 text-[10px] font-bold text-neutral-400 hover:text-neutral-500 uppercase transition-colors disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit" 
-                    disabled={isSaving || showSuccess}
-                    className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm transition-all active:scale-95 ${
-                      showSuccess 
-                        ? 'bg-emerald-500 text-white dark:text-brand-blue shadow-emerald-500/10' 
-                        : 'bg-brand-green text-white dark:text-brand-blue shadow-brand-green/10 hover:brightness-110'
-                    } disabled:opacity-70`}
-                  >
-                    {isSaving ? (
-                      <>
-                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Saving...</span>
-                      </>
-                    ) : showSuccess ? (
-                      <>
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Saved!</span>
-                      </>
-                    ) : (
-                      <span>{editingAccountId ? 'Update Account' : 'Save Account'}</span>
-                    )}
-                  </button>
-                </div>
-              </form>
+                  <div className="flex justify-end gap-3 pt-6 border-t border-neutral-50 dark:border-white/5">
+                    <button 
+                      type="button" 
+                      onClick={resetForm} 
+                      disabled={isSaving}
+                      className="px-5 py-2.5 text-[10px] font-bold text-neutral-400 hover:text-neutral-500 uppercase transition-colors disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit" 
+                      disabled={isSaving || showSuccess}
+                      className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm transition-all active:scale-95 ${
+                        showSuccess 
+                          ? 'bg-emerald-500 text-white dark:text-brand-blue shadow-emerald-500/10' 
+                          : 'bg-brand-green text-white dark:text-brand-blue shadow-brand-green/10 hover:brightness-110'
+                      } disabled:opacity-70`}
+                    >
+                      {isSaving ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>Saving...</span>
+                        </>
+                      ) : showSuccess ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Saved!</span>
+                        </>
+                      ) : (
+                        <span>{editingAccountId ? 'Update Account' : 'Save Account'}</span>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </motion.div>
         )}
