@@ -619,7 +619,7 @@ export default function Accounts() {
           const isCollapsed = isSectionCollapsed(type, idx);
           
           return (
-            <div key={type} className="space-y-4 bg-[#F9FBFF] dark:bg-white/[0.01] p-4 sm:p-5 rounded-[28px] border border-brand-blue/5 dark:border-white/5 shadow-sm">
+            <div key={type} className="space-y-4 bg-[#F9FBFF] dark:bg-white/[0.01] p-3 sm:p-5 rounded-[28px] border border-brand-blue/5 dark:border-white/5 shadow-sm">
               {/* Clickable Header Card */}
               <div 
                 onClick={() => toggleSection(type, idx)}
@@ -661,7 +661,7 @@ export default function Accounts() {
                     transition={{ duration: 0.2, ease: 'easeInOut' }}
                     className="overflow-hidden"
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-3 pb-1">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pt-3 pb-1">
                       {[...accList]
                         .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
                         .map(account => {
