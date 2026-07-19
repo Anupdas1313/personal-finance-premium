@@ -197,8 +197,8 @@ export default function Dashboard() {
           setExpenseType(tx.expenseType || '');
           setSelectedBudgetId(tx.linkedBudgetId || 'auto');
           setEntryMode('MANUAL');
-          setIsAddingManual(true);
           setEditingTransactionId(Number(editId));
+          setIsAddingManual(true);
 
           if (tx.category === 'Transfer' || tx.linkedTransactionId) {
             setType('TRANSFER');
@@ -220,6 +220,7 @@ export default function Dashboard() {
           } else {
             setType(tx.type);
             setSelectedAccountId(tx.accountId);
+            setToAccountId('');
           }
         }
       });
@@ -234,10 +235,11 @@ export default function Dashboard() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (isAddingManual) {
+    // Only reset date for NEW transactions, not when editing existing ones
+    if (isAddingManual && !editingTransactionId) {
       setTransactionDate(new Date().toISOString().slice(0, 16));
     }
-  }, [isAddingManual]);
+  }, [isAddingManual, editingTransactionId]);
 
   const closeMenu = () => {
     setIsAddingManual(false);
