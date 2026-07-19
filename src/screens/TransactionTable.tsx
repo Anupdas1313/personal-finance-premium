@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../models/db';
+import { db, normalizeType } from '../models/db';
 import { useAuth } from '../context/AuthContext';
 import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -117,7 +117,10 @@ export default function TransactionTable() {
     }
     return db.transactions.toArray();
   }, [startDate, endDate, user?.uid]) || [];
-  const accounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
+  const accounts = useLiveQuery(async () => {
+    const arr = await db.accounts.toArray();
+    return [...arr].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  }, [user?.uid]) || [];
 
   const uniqueCategories = useMemo(() => {
     const cats = new Set(allTransactionsRaw.map(tx => tx.category).filter(Boolean));
@@ -163,7 +166,7 @@ export default function TransactionTable() {
 
     // 3. Multi-Filters
     if (filterType !== 'ALL') {
-      result = result.filter(tx => tx.type === filterType);
+      result = result.filter(tx => normalizeType(tx.type) === filterType);
     }
     if (filterCategory !== 'ALL') {
       result = result.filter(tx => tx.category === filterCategory);
@@ -212,8 +215,8 @@ export default function TransactionTable() {
   // Summary calculations
   const summary = useMemo(() => {
     return filteredAndSortedTransactions.reduce((acc, tx) => {
-      if (tx.type === 'CREDIT') acc.received += (tx.amount || 0);
-      if (tx.type === 'DEBIT') acc.spent += (tx.amount || 0);
+      if (normalizeType(tx.type) === 'CREDIT') acc.received += (tx.amount || 0);
+      else if (normalizeType(tx.type) === 'DEBIT') acc.spent += (tx.amount || 0);
       return acc;
     }, { received: 0, spent: 0 });
   }, [filteredAndSortedTransactions]);
@@ -242,7 +245,7 @@ export default function TransactionTable() {
   const handleExportCSV = async () => {
     const headers = ['Date', 'Time', 'Type', 'Category', 'Name', 'Note', 'Amount', 'Payment Method', 'Account'];
     const rows = filteredAndSortedTransactions.map(tx => {
-      const typeLabel = tx.type === 'CREDIT' ? '(Received/Credited)' : '(Paid to / Debit)';
+      const typeLabel = normalizeType(tx.type) === 'CREDIT' ? '(Received/Credited)' : '(Paid to / Debit)';
       return [
         safeFormatDate(tx.dateTime, 'yyyy-MM-dd'),
         safeFormatDate(tx.dateTime, 'HH:mm:ss'),
@@ -301,14 +304,14 @@ export default function TransactionTable() {
 
     const tableColumn = ["Date", "Type", "Category", "Name", "Note", "Amount", "Account"];
     const tableRows = filteredAndSortedTransactions.map(tx => {
-      const typeLabel = tx.type === 'CREDIT' ? 'Credit' : 'Debit';
+      const typeLabel = normalizeType(tx.type) === 'CREDIT' ? 'Credit' : 'Debit';
       return [
         safeFormatDate(tx.dateTime, 'yyyy-MM-dd'),
         typeLabel,
         tx.category || '',
         tx.party || '',
         tx.note || '',
-        `${tx.type === 'CREDIT' ? '+' : '-'} Rs. ${tx.amount || 0}`,
+        `${normalizeType(tx.type) === 'CREDIT' ? '+' : '-'} Rs. ${tx.amount || 0}`,
         accounts.find(a => a.id === tx.accountId)?.bankName || ''
       ];
     });
@@ -351,7 +354,7 @@ export default function TransactionTable() {
     container.style.fontFamily = 'sans-serif';
     container.style.color = '#111827';
     
-    const isCredit = tx.type === 'CREDIT';
+    const isCredit = normalizeType(tx.type) === 'CREDIT';
     const amountColor = isCredit ? '#059669' : '#e11d48';
     const typeLabel = isCredit ? 'Received' : 'Paid';
     const merchantNote = tx.party && tx.note ? `${tx.party} - ${tx.note}` : tx.party || tx.note || 'Transaction';
@@ -633,8 +636,8 @@ export default function TransactionTable() {
 
 
                     <td className="hidden md:table-cell px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-widest ${tx.type === 'CREDIT' ? 'bg-brand-green/10 text-brand-green' : 'bg-brand-red/10 text-brand-red'}`}>
-                        {tx.type}
+                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-widest ${normalizeType(tx.type) === 'CREDIT' ? 'bg-brand-green/10 text-brand-green' : 'bg-brand-red/10 text-brand-red'}`}>
+                        {normalizeType(tx.type)}
                       </span>
                     </td>
 
@@ -652,8 +655,8 @@ export default function TransactionTable() {
                       {tx.note || '—'}
                     </td>
 
-                    <td className={`px-4 py-3 text-right font-semibold ${tx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-red'}`}>
-                      {tx.type === 'CREDIT' ? '+' : '-'}{currency}{(tx.amount || 0).toLocaleString('en-IN')}
+                    <td className={`px-4 py-3 text-right font-semibold ${normalizeType(tx.type) === 'CREDIT' ? 'text-brand-green' : 'text-brand-red'}`}>
+                      {normalizeType(tx.type) === 'CREDIT' ? '+' : '-'}{currency}{(tx.amount || 0).toLocaleString('en-IN')}
                     </td>
 
                     <td className="hidden md:table-cell px-4 py-3 font-medium text-[#717171] dark:text-[#A0A0A0]">

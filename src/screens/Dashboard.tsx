@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../models/db';
+import { db, normalizeType } from '../models/db';
 import { ArrowUpRight, ArrowDownRight, Wallet, Plus, X, AlertCircle, CheckCircle2, Search, ChevronDown, Landmark, Smartphone, ArrowLeft, Calendar, Clock, Calculator, MoreHorizontal, User, AlignLeft, Hash, Paperclip, Save, ChevronRight, CreditCard, Coins, PlaneTakeoff, Eye, EyeOff, Wand2, BarChart3, Target } from 'lucide-react';
 
 import { format, startOfMonth, endOfMonth, startOfYear, isToday, isYesterday, startOfDay } from 'date-fns';
@@ -122,7 +122,10 @@ export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const accounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
+  const accounts = useLiveQuery(async () => {
+    const arr = await db.accounts.toArray();
+    return [...arr].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  }, [user?.uid]) || [];
   const transactions = useLiveQuery(() => db.transactions.orderBy('dateTime').reverse().limit(5).toArray(), [user?.uid]) || [];
 
 
@@ -318,7 +321,7 @@ export default function Dashboard() {
 
   const handleSaveManual = async (txData?: any) => {
     const currentAmount = txData?.amount || amount;
-    const currentType = txData?.type || type;
+    const currentType = normalizeType(txData?.type || type);
     const currentSelectedAccountId = txData?.selectedAccountId || selectedAccountId;
     const currentToAccountId = txData?.toAccountId || toAccountId;
     const currentPaymentMethod = txData?.paymentMethod || paymentMethod;
@@ -488,7 +491,8 @@ export default function Dashboard() {
 
   // Optimized balance and metrics calculation
   const { balances, totalIncome, totalSpending, totalWealth, thisMonthSpendingToDate, lastMonthSpendingToDate, todaySpending, yesterdaySpending, thisWeekSpending, lastWeekSpending } = useLiveQuery(async () => {
-    const accs = await db.accounts.toArray();
+    const rawAccs = await db.accounts.toArray();
+    const accs = [...rawAccs].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
     const closings = await db.accountClosings.toArray();
     const monthlyClosings = await db.monthlyClosings.orderBy('month').reverse().toArray();
     const latestMonthly = monthlyClosings[0];
@@ -507,8 +511,9 @@ export default function Dashboard() {
       let bal = Number(acc.startingBalance) || 0;
       const accountTxs = allTxs.filter(t => Number(t.accountId) === Number(acc.id));
       accountTxs.forEach(tx => {
-        if (tx.type === 'CREDIT') bal += (Number(tx.amount) || 0);
-        else if (tx.type === 'DEBIT') bal -= (Number(tx.amount) || 0);
+        const txType = normalizeType(tx.type);
+        if (txType === 'CREDIT') bal += (Number(tx.amount) || 0);
+        else if (txType === 'DEBIT') bal -= (Number(tx.amount) || 0);
       });
       return bal;
     });
@@ -528,8 +533,9 @@ export default function Dashboard() {
 
       // Exclude transfers from income/spending metrics to avoid double-counting
       if (isInRange && tx.category !== 'Transfer') {
-        if (tx.type === 'CREDIT') income += (Number(tx.amount) || 0);
-        else if (tx.type === 'DEBIT') spending += (Number(tx.amount) || 0);
+        const txType = normalizeType(tx.type);
+        if (txType === 'CREDIT') income += (Number(tx.amount) || 0);
+        else if (txType === 'DEBIT') spending += (Number(tx.amount) || 0);
       }
     });
 
@@ -558,7 +564,7 @@ export default function Dashboard() {
     let lastWeekSpending = 0;
 
     allTxs.forEach(tx => {
-      if (tx.category !== 'Transfer' && tx.type === 'DEBIT') {
+      if (tx.category !== 'Transfer' && normalizeType(tx.type) === 'DEBIT') {
         const txTime = new Date(tx.dateTime).getTime();
         // Monthly
         if (txTime >= monthStart && txTime <= now.getTime()) {
@@ -609,7 +615,19 @@ export default function Dashboard() {
       if (!groups[type]) groups[type] = [];
       groups[type].push(acc);
     });
-    return groups;
+
+    const getMinSortOrder = (type: string) => {
+       const arr = groups[type];
+       if (arr.length === 0) return 999999;
+       return Math.min(...arr.map((a: any) => a.sortOrder || 0));
+    };
+
+    const sortedTypes = ['BANK', 'CASH', 'CREDIT_CARD'].sort((a, b) => getMinSortOrder(a) - getMinSortOrder(b));
+    const sortedGroups: Record<string, any[]> = {};
+    for (const type of sortedTypes) {
+       sortedGroups[type] = groups[type];
+    }
+    return sortedGroups;
   }, [balances]);
 
   const greeting = useMemo(() => {
@@ -898,65 +916,36 @@ export default function Dashboard() {
           <div className="bg-white dark:bg-[#0C0C0F] p-8 text-center text-neutral-400 text-xs font-bold uppercase tracking-widest rounded-3xl border border-dashed border-neutral-200 dark:border-white/5">No accounts discovered</div>
         ) : (
           <div className="grid grid-cols-1 gap-3">
-            {/* Bank Category Card */}
-            {groupedAccounts['BANK'].length > 0 && (
-              <div className="bg-brand-green/5 rounded-[28px] p-1 border border-brand-green/10 overflow-hidden">
-                <div className="px-4 py-3 flex justify-between items-center bg-white rounded-[24px] mb-1 shadow-sm">
-                   <div className="flex items-center gap-2.5">
-                     <div className="w-6 h-6 rounded-lg bg-brand-green/10 flex items-center justify-center">
-                       <Landmark className="w-3.5 h-3.5 text-brand-green" />
+            {Object.entries(groupedAccounts).map(([type, accList]) => {
+              if (accList.length === 0) return null;
+              let title, Icon, bgClass, iconBgClass, iconColorClass;
+              if (type === 'BANK') {
+                title = 'Checking & Savings'; Icon = Landmark; bgClass = 'bg-brand-green/5 border-brand-green/10'; iconBgClass = 'bg-brand-green/10'; iconColorClass = 'text-brand-green';
+              } else if (type === 'CREDIT_CARD') {
+                title = 'Credit Lines'; Icon = CreditCard; bgClass = 'bg-brand-green/5 border-brand-green/10'; iconBgClass = 'bg-rose-50'; iconColorClass = 'text-rose-500';
+              } else {
+                title = 'Cash & Wallets'; Icon = Coins; bgClass = 'bg-brand-green/5 border-brand-green/10'; iconBgClass = 'bg-brand-green/10'; iconColorClass = 'text-brand-green';
+              }
+              
+              return (
+                <div key={type} className={`${bgClass} rounded-[28px] p-1 border overflow-hidden`}>
+                  <div className="px-4 py-3 flex justify-between items-center bg-white rounded-[24px] mb-1 shadow-sm">
+                     <div className="flex items-center gap-2.5">
+                       <div className={`w-6 h-6 rounded-lg ${iconBgClass} flex items-center justify-center`}>
+                         <Icon className={`w-3.5 h-3.5 ${iconColorClass}`} />
+                       </div>
+                       <span className="text-[13px] font-semibold text-neutral-700">{title}</span>
                      </div>
-                     <span className="text-[13px] font-semibold text-neutral-700">Checking & Savings</span>
-                   </div>
-                   <span className={cn("text-xs font-bold text-neutral-900 tracking-tight transition-all duration-300", shouldBlur && "blur-[5px] select-none cursor-pointer")} onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
-                     {formatAmount(groupedAccounts['BANK'].reduce((sum, a) => sum + (a.currentBalance || 0), 0))}
-                   </span>
+                     <span className={cn("text-xs font-bold text-neutral-900 tracking-tight transition-all duration-300", shouldBlur && "blur-[5px] select-none cursor-pointer")} onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
+                       {formatAmount(accList.reduce((sum, a) => sum + ((a as any).currentBalance || 0), 0))}
+                     </span>
+                  </div>
+                  <div className="px-1 pb-1">
+                    {accList.map(renderAccountItem)}
+                  </div>
                 </div>
-                <div className="px-1 pb-1">
-                  {groupedAccounts['BANK'].map(renderAccountItem)}
-                </div>
-              </div>
-            )}
-
-            {/* Credit Cards & Liabilities Card */}
-            {groupedAccounts['CREDIT_CARD'].length > 0 && (
-              <div className="bg-brand-green/5 rounded-[28px] p-1 border border-brand-green/10 overflow-hidden">
-                <div className="px-4 py-3 flex justify-between items-center bg-white rounded-[24px] mb-1 shadow-sm">
-                   <div className="flex items-center gap-2.5">
-                     <div className="w-6 h-6 rounded-lg bg-rose-50 flex items-center justify-center">
-                       <CreditCard className="w-3.5 h-3.5 text-rose-500" />
-                     </div>
-                     <span className="text-[13px] font-semibold text-neutral-700">Credit Lines</span>
-                   </div>
-                   <span className={cn("text-xs font-bold text-neutral-900 tracking-tight transition-all duration-300", shouldBlur && "blur-[5px] select-none cursor-pointer")} onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
-                     {formatAmount(groupedAccounts['CREDIT_CARD'].reduce((sum, a) => sum + (a.currentBalance || 0), 0))}
-                   </span>
-                </div>
-                <div className="px-1 pb-1">
-                  {groupedAccounts['CREDIT_CARD'].map(renderAccountItem)}
-                </div>
-              </div>
-            )}
-
-            {/* Cash Wallets Card */}
-            {groupedAccounts['CASH'].length > 0 && (
-              <div className="bg-brand-green/5 rounded-[28px] p-1 border border-brand-green/10 overflow-hidden">
-                <div className="px-4 py-3 flex justify-between items-center bg-white rounded-[24px] mb-1 shadow-sm">
-                   <div className="flex items-center gap-2.5">
-                     <div className="w-6 h-6 rounded-lg bg-brand-green/10 flex items-center justify-center">
-                       <Coins className="w-3.5 h-3.5 text-brand-green" />
-                     </div>
-                     <span className="text-[13px] font-semibold text-neutral-700">Cash & Wallets</span>
-                   </div>
-                   <span className={cn("text-xs font-bold text-neutral-900 tracking-tight transition-all duration-300", shouldBlur && "blur-[5px] select-none cursor-pointer")} onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
-                     {formatAmount(groupedAccounts['CASH'].reduce((sum, a) => sum + (a.currentBalance || 0), 0))}
-                   </span>
-                </div>
-                <div className="px-1 pb-1">
-                  {groupedAccounts['CASH'].map(renderAccountItem)}
-                </div>
-              </div>
-            )}
+              );
+            })}
           </div>
         )}
       </div>

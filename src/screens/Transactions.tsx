@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, Transaction } from '../models/db';
+import { db, Transaction, normalizeType } from '../models/db';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, addMonths, subMonths, startOfYear, endOfYear, isSameDay } from 'date-fns';
 import {
   X, Trash2, Filter, Search, Edit3, Download, FileText,
@@ -89,7 +89,10 @@ export default function Transactions() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   // ── Data ──────────────────────────────────────────────────────
-  const accounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
+  const accounts = useLiveQuery(async () => {
+    const arr = await db.accounts.toArray();
+    return [...arr].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  }, [user?.uid]) || [];
 
   const dateLimits = useMemo(() => {
     let start: Date | number = 0;
@@ -141,7 +144,7 @@ export default function Transactions() {
   const totals = useMemo(() =>
     filteredTxs.reduce((acc, tx) => {
       const amt = Number(tx.amount) || 0;
-      if (tx.type === 'CREDIT') acc.income += amt; else acc.expense += amt;
+      if (normalizeType(tx.type) === 'CREDIT') acc.income += amt; else acc.expense += amt;
       return acc;
     }, { income: 0, expense: 0 }),
     [filteredTxs]
@@ -376,8 +379,8 @@ export default function Transactions() {
                       <span className="text-[7px] font-black text-brand-blue/30 dark:text-white/20 tracking-widest uppercase">{tx.category}</span>
                     </div>
                   </div>
-                  <p className={`text-base font-heading font-black tracking-tighter ${tx.type === 'DEBIT' ? 'text-rose-500' : tx.type === 'TRANSFER' ? 'text-cyan-500' : 'text-emerald-500'}`}>
-                    {tx.type === 'DEBIT' ? '−' : tx.type === 'TRANSFER' ? '⇄' : '+'}{currency}{Number(tx.amount).toLocaleString()}
+                  <p className={`text-base font-heading font-black tracking-tighter ${normalizeType(tx.type) === 'DEBIT' ? 'text-rose-500' : normalizeType(tx.type) === 'TRANSFER' ? 'text-cyan-500' : 'text-emerald-500'}`}>
+                    {normalizeType(tx.type) === 'DEBIT' ? '−' : normalizeType(tx.type) === 'TRANSFER' ? '⇄' : '+'}{currency}{Number(tx.amount).toLocaleString()}
                   </p>
                 </motion.div>
               </div>
@@ -420,8 +423,8 @@ export default function Transactions() {
                   { icon: <Smartphone className="w-2.5 h-2.5" />, label: 'Method', value: (selectedTx as any).upiApp || selectedTx.paymentMethod || 'Manual' },
                   { icon: <TagIcon className="w-2.5 h-2.5" />, label: 'Classification', value: `#${selectedTx.expenseType || 'Unclassified'}` },
                   { icon: <Layers className="w-2.5 h-2.5" />, label: 'Flow',
-                    value: selectedTx.type === 'CREDIT' ? '↓ Inflow' : selectedTx.type === 'TRANSFER' ? '⇄ Transfer' : '↑ Outflow',
-                    color: selectedTx.type === 'CREDIT' ? 'text-emerald-500' : selectedTx.type === 'TRANSFER' ? 'text-cyan-500' : 'text-rose-500' },
+                    value: normalizeType(selectedTx.type) === 'CREDIT' ? '↓ Inflow' : normalizeType(selectedTx.type) === 'TRANSFER' ? '⇄ Transfer' : '↑ Outflow',
+                    color: normalizeType(selectedTx.type) === 'CREDIT' ? 'text-emerald-500' : normalizeType(selectedTx.type) === 'TRANSFER' ? 'text-cyan-500' : 'text-rose-500' },
                 ].map(({ icon, label, value, color }) => (
                   <div key={label} className="bg-neutral-50 dark:bg-white/5 p-3 rounded-2xl border border-neutral-100 dark:border-white/5">
                     <p className="text-[7px] font-black text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">{icon} {label}</p>

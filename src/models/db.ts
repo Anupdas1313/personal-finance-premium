@@ -43,6 +43,19 @@ export interface Transaction {
   linkedBudgetId?: number;
 }
 
+/**
+ * Safely normalize a transaction type to a valid enum value.
+ * Handles undefined, null, empty strings, and case mismatches.
+ * Defaults to 'DEBIT' for any unrecognized value.
+ */
+export function normalizeType(type: any): 'DEBIT' | 'CREDIT' | 'TRANSFER' {
+  if (!type) return 'DEBIT';
+  const upper = String(type).toUpperCase().trim();
+  if (upper === 'CREDIT') return 'CREDIT';
+  if (upper === 'TRANSFER') return 'TRANSFER';
+  return 'DEBIT';
+}
+
 export interface Budget {
   id?: number;
   category: string;

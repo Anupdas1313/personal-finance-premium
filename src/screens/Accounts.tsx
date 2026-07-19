@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, Transaction } from '../models/db';
+import { db, Transaction, normalizeType } from '../models/db';
 import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark, Download, FileText, CheckCircle2, History, Calendar, ChevronDown, Printer, MoreHorizontal, Scissors, Filter, Search, ArrowUpDown, ArrowRightLeft, X } from 'lucide-react';
 import { BankLogo } from '../components/BankLogo';
 import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
 import { format, startOfDay, parseISO, endOfMonth, startOfMonth, subMonths, endOfDay, startOfWeek, endOfWeek, startOfYear, endOfYear, addMonths, subWeeks, addWeeks, subDays, addDays, subYears, addYears } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Reorder } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency, useCurrencyFormatter } from '../hooks/useCurrency';
@@ -17,7 +18,10 @@ export default function Accounts() {
   const { currency, hideDecimals, formatAmount } = useCurrencyFormatter();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const accounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
+  const accounts = useLiveQuery(async () => {
+    const arr = await db.accounts.toArray();
+    return [...arr].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  }, [user?.uid]) || [];
   const userSettings = useLiveQuery(() => db.userSettings.toArray(), [user?.uid]) || [];
   const isPrivacyMode = userSettings.find(s => s.key === 'privacy_mode')?.value === true;
   const [revealBalances, setRevealBalances] = useState(false);
@@ -69,11 +73,11 @@ export default function Accounts() {
         .filter(tx => Number(tx.accountId) === Number(account.id))
         .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
       
-      // Calculate Actual Total Balance (Entire History)
       let totalBalance = Number(account.startingBalance) || 0;
       allAccountTxs.forEach(tx => {
-        if (tx.type === 'CREDIT') totalBalance += (Number(tx.amount) || 0);
-        else if (tx.type === 'DEBIT') totalBalance -= (Number(tx.amount) || 0);
+        const txType = normalizeType(tx.type);
+        if (txType === 'CREDIT') totalBalance += (Number(tx.amount) || 0);
+        else if (txType === 'DEBIT') totalBalance -= (Number(tx.amount) || 0);
       });
 
       // Calculate Inflow/Outflow for Current Month
@@ -82,8 +86,8 @@ export default function Accounts() {
         return time >= monthStart && time <= monthEnd;
       });
 
-      const inflow = currentMonthTxs.filter(tx => tx.type === 'CREDIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
-      const outflow = currentMonthTxs.filter(tx => tx.type === 'DEBIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+      const inflow = currentMonthTxs.filter(tx => normalizeType(tx.type) === 'CREDIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+      const outflow = currentMonthTxs.filter(tx => normalizeType(tx.type) === 'DEBIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
       
       // Get Recent Activity
       const recentActivity = allAccountTxs.slice(0, 3);
@@ -212,7 +216,19 @@ export default function Accounts() {
         groups[type as keyof typeof groups].push(acc);
       }
     });
-    return groups;
+
+    const getMinSortOrder = (type: string) => {
+       const arr = groups[type as keyof typeof groups];
+       if (arr.length === 0) return 999999;
+       return Math.min(...arr.map(a => a.sortOrder || 0));
+    };
+
+    const sortedTypes = ['BANK', 'CASH', 'CREDIT_CARD'].sort((a, b) => getMinSortOrder(a) - getMinSortOrder(b));
+    const sortedGroups: Record<string, any[]> = {};
+    for (const type of sortedTypes) {
+       sortedGroups[type] = groups[type as keyof typeof groups];
+    }
+    return sortedGroups;
   }, [accounts]);
 
   const getGroupTitle = (type: string) => {
@@ -541,7 +557,6 @@ export default function Accounts() {
                         onClick={() => setSelectedAccountId(account.id!)} 
                         className="group relative bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm hover:shadow-md hover:border-brand-green/20 dark:hover:border-white/10 transition-all cursor-pointer overflow-hidden flex flex-col"
                       >
-                        <div className={`h-1.5 w-full ${isBank ? 'bg-indigo-500' : isCash ? 'bg-brand-green' : 'bg-rose-500'} opacity-75`} />
                         <div className="p-6 flex flex-col flex-1">
                           <div className="flex justify-between items-start mb-6">
                             <div className="flex items-center gap-4">
@@ -601,23 +616,15 @@ export default function Accounts() {
                             {isCc && account.creditLimit ? (() => {
                               const used = Math.abs(currentBalance);
                               const limit = account.creditLimit;
-                              const utilizationPercent = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
                               return (
-                                <div className="space-y-1">
-                                  <div className="h-1.5 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden">
-                                    <div className={`h-full ${utilizationPercent > 80 ? 'bg-rose-500' : 'bg-amber-500'}`} style={{ width: `${utilizationPercent}%` }} />
-                                  </div>
+                                <div className="space-y-1 mt-1">
                                   <div className="flex justify-between text-[7px] font-bold text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-wider" onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
                                     <span className={cn(shouldBlur && "blur-[4px] select-none")}>Used: {formatAmount(used)}</span>
                                     <span className={cn(shouldBlur && "blur-[4px] select-none")}>Limit: {formatAmount(limit)}</span>
                                   </div>
                                 </div>
                               );
-                            })() : (
-                              <div className="h-1.5 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden">
-                                <div className={`h-full ${incomeToExpenseRatio > 80 ? 'bg-rose-500' : 'bg-brand-green'}`} style={{ width: `${incomeToExpenseRatio}%` }} />
-                              </div>
-                            )}
+                            })() : null}
                           </div>
 
                           <div className="pt-4 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between mt-auto">
@@ -739,13 +746,15 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     });
     txsBefore.forEach(tx => {
       const amount = Number(tx.amount) || 0;
-      if (tx.type === 'CREDIT') runningBalance += amount;
-      else if (tx.type === 'DEBIT') runningBalance -= amount;
+      const txType = normalizeType(tx.type);
+      if (txType === 'CREDIT') runningBalance += amount;
+      else if (txType === 'DEBIT') runningBalance -= amount;
     });
     return txsInView.map(tx => {
       const amount = Number(tx.amount) || 0;
-      if (tx.type === 'CREDIT') runningBalance += amount;
-      else if (tx.type === 'DEBIT') runningBalance -= amount;
+      const txType = normalizeType(tx.type);
+      if (txType === 'CREDIT') runningBalance += amount;
+      else if (txType === 'DEBIT') runningBalance -= amount;
       return { ...tx, amount, runningBalance } as Transaction & { runningBalance: number };
     });
   }, [account, transactions, granularity, referenceDate, customRange]);
@@ -765,14 +774,15 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     });
   }, [statementData, typeFilter, searchTerm]);
 
-  const totalCredit = statementData.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
-  const totalDebit = statementData.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
+  const totalCredit = statementData.filter(t => normalizeType(t.type) === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
+  const totalDebit = statementData.filter(t => normalizeType(t.type) === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
 
   const actualTotalBalance = useMemo(() => {
     let bal = Number(account?.startingBalance) || 0;
     transactions.forEach(tx => {
-       if (tx.type === 'CREDIT') bal += (Number(tx.amount) || 0);
-       else if (tx.type === 'DEBIT') bal -= (Number(tx.amount) || 0);
+       const txType = normalizeType(tx.type);
+       if (txType === 'CREDIT') bal += (Number(tx.amount) || 0);
+       else if (txType === 'DEBIT') bal -= (Number(tx.amount) || 0);
     });
     return bal;
   }, [account?.startingBalance, transactions]);
@@ -801,8 +811,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     const rows = statementData.map(tx => [
       format(new Date(tx.dateTime), 'yyyy-MM-dd HH:mm'),
       (tx.note || tx.category || '').toUpperCase(),
-      tx.type === 'DEBIT' ? tx.amount : '',
-      tx.type === 'CREDIT' ? tx.amount : '',
+      normalizeType(tx.type) === 'DEBIT' ? tx.amount : '',
+      normalizeType(tx.type) === 'CREDIT' ? tx.amount : '',
       tx.runningBalance
     ]);
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -831,8 +841,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
       body: statementData.map(tx => [
         format(new Date(tx.dateTime), 'dd MMM yyyy'),
         (tx.note || tx.category || '').toUpperCase(),
-        tx.type === 'DEBIT' ? `${currency} ${tx.amount.toLocaleString()}` : '-',
-        tx.type === 'CREDIT' ? `${currency} ${tx.amount.toLocaleString()}` : '-',
+        normalizeType(tx.type) === 'DEBIT' ? `${currency} ${tx.amount.toLocaleString()}` : '-',
+        normalizeType(tx.type) === 'CREDIT' ? `${currency} ${tx.amount.toLocaleString()}` : '-',
         `${currency} ${tx.runningBalance.toLocaleString()}`
       ]),
       theme: 'grid',
@@ -858,8 +868,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
       const lastClosing = closings.length > 0 ? closings[closings.length - 1] : null;
       const startLimit = lastClosing ? new Date(lastClosing.closingDate).getTime() : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
       const liveTxs = transactions.filter(tx => new Date(tx.dateTime).getTime() > startLimit);
-      const inflow = liveTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
-      const outflow = liveTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
+      const inflow = liveTxs.filter(t => normalizeType(t.type) === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
+      const outflow = liveTxs.filter(t => normalizeType(t.type) === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
       const opening = lastClosing ? lastClosing.closingBalance : account.startingBalance;
 
       await db.accountClosings.add({
@@ -894,8 +904,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         const time = new Date(tx.dateTime).getTime();
         return time > startLimit && time < partitionTime;
     });
-    const inflow = periodTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
-    const outflow = periodTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
+    const inflow = periodTxs.filter(t => normalizeType(t.type) === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
+    const outflow = periodTxs.filter(t => normalizeType(t.type) === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
     const opening = prevClosing ? prevClosing.closingBalance : account.startingBalance;
     await db.accountClosings.add({
       accountId: account.id!,
@@ -1151,7 +1161,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                     <td className="px-2 py-2 whitespace-nowrap"><span className="text-[9px] font-bold text-neutral-400 uppercase tracking-tighter">{format(new Date(tx.dateTime), 'dd MMM HH:mm')}</span></td>
                     <td className="px-2 py-2"><span className="text-[10px] font-black text-neutral-700 dark:text-neutral-300 uppercase truncate max-w-[120px] block">{tx.party || '-'}</span></td>
                     <td className="px-2 py-2"><span className="text-[8px] font-bold text-neutral-400 dark:text-neutral-500 italic truncate max-w-[150px] block">{tx.note || '-'}</span></td>
-                    <td className="px-2 py-2 text-right whitespace-nowrap"><span className={`text-[11px] font-black tracking-tighter ${tx.type === 'CREDIT' ? 'text-emerald-500' : 'text-rose-500'}`}>{tx.type === 'CREDIT' ? '+' : '-'}{currency}{tx.amount.toLocaleString()}</span></td>
+                    <td className="px-2 py-2 text-right whitespace-nowrap"><span className={`text-[11px] font-black tracking-tighter ${normalizeType(tx.type) === 'CREDIT' ? 'text-emerald-500' : 'text-rose-500'}`}>{normalizeType(tx.type) === 'CREDIT' ? '+' : '-'}{currency}{tx.amount.toLocaleString()}</span></td>
                     <td className="px-2 py-2 text-right whitespace-nowrap"><span className="text-[10px] font-black text-brand-blue/70 dark:text-white/60 tracking-tighter">{currency}{tx.runningBalance.toLocaleString()}</span></td>
                   </tr>
                 </React.Fragment>
@@ -1186,37 +1196,22 @@ function AccountsReorderModal({ onClose }: { onClose: () => void }) {
   const [localAccounts, setLocalAccounts] = useState<any[]>([]);
 
   useEffect(() => {
-    if (accounts.length > 0) {
-      setLocalAccounts(
-        [...accounts].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
-      );
+    if (accounts.length > 0 && localAccounts.length === 0) {
+      const sorted = [...accounts].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+      setLocalAccounts(sorted);
     }
-  }, [accounts]);
-
-  const moveItem = (index: number, direction: 'up' | 'down') => {
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= localAccounts.length) return;
-
-    const newItems = [...localAccounts];
-    const temp = newItems[index];
-    newItems[index] = newItems[targetIndex];
-    newItems[targetIndex] = temp;
-
-    // Recalculate order values
-    const reindexed = newItems.map((item, idx) => ({
-      ...item,
-      sortOrder: idx + 1,
-    }));
-    setLocalAccounts(reindexed);
-  };
+  }, [accounts, localAccounts.length]);
 
   const handleSave = async () => {
     try {
-      for (const acc of localAccounts) {
-        if (acc.id) {
-          await db.accounts.update(acc.id, { sortOrder: acc.sortOrder });
+      await db.transaction('rw', db.accounts, async () => {
+        for (let i = 0; i < localAccounts.length; i++) {
+          const acc = localAccounts[i];
+          if (acc.id) {
+            await db.accounts.update(acc.id, { sortOrder: i + 1 });
+          }
         }
-      }
+      });
       onClose();
     } catch (err) {
       console.error('Failed to save accounts order:', err);
@@ -1228,54 +1223,49 @@ function AccountsReorderModal({ onClose }: { onClose: () => void }) {
       <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-2xl p-6 max-w-md w-full mx-4 animate-scale-up">
         <div className="flex justify-between items-center mb-5 pb-3 border-b border-neutral-50 dark:border-white/5">
           <h3 className="text-sm font-heading font-black text-brand-blue dark:text-white uppercase tracking-wider">Arrange Accounts Order</h3>
-          <button onClick={onClose} className="text-[10px] font-black text-neutral-400 dark:text-neutral-500 hover:text-brand-red uppercase tracking-wider">Cancel</button>
+          <button onClick={onClose} className="text-[10px] font-black text-neutral-400 dark:text-neutral-500 hover:text-brand-red uppercase tracking-wider transition-colors">Cancel</button>
         </div>
 
         {localAccounts.length === 0 ? (
           <p className="text-[10px] text-center text-neutral-400 py-10 uppercase tracking-widest font-bold">No accounts found</p>
         ) : (
-          <div className="space-y-2 max-h-[300px] overflow-y-auto no-scrollbar pr-1">
-            {localAccounts.map((acc, idx) => {
-              const isBank = acc.type === 'BANK';
-              const isCash = acc.type === 'CASH';
-              return (
-                <div key={acc.id} className="flex items-center justify-between p-3 rounded-xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center p-1.5 shadow-sm shrink-0">
-                      <BankLogo bankName={acc.bankName} type={acc.type} className="w-full h-full object-contain" />
+          <div className="max-h-[400px] overflow-y-auto no-scrollbar pr-1 -mx-2 px-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <p className="text-[9px] font-bold text-neutral-400 mb-3 uppercase tracking-widest text-center">Drag and drop to reorder</p>
+            <Reorder.Group axis="y" values={localAccounts} onReorder={setLocalAccounts} className="space-y-2 pb-2">
+              {localAccounts.map(acc => {
+                const isCash = acc.type === 'CASH';
+                return (
+                  <Reorder.Item 
+                    key={acc.id} 
+                    value={acc}
+                    className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-[#1A1A1A] border border-neutral-100 dark:border-white/5 cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md transition-shadow relative z-0"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 pointer-events-none">
+                      <div className="w-8 h-8 bg-neutral-50 dark:bg-white/5 rounded-lg flex items-center justify-center p-1.5 shadow-sm shrink-0 border border-neutral-100 dark:border-white/5">
+                        <BankLogo bankName={acc.bankName} type={acc.type} className="w-full h-full object-contain" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black text-neutral-800 dark:text-white truncate uppercase tracking-tight leading-none mb-0.5">{acc.bankName}</p>
+                        <p className="text-[8px] font-bold text-neutral-400 font-mono">
+                          {isCash ? 'CASH PORTFOLIO' : `•••• ${acc.accountLast4}`}
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-black text-neutral-800 dark:text-white truncate uppercase tracking-tight leading-none mb-0.5">{acc.bankName}</p>
-                      <p className="text-[8px] font-bold text-neutral-400 font-mono">
-                        {isCash ? 'CASH' : `•••• ${acc.accountLast4}`}
-                      </p>
+                    <div className="flex items-center gap-1.5 shrink-0 text-neutral-400 cursor-grab">
+                      <div className="w-7 h-7 flex items-center justify-center bg-neutral-50 dark:bg-white/5 rounded-lg">
+                        <ArrowUpDown className="w-3.5 h-3.5" />
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button 
-                      onClick={() => moveItem(idx, 'up')}
-                      disabled={idx === 0}
-                      className="w-7 h-7 rounded-lg bg-white dark:bg-white/5 flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:bg-neutral-100 disabled:opacity-30 disabled:hover:bg-transparent"
-                    >
-                      <Plus className="w-3.5 h-3.5 rotate-180" style={{ transform: 'scaleY(-1)' }} />
-                    </button>
-                    <button 
-                      onClick={() => moveItem(idx, 'down')}
-                      disabled={idx === localAccounts.length - 1}
-                      className="w-7 h-7 rounded-lg bg-white dark:bg-white/5 flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:bg-neutral-100 disabled:opacity-30 disabled:hover:bg-transparent"
-                    >
-                      <Plus className="w-3.5 h-3.5 rotate-180" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+                  </Reorder.Item>
+                );
+              })}
+            </Reorder.Group>
           </div>
         )}
 
         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-neutral-50 dark:border-white/5">
-          <button onClick={onClose} className="px-4 py-2 text-[10px] font-bold text-neutral-400 hover:text-neutral-500 uppercase">Cancel</button>
-          <button onClick={handleSave} className="px-5 py-2 bg-brand-green text-white dark:text-brand-blue rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg shadow-brand-green/10">Save Order</button>
+          <button onClick={onClose} className="px-4 py-2 text-[10px] font-bold text-neutral-400 hover:text-neutral-500 uppercase transition-colors">Cancel</button>
+          <button onClick={handleSave} className="px-5 py-2 bg-brand-green text-white dark:text-brand-blue rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg shadow-brand-green/10 transition-all hover:brightness-110 active:scale-95">Save Order</button>
         </div>
       </div>
     </div>
