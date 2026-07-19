@@ -129,11 +129,14 @@ export default function Accounts() {
         dueDate: undefined
       };
 
+      const parsedStartingBalance = parseFloat(startingBalance.toString().replace(/,/g, '')) || 0;
+      const finalStartingBalance = accountType === 'CREDIT_CARD' ? -Math.abs(parsedStartingBalance) : parsedStartingBalance;
+
       if (editingAccountId) {
         await db.accounts.update(editingAccountId, {
           bankName,
           accountLast4,
-          startingBalance: parseFloat(startingBalance.toString().replace(/,/g, '')) || 0,
+          startingBalance: finalStartingBalance,
           startingBalanceDate: new Date(startingBalanceDate),
           type: accountType,
           ...creditCardFields
@@ -143,7 +146,7 @@ export default function Accounts() {
         await db.accounts.add({
           bankName,
           accountLast4,
-          startingBalance: parseFloat(startingBalance.toString().replace(/,/g, '')) || 0,
+          startingBalance: finalStartingBalance,
           startingBalanceDate: new Date(startingBalanceDate),
           type: accountType,
           sortOrder: maxOrder + 1,
@@ -179,7 +182,8 @@ export default function Accounts() {
   const handleEdit = (account: any) => {
     setBankName(account.bankName);
     setAccountLast4(account.accountLast4);
-    setStartingBalance(account.startingBalance.toString());
+    const balanceVal = account.type === 'CREDIT_CARD' ? Math.abs(account.startingBalance) : account.startingBalance;
+    setStartingBalance(balanceVal.toString());
     setStartingBalanceDate(account.startingBalanceDate ? new Date(account.startingBalanceDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
     setAccountType(account.type || 'BANK');
     setCreditLimit(account.creditLimit ? account.creditLimit.toString() : '');
@@ -409,7 +413,9 @@ export default function Accounts() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-[0.2em]">Starting Balance ({currency})</label>
+                <label className="block text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-[0.2em]">
+                  {accountType === 'CREDIT_CARD' ? 'Outstanding Balance (Owed)' : `Starting Balance (${currency})`}
+                </label>
                 <input
                   type="number"
                   value={startingBalance}
@@ -419,6 +425,11 @@ export default function Accounts() {
                   className="w-full px-4 py-3 border border-brand-blue/10 dark:border-[#444444] rounded-xl focus:ring-2 focus:ring-brand-cyan focus:border-brand-blue outline-none transition-shadow text-brand-blue font-bold"
                   required
                 />
+                {accountType === 'CREDIT_CARD' && (
+                  <p className="text-[10px] text-neutral-400 mt-1.5 leading-tight">
+                    Enter how much you currently owe on this card (e.g. 5000). We will record this as a liability internally.
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-semibold text-brand-blue dark:text-[#F7F7F7] mb-1.5 uppercase tracking-[0.2em]">Starting Date</label>

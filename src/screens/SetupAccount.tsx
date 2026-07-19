@@ -60,12 +60,14 @@ export default function SetupAccount() {
     try {
       await saveUserSetting('currency', currency);
       await saveUserSetting('currency_country', selectedCurrency.country);
-      const balance = parseFloat(startingBalance);
+      const rawBalance = parseFloat(startingBalance);
+      const balance = isNaN(rawBalance) ? 0 : rawBalance;
+      const finalBalance = type === 'CREDIT_CARD' ? -Math.abs(balance) : balance;
       
       await db.accounts.add({
         bankName: bankName.trim() || 'My Account',
         accountLast4: type === 'CASH' ? '' : (accountLast4 || '0000'),
-        startingBalance: isNaN(balance) ? 0 : balance,
+        startingBalance: finalBalance,
         startingBalanceDate: new Date(),
         type
       });
@@ -293,7 +295,9 @@ export default function SetupAccount() {
                   )}
 
                   <div>
-                    <label className="block text-[13px] font-semibold text-neutral-700 mb-1.5 ml-1">Current Balance</label>
+                    <label className="block text-[13px] font-semibold text-neutral-700 mb-1.5 ml-1">
+                      {type === 'CREDIT_CARD' ? 'Current Outstanding Balance (Owed)' : 'Current Balance'}
+                    </label>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 font-semibold text-[15px]">{currency}</span>
                       <input
@@ -304,6 +308,11 @@ export default function SetupAccount() {
                         className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-xl pl-8 pr-4 py-3 text-[15px] font-medium outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
                       />
                     </div>
+                    {type === 'CREDIT_CARD' && (
+                      <p className="text-[10px] text-neutral-400 mt-1.5 ml-1 leading-tight">
+                        Enter how much you currently owe on this card (e.g. 5000). We will handle the sign internally to reduce your net worth.
+                      </p>
+                    )}
                   </div>
                 </div>
 
