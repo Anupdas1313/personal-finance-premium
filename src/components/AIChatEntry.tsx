@@ -1234,46 +1234,61 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
         {/* Preview Card */}
         {stage === 'PREVIEW' && (
-          <div className="mx-0.5 p-3 bg-[#F9FBFF] dark:bg-[#111111] border border-brand-blue/5 dark:border-white/5 rounded-3xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex items-center justify-between mb-3 px-1">
-              <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 flex items-center gap-1.5">
-                <Sparkles className="w-3 h-3 text-brand-green" /> Preview
+          <div className="mx-0.5 p-4 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/5 rounded-3xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 relative overflow-hidden flex flex-col gap-3">
+            {/* Header info */}
+            <div className="flex items-center justify-between px-0.5">
+              <span className="text-[9px] font-extrabold uppercase tracking-widest text-neutral-400 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-brand-green" /> Digital Receipt
                 {pendingTx._confidence > 0 && (
                   <span className={`text-[8px] font-black ${confidenceColor}`}>{pendingTx._confidence}% confident</span>
                 )}
               </span>
-              <button onClick={handleReset} className="text-[8px] font-black text-brand-green bg-brand-green/5 px-2 py-1 rounded-lg uppercase tracking-widest flex items-center gap-1">
+              <button onClick={handleReset} className="text-[8px] font-black text-brand-green bg-brand-green/5 px-2 py-1 rounded-lg uppercase tracking-widest flex items-center gap-1 hover:bg-brand-green/10 transition-colors">
                 <RotateCcw className="w-2.5 h-2.5" /> Reset
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 mb-2">
-              <div className="bg-white dark:bg-white/5 p-2 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:ring-2 ring-brand-green/30 transition-all group relative" onClick={() => handleEdit('amount')}>
-                <div className="absolute top-1 right-1 opacity-100"><Pencil className="w-2.5 h-2.5 text-brand-green/40 group-hover:text-brand-green transition-colors" /></div>
-                <span className="text-[17px] font-black text-brand-green dark:text-white">{currency}{pendingTx.amount}</span>
-                <span className={`text-[7px] font-black uppercase ${pendingTx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-red'}`}>
+            {/* Dash receipt divider */}
+            <div className="border-t border-dashed border-neutral-200 dark:border-neutral-800 w-full my-0.5" />
+
+            {/* Receipt Body */}
+            <div className="flex items-center justify-between py-1 px-1">
+              {/* Left: Amount & Type */}
+              <div className="flex flex-col cursor-pointer group relative" onClick={() => handleEdit('amount')}>
+                <span className="text-[18px] font-black text-brand-green dark:text-white flex items-center gap-1">
+                  {currency}{pendingTx.amount}
+                  <Pencil className="w-2.5 h-2.5 text-neutral-300 group-hover:text-brand-green opacity-0 group-hover:opacity-100 transition-all shrink-0" />
+                </span>
+                <span className={`text-[7px] font-extrabold uppercase tracking-widest ${pendingTx.type === 'CREDIT' ? 'text-brand-green' : pendingTx.type === 'TRANSFER' ? 'text-cyan-500' : 'text-rose-500'}`}>
                   {pendingTx.type === 'CREDIT' ? 'Inflow' : pendingTx.type === 'TRANSFER' ? 'Transfer' : 'Outflow'}
                 </span>
               </div>
-              <div className="bg-white dark:bg-white/5 p-2 rounded-2xl flex items-center gap-2 cursor-pointer hover:ring-2 ring-brand-green/30 transition-all group relative" onClick={() => handleEdit('category')}>
-                <div className="absolute top-1 right-1 opacity-100"><Pencil className="w-2.5 h-2.5 text-brand-green/40 group-hover:text-brand-green transition-colors" /></div>
-                <div className="text-xl">{CATEGORY_ICONS[pendingTx.category] || '📦'}</div>
-                <div className="flex flex-col">
-                  <span className="text-[8px] font-black text-neutral-400 uppercase leading-none">Category</span>
-                  <span className="text-[10px] font-bold text-brand-green dark:text-white truncate">{pendingTx.category || '—'}</span>
+
+              {/* Right: Category Icon & Name */}
+              <div className="flex items-center gap-2 cursor-pointer group relative text-right" onClick={() => handleEdit('category')}>
+                <div className="flex flex-col items-end">
+                  <span className="text-[8px] font-extrabold text-neutral-400 uppercase tracking-widest leading-none">Category</span>
+                  <span className="text-[10px] font-bold text-neutral-800 dark:text-neutral-200 mt-0.5 truncate max-w-[80px]">{pendingTx.category || '—'}</span>
                 </div>
+                <div className="text-xl w-7 h-7 rounded-lg bg-neutral-50 dark:bg-white/5 flex items-center justify-center border border-neutral-100 dark:border-white/5 shrink-0">
+                  {CATEGORY_ICONS[pendingTx.category] || '📦'}
+                </div>
+                <Pencil className="w-2.5 h-2.5 text-neutral-300 group-hover:text-brand-green absolute -left-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all" />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-1.5 mb-2">
+            {/* Dash receipt divider */}
+            <div className="border-t border-dashed border-neutral-200 dark:border-neutral-800 w-full my-0.5" />
+
+            {/* Rows list */}
+            <div className="space-y-1 px-0.5">
               {[
-                { icon: <Landmark className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Account', value: accounts.find(a => a.id === pendingTx.selectedAccountId)?.bankName || '—', field: 'bank' },
-                { icon: <AppWindow className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Method', value: pendingTx.upiApp || pendingTx.paymentMethod || '—', field: null },
-                { icon: <User className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Payee', value: pendingTx.party || '—', field: 'payee' },
-                { icon: <Hash className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Tag', value: `#${pendingTx.expenseType || '—'}`, field: 'tag' },
-                { icon: <Lightbulb className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Note', value: pendingTx.note || '—', field: 'remark' },
+                { label: 'Account', value: accounts.find(a => a.id === pendingTx.selectedAccountId)?.bankName || '—', field: 'bank' },
+                { label: 'Method', value: pendingTx.upiApp || pendingTx.paymentMethod || '—', field: null },
+                { label: 'Payee / Src', value: pendingTx.party || '—', field: 'payee' },
+                { label: 'Tag', value: pendingTx.expenseType ? `#${pendingTx.expenseType}` : '—', field: 'tag' },
+                { label: 'Remarks', value: pendingTx.note || '—', field: 'remark' },
                 ...(pendingTx.type === 'DEBIT' ? [{
-                  icon: <Target className="w-3 h-3 text-neutral-400 shrink-0" />,
                   label: 'Envelope',
                   value: pendingTx.linkedBudgetId 
                     ? envelopeBudgets.find(b => b.id === pendingTx.linkedBudgetId)?.category || '—'
