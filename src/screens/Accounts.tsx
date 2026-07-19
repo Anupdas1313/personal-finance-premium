@@ -661,7 +661,7 @@ export default function Accounts() {
                     transition={{ duration: 0.2, ease: 'easeInOut' }}
                     className="overflow-hidden"
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-2 pb-1">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-3 pb-1">
                       {[...accList]
                         .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
                         .map(account => {
@@ -674,101 +674,102 @@ export default function Accounts() {
                             <div 
                               key={account.id} 
                               onClick={() => setSelectedAccountId(account.id!)} 
-                              className="group relative bg-white dark:bg-[#111111] rounded-xl border border-neutral-100 dark:border-[#222222] shadow-sm hover:shadow-md hover:border-brand-green/20 dark:hover:border-white/10 transition-all cursor-pointer overflow-hidden"
+                              className="group relative bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm hover:shadow-md hover:border-brand-green/20 dark:hover:border-white/10 transition-all cursor-pointer overflow-hidden flex flex-col"
                             >
-                              <div className="p-3 flex flex-col gap-2">
-                                {/* Row 1: Logo + Name + Balance + Actions */}
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                    <div className="w-8 h-8 bg-neutral-50 dark:bg-white/5 rounded-lg flex items-center justify-center p-1.5 border border-neutral-100 dark:border-white/5 shrink-0">
+                              <div className="p-6 flex flex-col flex-1">
+                                <div className="flex justify-between items-start mb-6">
+                                  <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-neutral-50 dark:bg-white/5 rounded-[20px] flex items-center justify-center p-2.5 border border-neutral-100 dark:border-white/5 shadow-sm shrink-0">
                                       <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
                                     </div>
-                                    <div className="min-w-0 flex-1">
-                                      <div className="flex items-center gap-2">
-                                        <h3 className="text-[11px] font-heading font-black text-brand-blue dark:text-white tracking-tight truncate">{account.bankName}</h3>
-                                        <span className={cn("text-[8px] text-neutral-400 dark:text-[#888] font-bold shrink-0", !isCash && "font-mono tracking-wider")}>
-                                          {isCash ? 'Cash' : `•••• ${account.accountLast4}`}
-                                        </span>
-                                      </div>
+                                    <div className="min-w-0">
+                                      <h3 className="text-[13px] font-heading font-black text-brand-blue dark:text-white tracking-tight truncate">{account.bankName}</h3>
+                                      <p className={cn("text-[10px] text-neutral-400 dark:text-[#A0A0A0] font-bold mt-0.5", !isCash && "font-mono tracking-wider")}>
+                                        {isCash ? 'Total Cash' : `••••   ${account.accountLast4}`}
+                                      </p>
                                       {isCc && account.dueDate && (() => {
                                         const daysLeft = getDaysLeftToPay(account.dueDate);
                                         const isUrgent = daysLeft <= 5;
                                         return (
-                                          <span className={`inline-flex items-center gap-0.5 text-[7px] font-bold mt-0.5 ${
-                                            isUrgent ? 'text-rose-500' : 'text-neutral-400 dark:text-neutral-500'
+                                          <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider mt-1 ${
+                                            isUrgent 
+                                              ? 'bg-rose-50/10 text-rose-500 border border-rose-500/20' 
+                                              : 'bg-neutral-100 dark:bg-white/5 text-neutral-400 dark:text-neutral-500'
                                           }`}>
-                                            Due in {daysLeft}d
-                                          </span>
+                                            <span>Due in {daysLeft} {daysLeft === 1 ? 'day' : 'days'}</span>
+                                          </div>
                                         );
                                       })()}
                                     </div>
                                   </div>
                                   
-                                  {/* Balance + Actions */}
-                                  <div className="flex items-center gap-1.5 shrink-0">
-                                    <p 
-                                      className={cn(
-                                        "text-base font-heading font-black tracking-tighter transition-all duration-300",
-                                        currentBalance >= 0 ? (isCc ? 'text-brand-blue dark:text-white' : 'text-brand-green') : 'text-brand-red',
-                                        shouldBlur && "blur-[5px] select-none cursor-pointer"
-                                      )}
-                                      onClick={(e) => { e.stopPropagation(); isPrivacyMode && setRevealBalances(!revealBalances); }}
-                                    >
-                                      {formatAmount(currentBalance)}
-                                    </p>
-                                      <div className="flex items-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                      <button onClick={(e) => { e.stopPropagation(); handleEdit(account); }} className="w-6 h-6 rounded-md flex items-center justify-center text-neutral-400 hover:text-brand-blue dark:hover:text-white transition-all relative z-10"><Pencil className="w-2.5 h-2.5" /></button>
-                                      <button onClick={(e) => { e.stopPropagation(); handleDelete(account.id!); }} className="w-6 h-6 rounded-md flex items-center justify-center text-neutral-400 hover:text-brand-red transition-all relative z-10"><Trash2 className="w-2.5 h-2.5" /></button>
-                                    </div>
+                                  <div className="flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                    <button onClick={(e) => { e.stopPropagation(); handleEdit(account); }} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-white/5 transition-all relative z-10"><Pencil className="w-3.5 h-3.5" /></button>
+                                    <button onClick={(e) => { e.stopPropagation(); handleDelete(account.id!); }} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-red hover:bg-neutral-50 dark:hover:bg-white/5 transition-all relative z-10"><Trash2 className="w-3.5 h-3.5" /></button>
                                   </div>
                                 </div>
+ 
+                                <div className="mb-6">
+                                  <p className="text-[10px] font-bold text-neutral-400 dark:text-[#A0A0A0] mb-1">
+                                    {isCc ? 'Outstanding Balance' : 'Account Balance'}
+                                  </p>
+                                  <p 
+                                    className={cn(
+                                      "text-3xl font-heading font-black tracking-tighter transition-all duration-300",
+                                      currentBalance >= 0 ? (isCc ? 'text-brand-blue dark:text-white' : 'text-brand-green') : 'text-brand-red',
+                                      shouldBlur && "blur-[7px] select-none cursor-pointer"
+                                    )}
+                                    onClick={(e) => { e.stopPropagation(); isPrivacyMode && setRevealBalances(!revealBalances); }}
+                                  >
+                                    {formatAmount(currentBalance)}
+                                  </p>
+                                  {isCc && account.creditLimit ? (() => {
+                                    const used = Math.abs(currentBalance);
+                                    const limit = account.creditLimit;
+                                    const available = Math.max(limit - used, 0);
+                                    const pct = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
+                                    const barColor = pct >= 80 ? 'bg-rose-500' : pct >= 50 ? 'bg-amber-500' : 'bg-brand-green';
+                                    
+                                    return (
+                                      <div className="space-y-2 mt-3 p-3 bg-neutral-50 dark:bg-white/[0.02] rounded-xl border border-neutral-100 dark:border-white/5" onClick={(e) => { e.stopPropagation(); if (isPrivacyMode) setRevealBalances(!revealBalances); }}>
+                                        <div className="flex justify-between text-[11px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-widest">
+                                          <span className="flex items-center gap-1">
+                                            <span className={cn("inline-block w-1.5 h-1.5 rounded-full", pct >= 80 ? 'bg-rose-500' : pct >= 50 ? 'bg-amber-500' : 'bg-brand-green')}></span>
+                                            Used: <span className={cn("text-neutral-700 dark:text-neutral-200 font-bold", shouldBlur && "blur-[4px] select-none")}>{formatAmount(used)}</span>
+                                          </span>
+                                          <span>Limit: <span className="text-neutral-700 dark:text-neutral-200 font-bold">{formatAmount(limit)}</span></span>
+                                        </div>
+                                        
+                                        <div className="w-full h-1.5 bg-neutral-200/60 dark:bg-white/10 rounded-full overflow-hidden">
+                                          <div className={cn("h-full rounded-full transition-all duration-500", barColor)} style={{ width: `${pct}%` }} />
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center text-[10px] font-bold text-neutral-400 uppercase">
+                                          <span>{Math.round(pct)}% Utilized</span>
+                                          <span className={cn("text-neutral-500", shouldBlur && "blur-[3px] select-none")}>Available: {formatAmount(available)}</span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })() : null}
+                                </div>
 
-                                {/* Credit Card Utilization Bar (compact) */}
-                                {isCc && account.creditLimit ? (() => {
-                                  const used = Math.abs(currentBalance);
-                                  const limit = account.creditLimit;
-                                  const available = Math.max(limit - used, 0);
-                                  const pct = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
-                                  const barColor = pct >= 80 ? 'bg-rose-500' : pct >= 50 ? 'bg-amber-500' : 'bg-brand-green';
-                                  
-                                  return (
-                                    <div className="p-2 bg-neutral-50 dark:bg-white/[0.02] rounded-lg border border-neutral-100 dark:border-white/5 space-y-1" onClick={(e) => { e.stopPropagation(); if (isPrivacyMode) setRevealBalances(!revealBalances); }}>
-                                      <div className="flex justify-between text-[8px] font-bold text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-wider">
-                                        <span className="flex items-center gap-1">
-                                          <span className={cn("inline-block w-1 h-1 rounded-full", pct >= 80 ? 'bg-rose-500' : pct >= 50 ? 'bg-amber-500' : 'bg-brand-green')}></span>
-                                          Used: <span className={cn("text-neutral-700 dark:text-neutral-200", shouldBlur && "blur-[3px] select-none")}>{formatAmount(used)}</span>
-                                        </span>
-                                        <span>Limit: <span className="text-neutral-700 dark:text-neutral-200">{formatAmount(limit)}</span></span>
-                                      </div>
-                                      <div className="w-full h-0.5 bg-neutral-200/60 dark:bg-white/10 rounded-full overflow-hidden">
-                                        <div className={cn("h-full rounded-full transition-all duration-500", barColor)} style={{ width: `${pct}%` }} />
-                                      </div>
-                                      <div className="flex justify-between text-[7px] font-bold text-neutral-400 uppercase">
-                                        <span>{Math.round(pct)}% Used</span>
-                                        <span className={cn(shouldBlur && "blur-[3px] select-none")}>Avail: {formatAmount(available)}</span>
-                                      </div>
-                                    </div>
-                                  );
-                                })() : null}
-
-                                {/* Footer: Inflow/Outflow + History */}
-                                <div className="pt-2 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between">
+                                <div className="pt-4 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between mt-auto">
                                   <div className="flex items-center gap-4" onClick={(e) => { e.stopPropagation(); isPrivacyMode && setRevealBalances(!revealBalances); }}>
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-[7px] font-bold text-neutral-400 dark:text-[#888] uppercase">In</span>
-                                      <span className={cn("text-[9px] font-black text-emerald-500 transition-all duration-300", shouldBlur && "blur-[4px] select-none")}>{formatAmount(info?.inflow || 0)}</span>
+                                    <div className="flex flex-col">
+                                      <span className="text-[7px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase">Inflow</span>
+                                      <span className={cn("text-[10px] font-black text-emerald-500 transition-all duration-300", shouldBlur && "blur-[4px] select-none")}>{formatAmount(info?.inflow || 0)}</span>
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-[7px] font-bold text-neutral-400 dark:text-[#888] uppercase">Out</span>
-                                      <span className={cn("text-[9px] font-black text-rose-500 transition-all duration-300", shouldBlur && "blur-[4px] select-none")}>{formatAmount(info?.outflow || 0)}</span>
+                                    <div className="flex flex-col">
+                                      <span className="text-[7px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase">Outflow</span>
+                                      <span className={cn("text-[10px] font-black text-rose-500 transition-all duration-300", shouldBlur && "blur-[4px] select-none")}>{formatAmount(info?.outflow || 0)}</span>
                                     </div>
                                   </div>
                                   <button 
                                     onClick={e => { e.stopPropagation(); setSelectedAccountId(account.id!); }} 
-                                    className="w-6 h-6 rounded-lg bg-brand-green/10 dark:bg-brand-green/10 text-brand-green flex items-center justify-center transition-all hover:bg-brand-green/20"
+                                    className="w-9 h-9 rounded-2xl bg-brand-green dark:bg-brand-green/20 text-white dark:text-brand-green flex items-center justify-center transition-all hover:brightness-105"
                                     title="Statement History"
                                   >
-                                    <History className="w-3 h-3" />
+                                    <History className="w-4 h-4" />
                                   </button>
                                 </div>
                               </div>
