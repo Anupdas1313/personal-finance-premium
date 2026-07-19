@@ -324,6 +324,10 @@ export default function Dashboard() {
   const { categories: appCategories } = useCategories();
 
   const handleSaveManual = async (txData?: any) => {
+    // Prevent React MouseEvent from being treated as txData
+    if (txData && txData.nativeEvent) {
+      txData = undefined;
+    }
     const isFromChat = !!txData;
     const currentAmount = isFromChat ? txData.amount : amount;
     const currentType = normalizeType(isFromChat ? txData.type : type);
@@ -1215,7 +1219,7 @@ export default function Dashboard() {
               {/* Persistent Action Bar — Fixed Bottom Optimized */}
               <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-[#0A0A0A]/80 backdrop-blur-xl border-t border-[#EBEBEB] dark:border-white/5 z-50 flex justify-end items-center gap-3">
                 <button 
-                  onClick={handleSaveManual}
+                  onClick={() => handleSaveManual()}
                   disabled={!amount || !type || !selectedAccountId || (tags.length > 0 && type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || isSaving || status === 'success'}
                   className={`px-8 py-2.5 rounded-2xl text-[10px] font-black transition-all active:scale-[0.98] shadow-2xl flex items-center justify-center gap-2 uppercase tracking-widest ${
                     (!amount || !type || !selectedAccountId || (tags.length > 0 && type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
