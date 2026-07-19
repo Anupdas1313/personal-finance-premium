@@ -662,17 +662,39 @@ export default function Accounts() {
                                     {formatAmount(currentBalance)}
                                   </p>
                                   {isCc && account.creditLimit ? (() => {
-                                    const used = Math.abs(currentBalance);
-                                    const limit = account.creditLimit;
-                                    return (
-                                      <div className="space-y-1 mt-1">
-                                        <div className="flex justify-between text-[7px] font-bold text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-wider" onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
-                                          <span className={cn(shouldBlur && "blur-[4px] select-none")}>Used: {formatAmount(used)}</span>
-                                          <span className={cn(shouldBlur && "blur-[4px] select-none")}>Limit: {formatAmount(limit)}</span>
-                                        </div>
-                                      </div>
-                                    );
-                                  })() : null}
+                              const used = Math.abs(currentBalance);
+                              const limit = account.creditLimit;
+                              const available = Math.max(limit - used, 0);
+                              const pct = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
+                              const barColor = pct >= 80 ? 'bg-rose-500' : pct >= 50 ? 'bg-amber-500' : 'bg-brand-green';
+                              
+                              return (
+                                <div className="space-y-2 mt-3 p-3 bg-neutral-50 dark:bg-white/[0.02] rounded-xl border border-neutral-100 dark:border-white/5" onClick={(e) => { e.stopPropagation(); if (isPrivacyMode) setRevealBalances(!revealBalances); }}>
+                                  <div className="flex justify-between text-[9px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-widest">
+                                    <span className="flex items-center gap-1">
+                                      <span className={cn("inline-block w-1.5 h-1.5 rounded-full", pct >= 80 ? 'bg-rose-500' : pct >= 50 ? 'bg-amber-500' : 'bg-brand-green')}></span>
+                                      Used: <span className={cn("text-neutral-700 dark:text-neutral-200 font-bold", shouldBlur && "blur-[4px] select-none")}>{formatAmount(used)}</span>
+                                    </span>
+                                    <span>
+                                      Limit: <span className="text-neutral-700 dark:text-neutral-200 font-bold">{formatAmount(limit)}</span>
+                                    </span>
+                                  </div>
+                                  
+                                  {/* Progress Bar */}
+                                  <div className="w-full h-1.5 bg-neutral-200/60 dark:bg-white/10 rounded-full overflow-hidden">
+                                    <div 
+                                      className={cn("h-full rounded-full transition-all duration-500", barColor)}
+                                      style={{ width: `${pct}%` }}
+                                    />
+                                  </div>
+                                  
+                                  <div className="flex justify-between items-center text-[8px] font-bold text-neutral-400 uppercase">
+                                    <span>{Math.round(pct)}% Utilized</span>
+                                    <span className={cn("text-neutral-500", shouldBlur && "blur-[3px] select-none")}>Available: {formatAmount(available)}</span>
+                                  </div>
+                                </div>
+                              );
+                            })() : null}
                                 </div>
 
                                 <div className="pt-4 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between mt-auto">
