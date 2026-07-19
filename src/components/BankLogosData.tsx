@@ -84,6 +84,7 @@ export const INDIAN_BANKS = [
 ];
 
 export function getBankByPattern(input: string) {
+  if (!input) return undefined;
   const normalized = input.toLowerCase().trim();
   return INDIAN_BANKS.find(bank => 
     bank.aliases.some(alias => normalized.includes(alias)) || 
