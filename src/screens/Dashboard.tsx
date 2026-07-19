@@ -320,17 +320,23 @@ export default function Dashboard() {
   const { categories: appCategories } = useCategories();
 
   const handleSaveManual = async (txData?: any) => {
-    const currentAmount = txData?.amount || amount;
-    const currentType = normalizeType(txData?.type || type);
-    const currentSelectedAccountId = txData?.selectedAccountId || selectedAccountId;
-    const currentToAccountId = txData?.toAccountId || toAccountId;
-    const currentPaymentMethod = txData?.paymentMethod || paymentMethod;
-    const currentUpiApp = txData?.upiApp || upiApp;
-    const currentExpenseType = txData?.expenseType || expenseType;
-    const currentPartyName = txData?.party || partyName;
-    const currentNote = txData?.note || note;
-    const currentCategory = txData?.category || category;
-    const currentTransactionDate = txData?.transactionDate || transactionDate;
+    const isFromChat = !!txData;
+    const currentAmount = isFromChat ? txData.amount : amount;
+    const currentType = normalizeType(isFromChat ? txData.type : type);
+    const currentSelectedAccountId = isFromChat ? txData.selectedAccountId : selectedAccountId;
+    const currentToAccountId = isFromChat ? txData.toAccountId : toAccountId;
+    const currentPaymentMethod = isFromChat ? txData.paymentMethod : paymentMethod;
+    const currentUpiApp = isFromChat ? txData.upiApp : upiApp;
+    const currentExpenseType = isFromChat ? txData.expenseType : expenseType;
+    const currentPartyName = isFromChat ? txData.party : partyName;
+    const currentNote = isFromChat ? txData.note : note;
+    
+    let currentCategory = isFromChat ? txData.category : category;
+    if (!currentCategory || currentCategory.trim() === '') {
+      currentCategory = currentType === 'TRANSFER' ? 'Transfer' : 'Other';
+    }
+
+    const currentTransactionDate = isFromChat ? txData.transactionDate : transactionDate;
 
     setIsSaving(true);
     setStatus('idle');
