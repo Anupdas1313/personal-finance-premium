@@ -206,6 +206,7 @@ export default function Accounts() {
     setDueDate(account.dueDate ? account.dueDate.toString() : '');
     setEditingAccountId(account.id);
     setIsAdding(true);
+    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50);
   };
 
   const handleDelete = async (id: number) => {
@@ -632,10 +633,10 @@ export default function Accounts() {
                                     </div>
                                   </div>
                                   
-                                  <div className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
+                                  <div className="flex items-center gap-0.5">
 
-                                    <button onClick={() => handleEdit(account)} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-white/5 transition-all"><Pencil className="w-3.5 h-3.5" /></button>
-                                    <button onClick={() => handleDelete(account.id!)} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-red hover:bg-neutral-50 dark:hover:bg-white/5 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={(e) => { e.stopPropagation(); handleEdit(account); }} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-white/5 transition-all relative z-10"><Pencil className="w-3.5 h-3.5" /></button>
+                                    <button onClick={(e) => { e.stopPropagation(); handleDelete(account.id!); }} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-red hover:bg-neutral-50 dark:hover:bg-white/5 transition-all relative z-10"><Trash2 className="w-3.5 h-3.5" /></button>
                                   </div>
                                 </div>
 
