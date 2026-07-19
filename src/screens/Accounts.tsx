@@ -716,7 +716,7 @@ export default function Accounts() {
                                     >
                                       {formatAmount(currentBalance)}
                                     </p>
-                                    <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <div className="flex items-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                       <button onClick={(e) => { e.stopPropagation(); handleEdit(account); }} className="w-6 h-6 rounded-md flex items-center justify-center text-neutral-400 hover:text-brand-blue dark:hover:text-white transition-all relative z-10"><Pencil className="w-2.5 h-2.5" /></button>
                                       <button onClick={(e) => { e.stopPropagation(); handleDelete(account.id!); }} className="w-6 h-6 rounded-md flex items-center justify-center text-neutral-400 hover:text-brand-red transition-all relative z-10"><Trash2 className="w-2.5 h-2.5" /></button>
                                     </div>
