@@ -246,91 +246,85 @@ export default function Accounts() {
 
   return (
     <div className="space-y-10 pb-20">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1">
-        <div className="flex items-baseline gap-3 shrink-0">
-          <h1 className="text-3xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">Accounts</h1>
-          <p className="text-[8px] font-black text-neutral-400 uppercase tracking-widest hidden sm:block">Institutional Wealth</p>
-        </div>
-
-        <div className="flex-1 flex flex-wrap items-center gap-x-6 gap-y-2" onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
-          <div className="flex items-center gap-2 group">
-            <Landmark className="w-3.5 h-3.5 text-brand-blue dark:text-brand-cyan opacity-40 group-hover:opacity-100 transition-opacity" />
-            <div className="flex items-center gap-1.5">
-              <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Portfolio</span>
-              <p className={cn(
-                "text-sm font-heading font-black text-brand-blue dark:text-white tracking-tighter transition-all duration-300",
-                shouldBlur && "blur-[5px] select-none cursor-pointer"
-              )}>
-                {formatAmount(totalNetWorth)}
-              </p>
-            </div>
+      <div className="flex flex-col gap-6 px-1 mb-8">
+        {/* Title & Primary Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">Accounts</h1>
+            <p className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mt-0.5">Institutional Wealth</p>
           </div>
-
-          <div className="w-px h-3 bg-neutral-100 dark:bg-white/5 hidden lg:block" />
-
-          <div className="flex items-center gap-2 group">
-            <Wallet className="w-3.5 h-3.5 text-brand-green opacity-40 group-hover:opacity-100 transition-opacity" />
-            <div className="flex items-center gap-1.5">
-              <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Liquid</span>
-              <p className={cn(
-                "text-sm font-heading font-black text-brand-green tracking-tighter transition-all duration-300",
-                shouldBlur && "blur-[5px] select-none cursor-pointer"
-              )}>
-                {formatAmount(totalLiquid)}
-              </p>
+          
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative group min-w-[120px] sm:min-w-[160px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+              <input 
+                type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search..."
+                className="pl-8 pr-3 py-2 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 rounded-xl text-[10px] font-bold outline-none focus:ring-2 focus:ring-brand-blue/10 dark:focus:ring-white/5 transition-all w-full"
+              />
             </div>
-          </div>
-
-          <div className="w-px h-3 bg-neutral-100 dark:bg-white/5 hidden lg:block" />
-
-          <div className="flex items-center gap-2 group">
-            <CreditCard className="w-3.5 h-3.5 text-rose-500 opacity-40 group-hover:opacity-100 transition-opacity" />
-            <div className="flex items-center gap-1.5">
-              <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Liabilities</span>
-              <p className={cn(
-                "text-sm font-heading font-black text-rose-500 tracking-tighter transition-all duration-300",
-                shouldBlur && "blur-[5px] select-none cursor-pointer"
-              )}>
-                {formatAmount(totalLiabilities)}
-              </p>
-            </div>
+            <button
+              onClick={() => setIsTransferOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 text-brand-blue dark:text-white rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 transition-all font-bold uppercase tracking-wider text-[9px]"
+              title="Quick Transfer"
+            >
+              <ArrowRightLeft className="w-3.5 h-3.5 text-brand-green mr-0.5 shrink-0" />
+              <span className="hidden sm:inline">Transfer</span>
+            </button>
+            <button
+              onClick={() => setIsReorderOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 text-brand-blue dark:text-white rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 transition-all font-bold uppercase tracking-wider text-[9px]"
+              title="Arrange Accounts"
+            >
+              <ArrowUpDown className="w-3.5 h-3.5 text-brand-cyan mr-0.5 shrink-0" />
+              <span className="hidden sm:inline">Arrange</span>
+            </button>
+            <button
+              onClick={() => setIsAdding(!isAdding)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-brand-green text-white dark:text-brand-blue rounded-xl hover:brightness-110 active:scale-95 transition-all font-black uppercase tracking-widest text-[9px] shadow-lg shadow-brand-green/10"
+            >
+              {isAdding && !editingAccountId ? <Plus className="w-3 h-3 rotate-45" /> : <Plus className="w-3 h-3" />}
+              <span>{isAdding && !editingAccountId ? 'Close' : 'Add Account'}</span>
+            </button>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <div className="relative group">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-neutral-400" />
-            <input 
-              type="text" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter..."
-              className="pl-8 pr-3 py-2 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 rounded-xl text-[10px] font-bold outline-none focus:ring-2 focus:ring-brand-blue/10 dark:focus:ring-white/5 transition-all w-full md:w-32"
-            />
+        {/* Minimalist Stats Panel */}
+        <div 
+          onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}
+          className="grid grid-cols-3 gap-2 sm:gap-6 p-4 sm:p-5 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/5 rounded-2xl sm:rounded-3xl shadow-sm cursor-pointer hover:border-neutral-200 dark:hover:border-white/10 transition-all"
+        >
+          <div className="flex flex-col gap-0.5 sm:gap-1">
+            <span className="text-[8px] sm:text-[9px] font-black text-neutral-400 uppercase tracking-widest">Portfolio</span>
+            <p className={cn(
+              "text-sm sm:text-xl font-heading font-black text-brand-blue dark:text-white tracking-tighter transition-all duration-300",
+              shouldBlur && "blur-[5px] select-none"
+            )}>
+              {formatAmount(totalNetWorth)}
+            </p>
           </div>
-          <button
-            onClick={() => setIsTransferOpen(true)}
-            className="flex items-center gap-1 px-3 py-2 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 text-brand-blue dark:text-white rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 transition-all font-bold uppercase tracking-wider text-[9px]"
-            title="Quick Transfer"
-          >
-            <ArrowRightLeft className="w-3.5 h-3.5 text-brand-green mr-0.5 shrink-0" />
-            <span>Transfer</span>
-          </button>
-          <button
-            onClick={() => setIsReorderOpen(true)}
-            className="flex items-center gap-1 px-3 py-2 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 text-brand-blue dark:text-white rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 transition-all font-bold uppercase tracking-wider text-[9px]"
-            title="Arrange Accounts"
-          >
-            <ArrowUpDown className="w-3.5 h-3.5 text-brand-cyan mr-0.5 shrink-0" />
-            <span>Arrange</span>
-          </button>
-          <button
-            onClick={() => setIsAdding(!isAdding)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-brand-green text-white dark:text-brand-blue rounded-xl hover:brightness-110 active:scale-95 transition-all font-black uppercase tracking-widest text-[9px] shadow-lg shadow-brand-green/10 animate-fade-in"
-          >
-            {isAdding && !editingAccountId ? <Plus className="w-3 h-3 rotate-45" /> : <Plus className="w-3 h-3" />}
-            {isAdding && !editingAccountId ? 'Close' : 'Add Account'}
-          </button>
+          
+          <div className="flex flex-col gap-0.5 sm:gap-1 border-x border-neutral-100 dark:border-white/5 px-2 sm:px-6">
+            <span className="text-[8px] sm:text-[9px] font-black text-neutral-400 uppercase tracking-widest">Liquid</span>
+            <p className={cn(
+              "text-sm sm:text-xl font-heading font-black text-brand-green tracking-tighter transition-all duration-300",
+              shouldBlur && "blur-[5px] select-none"
+            )}>
+              {formatAmount(totalLiquid)}
+            </p>
+          </div>
+          
+          <div className="flex flex-col gap-0.5 sm:gap-1 pl-2 sm:pl-6">
+            <span className="text-[8px] sm:text-[9px] font-black text-neutral-400 uppercase tracking-widest">Liabilities</span>
+            <p className={cn(
+              "text-sm sm:text-xl font-heading font-black text-rose-500 tracking-tighter transition-all duration-300",
+              shouldBlur && "blur-[5px] select-none"
+            )}>
+              {formatAmount(totalLiabilities)}
+            </p>
+          </div>
         </div>
       </div>
 
