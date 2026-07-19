@@ -43,10 +43,6 @@ export default function Accounts() {
   const [isTransferOpen, setIsTransferOpen] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
-  const activeGroupedAccounts = useMemo(() => {
-    return Object.entries(groupedAccounts).filter(([_, list]) => list.length > 0);
-  }, [groupedAccounts]);
-
   const isSectionCollapsed = (type: string, index: number) => {
     if (collapsedSections[type] !== undefined) {
       return collapsedSections[type];
@@ -253,6 +249,10 @@ export default function Accounts() {
     }
     return sortedGroups;
   }, [accounts]);
+
+  const activeGroupedAccounts = useMemo(() => {
+    return Object.entries(groupedAccounts).filter(([_, list]) => list.length > 0);
+  }, [groupedAccounts]);
 
   const getGroupTitle = (type: string) => {
     switch(type) {
