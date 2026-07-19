@@ -321,12 +321,15 @@ const parseDate = (text: string): { date: string; confirmed: boolean } => {
   if (t.match(/\b(yesterday|kal|kal ka)\b/)) return { date: format(subDays(now, 1), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
   if (t.match(/\b(parso|day before yesterday)\b/)) return { date: format(subDays(now, 2), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
   if (t.match(/\b(tarso|narso)\b/)) return { date: format(subDays(now, 3), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
-  // N days/weeks/months ago
-  const daysAgo = t.match(/(\d+)\s+days?\s+ago/);
+  // N days/weeks/months ago or back (English & Hinglish)
+  const daysAgo = t.match(/(\d+)\s*(?:days?|din)\s*(?:ago|back|pehle)/);
   if (daysAgo) return { date: format(subDays(now, parseInt(daysAgo[1])), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
-  const weeksAgo = t.match(/(\d+)\s+weeks?\s+ago/);
+  const weeksAgo = t.match(/(\d+)\s*(?:weeks?|hafte)\s*(?:ago|back|pehle)/);
   if (weeksAgo) return { date: format(subWeeks(now, parseInt(weeksAgo[1])), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
-  // Hindi relative dates
+  const monthsAgo = t.match(/(\d+)\s*(?:months?|mahine)\s*(?:ago|back|pehle)/);
+  if (monthsAgo) return { date: format(subMonths(now, parseInt(monthsAgo[1])), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+
+  // Hindi & English relative periods
   if (t.match(/\b(pichle hafte|pichle week|last week)\b/)) return { date: format(subWeeks(now, 1), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
   if (t.match(/\b(pichle mahine|pichle month|last month)\b/)) {
     const d = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
@@ -337,11 +340,23 @@ const parseDate = (text: string): { date: string; confirmed: boolean } => {
     const monday = new Date(now); monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
     return { date: format(monday, "yyyy-MM-dd'T'HH:mm"), confirmed: true };
   }
-  // Last weekday
+  
+  // Weekday relative parsing (e.g. "last sunday", "on wednesday", "somvar pehle")
   const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  const hindiWeekdays = ['ravivar','somvar','mangalvar','budhvar','guruvar','shukravar','shanivar'];
   for (let i = 0; i < weekdays.length; i++) {
-    if (t.includes(`last ${weekdays[i]}`)) {
-      const diff = (now.getDay() - i + 7) % 7 || 7;
+    const w = weekdays[i];
+    const hw = hindiWeekdays[i];
+    const hasLast = t.match(new RegExp(`\\b(?:last|pichla|pichle)\\s*(?:${w}|${hw})\\b`, 'i'));
+    const hasWeekdayOnly = t.match(new RegExp(`\\b(?:on\\s+)?(?:${w}|${hw})\\b`, 'i'));
+    
+    if (hasLast || hasWeekdayOnly) {
+      let diff = now.getDay() - i;
+      if (diff < 0) {
+        diff += 7; // Go to last week's day
+      } else if (diff === 0 && hasLast) {
+        diff = 7; // "last Sunday" when today is Sunday means 7 days ago
+      }
       return { date: format(subDays(now, diff), "yyyy-MM-dd'T'HH:mm"), confirmed: true };
     }
   }
@@ -511,10 +526,10 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
 
   let type = '';
   // Hinglish-aware type detection
-  if (t.match(/\b(received|got|salary|income|credit|added|deposit|inflow|credited|mila|aaya|jama|milgaya|mil gaya)\b/)) type = 'CREDIT';
-  else if (t.match(/\b(transfer(?:red)?\s+(?:to|from|\d)|moved?\s+(?:to|from|\d)|shifted\s+(?:to|from|\d)|bheja)\b/)) type = 'TRANSFER';
-  else if (t.match(/\b(paid|spent|bought|expense|debit|gave|withdrawn?|purchased?|kharcha|diya|de diya|kharch|nikala|nikaal|udhar\s+diya|liya|mangaya|order)\b/)) type = 'DEBIT';
-  else if (t.match(/\bsent?\s+(?:${currency}|rs|\d|money|amount|paisa|paise|rupaiye)/)) type = 'TRANSFER';
+  if (t.match(/\b(received|got|salary|income|credit|added|deposit|inflow|credited|mila|aaya|jama|milgaya|mil gaya|aaye|recieved)\b/)) type = 'CREDIT';
+  else if (t.match(/\b(transfer(?:red)?\s+(?:to|from|\d)|moved?\s+(?:to|from|\d)|shifted\s+(?:to|from|\d)|bheja|transfer\s*kiya|bhej\s*diya)\b/)) type = 'TRANSFER';
+  else if (t.match(/\b(paid|spent|bought|expense|debit|gave|withdrawn?|purchased?|kharcha|diya|de diya|kharch|nikala|nikaal|udhar\s+diya|liya|mangaya|order|pay\s*kiya|spend\s*kiya|kharida|khareeda)\b/)) type = 'DEBIT';
+  else if (t.match(/\bsent?\s+(?:[$₹€£]|rs|\d|money|amount|paisa|paise|rupaiye)/)) type = 'TRANSFER';
   // Hinglish refund/return
   else if (t.match(/\b(refund|wapas\s+(?:mila|aaya)|return|cashback)\b/)) type = 'CREDIT';
 
@@ -556,13 +571,14 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
   // Hinglish category keywords
   if (!category) {
     const hindiCategories: Record<string, string> = {
-      khana: 'Food', nashta: 'Food', 'chai pani': 'Food', 'chai-pani': 'Food',
-      doodh: 'Groceries', sabzi: 'Groceries', sabji: 'Groceries', atta: 'Groceries', chawal: 'Groceries', dal: 'Groceries', ration: 'Groceries',
-      bijli: 'Bills', 'bijli ka bill': 'Bills', 'paani ka bill': 'Bills', 'gas ka bill': 'Bills', bharti: 'Bills',
-      dawai: 'Health', dawa: 'Health', ilaaj: 'Health', 'doctor ki fees': 'Health',
-      kiraya: 'Transport', 'auto ka kiraya': 'Transport', gaadi: 'Transport', rick: 'Transport',
-      padhai: 'Education', 'school ki fees': 'Education', kitaab: 'Education', 'coaching fees': 'Education',
-      chanda: 'Donations', daan: 'Donations', mandir: 'Donations',
+      khana: 'Food', nashta: 'Food', 'chai pani': 'Food', 'chai-pani': 'Food', chai: 'Food', coffee: 'Food', tea: 'Food', restaurant: 'Food', hotel: 'Food',
+      doodh: 'Groceries', sabzi: 'Groceries', sabji: 'Groceries', atta: 'Groceries', chawal: 'Groceries', dal: 'Groceries', ration: 'Groceries', milk: 'Groceries', egg: 'Groceries', eggs: 'Groceries', bread: 'Groceries', chicken: 'Groceries', vegetables: 'Groceries', grocery: 'Groceries',
+      bijli: 'Bills', 'bijli ka bill': 'Bills', 'paani ka bill': 'Bills', 'gas ka bill': 'Bills', bharti: 'Bills', mobile: 'Bills', recharge: 'Bills', wifi: 'Bills', broadband: 'Bills', utility: 'Bills', utilities: 'Bills',
+      dawai: 'Health', dawa: 'Health', ilaaj: 'Health', 'doctor ki fees': 'Health', medicine: 'Health', gym: 'Health', hospital: 'Health', doctor: 'Health', clinic: 'Health', fitness: 'Health',
+      kiraya: 'Transport', 'auto ka kiraya': 'Transport', gaadi: 'Transport', rick: 'Transport', cab: 'Transport', taxi: 'Transport', metro: 'Transport', bus: 'Transport', auto: 'Transport', petrol: 'Transport', diesel: 'Transport', fuel: 'Transport', train: 'Transport', ticket: 'Transport', fare: 'Transport', travel: 'Transport',
+      padhai: 'Education', 'school ki fees': 'Education', kitaab: 'Education', 'coaching fees': 'Education', school: 'Education', books: 'Education', tuition: 'Education', course: 'Education', fees: 'Education',
+      chanda: 'Donations', daan: 'Donations', mandir: 'Donations', masjid: 'Donations', charity: 'Donations', donation: 'Donations',
+      kapde: 'Shopping', kapda: 'Shopping', joota: 'Shopping', joote: 'Shopping', shopping: 'Shopping', mall: 'Shopping', shirt: 'Shopping', pant: 'Shopping', shoe: 'Shopping', shoes: 'Shopping', dress: 'Shopping', snkr: 'Shopping', sneakers: 'Shopping',
     };
     for (const [hindi, cat] of Object.entries(hindiCategories)) {
       if (t.includes(hindi)) { category = cat; tag = tag || 'Personal'; break; }
@@ -583,7 +599,7 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
 
   // Aggressive payee fallback
   if (!parsedPayee && type !== 'TRANSFER') {
-     const simpleMatch = text.match(/(?:${currency}|rs)?\s*\d+(?:\.\d+)?(?:k)?\s+([A-Za-z]+)/i);
+     const simpleMatch = text.match(/(?:[$₹€£]|rs)?\s*\d+(?:\.\d+)?(?:k)?\s+([A-Za-z]+)/i);
      if (simpleMatch) {
        const candidate = simpleMatch[1].trim().toLowerCase();
        const skipWords = ['and', 'for', 'to', 'from', 'via', 'using', 'in', 'on', 'spent', 'paid', 'credit', 'debit', 'cash', 'upi', 'gpay', 'today', 'yesterday'];
