@@ -633,15 +633,17 @@ export default function Accounts() {
                                   </div>
                                   
                                   <div className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
-                                    <button 
-                                      onClick={() => {
-                                        navigate(`/?add=true&accountId=${account.id}`);
-                                      }} 
-                                      className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-green hover:bg-neutral-50 dark:hover:bg-white/5 transition-all"
-                                      title="Quick Transaction"
-                                    >
-                                      <Plus className="w-4 h-4" />
-                                    </button>
+                                    {isCc && (
+                                      <button 
+                                        onClick={() => {
+                                          navigate(`/?add=true&accountId=${account.id}`);
+                                        }} 
+                                        className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-green hover:bg-neutral-50 dark:hover:bg-white/5 transition-all"
+                                        title="Quick Transaction"
+                                      >
+                                        <Plus className="w-4 h-4" />
+                                      </button>
+                                    )}
                                     <button onClick={() => handleEdit(account)} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-white/5 transition-all"><Pencil className="w-3.5 h-3.5" /></button>
                                     <button onClick={() => handleDelete(account.id!)} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-red hover:bg-neutral-50 dark:hover:bg-white/5 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
                                   </div>
