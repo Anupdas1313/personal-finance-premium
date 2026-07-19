@@ -8,7 +8,7 @@ import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
 import { format, startOfDay, parseISO, endOfMonth, startOfMonth, subMonths, endOfDay, startOfWeek, endOfWeek, startOfYear, endOfYear, addMonths, subWeeks, addWeeks, subDays, addDays, subYears, addYears } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Reorder } from 'framer-motion';
+import { Reorder, motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency, useCurrencyFormatter } from '../hooks/useCurrency';
@@ -41,6 +41,25 @@ export default function Accounts() {
   const [dueDate, setDueDate] = useState('');
   const [isReorderOpen, setIsReorderOpen] = useState(false);
   const [isTransferOpen, setIsTransferOpen] = useState(false);
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+
+  const activeGroupedAccounts = useMemo(() => {
+    return Object.entries(groupedAccounts).filter(([_, list]) => list.length > 0);
+  }, [groupedAccounts]);
+
+  const isSectionCollapsed = (type: string, index: number) => {
+    if (collapsedSections[type] !== undefined) {
+      return collapsedSections[type];
+    }
+    return index !== 0;
+  };
+
+  const toggleSection = (type: string, index: number) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [type]: !isSectionCollapsed(type, index)
+    }));
+  };
   
   const getDaysLeftToPay = (dueDay: number) => {
     const now = new Date();
@@ -521,141 +540,168 @@ export default function Accounts() {
         </div>
       )}
 
-      <div className="space-y-10">
-        {Object.entries(groupedAccounts).map(([type, accList]) => {
-          if (accList.length === 0) return null;
+      <div className="space-y-6">
+        {activeGroupedAccounts.map(([type, accList], idx) => {
           const { title, icon, color } = getGroupTitle(type);
           const total = getGroupTotal(accList);
+          const isCollapsed = isSectionCollapsed(type, idx);
           
           return (
-            <div key={type} className="space-y-6">
-              <div className="flex items-center justify-between px-1">
+            <div key={type} className="space-y-4 bg-[#F9FBFF] dark:bg-white/[0.01] p-4 sm:p-5 rounded-[28px] border border-brand-blue/5 dark:border-white/5 shadow-sm">
+              {/* Clickable Header Card */}
+              <div 
+                onClick={() => toggleSection(type, idx)}
+                className="flex items-center justify-between cursor-pointer select-none"
+              >
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-2xl bg-white dark:bg-[#111111] border border-neutral-100 flex items-center justify-center shadow-sm ${color}`}>{icon}</div>
+                  <div className={`w-10 h-10 rounded-2xl bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 flex items-center justify-center shadow-sm ${color}`}>{icon}</div>
                   <div>
                     <h2 className="text-sm font-heading font-black text-brand-blue dark:text-white uppercase tracking-tight leading-none mb-1">{title}</h2>
                     <span className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em]">{accList.length} Accounts</span>
                   </div>
                 </div>
-                <div className="text-right">
-                   <p className="text-[8px] font-black text-neutral-400 uppercase tracking-widest mb-0.5">Total</p>
-                   <p className="text-lg font-heading font-black text-brand-blue dark:text-white tracking-tighter">{currency}{total.toLocaleString('en-IN')}</p>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                     <p className="text-[8px] font-black text-neutral-400 uppercase tracking-widest mb-0.5">Total</p>
+                     <p className="text-sm font-heading font-black text-brand-blue dark:text-white tracking-tighter">{currency}{total.toLocaleString('en-IN')}</p>
+                  </div>
+                  {/* Toggle Button */}
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSection(type, idx);
+                    }}
+                    className="w-8 h-8 rounded-xl bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] transition-transform duration-200 shadow-sm"
+                    style={{ transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)' }}
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...accList]
-                  .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
-                  .filter(a => searchQuery === '' || a.bankName.toLowerCase().includes(searchQuery.toLowerCase()) || a.accountLast4.includes(searchQuery))
-                  .map(account => {
-                    const info = accountBreakdown[account.id!];
-                    const currentBalance = info?.currentBalance || 0;
-                    const incomeToExpenseRatio = info ? (info.inflow > 0 ? Math.min((info.outflow / info.inflow) * 100, 100) : (info.outflow > 0 ? 100 : 0)) : 0;
-                    
-                    const isBank = account.type === 'BANK';
-                    const isCash = account.type === 'CASH';
-                    const isCc = account.type === 'CREDIT_CARD';
-                    
-                    return (
-                      <div 
-                        key={account.id} 
-                        onClick={() => setSelectedAccountId(account.id!)} 
-                        className="group relative bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm hover:shadow-md hover:border-brand-green/20 dark:hover:border-white/10 transition-all cursor-pointer overflow-hidden flex flex-col"
-                      >
-                        <div className="p-6 flex flex-col flex-1">
-                          <div className="flex justify-between items-start mb-6">
-                            <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 bg-neutral-50 dark:bg-white/5 rounded-[20px] flex items-center justify-center p-2.5 border border-neutral-100 dark:border-white/5 shadow-sm shrink-0">
-                                <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
-                              </div>
-                              <div className="min-w-0">
-                                <h3 className="text-[13px] font-heading font-black text-brand-blue dark:text-white tracking-tight uppercase truncate">{account.bankName}</h3>
-                                <p className="font-mono text-[9px] tracking-wider text-neutral-400 dark:text-[#A0A0A0] font-semibold mt-0.5">
-                                  {isCash ? 'CASH PORTFOLIO' : `••••   ${account.accountLast4}`}
-                                </p>
-                                {isCc && account.dueDate && (() => {
-                                  const daysLeft = getDaysLeftToPay(account.dueDate);
-                                  const isUrgent = daysLeft <= 5;
-                                  return (
-                                    <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider mt-1 ${
-                                      isUrgent 
-                                        ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' 
-                                        : 'bg-neutral-100 dark:bg-white/5 text-neutral-400 dark:text-neutral-500'
-                                    }`}>
-                                      <span>Due in {daysLeft} {daysLeft === 1 ? 'day' : 'days'}</span>
-                                    </div>
-                                  );
-                                })()}
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
-                              <button 
-                                onClick={() => {
-                                  navigate(`/?add=true&accountId=${account.id}`);
-                                }} 
-                                className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-green hover:bg-neutral-50 dark:hover:bg-white/5 transition-all"
-                                title="Quick Transaction"
-                              >
-                                <Plus className="w-4 h-4" />
-                              </button>
-                              <button onClick={() => handleEdit(account)} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-white/5 transition-all"><Pencil className="w-3.5 h-3.5" /></button>
-                              <button onClick={() => handleDelete(account.id!)} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-red hover:bg-neutral-50 dark:hover:bg-white/5 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
-                            </div>
-                          </div>
-
-                          <div className="mb-6">
-                            <p className="text-[9px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-widest mb-1">
-                              {isCc ? 'Outstanding Balance' : 'Account Balance'}
-                            </p>
-                            <p 
-                              className={cn(
-                                "text-3xl font-heading font-black tracking-tighter transition-all duration-300",
-                                currentBalance >= 0 ? (isCc ? 'text-brand-blue dark:text-white' : 'text-brand-green') : 'text-brand-red',
-                                shouldBlur && "blur-[7px] select-none cursor-pointer"
-                              )}
-                              onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}
+              {/* Collapsible Accounts List */}
+              <AnimatePresence initial={false}>
+                {!isCollapsed && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2, ease: 'easeInOut' }}
+                    className="overflow-hidden"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-3 pb-1">
+                      {[...accList]
+                        .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                        .filter(a => searchQuery === '' || a.bankName.toLowerCase().includes(searchQuery.toLowerCase()) || a.accountLast4.includes(searchQuery))
+                        .map(account => {
+                          const info = accountBreakdown[account.id!];
+                          const currentBalance = info?.currentBalance || 0;
+                          const isCash = account.type === 'CASH';
+                          const isCc = account.type === 'CREDIT_CARD';
+                          
+                          return (
+                            <div 
+                              key={account.id} 
+                              onClick={() => setSelectedAccountId(account.id!)} 
+                              className="group relative bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm hover:shadow-md hover:border-brand-green/20 dark:hover:border-white/10 transition-all cursor-pointer overflow-hidden flex flex-col"
                             >
-                              {formatAmount(currentBalance)}
-                            </p>
-                            {isCc && account.creditLimit ? (() => {
-                              const used = Math.abs(currentBalance);
-                              const limit = account.creditLimit;
-                              return (
-                                <div className="space-y-1 mt-1">
-                                  <div className="flex justify-between text-[7px] font-bold text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-wider" onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
-                                    <span className={cn(shouldBlur && "blur-[4px] select-none")}>Used: {formatAmount(used)}</span>
-                                    <span className={cn(shouldBlur && "blur-[4px] select-none")}>Limit: {formatAmount(limit)}</span>
+                              <div className="p-6 flex flex-col flex-1">
+                                <div className="flex justify-between items-start mb-6">
+                                  <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-neutral-50 dark:bg-white/5 rounded-[20px] flex items-center justify-center p-2.5 border border-neutral-100 dark:border-white/5 shadow-sm shrink-0">
+                                      <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <h3 className="text-[13px] font-heading font-black text-brand-blue dark:text-white tracking-tight uppercase truncate">{account.bankName}</h3>
+                                      <p className="font-mono text-[9px] tracking-wider text-neutral-400 dark:text-[#A0A0A0] font-semibold mt-0.5">
+                                        {isCash ? 'CASH PORTFOLIO' : `••••   ${account.accountLast4}`}
+                                      </p>
+                                      {isCc && account.dueDate && (() => {
+                                        const daysLeft = getDaysLeftToPay(account.dueDate);
+                                        const isUrgent = daysLeft <= 5;
+                                        return (
+                                          <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider mt-1 ${
+                                            isUrgent 
+                                              ? 'bg-rose-50/10 text-rose-500 border border-rose-500/20' 
+                                              : 'bg-neutral-100 dark:bg-white/5 text-neutral-400 dark:text-neutral-500'
+                                          }`}>
+                                            <span>Due in {daysLeft} {daysLeft === 1 ? 'day' : 'days'}</span>
+                                          </div>
+                                        );
+                                      })()}
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
+                                    <button 
+                                      onClick={() => {
+                                        navigate(`/?add=true&accountId=${account.id}`);
+                                      }} 
+                                      className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-green hover:bg-neutral-50 dark:hover:bg-white/5 transition-all"
+                                      title="Quick Transaction"
+                                    >
+                                      <Plus className="w-4 h-4" />
+                                    </button>
+                                    <button onClick={() => handleEdit(account)} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-white/5 transition-all"><Pencil className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => handleDelete(account.id!)} className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-[#A0A0A0] hover:text-brand-red hover:bg-neutral-50 dark:hover:bg-white/5 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
                                   </div>
                                 </div>
-                              );
-                            })() : null}
-                          </div>
 
-                          <div className="pt-4 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between mt-auto">
-                            <div className="flex items-center gap-4" onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
-                              <div className="flex flex-col">
-                                <span className="text-[7px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase">Inflow</span>
-                                <span className={cn("text-[10px] font-black text-emerald-500 transition-all duration-300", shouldBlur && "blur-[4px] select-none")}>{formatAmount(info?.inflow || 0)}</span>
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="text-[7px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase">Outflow</span>
-                                <span className={cn("text-[10px] font-black text-rose-500 transition-all duration-300", shouldBlur && "blur-[4px] select-none")}>{formatAmount(info?.outflow || 0)}</span>
+                                <div className="mb-6">
+                                  <p className="text-[9px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-widest mb-1">
+                                    {isCc ? 'Outstanding Balance' : 'Account Balance'}
+                                  </p>
+                                  <p 
+                                    className={cn(
+                                      "text-3xl font-heading font-black tracking-tighter transition-all duration-300",
+                                      currentBalance >= 0 ? (isCc ? 'text-brand-blue dark:text-white' : 'text-brand-green') : 'text-brand-red',
+                                      shouldBlur && "blur-[7px] select-none cursor-pointer"
+                                    )}
+                                    onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}
+                                  >
+                                    {formatAmount(currentBalance)}
+                                  </p>
+                                  {isCc && account.creditLimit ? (() => {
+                                    const used = Math.abs(currentBalance);
+                                    const limit = account.creditLimit;
+                                    return (
+                                      <div className="space-y-1 mt-1">
+                                        <div className="flex justify-between text-[7px] font-bold text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-wider" onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
+                                          <span className={cn(shouldBlur && "blur-[4px] select-none")}>Used: {formatAmount(used)}</span>
+                                          <span className={cn(shouldBlur && "blur-[4px] select-none")}>Limit: {formatAmount(limit)}</span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })() : null}
+                                </div>
+
+                                <div className="pt-4 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between mt-auto">
+                                  <div className="flex items-center gap-4" onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
+                                    <div className="flex flex-col">
+                                      <span className="text-[7px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase">Inflow</span>
+                                      <span className={cn("text-[10px] font-black text-emerald-500 transition-all duration-300", shouldBlur && "blur-[4px] select-none")}>{formatAmount(info?.inflow || 0)}</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                      <span className="text-[7px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase">Outflow</span>
+                                      <span className={cn("text-[10px] font-black text-rose-500 transition-all duration-300", shouldBlur && "blur-[4px] select-none")}>{formatAmount(info?.outflow || 0)}</span>
+                                    </div>
+                                  </div>
+                                  <button 
+                                    onClick={e => { e.stopPropagation(); setSelectedAccountId(account.id!); }} 
+                                    className="w-9 h-9 rounded-2xl bg-brand-green dark:bg-brand-green/20 text-white dark:text-brand-green flex items-center justify-center transition-all hover:brightness-105"
+                                    title="Statement History"
+                                  >
+                                    <History className="w-4 h-4" />
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                            <button 
-                              onClick={e => { e.stopPropagation(); setSelectedAccountId(account.id!); }} 
-                              className="w-9 h-9 rounded-2xl bg-brand-green dark:bg-brand-green/20 text-white dark:text-brand-green flex items-center justify-center transition-all hover:brightness-105"
-                              title="Statement History"
-                            >
-                              <History className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
+                          );
+                        })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           );
         })}
