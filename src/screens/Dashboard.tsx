@@ -234,12 +234,7 @@ export default function Dashboard() {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    // Only reset date for NEW transactions, not when editing existing ones
-    if (isAddingManual && !editingTransactionId) {
-      setTransactionDate(new Date().toISOString().slice(0, 16));
-    }
-  }, [isAddingManual, editingTransactionId]);
+
 
   const closeMenu = () => {
     setIsAddingManual(false);
@@ -265,6 +260,13 @@ export default function Dashboard() {
   const [expenseType, setExpenseType] = useState<string>('');
   const [entryMode, setEntryMode] = useState<'MANUAL' | 'CHAT'>('CHAT');
   const [editingTransactionId, setEditingTransactionId] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Only reset date for NEW transactions, not when editing existing ones
+    if (isAddingManual && !editingTransactionId) {
+      setTransactionDate(new Date().toISOString().slice(0, 16));
+    }
+  }, [isAddingManual, editingTransactionId]);
 
   const currentMonthStr = format(new Date(transactionDate), 'yyyy-MM');
   const activeMonthBudgets = useLiveQuery(() => db.budgets.where('month').equals(currentMonthStr).toArray(), [currentMonthStr, user?.uid]) || [];

@@ -26,7 +26,7 @@ export const BankLogo: React.FC<BankLogoProps> = ({ bankName, className = "w-5 h
 
   return (
     <div className={`${className} bg-black/20 dark:bg-white/10 rounded-lg flex items-center justify-center text-[11px] font-bold text-[#717171] dark:text-[#A0A0A5] uppercase tracking-wider`}>
-      {bankName ? bankName.substring(0, 2) : <Landmark className="w-2/3 h-2/3" />}
+      {bankName ? String(bankName).substring(0, 2) : <Landmark className="w-2/3 h-2/3" />}
     </div>
   );
 };
