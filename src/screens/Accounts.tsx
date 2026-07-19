@@ -676,7 +676,7 @@ export default function Accounts() {
                               onClick={() => setSelectedAccountId(account.id!)} 
                               className="group relative bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm hover:shadow-md hover:border-brand-green/20 dark:hover:border-white/10 transition-all cursor-pointer overflow-hidden flex flex-col"
                             >
-                              <div className="p-6 flex flex-col flex-1">
+                              <div className="p-5 flex flex-col flex-1">
                                 <div className="flex justify-between items-start mb-6">
                                   <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 bg-neutral-50 dark:bg-white/5 rounded-[20px] flex items-center justify-center p-2.5 border border-neutral-100 dark:border-white/5 shadow-sm shrink-0">
