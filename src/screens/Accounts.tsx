@@ -47,7 +47,7 @@ export default function Accounts() {
     if (collapsedSections[type] !== undefined) {
       return collapsedSections[type];
     }
-    return index !== 0;
+    return true;
   };
 
   const toggleSection = (type: string, index: number) => {
