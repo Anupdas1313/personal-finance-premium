@@ -21,11 +21,10 @@ export const CATEGORY_ICONS: Record<string, string> = {
 };
 
 export const UPI_APPS_LIST = [
-  'Google Pay (GPay)',
   'PhonePe',
   'Paytm',
-  'BHIM UPI',
-  'CRED'
+  'Google Pay (GPay)',
+  'Amazon Pay'
 ];
 
 export const UPI_APP_ICONS: Record<string, { icon: string; bg: string; color: string }> = {
