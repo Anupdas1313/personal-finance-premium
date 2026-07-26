@@ -123,6 +123,7 @@ const TABS = [
   { key: 'accounts', label: 'Accounts', icon: <Layers className="w-3.5 h-3.5" /> },
   { key: 'methods', label: 'Methods', icon: <CreditCard className="w-3.5 h-3.5" /> },
   { key: 'payees', label: 'Payees', icon: <Store className="w-3.5 h-3.5" /> },
+  { key: 'daily', label: 'Daily Avg', icon: <Zap className="w-3.5 h-3.5" /> },
 ] as const;
 
 type TabKey = typeof TABS[number]['key'];
@@ -224,13 +225,14 @@ function SummaryContent() {
   }, [totalExpense, currentMonth, monthStart]);
 
   // ── Aggregations ──────────────────────────────────────────────────────────
-  const { pieData, tagData, accData, partyData, payMethodData } = useMemo(() => {
+  const { pieData, tagData, accData, partyData, payMethodData, dailySpendData } = useMemo(() => {
     try {
       const byCategory: Record<string, number> = {};
       const byTag: Record<string, number> = {};
       const byAccount: Record<string, number> = {};
       const byParty: Record<string, number> = {};
       const byPayMethod: Record<string, number> = {};
+      const byDay: Record<string, { dateStr: string; dayName: string; value: number; count: number }> = {};
 
       for (const tx of expenses) {
         const amt = safeNum(tx.amount);
@@ -240,10 +242,28 @@ function SummaryContent() {
         byAccount[accName] = (byAccount[accName] || 0) + amt;
         if (tx.party && typeof tx.party === 'string') { const p = tx.party.trim(); if (p) byParty[p] = (byParty[p] || 0) + amt; }
         if (tx.paymentMethod) byPayMethod[tx.paymentMethod] = (byPayMethod[tx.paymentMethod] || 0) + amt;
+
+        // Daily breakdown
+        const txDate = new Date(tx.dateTime);
+        const dayKey = format(txDate, 'yyyy-MM-dd');
+        if (!byDay[dayKey]) {
+          byDay[dayKey] = {
+            dateStr: format(txDate, 'dd MMM (EEE)'),
+            dayName: format(txDate, 'EEE, dd MMM'),
+            value: 0,
+            count: 0
+          };
+        }
+        byDay[dayKey].value += amt;
+        byDay[dayKey].count += 1;
       }
 
       const toSorted = (obj: Record<string, number>) =>
         Object.entries(obj).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+
+      const dailySorted = Object.entries(byDay)
+        .map(([dayKey, data]) => ({ name: data.dayName, value: data.value, dateKey: dayKey, count: data.count }))
+        .sort((a, b) => b.dateKey.localeCompare(a.dateKey));
 
       return {
         pieData: toSorted(byCategory),
@@ -251,9 +271,10 @@ function SummaryContent() {
         accData: toSorted(byAccount),
         partyData: toSorted(byParty).slice(0, 8),
         payMethodData: toSorted(byPayMethod),
+        dailySpendData: dailySorted,
       };
     } catch {
-      return { pieData: [], tagData: [], accData: [], partyData: [], payMethodData: [] };
+      return { pieData: [], tagData: [], accData: [], partyData: [], payMethodData: [], dailySpendData: [] };
     }
   }, [expenses, accounts]);
 
@@ -458,6 +479,60 @@ function SummaryContent() {
             })}
           </div>
         ) : <EmptyState icon={<Store className="w-6 h-6 text-neutral-400" />} msg="No payee data this month" />;
+
+      case 'daily':
+        const maxDaily = dailySpendData.reduce((m, d) => Math.max(m, d.value), 0);
+        return dailySpendData.length > 0 ? (
+          <div className="space-y-4">
+            {/* Daily Avg Header Banner */}
+            <div className="p-4 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent rounded-2xl border border-amber-500/20 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center text-amber-500">
+                  <Zap className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-medium text-amber-600 dark:text-amber-400">Average Daily Spend</p>
+                  <p className="text-lg font-bold text-brand-blue dark:text-white tracking-tight">{fmt(Math.round(avgDailySpend))} <span className="text-[10px] font-normal text-neutral-400">/ day</span></p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[9px] font-medium text-neutral-400">Active Days</p>
+                <p className="text-sm font-bold text-brand-blue dark:text-white">{dailySpendData.length} days</p>
+              </div>
+            </div>
+
+            {/* Daily Breakdown Rows */}
+            <div className="space-y-2">
+              {dailySpendData.map((d) => {
+                const barPct = maxDaily > 0 ? (d.value / maxDaily) * 100 : 0;
+                return (
+                  <div
+                    key={d.dateKey}
+                    onClick={() => setSelectedDetail({ type: 'daily', name: d.dateKey })}
+                    className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-white/5 border border-neutral-100 dark:border-white/5 flex flex-col items-center justify-center shrink-0">
+                      <span className="text-[9px] font-bold text-amber-500 leading-none">{d.name.split(',')[0]}</span>
+                      <span className="text-[10px] font-bold text-brand-blue dark:text-white leading-none mt-0.5">{d.name.split(',')[1]?.trim().split(' ')[0]}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-center mb-1">
+                        <p className="text-xs font-semibold text-brand-blue dark:text-white truncate">{d.name}</p>
+                        <span className="text-[9px] font-medium text-neutral-400">{d.count} {d.count === 1 ? 'tx' : 'txs'}</span>
+                      </div>
+                      <div className="w-full bg-neutral-100 dark:bg-white/5 rounded-full h-1.5 overflow-hidden">
+                        <div className="h-1.5 rounded-full bg-amber-500 transition-all duration-500" style={{ width: `${Math.min(barPct, 100)}%` }} />
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs font-bold text-rose-500">{fmt(d.value)}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : <EmptyState icon={<Zap className="w-6 h-6 text-neutral-400" />} msg="No daily spending data this month" />;
     }
   };
 
@@ -508,59 +583,28 @@ function SummaryContent() {
         </div>
       </div>
 
-      {/* ── HERO STATS CARD ── */}
-      <div className="bg-white dark:bg-[#111111] rounded-[24px] p-4 shadow-sm border border-neutral-100 dark:border-white/5 relative overflow-hidden">
-        <div className="relative z-10 grid grid-cols-3 gap-3">
+      {/* ── HERO STATS CARD (Compact & Sleek) ── */}
+      <div className="bg-white dark:bg-[#111111] rounded-[20px] p-2.5 shadow-sm border border-neutral-100 dark:border-white/5 relative overflow-hidden">
+        <div className="grid grid-cols-3 gap-2 text-center items-center">
           {/* Income */}
-          <div className="text-center">
-            <p className="text-neutral-400 text-[8px] font-bold uppercase tracking-widest mb-1">Income</p>
-            <p className="text-emerald-600 dark:text-emerald-400 font-heading font-black text-sm tracking-tight leading-none">{fmt(totalIncome)}</p>
-            {incomeChangePct !== null && (
-              <span className={cn('inline-flex items-center gap-0.5 text-[8px] font-bold mt-1', incomeChangePct >= 0 ? 'text-emerald-500' : 'text-rose-500')}>
-                {incomeChangePct >= 0 ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
-                {Math.abs(Math.round(incomeChangePct))}%
-              </span>
-            )}
+          <div>
+            <p className="text-neutral-400 text-[9px] font-medium mb-0.5">Income</p>
+            <p className="text-emerald-600 dark:text-emerald-400 font-bold text-xs tracking-tight">{fmt(totalIncome)}</p>
           </div>
           {/* Spent */}
-          <div className="text-center border-x border-neutral-100 dark:border-white/5">
-            <p className="text-neutral-400 text-[8px] font-bold uppercase tracking-widest mb-1">Spent</p>
-            <p className="text-rose-600 dark:text-rose-400 font-heading font-black text-sm tracking-tight leading-none">{fmt(totalExpense)}</p>
-            {expenseChangePct !== null && (
-              <span className={cn('inline-flex items-center gap-0.5 text-[8px] font-bold mt-1', expenseChangePct <= 0 ? 'text-emerald-500' : 'text-rose-500')}>
-                {expenseChangePct <= 0 ? <TrendingDown className="w-2.5 h-2.5" /> : <TrendingUp className="w-2.5 h-2.5" />}
-                {Math.abs(Math.round(expenseChangePct))}%
-              </span>
-            )}
+          <div className="border-x border-neutral-100 dark:border-white/5 px-1">
+            <p className="text-neutral-400 text-[9px] font-medium mb-0.5">Spent</p>
+            <p className="text-rose-600 dark:text-rose-400 font-bold text-xs tracking-tight">{fmt(totalExpense)}</p>
           </div>
           {/* Saved */}
-          <div className="text-center">
-            <p className="text-neutral-400 text-[8px] font-bold uppercase tracking-widest mb-1">Saved</p>
-            <p className={cn('font-heading font-black text-sm tracking-tight leading-none', savings >= 0 ? 'text-brand-blue dark:text-brand-cyan' : 'text-rose-500')}>
+          <div>
+            <p className="text-neutral-400 text-[9px] font-medium mb-0.5">Saved</p>
+            <p className={cn('font-bold text-xs tracking-tight', savings >= 0 ? 'text-brand-blue dark:text-brand-cyan' : 'text-rose-500')}>
               {savings >= 0 ? fmt(savings) : `-${fmt(Math.abs(savings))}`}
             </p>
-            {savingsRate !== 0 && (
-              <span className="text-[8px] font-bold text-neutral-400 mt-1 inline-block">
-                {savingsRate}% rate
-              </span>
-            )}
           </div>
         </div>
       </div>
-
-      {/* ── AVG DAILY SPEND PILL ── */}
-      {totalExpense > 0 && (
-        <div className="flex justify-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#111111] rounded-full shadow-sm border border-neutral-100 dark:border-white/5">
-            <Zap className="w-3.5 h-3.5 text-amber-500" />
-            <span className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400">Avg Daily Spend</span>
-            <span className="text-xs font-heading font-black text-brand-blue dark:text-white tracking-tight">
-              {fmt(Math.round(avgDailySpend))}
-            </span>
-            <span className="text-[9px] font-bold text-neutral-400">/day</span>
-          </div>
-        </div>
-      )}
 
       {/* ── TAB BAR ── */}
       <div className="flex gap-1.5 overflow-x-auto scrollbar-hide no-scrollbar pb-1 -mx-1 px-1">
@@ -599,6 +643,7 @@ function SummaryContent() {
             }
             if (selectedDetail.type === 'methods') return (tx as any).paymentMethod === selectedDetail.name;
             if (selectedDetail.type === 'payees') return tx.party && tx.party.trim() === selectedDetail.name;
+            if (selectedDetail.type === 'daily') return format(new Date(tx.dateTime), 'yyyy-MM-dd') === selectedDetail.name;
             return false;
           });
 
