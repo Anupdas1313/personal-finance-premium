@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../models/db';
 import { useCurrency } from '../hooks/useCurrency';
-import { ArrowLeft, Trash2, ArrowRight, ArrowLeftRight, Landmark, Wallet, CreditCard } from 'lucide-react';
+import { ArrowLeft, Trash2, Landmark, Wallet, CreditCard, ArrowLeftRight } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function TransferLogs() {
@@ -37,13 +37,13 @@ export default function TransferLogs() {
   };
 
   const getAccountIcon = (type?: string) => {
-    if (type === 'CASH') return <Wallet className="w-3.5 h-3.5 text-brand-green shrink-0" />;
-    if (type === 'CREDIT_CARD') return <CreditCard className="w-3.5 h-3.5 text-brand-red shrink-0" />;
-    return <Landmark className="w-3.5 h-3.5 text-brand-blue dark:text-brand-cyan shrink-0" />;
+    if (type === 'CASH') return <Wallet className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
+    if (type === 'CREDIT_CARD') return <CreditCard className="w-3.5 h-3.5 text-rose-500 shrink-0" />;
+    return <Landmark className="w-3.5 h-3.5 text-cyan-500 shrink-0" />;
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-1 pb-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="max-w-2xl mx-auto py-1 pb-4">
       {/* Back Header */}
       <div className="flex items-center gap-3 mb-6">
         <button 
@@ -63,7 +63,7 @@ export default function TransferLogs() {
       </div>
 
       {/* Logs List Container */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {transfers.length === 0 ? (
           <div className="bg-white dark:bg-[#111111] p-10 text-center rounded-[24px] shadow-sm border border-neutral-100 dark:border-white/5 flex flex-col items-center justify-center gap-3">
             <ArrowLeftRight className="w-8 h-8 text-neutral-300 dark:text-neutral-700" />
@@ -72,13 +72,13 @@ export default function TransferLogs() {
         ) : (
           transfers.map(tx => {
             const fromAcc = accounts.find(a => a.id === tx.accountId);
-            const fromAccName = fromAcc ? fromAcc.bankName : 'Unknown';
+            const fromAccName = fromAcc ? fromAcc.bankName : 'Unknown Account';
             const fromAccLast4 = fromAcc ? fromAcc.accountLast4 : '••••';
             const fromAccType = fromAcc ? fromAcc.type : 'BANK';
             
             const linkedTx = allTransactions.find(t => t.id === tx.linkedTransactionId);
             const toAcc = linkedTx ? accounts.find(a => a.id === linkedTx.accountId) : null;
-            const toAccName = toAcc ? toAcc.bankName : (tx.party || 'Unknown');
+            const toAccName = toAcc ? toAcc.bankName : (tx.party || 'Unknown Account');
             const toAccLast4 = toAcc ? toAcc.accountLast4 : '••••';
             const toAccType = toAcc ? toAcc.type : 'BANK';
 
@@ -87,7 +87,7 @@ export default function TransferLogs() {
             return (
               <div 
                 key={tx.id} 
-                className="bg-white dark:bg-[#111111] p-4 rounded-[24px] shadow-sm border border-neutral-100 dark:border-white/5 flex flex-col gap-3 animate-in fade-in duration-300"
+                className="bg-white dark:bg-[#111111] p-4 rounded-[20px] shadow-sm border border-neutral-100 dark:border-white/5 flex flex-col gap-3"
               >
                 {/* Header: Date and Delete button */}
                 <div className="flex justify-between items-center pb-2 border-b border-neutral-50 dark:border-white/5">
@@ -104,40 +104,31 @@ export default function TransferLogs() {
                   </button>
                 </div>
 
-                {/* Visual Flow Bridge */}
-                <div className="flex items-center gap-3">
-                  {/* From Account block */}
-                  <div className="flex items-center gap-2.5 p-2 bg-neutral-50 dark:bg-white/[0.01] border border-neutral-100/50 dark:border-white/5 rounded-xl flex-1 min-w-0">
-                    <div className="p-1.5 bg-white dark:bg-[#1A1A1A] rounded-lg border border-neutral-100 dark:border-white/5 shrink-0 shadow-sm">
+                {/* Structured Money Flow (Stacked FROM/TO to prevent mobile truncation) */}
+                <div className="space-y-2">
+                  {/* From Row */}
+                  <div className="flex items-center gap-2">
+                    <span className="w-9 px-1.5 py-0.5 rounded text-[8px] font-black text-center bg-rose-50 dark:bg-rose-500/10 text-rose-500 shrink-0">
+                      FROM
+                    </span>
+                    <div className="flex items-center gap-1.5 min-w-0">
                       {getAccountIcon(fromAccType)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[11px] font-black text-brand-blue dark:text-white truncate leading-tight">
-                        {fromAccName}
-                      </p>
-                      <p className="text-[8px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mt-0.5">
-                        •• {fromAccLast4}
-                      </p>
+                      <span className="text-xs font-black text-brand-blue dark:text-white truncate">
+                        {fromAccName} <span className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 ml-1">•• {fromAccLast4}</span>
+                      </span>
                     </div>
                   </div>
 
-                  {/* Arrow Indicator */}
-                  <div className="p-1 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-full shrink-0">
-                    <ArrowRight className="w-3.5 h-3.5 text-brand-cyan" />
-                  </div>
-
-                  {/* To Account block */}
-                  <div className="flex items-center gap-2.5 p-2 bg-neutral-50 dark:bg-white/[0.01] border border-neutral-100/50 dark:border-white/5 rounded-xl flex-1 min-w-0">
-                    <div className="p-1.5 bg-white dark:bg-[#1A1A1A] rounded-lg border border-neutral-100 dark:border-white/5 shrink-0 shadow-sm">
+                  {/* To Row */}
+                  <div className="flex items-center gap-2">
+                    <span className="w-9 px-1.5 py-0.5 rounded text-[8px] font-black text-center bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 shrink-0">
+                      TO
+                    </span>
+                    <div className="flex items-center gap-1.5 min-w-0">
                       {getAccountIcon(toAccType)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[11px] font-black text-brand-blue dark:text-white truncate leading-tight">
-                        {toAccName}
-                      </p>
-                      <p className="text-[8px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mt-0.5">
-                        •• {toAccLast4}
-                      </p>
+                      <span className="text-xs font-black text-brand-blue dark:text-white truncate">
+                        {toAccName} <span className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 ml-1">•• {toAccLast4}</span>
+                      </span>
                     </div>
                   </div>
                 </div>
