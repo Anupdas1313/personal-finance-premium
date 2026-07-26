@@ -181,7 +181,7 @@ export default function TransactionTable() {
       });
     }
     if (filterExpenseType !== 'ALL') {
-      result = result.filter(tx => tx.expenseType === filterExpenseType);
+      result = result.filter(tx => (tx.expenseType || '').toLowerCase() === filterExpenseType.toLowerCase());
     }
 
     // 4. Sorting

@@ -191,7 +191,7 @@ export default function Reports() {
     if (selectedMethodAccount !== 'ALL') {
       txs = txs.filter(t => t.accountId === Number(selectedMethodAccount));
     }
-    if (selectedTag !== 'ALL') txs = txs.filter(t => t.expenseType === selectedTag);
+    if (selectedTag !== 'ALL') txs = txs.filter(t => (t.expenseType || '').toLowerCase() === selectedTag.toLowerCase());
     if (payeeSearch.trim()) {
       const q = payeeSearch.toLowerCase();
       txs = txs.filter(t => (t.party || '').toLowerCase().includes(q) || (t.note || '').toLowerCase().includes(q));
@@ -210,7 +210,7 @@ export default function Reports() {
     if (transactionType !== 'ALL') txs = txs.filter(t => t.type === transactionType);
     if (selectedCategory !== 'ALL') txs = txs.filter(t => t.category === selectedCategory);
     if (selectedMethod !== 'ALL') txs = txs.filter(t => t.paymentMethod === selectedMethod);
-    if (selectedTag !== 'ALL') txs = txs.filter(t => t.expenseType === selectedTag);
+    if (selectedTag !== 'ALL') txs = txs.filter(t => (t.expenseType || '').toLowerCase() === selectedTag.toLowerCase());
     return txs;
   }, [comparisonMode, allTransactions, selectedAccountId, comparisonRange, transactionType, selectedCategory, selectedMethod, selectedTag]);
 

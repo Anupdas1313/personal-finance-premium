@@ -119,7 +119,7 @@ export default function Transactions() {
       if (typeFilter !== 'ALL' && tx.type !== typeFilter) return false;
       if (categoryFilter !== 'ALL' && tx.category !== categoryFilter) return false;
       if (accountFilter !== 'ALL' && Number(tx.accountId) !== Number(accountFilter)) return false;
-      if (tagFilter !== 'ALL' && tx.expenseType !== tagFilter) return false;
+      if (tagFilter !== 'ALL' && (tx.expenseType || '').toLowerCase() !== tagFilter.toLowerCase()) return false;
       if (methodFilter !== 'ALL' && tx.paymentMethod !== methodFilter && (tx as any).upiApp !== methodFilter) return false;
       
       const budgetIdParam = searchParams.get('budgetId');
