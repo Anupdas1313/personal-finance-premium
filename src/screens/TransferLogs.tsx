@@ -48,7 +48,7 @@ export default function TransferLogs() {
       <div className="flex items-center gap-3 mb-6">
         <button 
           onClick={() => navigate('/transfer')}
-          className="-ml-3 p-1.5 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/5 rounded-full hover:bg-neutral-50 dark:hover:bg-white/10 transition-all text-neutral-600 dark:text-neutral-300"
+          className="-ml-1.5 p-1.5 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/5 rounded-full hover:bg-neutral-50 dark:hover:bg-white/10 transition-all text-neutral-600 dark:text-neutral-300"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -112,7 +112,7 @@ export default function TransferLogs() {
                       {getAccountIcon(fromAccType)}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-black text-brand-blue dark:text-white uppercase tracking-wider truncate leading-tight">
+                      <p className="text-[11px] font-black text-brand-blue dark:text-white truncate leading-tight">
                         {fromAccName}
                       </p>
                       <p className="text-[8px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mt-0.5">
@@ -132,7 +132,7 @@ export default function TransferLogs() {
                       {getAccountIcon(toAccType)}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-black text-brand-blue dark:text-white uppercase tracking-wider truncate leading-tight">
+                      <p className="text-[11px] font-black text-brand-blue dark:text-white truncate leading-tight">
                         {toAccName}
                       </p>
                       <p className="text-[8px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mt-0.5">
@@ -145,7 +145,7 @@ export default function TransferLogs() {
                 {/* Footer: Amount & Remarks */}
                 <div className="flex items-center justify-between mt-1 pt-2 border-t border-neutral-50 dark:border-white/5">
                   <div className="min-w-0 pr-4">
-                    <p className="text-[9px] text-neutral-400 dark:text-neutral-500 font-bold uppercase tracking-wide truncate">
+                    <p className="text-[9px] text-neutral-400 dark:text-neutral-500 font-bold truncate">
                       {tx.note || 'Inter-Account Transfer'}
                     </p>
                   </div>
