@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useNavigate } from 'react-router-dom';
 import { db } from '../models/db';
 import { useAuth } from '../context/AuthContext';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
@@ -133,10 +134,13 @@ function SectionTitle({ icon, label }: { icon: ReactNode; label: string }) {
 }
 
 // ── Progress row ─────────────────────────────────────────────────────────────
-function ProgressRow({ label, amount, pct, color, icon, rank, fmt }:
-  { label: string; amount: number; pct: number; color: string; icon?: string; rank?: number; fmt: (n: number) => string }) {
+function ProgressRow({ label, amount, pct, color, icon, rank, fmt, onClick }:
+  { label: string; amount: number; pct: number; color: string; icon?: string; rank?: number; fmt: (n: number) => string; onClick?: () => void }) {
   return (
-    <div className="p-3.5 rounded-2xl border border-neutral-100 dark:border-[#222222] bg-neutral-50 dark:bg-[#1A1A1A]/50">
+    <div 
+      onClick={onClick}
+      className={cn("p-3.5 rounded-2xl border border-neutral-100 dark:border-[#222222] bg-neutral-50 dark:bg-[#1A1A1A]/50", onClick && "cursor-pointer hover:bg-neutral-100 dark:hover:bg-[#222222] transition-colors")}
+    >
       <div className="flex items-center justify-between mb-2.5">
         <div className="flex items-center gap-2 min-w-0">
           {rank !== undefined && (
@@ -164,6 +168,7 @@ function ProgressRow({ label, amount, pct, color, icon, rank, fmt }:
 function SummaryContent() {
   const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
+  const navigate = useNavigate();
 
   const transactions = useLiveQuery(() => db.transactions.toArray(), [user?.uid]) || [];
   const accounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
@@ -336,6 +341,7 @@ function SummaryContent() {
                   color={CAT_COLORS[i % CAT_COLORS.length]}
                   icon={CATEGORY_ICONS[d.name] || '📦'}
                   fmt={fmt}
+                  onClick={() => navigate(`/transactions?category=${encodeURIComponent(d.name)}&month=${format(currentMonth, 'yyyy-MM')}`)}
                 />
               ))}
             </div>
@@ -349,7 +355,11 @@ function SummaryContent() {
         {tagData.length > 0 ? (
           <div className="space-y-2.5">
             {tagData.map((d, i) => (
-              <div key={d.name} className="p-3.5 rounded-2xl border border-neutral-100 dark:border-[#222222] bg-neutral-50 dark:bg-[#1A1A1A]/50">
+              <div 
+                key={d.name} 
+                onClick={() => navigate(`/transactions?tag=${encodeURIComponent(d.name)}&month=${format(currentMonth, 'yyyy-MM')}`)}
+                className="p-3.5 rounded-2xl border border-neutral-100 dark:border-[#222222] bg-neutral-50 dark:bg-[#1A1A1A]/50 cursor-pointer hover:bg-neutral-100 dark:hover:bg-[#222222] transition-colors"
+              >
                 <div className="flex items-center justify-between mb-2.5">
                   <span
                     className="text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider"
@@ -389,6 +399,10 @@ function SummaryContent() {
                 pct={totalExpense > 0 ? (d.value / totalExpense) * 100 : 0}
                 color={CAT_COLORS[(i + 1) % CAT_COLORS.length]}
                 fmt={fmt}
+                onClick={() => {
+                  const acc = accounts.find(a => a.bankName === d.name);
+                  if (acc) navigate(`/transactions?account=${acc.id}&month=${format(currentMonth, 'yyyy-MM')}`);
+                }}
               />
             ))}
           </div>
@@ -408,6 +422,7 @@ function SummaryContent() {
                 pct={totalExpense > 0 ? (d.value / totalExpense) * 100 : 0}
                 color={PAY_COLORS[d.name] || '#1A237E'}
                 fmt={fmt}
+                onClick={() => navigate(`/transactions?method=${encodeURIComponent(d.name)}&month=${format(currentMonth, 'yyyy-MM')}`)}
               />
             ))}
           </div>
@@ -428,6 +443,7 @@ function SummaryContent() {
                 color="#E53935"
                 rank={i + 1}
                 fmt={fmt}
+                onClick={() => navigate(`/transactions?search=${encodeURIComponent(d.name)}&month=${format(currentMonth, 'yyyy-MM')}`)}
               />
             ))}
           </div>

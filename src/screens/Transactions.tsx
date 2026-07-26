@@ -79,9 +79,13 @@ export default function Transactions() {
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'CREDIT' | 'DEBIT' | 'TRANSFER'>('ALL');
   const [sourceTypeFilter, setSourceTypeFilter] = useState<'ALL' | 'BANK' | 'CREDIT_CARD' | 'CASH'>('ALL');
   const [categoryFilter, setCategoryFilter] = useState(initialCategory);
-  const [accountFilter, setAccountFilter] = useState<number | 'ALL'>('ALL');
-  const [tagFilter, setTagFilter] = useState('ALL');
-  const [methodFilter, setMethodFilter] = useState('ALL');
+  const initialTag = searchParams.get('tag') || 'ALL';
+  const initialAccount = searchParams.has('account') ? Number(searchParams.get('account')) : 'ALL';
+  const initialMethod = searchParams.get('method') || 'ALL';
+
+  const [accountFilter, setAccountFilter] = useState<number | 'ALL'>(initialAccount);
+  const [tagFilter, setTagFilter] = useState(initialTag);
+  const [methodFilter, setMethodFilter] = useState(initialMethod);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // ── Detail drawer ─────────────────────────────────────────────
