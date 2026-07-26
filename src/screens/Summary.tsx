@@ -537,26 +537,25 @@ function SummaryContent() {
       </div>
 
       {/* ── HERO STATS CARD ── */}
-      <div className="bg-brand-green rounded-[24px] p-4 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/15 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      <div className="bg-white dark:bg-[#111111] rounded-[24px] p-4 shadow-sm border border-neutral-100 dark:border-white/5 relative overflow-hidden">
         <div className="relative z-10 grid grid-cols-3 gap-3">
           {/* Income */}
           <div className="text-center">
-            <p className="text-white/50 text-[8px] font-bold uppercase tracking-widest mb-1">Income</p>
-            <p className="text-white font-heading font-black text-sm tracking-tight leading-none">{fmt(totalIncome)}</p>
+            <p className="text-neutral-400 text-[8px] font-bold uppercase tracking-widest mb-1">Income</p>
+            <p className="text-emerald-600 dark:text-emerald-400 font-heading font-black text-sm tracking-tight leading-none">{fmt(totalIncome)}</p>
             {incomeChangePct !== null && (
-              <span className={cn('inline-flex items-center gap-0.5 text-[8px] font-bold mt-1', incomeChangePct >= 0 ? 'text-white/80' : 'text-rose-200')}>
+              <span className={cn('inline-flex items-center gap-0.5 text-[8px] font-bold mt-1', incomeChangePct >= 0 ? 'text-emerald-500' : 'text-rose-500')}>
                 {incomeChangePct >= 0 ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
                 {Math.abs(Math.round(incomeChangePct))}%
               </span>
             )}
           </div>
           {/* Spent */}
-          <div className="text-center border-x border-white/10">
-            <p className="text-white/50 text-[8px] font-bold uppercase tracking-widest mb-1">Spent</p>
-            <p className="text-white font-heading font-black text-sm tracking-tight leading-none">{fmt(totalExpense)}</p>
+          <div className="text-center border-x border-neutral-100 dark:border-white/5">
+            <p className="text-neutral-400 text-[8px] font-bold uppercase tracking-widest mb-1">Spent</p>
+            <p className="text-rose-600 dark:text-rose-400 font-heading font-black text-sm tracking-tight leading-none">{fmt(totalExpense)}</p>
             {expenseChangePct !== null && (
-              <span className={cn('inline-flex items-center gap-0.5 text-[8px] font-bold mt-1', expenseChangePct <= 0 ? 'text-white/80' : 'text-rose-200')}>
+              <span className={cn('inline-flex items-center gap-0.5 text-[8px] font-bold mt-1', expenseChangePct <= 0 ? 'text-emerald-500' : 'text-rose-500')}>
                 {expenseChangePct <= 0 ? <TrendingDown className="w-2.5 h-2.5" /> : <TrendingUp className="w-2.5 h-2.5" />}
                 {Math.abs(Math.round(expenseChangePct))}%
               </span>
@@ -564,12 +563,12 @@ function SummaryContent() {
           </div>
           {/* Saved */}
           <div className="text-center">
-            <p className="text-white/50 text-[8px] font-bold uppercase tracking-widest mb-1">Saved</p>
-            <p className={cn('font-heading font-black text-sm tracking-tight leading-none', savings >= 0 ? 'text-white' : 'text-rose-200')}>
+            <p className="text-neutral-400 text-[8px] font-bold uppercase tracking-widest mb-1">Saved</p>
+            <p className={cn('font-heading font-black text-sm tracking-tight leading-none', savings >= 0 ? 'text-brand-blue dark:text-brand-cyan' : 'text-rose-500')}>
               {savings >= 0 ? fmt(savings) : `-${fmt(Math.abs(savings))}`}
             </p>
             {savingsRate !== 0 && (
-              <span className="text-[8px] font-bold text-white/60 mt-1 inline-block">
+              <span className="text-[8px] font-bold text-neutral-400 mt-1 inline-block">
                 {savingsRate}% rate
               </span>
             )}
