@@ -11,6 +11,7 @@ import { CATEGORY_ICONS } from '../constants';
 import { db } from '../models/db';
 import { useCategories } from '../hooks/useCategories';
 import { useCurrency } from '../hooks/useCurrency';
+import { parseTransactionWithAI, ParsedTransaction } from '../lib/gemini';
 
 interface AIChatEntryProps {
   onSave: (transaction: any) => void;
@@ -513,162 +514,6 @@ const resolveBank = (snippet: string, accounts: any[]) => {
   return null;
 };
 
-// ─── Universal Parser ────────────────────────────────────────────────────
-const parseUniversal = (text: string, accounts: any[], appCategories: string[]) => {
-  const t = text.toLowerCase();
-
-  // Emoji shortcuts
-  let emojiCategory = '', emojiTag = '';
-  for (const [em, cat] of Object.entries(EMOJI_CATEGORY)) { if (t.includes(em)) { emojiCategory = cat; break; } }
-  for (const [em, tag] of Object.entries(EMOJI_TAG)) { if (t.includes(em)) { emojiTag = tag; break; } }
-
-  const amount = parseAmount(text);
-
-  let type = '';
-  // Hinglish-aware type detection
-  if (t.match(/\b(received|got|salary|income|credit|added|deposit|inflow|credited|mila|aaya|jama|milgaya|mil gaya|aaye|recieved)\b/)) type = 'CREDIT';
-  else if (t.match(/\b(transfer(?:red)?\s+(?:to|from|\d)|moved?\s+(?:to|from|\d)|shifted\s+(?:to|from|\d)|bheja|transfer\s*kiya|bhej\s*diya)\b/)) type = 'TRANSFER';
-  else if (t.match(/\b(paid|spent|bought|expense|debit|gave|withdrawn?|purchased?|kharcha|diya|de diya|kharch|nikala|nikaal|udhar\s+diya|liya|mangaya|order|pay\s*kiya|spend\s*kiya|kharida|khareeda)\b/)) type = 'DEBIT';
-  else if (t.match(/\bsent?\s+(?:[$₹€£]|rs|\d|money|amount|paisa|paise|rupaiye)/)) type = 'TRANSFER';
-  // Hinglish refund/return
-  else if (t.match(/\b(refund|wapas\s+(?:mila|aaya)|return|cashback)\b/)) type = 'CREDIT';
-
-  const acc = resolveBank(t, accounts);
-  let accountId = acc?.id || '';
-  let autoPaymentMethod = acc ? (acc.type === 'CREDIT_CARD' ? 'Credit Card' : acc.type === 'CASH' ? 'Cash' : 'UPI') : '';
-
-  let upiApp = '';
-  for (const [key, val] of Object.entries(UPI_APPS)) { if (t.includes(key)) { upiApp = val; break; } }
-
-  let paymentMethod = autoPaymentMethod;
-  if (!paymentMethod) {
-    if (t.match(/\b(cash|nakit|naqad|nagad)\b/)) paymentMethod = 'Cash';
-    else if (t.match(/\b(credit\s+card|cc|credit\s*card)\b/)) paymentMethod = 'Credit Card';
-    else if (t.match(/\b(debit\s+card|dc|debit\s*card)\b/)) paymentMethod = 'Debit Card';
-    else if (t.match(/\b(net\s*banking|internet\s*banking|online\s*banking)\b/)) paymentMethod = 'Net Banking';
-    else if (t.match(/\b(wallet|paytm\s+wallet|mobikwik\s+wallet)\b/)) paymentMethod = 'Wallet';
-    else if (t.match(/\b(cheque|check|cheq)\b/)) paymentMethod = 'Cheque';
-    else if (t.match(/\b(neft|rtgs|imps|bank\s+transfer)\b/)) paymentMethod = 'Bank Transfer';
-    else if (upiApp) paymentMethod = 'UPI';
-  }
-
-  // Merchant matching with fuzzy
-  let category = emojiCategory, tag = emojiTag, isPredicted = false;
-  if (!category) {
-    for (const cat of appCategories) { if (t.includes(cat.toLowerCase())) { category = cat; break; } }
-  }
-  if (!category) {
-    const merchantKeys = Object.keys(MERCHANT_KNOWLEDGE);
-    for (const merchant of merchantKeys) {
-      if (t.includes(merchant)) { category = MERCHANT_KNOWLEDGE[merchant].category; tag = tag || MERCHANT_KNOWLEDGE[merchant].tag; isPredicted = true; break; }
-    }
-    if (!category) {
-      const fuzzyMerchant = fuzzyMatch(t, merchantKeys);
-      if (fuzzyMerchant) { category = MERCHANT_KNOWLEDGE[fuzzyMerchant].category; tag = tag || MERCHANT_KNOWLEDGE[fuzzyMerchant].tag; isPredicted = true; }
-    }
-  }
-
-  // Hinglish category keywords
-  if (!category) {
-    const hindiCategories: Record<string, string> = {
-      khana: 'Food', nashta: 'Food', 'chai pani': 'Food', 'chai-pani': 'Food', chai: 'Food', coffee: 'Food', tea: 'Food', restaurant: 'Food', hotel: 'Food',
-      doodh: 'Groceries', sabzi: 'Groceries', sabji: 'Groceries', atta: 'Groceries', chawal: 'Groceries', dal: 'Groceries', ration: 'Groceries', milk: 'Groceries', egg: 'Groceries', eggs: 'Groceries', bread: 'Groceries', chicken: 'Groceries', vegetables: 'Groceries', grocery: 'Groceries',
-      bijli: 'Bills', 'bijli ka bill': 'Bills', 'paani ka bill': 'Bills', 'gas ka bill': 'Bills', bharti: 'Bills', mobile: 'Bills', recharge: 'Bills', wifi: 'Bills', broadband: 'Bills', utility: 'Bills', utilities: 'Bills',
-      dawai: 'Health', dawa: 'Health', ilaaj: 'Health', 'doctor ki fees': 'Health', medicine: 'Health', gym: 'Health', hospital: 'Health', doctor: 'Health', clinic: 'Health', fitness: 'Health',
-      kiraya: 'Transport', 'auto ka kiraya': 'Transport', gaadi: 'Transport', rick: 'Transport', cab: 'Transport', taxi: 'Transport', metro: 'Transport', bus: 'Transport', auto: 'Transport', petrol: 'Transport', diesel: 'Transport', fuel: 'Transport', train: 'Transport', ticket: 'Transport', fare: 'Transport', travel: 'Transport',
-      padhai: 'Education', 'school ki fees': 'Education', kitaab: 'Education', 'coaching fees': 'Education', school: 'Education', books: 'Education', tuition: 'Education', course: 'Education', fees: 'Education',
-      chanda: 'Donations', daan: 'Donations', mandir: 'Donations', masjid: 'Donations', charity: 'Donations', donation: 'Donations',
-      kapde: 'Shopping', kapda: 'Shopping', joota: 'Shopping', joote: 'Shopping', shopping: 'Shopping', mall: 'Shopping', shirt: 'Shopping', pant: 'Shopping', shoe: 'Shopping', shoes: 'Shopping', dress: 'Shopping', snkr: 'Shopping', sneakers: 'Shopping',
-    };
-    for (const [hindi, cat] of Object.entries(hindiCategories)) {
-      if (t.includes(hindi)) { category = cat; tag = tag || 'Personal'; break; }
-    }
-  }
-
-  // Time-of-day category suggestion (only if still no category)
-  if (!category && amount) {
-    const hour = new Date().getHours();
-    if (hour >= 6 && hour <= 10) category = 'Food'; // Morning = breakfast/coffee
-    else if (hour >= 11 && hour <= 14) category = 'Food'; // Lunch time
-    else if (hour >= 19 && hour <= 22) category = 'Food'; // Dinner time
-  }
-
-  let parsedPayee = '';
-  const payeeMatch = text.match(/\b(?:to|paid\s+to|at|@|from|received\s+from|on)\s+([A-Za-z][A-Za-z0-9\s]{0,20}?)(?:\s+(?:via|using|on|for|from|today|yesterday|\d)|$)/i);
-  if (payeeMatch && type !== 'TRANSFER') parsedPayee = payeeMatch[1].trim();
-
-  // Aggressive payee fallback
-  if (!parsedPayee && type !== 'TRANSFER') {
-     const simpleMatch = text.match(/(?:[$₹€£]|rs)?\s*\d+(?:\.\d+)?(?:k)?\s+([A-Za-z]+)/i);
-     if (simpleMatch) {
-       const candidate = simpleMatch[1].trim().toLowerCase();
-       const skipWords = ['and', 'for', 'to', 'from', 'via', 'using', 'in', 'on', 'spent', 'paid', 'credit', 'debit', 'cash', 'upi', 'gpay', 'today', 'yesterday'];
-       if (!skipWords.includes(candidate) && !appCategories.map(c => c.toLowerCase()).includes(candidate)) {
-         parsedPayee = simpleMatch[1].trim();
-       }
-     }
-  }
-
-  let parsedNote = '';
-  const forMatch = text.match(/\b(?:for|remark[:\s]+|note[:\s]+)(.+?)(?:\s+(?:via|using|from|to|today|yesterday|on \d|\d+\s*(?:days|week))\b|$)/i);
-  if (forMatch) parsedNote = forMatch[1].trim();
-
-  const { date, confirmed: dateConfirmed } = parseDate(text);
-
-  // Compute confidence score (0–100)
-  let confidence = 0;
-  if (amount) confidence += 25;
-  if (type) confidence += 15;
-  if (accountId) confidence += 20;
-  if (paymentMethod) confidence += 10;
-  if (category) confidence += 20;
-  if (parsedNote || parsedPayee) confidence += 10;
-
-  return { amount, type, accountId, autoPaymentMethod, upiApp, paymentMethod, category, tag, parsedPayee, parsedNote, date, dateConfirmed, isPredicted, confidence };
-};
-
-// ─── Personal Learning Hook ───────────────────────────────────────────────
-const usePersonalLearning = () => {
-  const [recentTx, setRecentTx] = useState<any[]>([]);
-  const [smartDefaults, setSmartDefaults] = useState<{ accountId: string; paymentMethod: string; upiApp: string }>({
-    accountId: '', paymentMethod: '', upiApp: ''
-  });
-  const [payeeMemory, setPayeeMemory] = useState<Record<string, { category: string; accountId: string; paymentMethod: string; upiApp: string }>>({});
-
-  useEffect(() => {
-    db.transactions.orderBy('dateTime').reverse().limit(30).toArray().then(txs => {
-      setRecentTx(txs.slice(0, 5));
-
-      // Most used account
-      const accCount: Record<string, number> = {};
-      const methodCount: Record<string, number> = {};
-      const upiCount: Record<string, number> = {};
-      const payeeMap: Record<string, any> = {};
-
-      txs.forEach(tx => {
-        if (tx.accountId) accCount[tx.accountId] = (accCount[tx.accountId] || 0) + 1;
-        if (tx.paymentMethod) methodCount[tx.paymentMethod] = (methodCount[tx.paymentMethod] || 0) + 1;
-        if (tx.upiApp) upiCount[tx.upiApp] = (upiCount[tx.upiApp] || 0) + 1;
-        // Build payee → category/account memory
-        if (tx.party) {
-          const key = tx.party.toLowerCase().trim();
-          if (!payeeMap[key]) payeeMap[key] = { category: tx.category, accountId: tx.accountId, paymentMethod: tx.paymentMethod, upiApp: tx.upiApp, count: 0 };
-          payeeMap[key].count++;
-        }
-      });
-
-      const topAccount = Object.entries(accCount).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
-      const topMethod = Object.entries(methodCount).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
-      const topUpi = Object.entries(upiCount).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
-
-      setSmartDefaults({ accountId: topAccount, paymentMethod: topMethod, upiApp: topUpi });
-      setPayeeMemory(payeeMap);
-    });
-  }, []);
-
-  return { recentTx, smartDefaults, payeeMemory };
-};
-
 // ─── Main Component ───────────────────────────────────────────────────────
 export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags, isSaving, showSuccess }) => {
   const currency = useCurrency();
@@ -702,8 +547,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
   const [isAutoFillEnabled, setIsAutoFillEnabled] = useState(true);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const { recentTx, smartDefaults, payeeMemory } = usePersonalLearning();
-
+  
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isTyping]);
 
   // Load autocomplete suggestions from past transactions
@@ -755,34 +599,16 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       const prompt = tx.type === 'CREDIT' ? "Which account received this?" : "Which account did you pay from?";
       // Show smart default as first option if available
       const options = getGroupedAccountOptions(tx);
-      if (smartDefaults.accountId) {
-        const defaultAcc = accounts.find(a => a.id === Number(smartDefaults.accountId));
-        if (defaultAcc) {
-          const emoji = defaultAcc.type === 'BANK' ? '🏦' : defaultAcc.type === 'CASH' ? '💵' : '💳';
-          const defLabel = `${emoji} ${defaultAcc.bankName}`;
-          // Move default to front
-          const filtered = options.filter(o => o !== defLabel);
-          addAIMessage(prompt, [defLabel, ...filtered]);
-        } else addAIMessage(prompt, options);
-      } else addAIMessage(prompt, options);
+      addAIMessage(prompt, options);
     } else if (tx.type === 'TRANSFER' && !tx.toAccountId) {
       setStage('ASK_BANK'); addAIMessage("Transfer to which account?", getGroupedAccountOptions(tx));
     } else if (!tx.paymentMethod) {
       // Show smart default method as first option
       const methods = ['📱 UPI', '💳 Credit Card', '💵 Cash', '🏦 Bank Transfer'];
-      if (smartDefaults.paymentMethod) {
-        const defMethod = methods.find(m => m.toLowerCase().includes(smartDefaults.paymentMethod.toLowerCase()));
-        if (defMethod) {
-          const filtered = methods.filter(m => m !== defMethod);
-          setStage('ASK_PAYMENT_METHOD'); addAIMessage("How did you pay?", [defMethod, ...filtered]);
-        } else { setStage('ASK_PAYMENT_METHOD'); addAIMessage("How did you pay?", methods); }
-      } else { setStage('ASK_PAYMENT_METHOD'); addAIMessage("How did you pay?", methods); }
+      setStage('ASK_PAYMENT_METHOD'); addAIMessage("How did you pay?", methods);
     } else if (tx.paymentMethod === 'UPI' && !tx.upiApp) {
       const upiApps = ['GPay', 'PhonePe', 'Paytm', 'BHIM', 'CRED'];
-      if (smartDefaults.upiApp) {
-        const filtered = upiApps.filter(a => a !== smartDefaults.upiApp);
-        setStage('ASK_UPI_APP'); addAIMessage("Which UPI app?", [smartDefaults.upiApp, ...filtered]);
-      } else { setStage('ASK_UPI_APP'); addAIMessage("Which UPI app?", upiApps); }
+      setStage('ASK_UPI_APP'); addAIMessage("Which UPI app?", upiApps);
     } else if (!tx.expenseType && tx.type !== 'TRANSFER') {
       setStage('ASK_TAG'); addAIMessage("Tag this as:", tags);
     } else if (!tx.note && tx.note !== '-') {
@@ -831,7 +657,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
 
 
-  const handleSend = useCallback((msgOverride?: string) => {
+  const handleSend = useCallback(async (msgOverride?: string) => {
     const userMsg = (msgOverride || input).trim();
     if (!userMsg) return;
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
@@ -839,8 +665,6 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     setAutocomplete([]);
 
     let updated = { ...pendingTx };
-
-    // ── Special commands ──────────────────────────────────────────────────
     const t = userMsg.toLowerCase();
     
     // Chat-based Undo / Delete
@@ -853,11 +677,9 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
           if (!target || target === 'last' || target === 'that' || target === 'it' || target === 'transaction') {
             const last = await db.transactions.orderBy('dateTime').reverse().first();
             if (last && last.id) {
-              if (last.linkedTransactionId) {
-                await db.transactions.delete(last.linkedTransactionId);
-              }
+              if (last.linkedTransactionId) await db.transactions.delete(last.linkedTransactionId);
               await db.transactions.delete(last.id);
-              setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted your last transaction ({currency}${last.amount} for ${last.party || last.category || 'unknown'}).` }]);
+              setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted your last transaction (${currency}${last.amount}).` }]);
               handleReset();
             } else {
               setMessages(prev => [...prev, { role: 'ai', content: `Hmm, I couldn't find any recent transaction to delete.` }]);
@@ -868,18 +690,15 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
                 (tx.party?.toLowerCase().includes(target) || false) || 
                 (tx.category?.toLowerCase().includes(target) || false) ||
                 (tx.note?.toLowerCase().includes(target) || false)
-              )
-              .toArray();
+              ).toArray();
             
             if (recentMatches.length > 0) {
               recentMatches.sort((a,b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
               const match = recentMatches[0];
               if (match.id) {
-                if (match.linkedTransactionId) {
-                  await db.transactions.delete(match.linkedTransactionId);
-                }
+                if (match.linkedTransactionId) await db.transactions.delete(match.linkedTransactionId);
                 await db.transactions.delete(match.id);
-                setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted recent transaction matching "${target}" (${currency}${match.amount} for ${match.party || match.category}).` }]);
+                setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted recent transaction matching "${target}".` }]);
                 handleReset();
               }
             } else {
@@ -892,59 +711,9 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       }
     }
 
-    // Chat-based Undo / Delete
-    if (stage === 'IDLE' || stage === 'PREVIEW') {
-      const deleteMatch = t.match(/^(?:undo|delete|remove)\s*(.*)$/i);
-      if (deleteMatch) {
-        const target = deleteMatch[1].trim();
-        setIsTyping(true);
-        setTimeout(async () => {
-          if (!target || target === 'last' || target === 'that' || target === 'it' || target === 'transaction') {
-            const last = await db.transactions.orderBy('dateTime').reverse().first();
-            if (last && last.id) {
-              if (last.linkedTransactionId) {
-                await db.transactions.delete(last.linkedTransactionId);
-              }
-              await db.transactions.delete(last.id);
-              setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted your last transaction (${currency}${last.amount} for ${last.party || last.category || 'unknown'}).` }]);
-              handleReset();
-            } else {
-              setMessages(prev => [...prev, { role: 'ai', content: `Hmm, I couldn't find any recent transaction to delete.` }]);
-            }
-          } else {
-            const recentMatches = await db.transactions
-              .filter(tx => 
-                (tx.party?.toLowerCase().includes(target) || false) || 
-                (tx.category?.toLowerCase().includes(target) || false) ||
-                (tx.note?.toLowerCase().includes(target) || false)
-              )
-              .toArray();
-            
-            if (recentMatches.length > 0) {
-              recentMatches.sort((a,b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
-              const match = recentMatches[0];
-              if (match.id) {
-                if (match.linkedTransactionId) {
-                  await db.transactions.delete(match.linkedTransactionId);
-                }
-                await db.transactions.delete(match.id);
-                setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted recent transaction matching "${target}" (${currency}${match.amount} for ${match.party || match.category}).` }]);
-                handleReset();
-              }
-            } else {
-              setMessages(prev => [...prev, { role: 'ai', content: `I couldn't find any recent transactions matching "${target}" to delete.` }]);
-            }
-          }
-          setIsTyping(false);
-        }, 600);
-        return;
-      }
-    }
-
-    // "same" / "repeat" → copy last transaction
     if (t.match(/^(same|repeat|again|same as last)$/i)) {
-      if (recentTx.length > 0) {
-        const last = recentTx[0];
+      const last = await db.transactions.orderBy('dateTime').reverse().first();
+      if (last) {
         const cloned = {
           ...pendingTx,
           amount: last.amount, type: last.type, selectedAccountId: last.accountId,
@@ -964,38 +733,30 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       }
     }
 
-    // Multi-transaction: "200 zomato and 150 uber"
-    if (stage === 'IDLE' || stage === 'PREVIEW') {
-      const parts = splitMultiTransaction(userMsg);
-      if (parts.length > 1) {
-        addAIMessage(`📋 Found ${parts.length} transactions! Processing one by one...`);
-        setMultiQueue(parts.slice(1));
-        // Process first one
-        const p = parseUniversal(parts[0], accounts, appCategories);
-        applyParsed(p, updated);
-        return;
-      }
-    }
-
-    // Correction command in preview
     if (stage === 'PREVIEW') {
       if (handleCorrectionCommand(userMsg, updated)) return;
     }
 
     if (stage === 'IDLE' && !t.match(/^(edit|change|update)/)) {
-      const p = parseUniversal(userMsg, accounts, appCategories);
-
-      // DO NOT auto-fill accountId/paymentMethod/upiApp from smart defaults.
-      // Instead, let checkNextStep ASK the user (with smart defaults shown as first option).
-      // Only apply payee memory for CATEGORY (not bank/method) — since category is safe to predict.
-      if (isAutoFillEnabled && p.parsedPayee) {
-        const mem = payeeMemory[p.parsedPayee.toLowerCase()];
-        if (mem) {
-          if (!p.category) { p.category = mem.category; p.isPredicted = true; }
+      setIsTyping(true);
+      try {
+        const parsedArray = await parseTransactionWithAI(userMsg, { accounts, categories: appCategories, tags });
+        if (parsedArray && parsedArray.length > 0) {
+          if (parsedArray.length > 1) {
+            addAIMessage(`📋 Found ${parsedArray.length} transactions! Processing one by one...`);
+            // Queue the rest by re-converting them to strings for simplicity, or just apply the first
+            setMultiQueue(parsedArray.slice(1).map(tx => JSON.stringify(tx)));
+          }
+          applyParsed(parsedArray[0], updated);
+        } else {
+          addAIMessage("I couldn't understand that. Could you provide the amount and what it was for?");
         }
+      } catch (e) {
+        console.error(e);
+        addAIMessage("Oops, AI parsing failed. Please check your connection or enter manually.");
+      } finally {
+        setIsTyping(false);
       }
-
-      applyParsed(p, updated);
     } else if (stage === 'ASK_AMOUNT') {
       const amt = parseAmount(userMsg);
       if (amt && !isNaN(parseFloat(amt))) { updated.amount = parseFloat(amt); setPendingTx(updated); checkNextStep(updated); }
@@ -1010,90 +771,69 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         updated.party = '-';
       } else {
         updated.party = userMsg;
-        // SMART AUTO-FILL: Check payee memory immediately
-        if (isAutoFillEnabled) {
-          const mem = payeeMemory[updated.party.toLowerCase()];
-          if (mem) {
-            if (!updated.category) { updated.category = mem.category; updated._isPredicted = true; }
-          } else {
-             // Also try merchant KB
-             const merchantKeys = Object.keys(MERCHANT_KNOWLEDGE);
-             const fuzzyMerchant = fuzzyMatch(updated.party, merchantKeys);
-             if (fuzzyMerchant) {
-               updated.category = MERCHANT_KNOWLEDGE[fuzzyMerchant].category;
-               updated.expenseType = updated.expenseType || MERCHANT_KNOWLEDGE[fuzzyMerchant].tag;
-               updated._isPredicted = true;
-             }
-          }
-        }
       }
       setPendingTx(updated); checkNextStep(updated);
+    } else if (stage === 'ASK_CATEGORY') {
+      const catOverride = userMsg.match(/^\[(.*)\]$/);
+      const cat = appCategories.find(c => c.toLowerCase().includes(catOverride ? catOverride[1].toLowerCase() : userMsg.toLowerCase()));
+      if (cat) updated.category = cat;
+      setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_BANK') {
-      const cleanName = userMsg.replace(/^(🏦|💵|💳)\s*/, '').trim();
-      const acc = accounts.find(a => a.bankName === cleanName) || resolveBank(cleanName, accounts);
+      const acc = accounts.find(a => a.bankName.toLowerCase().includes(userMsg.toLowerCase()));
       if (acc) {
-        if (updated.type === 'TRANSFER' && updated.selectedAccountId && !updated.toAccountId) updated.toAccountId = acc.id;
-        else { updated.selectedAccountId = acc.id; updated.paymentMethod = acc.type === 'CREDIT_CARD' ? 'Credit Card' : acc.type === 'CASH' ? 'Cash' : 'UPI'; }
-        setPendingTx(updated); checkNextStep(updated);
-      } else addAIMessage("Couldn't find that account. Pick one:", getGroupedAccountOptions(updated));
+        if (updated.type === 'TRANSFER' && updated.selectedAccountId) updated.toAccountId = acc.id;
+        else updated.selectedAccountId = acc.id;
+      }
+      setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_PAYMENT_METHOD') {
-      if (t.includes('upi') || t.includes('📱')) updated.paymentMethod = 'UPI';
-      else if (t.includes('credit') || t.includes('💳')) updated.paymentMethod = 'Credit Card';
-      else if (t.includes('cash') || t.includes('💵')) updated.paymentMethod = 'Cash';
-      else if (t.includes('bank') || t.includes('🏦')) updated.paymentMethod = 'Bank Transfer';
-      else updated.paymentMethod = userMsg;
+      updated.paymentMethod = userMsg;
       setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_UPI_APP') {
-      updated.upiApp = userMsg; setPendingTx(updated); checkNextStep(updated);
-    } else if (stage === 'ASK_CATEGORY') {
-      const cat = appCategories.find(c => c.toLowerCase().includes(userMsg.toLowerCase()));
-      if (cat) { updated.category = cat; setPendingTx(updated); checkNextStep(updated); }
-      else addAIMessage("Please pick from the options:", appCategories);
+      updated.upiApp = userMsg;
+      setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_TAG') {
-      updated.expenseType = userMsg; setPendingTx(updated); checkNextStep(updated);
+      const tg = tags.find(t => t.toLowerCase().includes(userMsg.toLowerCase()));
+      if (tg) updated.expenseType = tg;
+      setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_NOTE') {
-      if (!userMsg.trim() || userMsg.match(/^(skip|no|na|-)$/i)) updated.note = '-';
-      else updated.note = userMsg; 
+      if (!t.match(/^(skip|no|na|-)$/i)) updated.note = userMsg;
+      else updated.note = '-';
       setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_DATE') {
       const { date } = parseDate(userMsg);
-      updated.transactionDate = date; updated._dateConfirmed = true;
+      if (date) updated.transactionDate = date;
+      updated._dateConfirmed = true;
       setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_BUDGET') {
-      if (t === 'none' || t === 'skip') {
-        updated.linkedBudgetId = null;
+      if (t !== 'none') {
+        const selected = envelopeBudgets.find(b => b.category.toLowerCase().includes(t.toLowerCase()));
+        if (selected) updated.linkedBudgetId = selected.id;
+        else updated.linkedBudgetId = null;
       } else {
-        const cleanName = userMsg.replace(/^(🏦|💵|💳|📦|🍕|🍔|🍜|🥘|☕|🍩|🍱|🍛|🥗|🍺|🧁|🚗|🛵|🚌|🚕|🛺|✈️|🚂|🏨|🗺️|🛒|🥦|🥛|🛍️|👗|sneaker|👟|💄|💊|🏥|🏋️|🩺|📺|💡|🔌|📚|🎓|📖|🎬|🎮|🎵|🎭|🏠|🏡|💰|📈|💹|🙏|⛪|🕌|🛕)\s*/, '').trim();
-        const selectedBud = envelopeBudgets.find(b => b.category.toLowerCase() === cleanName.toLowerCase());
-        if (selectedBud) {
-          updated.linkedBudgetId = selectedBud.id;
-        } else {
-          updated.linkedBudgetId = null;
-        }
+        updated.linkedBudgetId = null;
       }
       setPendingTx(updated); checkNextStep(updated);
     }
-  }, [input, pendingTx, stage, accounts, tags, recentTx, smartDefaults, payeeMemory, multiQueue, messages, appCategories, envelopeBudgets]);
+  }, [input, pendingTx, stage, accounts, tags, multiQueue, messages, appCategories, envelopeBudgets, currency]);
 
-  const applyParsed = (p: ReturnType<typeof parseUniversal>, updated: any) => {
+  const applyParsed = (p: ParsedTransaction, updated: any) => {
     const isDebit = p.type === 'DEBIT' || updated.type === 'DEBIT';
     const newTx = {
       ...updated,
       ...(p.amount && { amount: p.amount }),
       ...(p.type && { type: p.type }),
       ...(p.accountId && { selectedAccountId: p.accountId }),
-      ...(p.autoPaymentMethod && { paymentMethod: p.autoPaymentMethod }),
-      ...(p.upiApp && { upiApp: p.upiApp }),
+      ...(p.toAccountId && { toAccountId: p.toAccountId }),
       ...(p.paymentMethod && !updated.paymentMethod && { paymentMethod: p.paymentMethod }),
+      ...(p.upiApp && { upiApp: p.upiApp }),
       ...(p.category && { category: p.category }),
       ...(p.tag && { expenseType: p.tag }),
-      ...(p.parsedPayee && { party: p.parsedPayee }),
-      ...(p.parsedNote && { note: p.parsedNote }),
+      ...(p.party && { party: p.party }),
+      ...(p.note && { note: p.note }),
       linkedBudgetId: isDebit ? undefined : null,
-      transactionDate: p.date || updated.transactionDate,
-      _dateConfirmed: p.dateConfirmed || updated._dateConfirmed,
-      _isPredicted: p.isPredicted,
-      _confidence: p.confidence,
+      _dateConfirmed: true,
+      _isPredicted: false,
+      _confidence: 95,
     };
     setPendingTx(newTx);
     checkNextStep(newTx);
@@ -1172,26 +912,6 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     <div className="flex flex-col h-full bg-[#F9FBFF] dark:bg-[#0A0A0A] relative">
 
 
-      {/* Recent shortcuts — shown only in IDLE stage */}
-      {stage === 'IDLE' && recentTx.length > 0 && (
-        <div className="px-3 pt-3 pb-1 shrink-0">
-          <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-2 flex items-center gap-1">
-            <Clock className="w-3 h-3" /> Quick Repeat
-          </p>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-            {recentTx.slice(0, 4).map((tx, i) => (
-              <button
-                key={i}
-                onClick={() => repeatLastTx(tx)}
-                className="flex-shrink-0 bg-white dark:bg-[#111111] border border-brand-blue/5 dark:border-white/5 rounded-2xl px-3 py-2 text-left hover:border-brand-green/30 active:scale-95 transition-all shadow-sm"
-              >
-                <div className="text-[10px] font-black text-brand-green">{currency}{tx.amount}</div>
-                <div className="text-[8px] text-neutral-400 truncate max-w-[70px]">{tx.note || tx.category}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-64">
@@ -1234,92 +954,77 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
         {/* Preview Card */}
         {stage === 'PREVIEW' && (
-          <div className="mx-0.5 p-4 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/5 rounded-3xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 relative overflow-hidden flex flex-col gap-3">
-            {/* Header info */}
-            <div className="flex items-center justify-between px-0.5">
-              <span className="text-[9px] font-extrabold uppercase tracking-widest text-neutral-400 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-brand-green" /> Digital Receipt
+          <div className="mx-0.5 p-3 bg-[#F9FBFF] dark:bg-[#111111] border border-brand-blue/5 dark:border-white/5 rounded-3xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center justify-between mb-3 px-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3 text-brand-green" /> Preview
                 {pendingTx._confidence > 0 && (
                   <span className={`text-[8px] font-black ${confidenceColor}`}>{pendingTx._confidence}% confident</span>
                 )}
               </span>
-              <button onClick={handleReset} className="text-[8px] font-black text-brand-green bg-brand-green/5 px-2 py-1 rounded-lg uppercase tracking-widest flex items-center gap-1 hover:bg-brand-green/10 transition-colors">
+              <button onClick={handleReset} className="text-[8px] font-black text-brand-green bg-brand-green/5 px-2 py-1 rounded-lg uppercase tracking-widest flex items-center gap-1">
                 <RotateCcw className="w-2.5 h-2.5" /> Reset
               </button>
             </div>
 
-            {/* Dash receipt divider */}
-            <div className="border-t border-dashed border-neutral-200 dark:border-neutral-800 w-full my-0.5" />
-
-            {/* Receipt Body */}
-            <div className="flex items-center justify-between py-1 px-1">
-              {/* Left: Amount & Type */}
-              <div className="flex flex-col cursor-pointer group relative" onClick={() => handleEdit('amount')}>
-                <span className="text-[18px] font-black text-brand-green dark:text-white flex items-center gap-1">
-                  {currency}{pendingTx.amount}
-                  <Pencil className="w-2.5 h-2.5 text-neutral-300 group-hover:text-brand-green opacity-0 group-hover:opacity-100 transition-all shrink-0" />
-                </span>
-                <span className={`text-[7px] font-extrabold uppercase tracking-widest ${pendingTx.type === 'CREDIT' ? 'text-brand-green' : pendingTx.type === 'TRANSFER' ? 'text-cyan-500' : 'text-rose-500'}`}>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <div className="bg-white dark:bg-white/5 p-2 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:ring-2 ring-brand-green/30 transition-all group relative" onClick={() => handleEdit('amount')}>
+                <div className="absolute top-1 right-1 opacity-100"><Pencil className="w-2.5 h-2.5 text-brand-green/40 group-hover:text-brand-green transition-colors" /></div>
+                <span className="text-[17px] font-black text-brand-green dark:text-white">{currency}{pendingTx.amount}</span>
+                <span className={`text-[7px] font-black uppercase ${pendingTx.type === 'CREDIT' ? 'text-brand-green' : 'text-brand-red'}`}>
                   {pendingTx.type === 'CREDIT' ? 'Inflow' : pendingTx.type === 'TRANSFER' ? 'Transfer' : 'Outflow'}
                 </span>
               </div>
-
-              {/* Right: Category Icon & Name */}
-              <div className="flex items-center gap-2 cursor-pointer group relative text-right" onClick={() => handleEdit('category')}>
-                <div className="flex flex-col items-end">
-                  <span className="text-[8px] font-extrabold text-neutral-400 uppercase tracking-widest leading-none">Category</span>
-                  <span className="text-[10px] font-bold text-neutral-800 dark:text-neutral-200 mt-0.5 truncate max-w-[80px]">{pendingTx.category || '—'}</span>
+              <div className="bg-white dark:bg-white/5 p-2 rounded-2xl flex items-center gap-2 cursor-pointer hover:ring-2 ring-brand-green/30 transition-all group relative" onClick={() => handleEdit('category')}>
+                <div className="absolute top-1 right-1 opacity-100"><Pencil className="w-2.5 h-2.5 text-brand-green/40 group-hover:text-brand-green transition-colors" /></div>
+                <div className="text-xl">{CATEGORY_ICONS[pendingTx.category] || '📦'}</div>
+                <div className="flex flex-col">
+                  <span className="text-[8px] font-black text-neutral-400 uppercase leading-none">Category</span>
+                  <span className="text-[10px] font-bold text-brand-green dark:text-white truncate">{pendingTx.category || '—'}</span>
                 </div>
-                <div className="text-xl w-7 h-7 rounded-lg bg-neutral-50 dark:bg-white/5 flex items-center justify-center border border-neutral-100 dark:border-white/5 shrink-0">
-                  {CATEGORY_ICONS[pendingTx.category] || '📦'}
-                </div>
-                <Pencil className="w-2.5 h-2.5 text-neutral-300 group-hover:text-brand-green absolute -left-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all" />
               </div>
             </div>
 
-            {/* Dash receipt divider */}
-            <div className="border-t border-dashed border-neutral-200 dark:border-neutral-800 w-full my-0.5" />
-
-            {/* Rows list */}
-            <div className="space-y-1 px-0.5">
+            <div className="grid grid-cols-2 gap-1.5 mb-2">
               {[
-                { label: 'Account', value: accounts.find(a => a.id === pendingTx.selectedAccountId)?.bankName || '—', field: 'bank' },
-                { label: 'Method', value: pendingTx.upiApp || pendingTx.paymentMethod || '—', field: null },
-                { label: 'Payee / Src', value: pendingTx.party || '—', field: 'payee' },
-                { label: 'Tag', value: pendingTx.expenseType ? `#${pendingTx.expenseType}` : '—', field: 'tag' },
-                { label: 'Remarks', value: pendingTx.note || '—', field: 'remark' },
+                { icon: <Landmark className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Account', value: accounts.find(a => a.id === pendingTx.selectedAccountId)?.bankName || '—', field: 'bank' },
+                { icon: <AppWindow className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Method', value: pendingTx.upiApp || pendingTx.paymentMethod || '—', field: null },
+                { icon: <User className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Payee', value: pendingTx.party || '—', field: 'payee' },
+                { icon: <Hash className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Tag', value: `#${pendingTx.expenseType || '—'}`, field: 'tag' },
+                { icon: <Lightbulb className="w-3 h-3 text-neutral-400 shrink-0" />, label: 'Note', value: pendingTx.note || '—', field: 'remark' },
                 ...(pendingTx.type === 'DEBIT' ? [{
+                  icon: <Target className="w-3 h-3 text-neutral-400 shrink-0" />,
                   label: 'Envelope',
                   value: pendingTx.linkedBudgetId 
                     ? envelopeBudgets.find(b => b.id === pendingTx.linkedBudgetId)?.category || '—'
                     : 'None',
                   field: 'budget'
                 }] : []),
-              ].map(({ label, value, field }) => (
+              ].map(({ icon, label, value, field }) => (
                 <div key={label} onClick={() => field && handleEdit(field)}
-                  className={`flex items-center justify-between py-1 px-1.5 rounded-lg transition-colors group ${field ? 'cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5' : ''}`}>
-                  <span className="text-[8px] font-extrabold text-neutral-400 uppercase tracking-widest">{label}</span>
-                  <div className="flex items-center gap-1.5 truncate max-w-[70%]">
-                    <span className="text-[10px] font-bold text-neutral-800 dark:text-neutral-300 truncate">{value}</span>
-                    {field && <Pencil className="w-2.5 h-2.5 text-neutral-300 group-hover:text-brand-green opacity-0 group-hover:opacity-100 transition-all shrink-0" />}
+                  className={`bg-white dark:bg-white/5 p-2 rounded-2xl flex items-center gap-1.5 group relative ${field ? 'cursor-pointer hover:ring-2 ring-brand-green/30 transition-all' : ''}`}>
+                  {icon}
+                  <div className="flex flex-col overflow-hidden">
+                    <span className="text-[7px] font-black text-neutral-400 uppercase tracking-widest">{label}</span>
+                    <span className="text-[9px] font-bold text-neutral-800 dark:text-neutral-300 truncate">{value}</span>
                   </div>
+                  {field && <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"><Pencil className="w-2.5 h-2.5 text-brand-green/40" /></div>}
                 </div>
               ))}
             </div>
 
-            {/* Date Pill & Auto-filled notification */}
-            <div className="flex items-center justify-between px-1 mt-0.5">
-              <button onClick={() => handleEdit('date')} className="text-[9px] font-extrabold uppercase tracking-wider text-neutral-400 flex items-center gap-1 hover:text-brand-green transition-colors">
+            <div className="flex items-center justify-between mb-3 px-1">
+              <button onClick={() => handleEdit('date')} className="text-[9px] font-black uppercase tracking-wider text-neutral-400 flex items-center gap-1">
                 📅 {pendingTx.transactionDate ? format(new Date(pendingTx.transactionDate), 'dd MMM yyyy') : 'Set date'}
-                <Pencil className="w-2.5 h-2.5 text-neutral-300 hover:text-brand-green" />
+                <Pencil className="w-2 h-2 text-neutral-300" />
               </button>
               {pendingTx._isPredicted && (
-                <span className="text-[8px] font-extrabold uppercase tracking-widest text-brand-green flex items-center gap-1"><TrendingUp className="w-2.5 h-2.5" /> Auto-filled</span>
+                <span className="text-[8px] font-black uppercase tracking-widest text-brand-green flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Auto-filled</span>
               )}
             </div>
 
             <button onClick={() => handleSaveAndNext(pendingTx)} disabled={isSaving || showSuccess}
-              className={`w-full py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all ${
+              className={`w-full py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all ${
                 showSuccess ? 'bg-emerald-500 text-white' : 'bg-brand-green text-white shadow-brand-green/30 dark:shadow-brand-green/20'} disabled:opacity-70`}>
               {isSaving ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /><span>Saving...</span></>
                 : showSuccess ? <><CheckCircle2 className="w-5 h-5" /><span>Saved! {multiQueue.length > 0 ? `(${multiQueue.length} more...)` : ''}</span></>
