@@ -25,28 +25,7 @@ export const UPI_APPS_LIST = [
   'PhonePe',
   'Paytm',
   'BHIM UPI',
-  'CRED',
-  'Amazon Pay',
-  'Jupiter',
-  'Fi Money',
-  'WhatsApp Pay',
-  'Super.money',
-  'Navi UPI',
-  'Slice',
-  'Mobikwik',
-  'Freecharge',
-  'Tata Neu',
-  'Bajaj Pay',
-  'Airtel Payments Bank',
-  'JioPay',
-  'YONO SBI',
-  'iMobile Pay (ICICI)',
-  'HDFC PayZapp',
-  'Kotak Mahindra Bank',
-  'Axis Mobile (PayAuto)',
-  'BOB World (Baroda)',
-  'Canara ai1',
-  'IndusInd Pockets'
+  'CRED'
 ];
 
 export const UPI_APP_ICONS: Record<string, { icon: string; bg: string; color: string }> = {
