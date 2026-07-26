@@ -7,7 +7,7 @@ import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as Sett
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
 import { useUpiApps } from '../hooks/useUpiApps';
-import { UPI_APP_ICONS } from '../constants';
+import { UPI_APP_ICONS, getUpiAppIcon } from '../constants';
 import { useTheme } from '../components/ThemeProvider';
 import { useCurrency } from '../hooks/useCurrency';
 import { RecurringBillsManager } from '../components/RecurringBillsManager';
@@ -958,7 +958,7 @@ export default function Settings() {
                     <div className="space-y-4">
                       <div className="flex flex-wrap gap-2">
                         {upiApps.map((app) => {
-                          const iconData = UPI_APP_ICONS[app] || { icon: '📱', bg: 'bg-neutral-50 dark:bg-[#222222]', color: 'text-brand-blue dark:text-[#F7F7F7]' };
+                          const iconData = getUpiAppIcon(app);
                           return (
                             <div key={app} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-neutral-100 dark:border-[#333333] shadow-sm transition-all", iconData.bg)}>
                               <span>{iconData.icon}</span>
@@ -1288,7 +1288,7 @@ export default function Settings() {
             <div className="p-6 overflow-y-auto space-y-2 flex-1 scrollbar-none">
               {rawUpiApps.map((app, index) => {
                 const isSelected = selectedUpiAppSwapIndex === index;
-                const iconData = UPI_APP_ICONS[app.name] || { icon: '📱', bg: '', color: '' };
+                const iconData = getUpiAppIcon(app.name);
                 return (
                   <div
                     key={app.id}

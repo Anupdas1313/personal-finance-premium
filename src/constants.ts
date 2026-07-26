@@ -79,3 +79,38 @@ export const UPI_APP_ICONS: Record<string, { icon: string; bg: string; color: st
   'Canara ai1': { icon: '🟡', bg: 'bg-yellow-500/10 dark:bg-yellow-500/20', color: 'text-yellow-600 dark:text-yellow-400' },
   'IndusInd Pockets': { icon: '🦁', bg: 'bg-red-800/10 dark:bg-red-800/20', color: 'text-red-800 dark:text-red-400' },
 };
+
+export function getUpiAppIcon(appName: string): { icon: string; bg: string; color: string } {
+  if (!appName) return { icon: '📱', bg: 'bg-neutral-50 dark:bg-[#222222]', color: 'text-brand-blue dark:text-[#F7F7F7]' };
+  if (UPI_APP_ICONS[appName]) return UPI_APP_ICONS[appName];
+  
+  const lower = appName.toLowerCase();
+  if (lower.includes('gpay') || lower.includes('google pay')) return UPI_APP_ICONS['Google Pay (GPay)'];
+  if (lower.includes('phonepe') || lower.includes('phone pe')) return UPI_APP_ICONS['PhonePe'];
+  if (lower.includes('paytm')) return UPI_APP_ICONS['Paytm'];
+  if (lower.includes('bhim')) return UPI_APP_ICONS['BHIM UPI'];
+  if (lower.includes('cred')) return UPI_APP_ICONS['CRED'];
+  if (lower.includes('amazon')) return UPI_APP_ICONS['Amazon Pay'];
+  if (lower.includes('jupiter')) return UPI_APP_ICONS['Jupiter'];
+  if (lower.includes('fi')) return UPI_APP_ICONS['Fi Money'];
+  if (lower.includes('whatsapp')) return UPI_APP_ICONS['WhatsApp Pay'];
+  if (lower.includes('super')) return UPI_APP_ICONS['Super.money'];
+  if (lower.includes('navi')) return UPI_APP_ICONS['Navi UPI'];
+  if (lower.includes('slice')) return UPI_APP_ICONS['Slice'];
+  if (lower.includes('mobikwik')) return UPI_APP_ICONS['Mobikwik'];
+  if (lower.includes('freecharge')) return UPI_APP_ICONS['Freecharge'];
+  if (lower.includes('tata') || lower.includes('neu')) return UPI_APP_ICONS['Tata Neu'];
+  if (lower.includes('bajaj')) return UPI_APP_ICONS['Bajaj Pay'];
+  if (lower.includes('airtel')) return UPI_APP_ICONS['Airtel Payments Bank'];
+  if (lower.includes('jio')) return UPI_APP_ICONS['JioPay'];
+  if (lower.includes('sbi') || lower.includes('yono')) return UPI_APP_ICONS['YONO SBI'];
+  if (lower.includes('icici') || lower.includes('imobile')) return UPI_APP_ICONS['iMobile Pay (ICICI)'];
+  if (lower.includes('hdfc') || lower.includes('payzapp')) return UPI_APP_ICONS['HDFC PayZapp'];
+  if (lower.includes('kotak')) return UPI_APP_ICONS['Kotak Mahindra Bank'];
+  if (lower.includes('axis')) return UPI_APP_ICONS['Axis Mobile (PayAuto)'];
+  if (lower.includes('bob') || lower.includes('baroda')) return UPI_APP_ICONS['BOB World (Baroda)'];
+  if (lower.includes('canara')) return UPI_APP_ICONS['Canara ai1'];
+  if (lower.includes('indusind')) return UPI_APP_ICONS['IndusInd Pockets'];
+
+  return { icon: '📱', bg: 'bg-neutral-50 dark:bg-[#222222]', color: 'text-brand-blue dark:text-[#F7F7F7]' };
+}
