@@ -165,39 +165,6 @@ function SummaryContent() {
     isPulling.current = false;
   }, [pullDistance]);
 
-  // ── Swipe-between-months gesture ───────────────────────────────────────
-  const swipeStartX = useRef(0);
-  const swipeStartY = useRef(0);
-  const isSwiping = useRef(false);
-
-  const handleSwipeStart = useCallback((e: React.TouchEvent) => {
-    swipeStartX.current = e.touches[0].clientX;
-    swipeStartY.current = e.touches[0].clientY;
-    isSwiping.current = true;
-  }, []);
-
-  const handleSwipeEnd = useCallback((e: React.TouchEvent) => {
-    if (!isSwiping.current) return;
-    isSwiping.current = false;
-    const endX = e.changedTouches[0].clientX;
-    const endY = e.changedTouches[0].clientY;
-    const diffX = endX - swipeStartX.current;
-    const diffY = Math.abs(endY - swipeStartY.current);
-    // Only trigger if horizontal swipe is dominant and significant
-    if (Math.abs(diffX) > 60 && diffY < Math.abs(diffX) * 0.7) {
-      if (diffX > 0) {
-        // Swiped right → previous month
-        setCurrentMonth(m => subMonths(m, 1));
-      } else {
-        // Swiped left → next month
-        setCurrentMonth(m => {
-          const next = new Date(m.getFullYear(), m.getMonth() + 1, 1);
-          return next > new Date() ? m : next;
-        });
-      }
-    }
-  }, []);
-
   const transactions = useLiveQuery(() => db.transactions.toArray(), [user?.uid]) || [];
   const accounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
 
@@ -493,9 +460,9 @@ function SummaryContent() {
     <div
       ref={containerRef}
       className="space-y-4 max-w-2xl mx-auto pb-16"
-      onTouchStart={(e) => { handlePullStart(e); handleSwipeStart(e); }}
+      onTouchStart={handlePullStart}
       onTouchMove={handlePullMove}
-      onTouchEnd={(e) => { handlePullEnd(); handleSwipeEnd(e); }}
+      onTouchEnd={handlePullEnd}
     >
 
       {/* ── PULL-TO-REFRESH INDICATOR ── */}
