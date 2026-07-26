@@ -120,10 +120,10 @@ const Portal: React.FC<{ children: ReactNode }> = ({ children }) =>
 const TABS = [
   { key: 'category', label: 'Category', icon: <PieIcon className="w-3.5 h-3.5" /> },
   { key: 'tags', label: 'Tags', icon: <Tag className="w-3.5 h-3.5" /> },
+  { key: 'daily', label: 'Daily Avg', icon: <Zap className="w-3.5 h-3.5" /> },
   { key: 'accounts', label: 'Accounts', icon: <Layers className="w-3.5 h-3.5" /> },
   { key: 'methods', label: 'Methods', icon: <CreditCard className="w-3.5 h-3.5" /> },
   { key: 'payees', label: 'Payees', icon: <Store className="w-3.5 h-3.5" /> },
-  { key: 'daily', label: 'Daily Avg', icon: <Zap className="w-3.5 h-3.5" /> },
 ] as const;
 
 type TabKey = typeof TABS[number]['key'];
@@ -225,7 +225,7 @@ function SummaryContent() {
   }, [totalExpense, currentMonth, monthStart]);
 
   // ── Aggregations ──────────────────────────────────────────────────────────
-  const { pieData, tagData, accData, partyData, payMethodData, dailySpendData } = useMemo(() => {
+  const { pieData, tagData, accData, partyData, payMethodData, dailySpendData, dayOfWeekData, peakDay, busiestDay } = useMemo(() => {
     try {
       const byCategory: Record<string, number> = {};
       const byTag: Record<string, number> = {};
@@ -233,6 +233,15 @@ function SummaryContent() {
       const byParty: Record<string, number> = {};
       const byPayMethod: Record<string, number> = {};
       const byDay: Record<string, { dateStr: string; dayName: string; value: number; count: number }> = {};
+      const dayOfWeekTotals: Record<string, { total: number; count: number }> = {
+        'Mon': { total: 0, count: 0 },
+        'Tue': { total: 0, count: 0 },
+        'Wed': { total: 0, count: 0 },
+        'Thu': { total: 0, count: 0 },
+        'Fri': { total: 0, count: 0 },
+        'Sat': { total: 0, count: 0 },
+        'Sun': { total: 0, count: 0 },
+      };
 
       for (const tx of expenses) {
         const amt = safeNum(tx.amount);
@@ -246,6 +255,7 @@ function SummaryContent() {
         // Daily breakdown
         const txDate = new Date(tx.dateTime);
         const dayKey = format(txDate, 'yyyy-MM-dd');
+        const dowStr = format(txDate, 'EEE');
         if (!byDay[dayKey]) {
           byDay[dayKey] = {
             dateStr: format(txDate, 'dd MMM (EEE)'),
@@ -256,6 +266,11 @@ function SummaryContent() {
         }
         byDay[dayKey].value += amt;
         byDay[dayKey].count += 1;
+
+        if (dayOfWeekTotals[dowStr]) {
+          dayOfWeekTotals[dowStr].total += amt;
+          dayOfWeekTotals[dowStr].count += 1;
+        }
       }
 
       const toSorted = (obj: Record<string, number>) =>
@@ -265,6 +280,20 @@ function SummaryContent() {
         .map(([dayKey, data]) => ({ name: data.dayName, value: data.value, dateKey: dayKey, count: data.count }))
         .sort((a, b) => b.dateKey.localeCompare(a.dateKey));
 
+      let peak = { name: '-', value: 0 };
+      let busiest = { name: '-', count: 0 };
+
+      for (const d of dailySorted) {
+        if (d.value > peak.value) peak = { name: d.name, value: d.value };
+        if (d.count > busiest.count) busiest = { name: d.name, count: d.count };
+      }
+
+      const dowData = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => ({
+        day,
+        total: dayOfWeekTotals[day]?.total || 0,
+        count: dayOfWeekTotals[day]?.count || 0,
+      }));
+
       return {
         pieData: toSorted(byCategory),
         tagData: toSorted(byTag).slice(0, 6),
@@ -272,9 +301,15 @@ function SummaryContent() {
         partyData: toSorted(byParty).slice(0, 8),
         payMethodData: toSorted(byPayMethod),
         dailySpendData: dailySorted,
+        dayOfWeekData: dowData,
+        peakDay: peak,
+        busiestDay: busiest,
       };
     } catch {
-      return { pieData: [], tagData: [], accData: [], partyData: [], payMethodData: [], dailySpendData: [] };
+      return {
+        pieData: [], tagData: [], accData: [], partyData: [], payMethodData: [], dailySpendData: [],
+        dayOfWeekData: [], peakDay: { name: '-', value: 0 }, busiestDay: { name: '-', count: 0 }
+      };
     }
   }, [expenses, accounts]);
 
@@ -482,27 +517,65 @@ function SummaryContent() {
 
       case 'daily':
         const maxDaily = dailySpendData.reduce((m, d) => Math.max(m, d.value), 0);
+        const maxDow = dayOfWeekData.reduce((m, d) => Math.max(m, d.total), 0);
+
         return dailySpendData.length > 0 ? (
           <div className="space-y-4">
-            {/* Daily Avg Header Banner */}
-            <div className="p-4 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent rounded-2xl border border-amber-500/20 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center text-amber-500">
-                  <Zap className="w-5 h-5" />
+            {/* 1. Daily Avg KPI Stats Grid */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="p-3 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent rounded-2xl border border-amber-500/20">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Zap className="w-3.5 h-3.5 text-amber-500" />
+                  <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">Daily Average</span>
                 </div>
-                <div>
-                  <p className="text-[10px] font-medium text-amber-600 dark:text-amber-400">Average Daily Spend</p>
-                  <p className="text-lg font-bold text-brand-blue dark:text-white tracking-tight">{fmt(Math.round(avgDailySpend))} <span className="text-[10px] font-normal text-neutral-400">/ day</span></p>
-                </div>
+                <p className="text-base font-bold text-brand-blue dark:text-white tracking-tight">{fmt(Math.round(avgDailySpend))}</p>
+                <p className="text-[9px] font-medium text-neutral-400 mt-0.5">{dailySpendData.length} active spend days</p>
               </div>
-              <div className="text-right">
-                <p className="text-[9px] font-medium text-neutral-400">Active Days</p>
-                <p className="text-sm font-bold text-brand-blue dark:text-white">{dailySpendData.length} days</p>
+
+              <div className="p-3 bg-gradient-to-br from-rose-500/10 via-rose-500/5 to-transparent rounded-2xl border border-rose-500/20">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <TrendingUp className="w-3.5 h-3.5 text-rose-500" />
+                  <span className="text-[10px] font-medium text-rose-600 dark:text-rose-400">Single Peak Day</span>
+                </div>
+                <p className="text-base font-bold text-brand-blue dark:text-white tracking-tight">{fmt(peakDay.value)}</p>
+                <p className="text-[9px] font-medium text-neutral-400 truncate mt-0.5">{peakDay.name}</p>
               </div>
             </div>
 
-            {/* Daily Breakdown Rows */}
+            {/* 2. Day-of-Week Distribution (Mon-Sun Bar Chart) */}
+            <div className="p-3.5 bg-neutral-50 dark:bg-white/[0.02] rounded-2xl border border-neutral-100 dark:border-white/5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Weekly Spend Pattern</span>
+                <span className="text-[9px] font-medium text-neutral-400">By Day of Week</span>
+              </div>
+              <div className="grid grid-cols-7 gap-1 pt-2 items-end h-24">
+                {dayOfWeekData.map(d => {
+                  const heightPct = maxDow > 0 ? (d.total / maxDow) * 100 : 0;
+                  return (
+                    <div key={d.day} className="flex flex-col items-center gap-1 h-full justify-end group">
+                      <span className="text-[8px] font-bold text-neutral-400 group-hover:text-amber-500 transition-colors">
+                        {d.total > 0 ? fmt(d.total) : '0'}
+                      </span>
+                      <div className="w-full bg-neutral-200/50 dark:bg-white/5 rounded-t-lg flex-1 flex items-end overflow-hidden">
+                        <div
+                          className="w-full bg-amber-500 rounded-t-lg transition-all duration-500 group-hover:bg-amber-400"
+                          style={{ height: `${Math.max(heightPct, 6)}%` }}
+                        />
+                      </div>
+                      <span className="text-[9px] font-semibold text-neutral-500 dark:text-neutral-400">{d.day}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 3. Daily Breakdown Timeline */}
             <div className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Daily Activity Timeline</span>
+                <span className="text-[9px] font-medium text-neutral-400">{dailySpendData.length} recorded days</span>
+              </div>
+
               {dailySpendData.map((d) => {
                 const barPct = maxDaily > 0 ? (d.value / maxDaily) * 100 : 0;
                 return (
