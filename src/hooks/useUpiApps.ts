@@ -2,8 +2,9 @@ import React from 'react';
 import { db } from '../models/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useAuth } from '../context/AuthContext';
+import { UPI_APPS_LIST } from '../constants';
 
-export const DEFAULT_UPI_APPS = ['GPay', 'PhonePe', 'Paytm', 'BHIM', 'CRED', 'Jupiter', 'Fi Money', 'Amazon Pay'];
+export const DEFAULT_UPI_APPS = UPI_APPS_LIST;
 
 let upiAppsInitialized = false;
 

@@ -7,6 +7,7 @@ import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as Sett
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
 import { useUpiApps } from '../hooks/useUpiApps';
+import { UPI_APP_ICONS } from '../constants';
 import { useTheme } from '../components/ThemeProvider';
 import { useCurrency } from '../hooks/useCurrency';
 import { RecurringBillsManager } from '../components/RecurringBillsManager';
@@ -956,14 +957,18 @@ export default function Settings() {
                   <div className="p-5 border-t border-neutral-100 dark:border-[#222222] flex flex-col gap-5 animate-in fade-in slide-in-from-top-4 duration-200">
                     <div className="space-y-4">
                       <div className="flex flex-wrap gap-2">
-                        {upiApps.map((app) => (
-                          <div key={app} className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-50 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] rounded-full text-xs font-semibold border border-neutral-100 dark:border-[#333333] shadow-sm">
-                            📱 {app}
-                            <button type="button" onClick={() => removeUpiApp(app)} className="text-brand-blue/20 dark:text-[#666666] hover:text-brand-red transition-colors">
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ))}
+                        {upiApps.map((app) => {
+                          const iconData = UPI_APP_ICONS[app] || { icon: '📱', bg: 'bg-neutral-50 dark:bg-[#222222]', color: 'text-brand-blue dark:text-[#F7F7F7]' };
+                          return (
+                            <div key={app} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-neutral-100 dark:border-[#333333] shadow-sm transition-all", iconData.bg)}>
+                              <span>{iconData.icon}</span>
+                              <span className={iconData.color}>{app}</span>
+                              <button type="button" onClick={() => removeUpiApp(app)} className="ml-0.5 text-neutral-400 hover:text-brand-red transition-colors">
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
 
                       <div className="flex flex-col sm:flex-row gap-3 items-center">
@@ -1283,6 +1288,7 @@ export default function Settings() {
             <div className="p-6 overflow-y-auto space-y-2 flex-1 scrollbar-none">
               {rawUpiApps.map((app, index) => {
                 const isSelected = selectedUpiAppSwapIndex === index;
+                const iconData = UPI_APP_ICONS[app.name] || { icon: '📱', bg: '', color: '' };
                 return (
                   <div
                     key={app.id}
@@ -1300,7 +1306,8 @@ export default function Settings() {
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <span className="text-neutral-300 dark:text-neutral-600 group-hover:text-brand-green select-none shrink-0"><GripVertical className="w-3.5 h-3.5" /></span>
-                      <span className="truncate">📱 {app.name}</span>
+                      <span className="shrink-0">{iconData.icon}</span>
+                      <span className="truncate">{app.name}</span>
                     </div>
                     {isSelected && (
                       <span className="text-[7px] font-black uppercase tracking-widest bg-brand-green/10 px-2 py-0.5 rounded-full">
