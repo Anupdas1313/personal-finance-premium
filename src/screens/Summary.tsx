@@ -1,10 +1,12 @@
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../models/db';
+import { db, Transaction, normalizeType } from '../models/db';
 import { useAuth } from '../context/AuthContext';
 import { format, startOfMonth, endOfMonth, subMonths, differenceInDays, getDaysInMonth } from 'date-fns';
 import { useState, useMemo, useRef, useCallback, Component, type ReactNode } from 'react';
-import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, PieChart as PieIcon, Tag, Store, Layers, AlertTriangle, CreditCard, Wallet, ArrowUpRight, ArrowDownRight, Minus, RefreshCw, Zap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, PieChart as PieIcon, Tag, Store, Layers, AlertTriangle, CreditCard, Wallet, ArrowUpRight, ArrowDownRight, Minus, RefreshCw, Zap, X, Landmark, Smartphone, Tag as TagIcon, ArrowDownLeft } from 'lucide-react';
 import { CATEGORY_ICONS } from '../constants';
 import { useCurrency } from '../hooks/useCurrency';
 import { cn } from '../logic/utils';
@@ -110,6 +112,10 @@ function EmptyState({ icon, msg }: { icon: ReactNode; msg: string }) {
   );
 }
 
+// ── Portal helper ────────────────────────────────────────────────
+const Portal: React.FC<{ children: ReactNode }> = ({ children }) =>
+  createPortal(children, document.body);
+
 // ── Tab definitions ─────────────────────────────────────────────────────────
 const TABS = [
   { key: 'category', label: 'Category', icon: <PieIcon className="w-3.5 h-3.5" /> },
@@ -126,6 +132,8 @@ function SummaryContent() {
   const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const [activeTab, setActiveTab] = useState<TabKey>('category');
+  const [selectedDetail, setSelectedDetail] = useState<{ type: TabKey; name: string } | null>(null);
+  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const navigate = useNavigate();
 
   // ── Pull-to-refresh state ──────────────────────────────────────────────
@@ -289,7 +297,7 @@ function SummaryContent() {
                 return (
                   <div
                     key={d.name}
-                    onClick={() => navigate(`/transactions?category=${encodeURIComponent(d.name)}&month=${format(currentMonth, 'yyyy-MM')}`)}
+                    onClick={() => setSelectedDetail({ type: 'category', name: d.name })}
                     className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
                   >
                     {/* Color accent + icon */}
@@ -321,7 +329,7 @@ function SummaryContent() {
               return (
                 <div
                   key={d.name}
-                  onClick={() => navigate(`/transactions?tag=${encodeURIComponent(d.name)}&month=${format(currentMonth, 'yyyy-MM')}`)}
+                  onClick={() => setSelectedDetail({ type: 'tags', name: d.name })}
                   className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
                 >
                   <div className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: color }} />
@@ -355,10 +363,7 @@ function SummaryContent() {
               return (
                 <div
                   key={d.name}
-                  onClick={() => {
-                    const acc = accounts.find(a => a.bankName === d.name);
-                    if (acc) navigate(`/transactions?account=${acc.id}&month=${format(currentMonth, 'yyyy-MM')}`);
-                  }}
+                  onClick={() => setSelectedDetail({ type: 'accounts', name: d.name })}
                   className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
                 >
                   <div className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: color }} />
@@ -390,7 +395,7 @@ function SummaryContent() {
               return (
                 <div
                   key={d.name}
-                  onClick={() => navigate(`/transactions?method=${encodeURIComponent(d.name)}&month=${format(currentMonth, 'yyyy-MM')}`)}
+                  onClick={() => setSelectedDetail({ type: 'methods', name: d.name })}
                   className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
                 >
                   <div className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: color }} />
@@ -424,7 +429,7 @@ function SummaryContent() {
               return (
                 <div
                   key={d.name}
-                  onClick={() => navigate(`/transactions?search=${encodeURIComponent(d.name)}&month=${format(currentMonth, 'yyyy-MM')}`)}
+                  onClick={() => setSelectedDetail({ type: 'payees', name: d.name })}
                   className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
                 >
                   {/* Rank */}
@@ -580,6 +585,184 @@ function SummaryContent() {
       <div className="bg-white dark:bg-[#111111] p-4 rounded-[24px] border border-neutral-100 dark:border-white/5 shadow-sm">
         {renderTabContent()}
       </div>
+
+      {/* ── DETAIL DRAWER MODAL OVERLAY ── */}
+      <AnimatePresence>
+        {selectedDetail && (() => {
+          // Filter transactions for this specific detail selection in the current month
+          const detailTxs = expenses.filter(tx => {
+            if (selectedDetail.type === 'category') return tx.category === selectedDetail.name;
+            if (selectedDetail.type === 'tags') return tx.expenseType === selectedDetail.name;
+            if (selectedDetail.type === 'accounts') {
+              const acc = accounts.find(a => a.id === tx.accountId);
+              return acc?.bankName === selectedDetail.name;
+            }
+            if (selectedDetail.type === 'methods') return (tx as any).paymentMethod === selectedDetail.name;
+            if (selectedDetail.type === 'payees') return tx.party && tx.party.trim() === selectedDetail.name;
+            return false;
+          });
+
+          const detailTotal = detailTxs.reduce((s, tx) => s + safeNum(tx.amount), 0);
+          const detailPct = totalExpense > 0 ? (detailTotal / totalExpense) * 100 : 0;
+          const count = detailTxs.length;
+
+          return (
+            <Portal>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedDetail(null)}
+                className="fixed inset-0 bg-black/60 backdrop-blur-md z-[9999]"
+              />
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0C0C0F] z-[10000] rounded-t-[32px] p-6 pb-20 md:pb-6 max-w-lg mx-auto shadow-2xl border-t border-white/10 max-h-[85vh] flex flex-col"
+              >
+                {/* Drag pill handle */}
+                <div className="w-10 h-1 bg-neutral-100 dark:bg-white/10 rounded-full mx-auto mb-4 shrink-0" />
+
+                {/* Modal Header */}
+                <div className="flex items-start justify-between mb-4 shrink-0">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-11 h-11 bg-neutral-100 dark:bg-white/5 rounded-2xl flex items-center justify-center text-xl border border-neutral-100 dark:border-white/10 shrink-0">
+                      {selectedDetail.type === 'category' ? (CATEGORY_ICONS[selectedDetail.name] || '📦') :
+                       selectedDetail.type === 'tags' ? '🏷️' :
+                       selectedDetail.type === 'accounts' ? '🏦' :
+                       selectedDetail.type === 'methods' ? '💳' : '👤'}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-medium text-neutral-400 dark:text-neutral-500 block mb-0.5 uppercase tracking-wider">
+                        {format(currentMonth, 'MMMM yyyy')} • {selectedDetail.type}
+                      </span>
+                      <h2 className="text-base font-bold text-brand-blue dark:text-white tracking-tight truncate">
+                        {selectedDetail.name}
+                      </h2>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedDetail(null)}
+                    className="p-2 bg-neutral-50 dark:bg-white/5 rounded-full text-neutral-400 hover:text-brand-blue dark:hover:text-white transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Summary Stat Card */}
+                <div className="grid grid-cols-3 gap-2 p-3 bg-neutral-50 dark:bg-white/[0.03] rounded-2xl border border-neutral-100 dark:border-white/5 mb-4 shrink-0">
+                  <div className="text-center">
+                    <p className="text-[9px] font-medium text-neutral-400 dark:text-neutral-500">Total Spent</p>
+                    <p className="text-sm font-bold text-rose-500 tracking-tight">{fmt(detailTotal)}</p>
+                  </div>
+                  <div className="text-center border-x border-neutral-100 dark:border-white/5">
+                    <p className="text-[9px] font-medium text-neutral-400 dark:text-neutral-500">Share</p>
+                    <p className="text-sm font-bold text-brand-blue dark:text-white tracking-tight">{Math.round(detailPct)}%</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[9px] font-medium text-neutral-400 dark:text-neutral-500">Entries</p>
+                    <p className="text-sm font-bold text-brand-blue dark:text-white tracking-tight">{count}</p>
+                  </div>
+                </div>
+
+                {/* Transaction List */}
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-none">
+                  {detailTxs.length === 0 ? (
+                    <div className="py-12 text-center text-neutral-400 text-xs font-medium">No transactions found for this period.</div>
+                  ) : (
+                    detailTxs.map((tx, idx) => (
+                      <div
+                        key={tx.id || idx}
+                        onClick={() => setSelectedTx(tx)}
+                        className="p-3 bg-white dark:bg-[#121217] rounded-xl border border-neutral-100 dark:border-white/5 flex items-center justify-between cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-white/5 flex items-center justify-center text-sm shrink-0">
+                            {CATEGORY_ICONS[tx.category] || '📝'}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-brand-blue dark:text-white truncate">
+                              {tx.party || tx.note || tx.category}
+                            </p>
+                            <p className="text-[9px] font-medium text-neutral-400">
+                              {format(new Date(tx.dateTime), 'dd MMM yyyy, hh:mm a')}
+                            </p>
+                          </div>
+                        </div>
+                        <p className="text-xs font-bold text-rose-500 shrink-0 ml-2">
+                          -{fmt(tx.amount)}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            </Portal>
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* ── INDIVIDUAL TRANSACTION DETAIL DRAWER ── */}
+      <AnimatePresence>
+        {selectedTx && (
+          <Portal>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedTx(null)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-md z-[10001]"
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0C0C0F] z-[10002] rounded-t-[32px] p-6 pb-20 md:pb-6 max-w-lg mx-auto shadow-2xl border-t border-white/10"
+            >
+              <div className="w-10 h-1 bg-neutral-100 dark:bg-white/10 rounded-full mx-auto mb-6" />
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-neutral-100 dark:bg-white/5 rounded-xl flex items-center justify-center text-2xl border border-neutral-100 dark:border-white/10">
+                    {CATEGORY_ICONS[selectedTx.category || 'Other'] || '📝'}
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-medium text-neutral-400 dark:text-neutral-500 block mb-0.5">{selectedTx.category} Ledger</span>
+                    <h2 className="text-base font-bold text-brand-blue dark:text-white tracking-tight">{selectedTx.party || 'Statement Entry'}</h2>
+                    <p className="text-[10px] font-medium text-neutral-400 mt-0.5">{format(new Date(selectedTx.dateTime), 'dd MMM yyyy, hh:mm a')}</p>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedTx(null)} className="p-2 bg-neutral-50 dark:bg-white/5 rounded-full text-neutral-400">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {[
+                  { icon: <Landmark className="w-2.5 h-2.5" />, label: 'Source Account', value: accounts.find(a => a.id === selectedTx.accountId)?.bankName || 'Unknown' },
+                  { icon: <Smartphone className="w-2.5 h-2.5" />, label: 'Method', value: (selectedTx as any).upiApp || selectedTx.paymentMethod || 'Manual' },
+                  { icon: <TagIcon className="w-2.5 h-2.5" />, label: 'Classification', value: `#${selectedTx.expenseType || 'Unclassified'}` },
+                  { icon: <Layers className="w-2.5 h-2.5" />, label: 'Flow', value: normalizeType(selectedTx.type) },
+                ].map((item, i) => (
+                  <div key={i} className="p-3 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-2xl">
+                    <p className="text-[9px] font-medium text-neutral-400 mb-1 flex items-center gap-1.5">{item.icon} {item.label}</p>
+                    <p className="text-xs font-semibold text-brand-blue dark:text-white truncate">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-4 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-2xl flex items-center justify-between">
+                <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">Transaction Amount</span>
+                <span className={`text-lg font-bold ${normalizeType(selectedTx.type) === 'DEBIT' ? 'text-rose-500' : 'text-emerald-500'}`}>
+                  {normalizeType(selectedTx.type) === 'DEBIT' ? '−' : '+'}{fmt(selectedTx.amount)}
+                </span>
+              </div>
+            </motion.div>
+          </Portal>
+        )}
+      </AnimatePresence>
 
     </div>
   );
