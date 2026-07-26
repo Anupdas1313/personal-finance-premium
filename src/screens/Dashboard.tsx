@@ -445,23 +445,23 @@ export default function Dashboard() {
         }
 
         const txPayload = {
-          accountId: Number(currentSelectedAccountId) || 0,
-          amount: parseFloat(currentAmount?.toString().replace(/,/g, '')) || 0,
+          accountId: Number(currentSelectedAccountId),
+          amount: parseFloat(currentAmount.toString().replace(/,/g, '')) || 0,
           type: currentType as 'CREDIT' | 'DEBIT',
           dateTime: finalDateTime,
           note: currentNote || '',
           category: currentCategory,
-          paymentMethod: currentPaymentMethod || 'UPI',
-          upiApp: currentPaymentMethod === 'UPI' ? currentUpiApp : null,
-          party: currentPartyName || '',
-          expenseType: currentExpenseType || '',
+          paymentMethod: currentPaymentMethod,
+          upiApp: currentPaymentMethod === 'UPI' ? currentUpiApp : undefined,
+          party: currentPartyName,
+          expenseType: currentExpenseType,
           linkedBudgetId: txData && 'linkedBudgetId' in txData
-            ? (txData.linkedBudgetId ? Number(txData.linkedBudgetId) : null)
-            : (selectedBudgetId === 'auto' ? null : Number(selectedBudgetId)),
-          linkedTransactionId: null // ensure link is cleared
+            ? (txData.linkedBudgetId ? Number(txData.linkedBudgetId) : undefined)
+            : (selectedBudgetId === 'auto' ? undefined : Number(selectedBudgetId)),
+          linkedTransactionId: undefined // ensure link is cleared
         };
 
-        // Remove ONLY explicitly undefined properties, keep nulls so Dexie/Firestore clear them properly
+        // Remove undefined properties to prevent Dexie/Firestore errors
         Object.keys(txPayload).forEach(key => {
           if ((txPayload as any)[key] === undefined) {
             delete (txPayload as any)[key];
@@ -1014,265 +1014,295 @@ export default function Dashboard() {
             </div>
           ) : (
             <>
-              {/* ── MANUAL ENTRY: Immersive single-screen layout ── */}
-              <div className="flex-1 flex flex-col overflow-hidden">
-
-                {/* ── HERO: Type + Amount + Date ── */}
-                <div className={`flex flex-col items-center justify-center px-6 pt-5 pb-6 transition-colors duration-300 ${
-                  type === 'DEBIT' ? 'bg-rose-50 dark:bg-rose-950/20' : type === 'CREDIT' ? 'bg-emerald-50 dark:bg-emerald-950/20' : 'bg-sky-50 dark:bg-sky-950/20'
-                }`}>
-                  {/* Type pills */}
-                  <div className="flex gap-1 mb-4 bg-white/70 dark:bg-black/30 backdrop-blur-sm rounded-2xl p-1 border border-white dark:border-white/5 shadow-sm">
-                    <button onClick={() => setType('DEBIT')} className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all duration-200 ${
-                      type === 'DEBIT' ? 'bg-rose-500 text-white shadow-md shadow-rose-500/40' : 'text-neutral-400 dark:text-neutral-500 hover:text-neutral-600'
-                    }`}>Expense</button>
-                    <button onClick={() => setType('CREDIT')} className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all duration-200 ${
-                      type === 'CREDIT' ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/40' : 'text-neutral-400 dark:text-neutral-500 hover:text-neutral-600'
-                    }`}>Income</button>
-                    <button onClick={() => setType('TRANSFER')} className={`px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all duration-200 ${
-                      type === 'TRANSFER' ? 'bg-sky-500 text-white shadow-md shadow-sky-500/40' : 'text-neutral-400 dark:text-neutral-500 hover:text-neutral-600'
-                    }`}>Transfer</button>
+              <div className="flex-1 overflow-y-auto w-full px-4 pt-4 pb-28 space-y-4 scrollbar-hide no-scrollbar bg-neutral-50/30 dark:bg-black/10">
+                
+                {/* 1. Hero Card: Flow, Amount, and Date */}
+                <div className="bg-white dark:bg-[#111111] border border-neutral-100/80 dark:border-white/5 rounded-3xl p-5 flex flex-col items-center gap-4 shadow-sm relative">
+                  {/* Sliding Type Segmented Control */}
+                  <div className="flex bg-neutral-50 dark:bg-neutral-900/50 p-1 rounded-2xl w-full border border-neutral-100 dark:border-white/5">
+                    <button onClick={() => setType('DEBIT')} className={`flex-1 py-2 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'DEBIT' ? 'bg-white dark:bg-[#2C2C34] text-rose-500 shadow-sm border border-neutral-100 dark:border-neutral-800' : 'text-neutral-400'}`}>Outflow</button>
+                    <button onClick={() => setType('CREDIT')} className={`flex-1 py-2 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'CREDIT' ? 'bg-white dark:bg-[#2C2C34] text-brand-green shadow-sm border border-neutral-100 dark:border-neutral-800' : 'text-neutral-400'}`}>Inflow</button>
+                    <button onClick={() => setType('TRANSFER')} className={`flex-1 py-2 text-[10px] font-bold rounded-xl transition-all uppercase tracking-[0.1em] ${type === 'TRANSFER' ? 'bg-white dark:bg-[#2C2C34] text-cyan-500 shadow-sm border border-neutral-100 dark:border-neutral-800' : 'text-neutral-400'}`}>Transfer</button>
                   </div>
 
-                  {/* Amount */}
-                  <div className="flex items-baseline gap-1.5">
-                    <span className={`text-3xl font-black ${
-                      type === 'DEBIT' ? 'text-rose-300 dark:text-rose-600' : type === 'CREDIT' ? 'text-emerald-300 dark:text-emerald-600' : 'text-sky-300 dark:text-sky-600'
-                    }`}>{currency}</span>
-                    <input
-                      type="number" inputMode="decimal" autoFocus
-                      value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" step="0.01"
-                      className="bg-transparent text-[52px] font-black tracking-tighter text-center outline-none w-52 text-neutral-900 dark:text-white caret-transparent"
-                    />
-                  </div>
-
-                  {/* Date pill */}
-                  <div className="relative mt-3">
-                    <div className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest cursor-pointer border ${
-                      type === 'DEBIT' ? 'bg-rose-100/80 dark:bg-rose-900/30 border-rose-200/60 dark:border-rose-800/30 text-rose-500'
-                      : type === 'CREDIT' ? 'bg-emerald-100/80 dark:bg-emerald-900/30 border-emerald-200/60 dark:border-emerald-800/30 text-emerald-600'
-                      : 'bg-sky-100/80 dark:bg-sky-900/30 border-sky-200/60 dark:border-sky-800/30 text-sky-600'
-                    }`}>
-                      <Calendar className="w-3 h-3 shrink-0" />
-                      {format(new Date(transactionDate), 'EEE dd MMM · hh:mm a')}
+                  {/* Centered Amount Input */}
+                  <div className="flex flex-col items-center gap-1.5 w-full mt-1">
+                    <div className="flex items-baseline justify-center gap-1 w-full max-w-[220px]">
+                      <span className="text-xl font-black text-neutral-300 dark:text-neutral-600">{currency}</span>
+                      <input 
+                        type="number" inputMode="decimal" autoFocus value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" step="0.01"
+                        className="bg-transparent text-4xl font-heading font-black text-center outline-none w-full text-neutral-900 dark:text-white tracking-tighter caret-brand-green"
+                      />
                     </div>
-                    <input type="datetime-local" value={transactionDate} onChange={(e) => setTransactionDate(e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+                    
+                    {/* Date Picker Pill */}
+                    <div className="relative mt-1">
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-50 dark:bg-neutral-900 border border-neutral-100 dark:border-white/5 text-neutral-400 dark:text-neutral-400 hover:text-brand-green dark:hover:text-brand-green transition-colors cursor-pointer">
+                        <Calendar className="w-3 h-3 text-neutral-400 shrink-0" />
+                        <span className="text-[9px] font-extrabold uppercase tracking-widest leading-none">{format(new Date(transactionDate), 'dd MMM, hh:mm a')}</span>
+                      </div>
+                      <input type="datetime-local" value={transactionDate} onChange={(e) => setTransactionDate(e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+                    </div>
                   </div>
                 </div>
 
-                {/* ── DETAILS ROWS ── */}
-                <div className="flex-1 overflow-y-auto bg-white dark:bg-[#0C0C0F] no-scrollbar">
-
-                  {/* Account row */}
-                  <div className="border-b border-neutral-100 dark:border-white/[0.06] px-4 py-3">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400 dark:text-neutral-600 mb-2">{type === 'TRANSFER' ? 'From → To' : 'Account'}</p>
-                    <div className="flex gap-2.5 overflow-x-auto no-scrollbar">
+                {/* 2. Account Selector & Dynamic Payment Logistics */}
+                <div className="bg-white dark:bg-[#111111] border border-neutral-100/80 dark:border-white/5 rounded-3xl p-4 space-y-3 shadow-sm">
+                  <span className="text-[10px] font-extrabold text-[#888] dark:text-neutral-500 uppercase tracking-widest px-1">
+                    {type === 'TRANSFER' ? 'Select Transfer Accounts' : 'Select Account'}
+                  </span>
                   
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {accounts.map(acc => {
                       const isSelected = selectedAccountId === acc.id;
                       const isToAccount = toAccountId === acc.id;
-                      const active = isSelected || isToAccount;
+                      
                       return (
-                        <button
-                          key={acc.id}
-                          onClick={() => {
-                            if (type === 'TRANSFER') {
-                              if (!selectedAccountId) setSelectedAccountId(acc.id!);
-                              else if (selectedAccountId === acc.id) setSelectedAccountId('');
-                              else if (toAccountId === acc.id) setToAccountId('');
-                              else setToAccountId(acc.id!);
-                            } else {
-                              setSelectedAccountId(acc.id!);
-                              if ((acc as any).type === 'CASH') setPaymentMethod('Cash');
-                              else if ((acc as any).type === 'CREDIT_CARD') setPaymentMethod('Credit Card');
-                              else if (paymentMethod === 'Cash' || paymentMethod === 'Credit Card') setPaymentMethod('UPI');
-                            }
-                          }}
-                          className={`flex-shrink-0 flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border transition-all active:scale-95 ${
-                            active
-                              ? 'border-brand-green bg-brand-green/5 dark:bg-brand-green/10 shadow-sm'
-                              : 'border-transparent bg-neutral-50 dark:bg-white/[0.04] hover:border-neutral-200 dark:hover:border-white/10'
-                          }`}
-                        >
-                          <div className="w-10 h-10 rounded-2xl bg-white dark:bg-[#1A1A22] flex items-center justify-center p-1 shadow-sm border border-neutral-100 dark:border-white/[0.06] shrink-0">
-                            <BankLogo bankName={acc.bankName} type={(acc as any).type} className="w-full h-full" />
-                          </div>
-                          <span className={`text-[9px] font-black truncate max-w-[58px] text-center ${active ? 'text-brand-green' : 'text-neutral-500 dark:text-neutral-400'}`}>{acc.bankName}</span>
-                          {type === 'TRANSFER' && isSelected && <span className="text-[7px] font-black text-brand-green bg-brand-green/10 px-1.5 py-0.5 rounded-md uppercase">FROM</span>}
-                          {type === 'TRANSFER' && isToAccount && <span className="text-[7px] font-black text-sky-500 bg-sky-500/10 px-1.5 py-0.5 rounded-md uppercase">TO</span>}
-                        </button>
+                        <div key={acc.id} className="flex flex-col gap-2">
+                          <button
+                            key={acc.id}
+                            onClick={() => {
+                              if (type === 'TRANSFER') {
+                                if (!selectedAccountId) setSelectedAccountId(acc.id!);
+                                else if (selectedAccountId === acc.id) setSelectedAccountId('');
+                                else if (toAccountId === acc.id) setToAccountId('');
+                                else setToAccountId(acc.id!);
+                              } else {
+                                setSelectedAccountId(acc.id!);
+                                if ((acc as any).type === 'CASH') setPaymentMethod('Cash');
+                                else if ((acc as any).type === 'CREDIT_CARD') setPaymentMethod('Credit Card');
+                                else if (paymentMethod === 'Cash' || paymentMethod === 'Credit Card') setPaymentMethod('Bank');
+                              }
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-3 rounded-2xl border transition-all relative ${
+                              (isSelected || isToAccount)
+                                ? 'bg-neutral-50 dark:bg-white/[0.03] border-brand-green dark:border-brand-green shadow-sm'
+                                : 'bg-transparent border-neutral-100 dark:border-white/5 hover:border-neutral-200 dark:hover:border-white/10'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 overflow-hidden">
+                              <div className="w-8 h-8 rounded-xl bg-neutral-50 dark:bg-[#151518] flex items-center justify-center p-0.5 shadow-sm border border-neutral-100/80 dark:border-white/5 shrink-0">
+                                <BankLogo bankName={acc.bankName} type={(acc as any).type} className="w-full h-full" />
+                              </div>
+                              <div className="text-left min-w-0">
+                                <p className={`text-xs font-bold truncate ${isSelected || isToAccount ? 'text-brand-green dark:text-[#F7F7F7]' : 'text-neutral-600 dark:text-[#A0A0A5]'}`}>{acc.bankName}</p>
+                                <p className="text-[9px] text-neutral-400 mt-0.5 uppercase tracking-widest">{acc.type === 'CASH' ? 'Cash' : `**** ${acc.accountLast4}`}</p>
+                              </div>
+                            </div>
+                            
+                            {type === 'TRANSFER' ? (
+                              <div className="flex gap-1.5 shrink-0">
+                                {isSelected && <span className="bg-brand-green text-white text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider">From</span>}
+                                {isToAccount && <span className="bg-brand-cyan text-brand-blue text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider font-sans">To</span>}
+                              </div>
+                            ) : (
+                              isSelected && <span className="w-2 h-2 rounded-full bg-brand-green shrink-0" />
+                            )}
+                          </button>
+                          
+                          {/* Dynamic Inline Logistics for Bank accounts */}
+                          {isSelected && type !== 'TRANSFER' && acc.type === 'BANK' && (
+                            <div className="bg-neutral-50 dark:bg-[#16161B]/50 border border-neutral-100 dark:border-white/5 rounded-2xl p-2.5 space-y-2.5 animate-in slide-in-from-top-2 duration-300">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[9px] font-extrabold text-[#888] dark:text-neutral-500 uppercase tracking-widest pl-1">Payment Method</span>
+                                <div className="flex bg-white dark:bg-white/5 p-0.5 rounded-xl border border-neutral-100 dark:border-white/5 shrink-0">
+                                  <button
+                                    onClick={() => setPaymentMethod('UPI')}
+                                    className={`px-3 py-1.5 text-[8px] font-black rounded-lg transition-all ${paymentMethod === 'UPI' ? 'bg-[#111] dark:bg-[#2C2C34] text-white shadow-sm' : 'text-neutral-400'}`}
+                                  >
+                                    UPI
+                                  </button>
+                                  <button
+                                    onClick={() => setPaymentMethod('Bank Transfer')}
+                                    className={`px-3 py-1.5 text-[8px] font-black rounded-lg transition-all ${paymentMethod === 'Bank Transfer' ? 'bg-[#111] dark:bg-[#2C2C34] text-white shadow-sm' : 'text-neutral-400'}`}
+                                  >
+                                    Bank Transfer
+                                  </button>
+                                </div>
+                              </div>
+                              
+                              {paymentMethod === 'UPI' && (
+                                <div className="flex gap-1.5">
+                                  {['GPay', 'PhonePe', 'Paytm', 'BHIM', 'CRED'].map(app => (
+                                    <button
+                                      key={app}
+                                      onClick={() => setUpiApp(app)}
+                                      className={`flex-1 py-1.5 rounded-xl text-[8px] font-black uppercase transition-all border ${
+                                        upiApp === app
+                                          ? 'bg-brand-green border-brand-green text-white shadow-sm'
+                                          : 'bg-white dark:bg-[#1A1A22] border-neutral-100 dark:border-white/5 text-neutral-400 hover:border-neutral-200'
+                                      }`}
+                                    >
+                                      {app}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       );
                     })}
+                  </div>
+                </div>
+
+                {/* 3. Category Carousel */}
+                {type !== 'TRANSFER' && (
+                  <div className="bg-white dark:bg-[#111111] border border-neutral-100/80 dark:border-white/5 rounded-3xl p-4 space-y-3 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold text-[#888] dark:text-neutral-500 uppercase tracking-widest px-1">Choose Category</span>
+                      <span className="text-[10px] font-black text-brand-green dark:text-brand-green px-2 py-0.5 bg-brand-green/5 rounded-lg lowercase tracking-wider">{category}</span>
+                    </div>
+                    
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                      {appCategories.map(cat => {
+                        const isSelected = category === cat;
+                        return (
+                          <button
+                            key={cat}
+                            onClick={() => setCategory(cat)}
+                            className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-2xl border transition-all active:scale-95 ${
+                              isSelected
+                                ? 'bg-brand-green border-brand-green text-white dark:text-brand-blue shadow-md scale-105'
+                                : 'bg-neutral-50 dark:bg-white/5 border-transparent text-neutral-500 hover:bg-neutral-100 dark:hover:bg-white/10'
+                            }`}
+                          >
+                            <span className="text-sm">{CATEGORY_ICONS[cat] || '📝'}</span>
+                            <span className="text-[10px] font-extrabold uppercase tracking-widest">{cat}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
+                )}
 
-                  {/* Payment method — shown when bank is selected */}
-                  {type !== 'TRANSFER' && selectedAccountId && accounts.find(a => a.id === selectedAccountId && (a as any).type === 'BANK') && (
-                    <div className="border-b border-neutral-100 dark:border-white/[0.06] px-4 py-3">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400 dark:text-neutral-600 mb-2">Pay via</p>
-                      <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                        {(['UPI', 'Bank Transfer'] as const).map(m => (
-                          <button key={m} onClick={() => setPaymentMethod(m as any)}
-                            className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-[9px] font-black border transition-all ${
-                              paymentMethod === m
-                                ? 'bg-brand-green text-white border-brand-green shadow-sm'
-                                : 'border-neutral-100 dark:border-white/[0.06] text-neutral-400 bg-neutral-50 dark:bg-white/[0.04]'
-                            }`}>{m}
-                          </button>
-                        ))}
-                        {paymentMethod === 'UPI' && ['GPay', 'PhonePe', 'Paytm', 'BHIM', 'CRED'].map(app => (
-                          <button key={app} onClick={() => setUpiApp(app)}
-                            className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-[9px] font-black border transition-all ${
-                              upiApp === app
-                                ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 border-transparent shadow-sm'
-                                : 'border-neutral-100 dark:border-white/[0.06] text-neutral-400 bg-neutral-50 dark:bg-white/[0.04]'
-                            }`}>{app}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Category row */}
+                {/* 4. Details Section (Payee, Remarks, Tags) */}
+                <div className="bg-white dark:bg-[#111111] border border-neutral-100/80 dark:border-white/5 rounded-3xl p-4 space-y-4 shadow-sm">
+                  <span className="text-[10px] font-extrabold text-[#888] dark:text-neutral-500 uppercase tracking-widest px-1">Transaction Details</span>
+                  
+                  {/* Payee / Source */}
                   {type !== 'TRANSFER' && (
-                    <div className="border-b border-neutral-100 dark:border-white/[0.06] px-4 py-3">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400 dark:text-neutral-600 mb-2 flex items-center gap-1.5">
-                        <span className="text-base">{CATEGORY_ICONS[category] || '📝'}</span>{category}
-                      </p>
-                      <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                        {appCategories.map(cat => (
-                          <button key={cat} onClick={() => setCategory(cat)}
-                            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black transition-all border ${
-                              category === cat
-                                ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 border-transparent shadow-md'
-                                : 'border-neutral-100 dark:border-white/[0.06] text-neutral-500 bg-neutral-50 dark:bg-white/[0.04] hover:border-neutral-200'
-                            }`}>
-                            <span className="text-xs">{CATEGORY_ICONS[cat] || '📝'}</span><span>{cat}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Payee row */}
-                  {type !== 'TRANSFER' && (
-                    <div className="border-b border-neutral-100 dark:border-white/[0.06] flex items-center gap-3 px-4 py-3.5 group">
-                      <User className="w-4 h-4 text-neutral-300 dark:text-neutral-700 shrink-0" />
-                      <input
-                        type="text" value={partyName} onChange={e => setPartyName(e.target.value)}
-                        placeholder={type === 'DEBIT' ? 'Payee (Zomato, Reliance...)' : 'Source (Salary, Freelance...)'}
-                        className="flex-1 bg-transparent text-[13px] font-semibold text-neutral-800 dark:text-neutral-100 outline-none placeholder:text-neutral-300 dark:placeholder:text-neutral-700"
+                    <div className="flex items-center gap-3 bg-neutral-50 dark:bg-white/5 px-3 py-2.5 rounded-2xl border border-transparent focus-within:border-brand-green/20 transition-all">
+                      <User className="w-4 h-4 text-neutral-400 shrink-0" />
+                      <input 
+                        type="text" 
+                        value={partyName} 
+                        onChange={e => setPartyName(e.target.value)} 
+                        placeholder={type === 'DEBIT' ? 'Payee (e.g. Zomato, Starbucks)' : 'Source (e.g. Salary, Client)'} 
+                        className="bg-transparent flex-1 text-xs font-bold outline-none text-neutral-800 dark:text-white placeholder:text-neutral-400" 
                       />
                     </div>
                   )}
 
-                  {/* Note row */}
-                  <div className="border-b border-neutral-100 dark:border-white/[0.06] flex items-center gap-3 px-4 py-3.5">
-                    <AlignLeft className="w-4 h-4 text-neutral-300 dark:text-neutral-700 shrink-0" />
-                    <input
-                      type="text" value={note} onChange={e => setNote(e.target.value)}
-                      placeholder="Note (optional)..."
-                      className="flex-1 bg-transparent text-[13px] font-semibold text-neutral-800 dark:text-neutral-100 outline-none placeholder:text-neutral-300 dark:placeholder:text-neutral-700"
+                  {/* Remarks */}
+                  <div className="flex items-center gap-3 bg-neutral-50 dark:bg-white/5 px-3 py-2.5 rounded-2xl border border-transparent focus-within:border-brand-green/20 transition-all">
+                    <AlignLeft className="w-4 h-4 text-neutral-400 shrink-0" />
+                    <input 
+                      type="text" 
+                      value={note} 
+                      onChange={e => setNote(e.target.value)} 
+                      placeholder="Add specific details or remarks..." 
+                      className="bg-transparent flex-1 text-xs font-bold outline-none text-neutral-800 dark:text-white placeholder:text-neutral-400" 
                     />
                   </div>
 
-                  {/* Tags row */}
+                  {/* Tags Selector */}
                   {type !== 'TRANSFER' && tags.length > 0 && (
-                    <div className="border-b border-neutral-100 dark:border-white/[0.06] flex items-center gap-3 px-4 py-3">
-                      <Hash className="w-4 h-4 text-neutral-300 dark:text-neutral-700 shrink-0" />
-                      <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                        {tags.map(tagName => (
-                          <button key={tagName} onClick={() => setExpenseType(expenseType === tagName ? '' : tagName)}
-                            className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-[9px] font-black border transition-all ${
-                              expenseType === tagName
-                                ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 border-transparent shadow-sm'
-                                : 'border-neutral-100 dark:border-white/[0.06] text-neutral-400 bg-neutral-50 dark:bg-white/[0.04]'
-                            }`}>#{tagName}
-                          </button>
-                        ))}
+                    <div className="space-y-2 pt-1">
+                      <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest pl-1">Classification Tag</span>
+                      <div className="flex gap-1.5">
+                        {tags.map(tagName => {
+                          const isSelected = expenseType === tagName;
+                          return (
+                            <button
+                              key={tagName}
+                              onClick={() => setExpenseType(expenseType === tagName ? '' : tagName)}
+                              className={`flex-1 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all border ${
+                                isSelected
+                                  ? 'bg-brand-green border-brand-green text-white dark:text-brand-blue shadow-sm'
+                                  : 'bg-neutral-50 dark:bg-white/5 border-neutral-100 dark:border-white/5 text-neutral-400 hover:border-neutral-200'
+                              }`}
+                            >
+                              #{tagName}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
-
-                  {/* Budget row */}
-                  {type === 'DEBIT' && activeMonthBudgets.length > 0 && (
-                    <div className="border-b border-neutral-100 dark:border-white/[0.06] px-4 py-3">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400 dark:text-neutral-600 mb-2">Budget Envelope</p>  
-                      <div className="flex items-center gap-3">
-                        <Target className="w-4 h-4 text-neutral-300 dark:text-neutral-700 shrink-0" />
-                        <select
-                          value={selectedBudgetId}
-                          onChange={(e) => setSelectedBudgetId(e.target.value === 'auto' ? 'auto' : Number(e.target.value))}
-                          className="flex-1 bg-transparent text-[13px] font-semibold text-neutral-800 dark:text-neutral-100 outline-none appearance-none cursor-pointer"
-                        >
-                          <option value="auto">Auto-match by category</option>
-                          {activeMonthBudgets.map(b => (
-                            <option key={b.id} value={b.id}>{b.category} ({currency}{b.amount})</option>
-                          ))}
-                        </select>
-                      </div>
-                      {/* Budget progress bar */}
-                      {selectedBudget && (
-                        <div className="mt-2 space-y-1">
-                          <div className="flex justify-between text-[9px] font-bold">
-                            <span className="text-neutral-400">{selectedBudget.category}</span>
-                            <span className={(selectedBudgetSpent + (Number(amount) || 0)) > selectedBudget.amount ? 'text-rose-500' : 'text-brand-green'}>
-                              {currency}{(selectedBudgetSpent + (Number(amount) || 0)).toLocaleString()} / {currency}{selectedBudget.amount.toLocaleString()}
-                            </span>
-                          </div>
-                          <div className="w-full h-1 bg-neutral-100 dark:bg-white/[0.06] rounded-full overflow-hidden flex">
-                            <div className="h-full bg-brand-green opacity-40" style={{ width: `${Math.min((selectedBudgetSpent / selectedBudget.amount) * 100, 100)}%` }} />
-                            {(Number(amount) || 0) > 0 && (
-                              <div className={`h-full ${((selectedBudgetSpent + Number(amount)) > selectedBudget.amount) ? 'bg-rose-500' : 'bg-brand-green'}`} style={{ width: `${Math.min(((Number(amount) || 0) / selectedBudget.amount) * 100, 100 - Math.min((selectedBudgetSpent / selectedBudget.amount) * 100, 100))}%` }} />
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Low balance warning */}
-                  {type === 'DEBIT' && amount && parseFloat(amount.toString().replace(/,/g, '')) > (balances.find(a => a.id === selectedAccountId)?.currentBalance || 0) && (
-                    <div className="mx-4 mt-2 flex items-center gap-2 text-rose-500 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 p-3 rounded-2xl">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span className="text-[9px] font-black uppercase tracking-widest">Insufficient balance</span>
-                    </div>
-                  )}
-
-                  <div className="h-24" />
                 </div>
+
+                {/* 5. Budget Envelope Selection */}
+                {type === 'DEBIT' && activeMonthBudgets.length > 0 && (
+                  <div className="bg-white dark:bg-[#111111] border border-neutral-100/80 dark:border-white/5 rounded-3xl p-4 space-y-3 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold text-[#888] dark:text-neutral-500 uppercase tracking-widest px-1">Draw From Budget</span>
+                      <select 
+                        value={selectedBudgetId} 
+                        onChange={(e) => setSelectedBudgetId(e.target.value === 'auto' ? 'auto' : Number(e.target.value))}
+                        className="bg-neutral-50 dark:bg-white/5 text-[10px] font-bold text-brand-green dark:text-brand-green outline-none border border-neutral-100 dark:border-white/5 px-2.5 py-1.5 rounded-xl cursor-pointer"
+                      >
+                        <option value="auto">Auto-match by Category</option>
+                        {activeMonthBudgets.map(b => (
+                          <option key={b.id} value={b.id}>{b.category} ({currency}{b.amount})</option>
+                        ))}
+                      </select>
+                    </div>
+                    {selectedBudget && (
+                      <div className="px-1 space-y-1.5">
+                        <div className="flex justify-between items-end text-[9px] font-bold">
+                          <span className="text-neutral-400 uppercase tracking-wider">{selectedBudget.category} Budget</span>
+                          <span className={(selectedBudgetSpent + (Number(amount) || 0)) > selectedBudget.amount ? 'text-brand-red' : 'text-brand-green'}>
+                            {currency}{(selectedBudgetSpent + (Number(amount) || 0)).toLocaleString()} / {currency}{selectedBudget.amount.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden flex">
+                          <div className="h-full bg-brand-green dark:bg-brand-green opacity-40 transition-all duration-300" style={{ width: `${Math.min((selectedBudgetSpent / selectedBudget.amount) * 100, 100)}%` }} />
+                          {(Number(amount) || 0) > 0 && (
+                            <div className={`h-full transition-all duration-300 ${((selectedBudgetSpent + Number(amount)) > selectedBudget.amount) ? 'bg-brand-red' : 'bg-brand-green'}`} style={{ width: `${Math.min(((Number(amount) || 0) / selectedBudget.amount) * 100, 100 - Math.min((selectedBudgetSpent / selectedBudget.amount) * 100, 100))}%` }} />
+                          )}
+                        </div>
+                        {((selectedBudgetSpent + (Number(amount) || 0)) > selectedBudget.amount) && (
+                          <p className="text-[8px] font-bold text-brand-red uppercase tracking-widest pt-0.5">⚠️ Breaches budget by {currency}{((selectedBudgetSpent + (Number(amount) || 0)) - selectedBudget.amount).toLocaleString()}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Low Balance Warning */}
+                {type === 'DEBIT' && amount && parseFloat(amount.toString().replace(/,/g, '')) > (balances.find(a => a.id === selectedAccountId)?.currentBalance || 0) && (
+                  <div className="flex items-center gap-1.5 text-brand-red bg-rose-500/5 border border-rose-500/10 p-3 rounded-2xl animate-pulse">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span className="text-[9px] font-black uppercase tracking-widest">Low Balance Warning</span>
+                  </div>
+                )}
               </div>
 
-              {/* ── BOTTOM ACTION BAR ── */}
-              <div className="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-[#0C0C0F]/95 backdrop-blur-xl border-t border-neutral-100 dark:border-white/[0.06] px-4 py-3 z-50 flex items-center gap-3">
-                <button
-                  onClick={() => setEntryMode('CHAT')}
-                  className="w-12 h-12 rounded-2xl border border-neutral-100 dark:border-white/[0.08] bg-neutral-50 dark:bg-white/[0.04] flex items-center justify-center text-brand-green shrink-0 active:scale-95 transition-all hover:bg-brand-green/5"
-                >
-                  <Wand2 className="w-5 h-5" />
-                </button>
-                <button
+              {/* Persistent Action Bar — Fixed Bottom Optimized */}
+              <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-[#0A0A0A]/80 backdrop-blur-xl border-t border-[#EBEBEB] dark:border-white/5 z-50 flex justify-end items-center gap-3">
+                <button 
                   onClick={() => handleSaveManual()}
                   disabled={!amount || !type || !selectedAccountId || (tags.length > 0 && type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp) || isSaving || status === 'success'}
-                  className={`flex-1 h-12 rounded-2xl text-[13px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-xl ${
+                  className={`px-8 py-2.5 rounded-2xl text-[10px] font-black transition-all active:scale-[0.98] shadow-2xl flex items-center justify-center gap-2 uppercase tracking-widest ${
                     (!amount || !type || !selectedAccountId || (tags.length > 0 && type !== 'TRANSFER' && !expenseType) || (type === 'TRANSFER' && !toAccountId) || (paymentMethod === 'UPI' && !upiApp))
-                      ? 'bg-neutral-100 dark:bg-white/[0.04] text-neutral-300 dark:text-neutral-700 cursor-not-allowed'
-                      : status === 'success'
-                        ? 'bg-emerald-500 text-white shadow-emerald-500/40'
-                        : type === 'DEBIT'
-                          ? 'bg-rose-500 text-white shadow-rose-500/30'
-                          : type === 'CREDIT'
-                            ? 'bg-emerald-500 text-white shadow-emerald-500/30'
-                            : 'bg-sky-500 text-white shadow-sky-500/30'
-                  } disabled:opacity-60`}
+                    ? 'bg-neutral-100 dark:bg-[#1C1C22] text-neutral-300 dark:text-[#4A4A52] cursor-not-allowed border border-[#EBEBEB] dark:border-transparent opacity-50'
+                    : (status === 'success' ? 'bg-emerald-500 text-white shadow-emerald-500/20' : 'bg-brand-green dark:bg-brand-green text-white dark:text-brand-blue shadow-brand-green/30 dark:shadow-brand-green/20')
+                  } disabled:opacity-70`}
                 >
                   {isSaving ? (
-                    <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /><span>Saving…</span></>
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>SAVING...</span>
+                    </>
                   ) : status === 'success' ? (
-                    <><CheckCircle2 className="w-5 h-5" /><span>Saved!</span></>
+                    <> <CheckCircle2 className="w-4 h-4" /> SAVED </>
                   ) : (
-                    <><Save className="w-4 h-4 opacity-80" /><span>{type === 'DEBIT' ? 'Save Expense' : type === 'CREDIT' ? 'Save Income' : 'Save Transfer'}</span></>
+                    <> <Save className="w-4 h-4 text-current opacity-60" /> SAVE ENTRY </>
                   )}
+                </button>
+                <button onClick={() => setEntryMode('CHAT')} className="w-11 h-11 bg-brand-green/5 dark:bg-brand-green/5 text-brand-green dark:text-brand-green rounded-2xl flex items-center justify-center border border-brand-green/10 dark:border-brand-green/10 transition-all active:scale-90 shadow-sm">
+                   <Wand2 className="w-5 h-5" />
                 </button>
               </div>
             </>
