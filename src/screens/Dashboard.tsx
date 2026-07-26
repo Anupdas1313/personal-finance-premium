@@ -1212,11 +1212,11 @@ export default function Dashboard() {
                       <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest pl-1">Classification Tag</span>
                       <div className="flex gap-1.5">
                         {tags.map(tagName => {
-                          const isSelected = expenseType === tagName;
+                          const isSelected = (expenseType || '').toLowerCase() === tagName.toLowerCase();
                           return (
                             <button
                               key={tagName}
-                              onClick={() => setExpenseType(expenseType === tagName ? '' : tagName)}
+                              onClick={() => setExpenseType(isSelected ? '' : tagName)}
                               className={`flex-1 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all border ${
                                 isSelected
                                   ? 'bg-brand-green border-brand-green text-white dark:text-brand-blue shadow-sm'
