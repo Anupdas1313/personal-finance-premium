@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../models/db';
 import { useCurrency } from '../hooks/useCurrency';
-import { ArrowLeft, Trash2, ArrowRight, ArrowLeftRight } from 'lucide-react';
+import { ArrowLeft, Trash2, ArrowRight, ArrowLeftRight, Landmark, Wallet, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function TransferLogs() {
@@ -36,6 +36,12 @@ export default function TransferLogs() {
     }
   };
 
+  const getAccountIcon = (type?: string) => {
+    if (type === 'CASH') return <Wallet className="w-3.5 h-3.5 text-brand-green shrink-0" />;
+    if (type === 'CREDIT_CARD') return <CreditCard className="w-3.5 h-3.5 text-brand-red shrink-0" />;
+    return <Landmark className="w-3.5 h-3.5 text-brand-blue dark:text-brand-cyan shrink-0" />;
+  };
+
   return (
     <div className="max-w-2xl mx-auto py-1 pb-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Back Header */}
@@ -57,7 +63,7 @@ export default function TransferLogs() {
       </div>
 
       {/* Logs List Container */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {transfers.length === 0 ? (
           <div className="bg-white dark:bg-[#111111] p-10 text-center rounded-[24px] shadow-sm border border-neutral-100 dark:border-white/5 flex flex-col items-center justify-center gap-3">
             <ArrowLeftRight className="w-8 h-8 text-neutral-300 dark:text-neutral-700" />
@@ -66,51 +72,86 @@ export default function TransferLogs() {
         ) : (
           transfers.map(tx => {
             const fromAcc = accounts.find(a => a.id === tx.accountId);
-            const fromAccName = fromAcc ? `${fromAcc.bankName} (•• ${fromAcc.accountLast4})` : 'Unknown Account';
+            const fromAccName = fromAcc ? fromAcc.bankName : 'Unknown';
+            const fromAccLast4 = fromAcc ? fromAcc.accountLast4 : '••••';
+            const fromAccType = fromAcc ? fromAcc.type : 'BANK';
             
             const linkedTx = allTransactions.find(t => t.id === tx.linkedTransactionId);
             const toAcc = linkedTx ? accounts.find(a => a.id === linkedTx.accountId) : null;
-            const toAccName = toAcc ? `${toAcc.bankName} (•• ${toAcc.accountLast4})` : (tx.party || 'Unknown Account');
+            const toAccName = toAcc ? toAcc.bankName : (tx.party || 'Unknown');
+            const toAccLast4 = toAcc ? toAcc.accountLast4 : '••••';
+            const toAccType = toAcc ? toAcc.type : 'BANK';
 
             const formattedDate = format(new Date(tx.dateTime), 'dd MMM yyyy, hh:mm a');
 
             return (
               <div 
                 key={tx.id} 
-                className="bg-white dark:bg-[#111111] p-4 rounded-[20px] shadow-sm border border-neutral-100 dark:border-white/5 flex items-center justify-between gap-4 animate-in fade-in duration-300"
+                className="bg-white dark:bg-[#111111] p-4 rounded-[24px] shadow-sm border border-neutral-100 dark:border-white/5 flex flex-col gap-3 animate-in fade-in duration-300"
               >
-                <div className="flex-1 min-w-0">
-                  {/* Date & Paths */}
-                  <div className="flex items-center gap-2 text-[8px] font-black text-neutral-400 uppercase tracking-wider mb-2">
-                    <span>{formattedDate}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-xs font-bold text-brand-blue dark:text-white mb-1 truncate">
-                    <span className="truncate">{fromAccName}</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                    <span className="truncate">{toAccName}</span>
-                  </div>
-
-                  {tx.note && (
-                    <p className="text-[10px] text-neutral-400 dark:text-neutral-500 font-bold uppercase tracking-wide truncate">
-                      {tx.note}
-                    </p>
-                  )}
-                </div>
-
-                {/* Right side: Amount and Delete button */}
-                <div className="flex items-center gap-4 shrink-0">
-                  <span className="text-sm font-heading font-black text-cyan-500 tracking-tight">
-                    {currency}{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                {/* Header: Date and Delete button */}
+                <div className="flex justify-between items-center pb-2 border-b border-neutral-50 dark:border-white/5">
+                  <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">
+                    {formattedDate}
                   </span>
                   
                   <button 
                     onClick={() => handleDeleteTransfer(tx.id!, tx.linkedTransactionId)}
-                    className="p-2 text-neutral-400 hover:text-brand-red dark:hover:text-rose-500 bg-neutral-50 dark:bg-white/5 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all"
+                    className="p-1.5 text-neutral-400 hover:text-brand-red dark:hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-all"
                     title="Delete Transfer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
+                </div>
+
+                {/* Visual Flow Bridge */}
+                <div className="flex items-center gap-3">
+                  {/* From Account block */}
+                  <div className="flex items-center gap-2.5 p-2 bg-neutral-50 dark:bg-white/[0.01] border border-neutral-100/50 dark:border-white/5 rounded-xl flex-1 min-w-0">
+                    <div className="p-1.5 bg-white dark:bg-[#1A1A1A] rounded-lg border border-neutral-100 dark:border-white/5 shrink-0 shadow-sm">
+                      {getAccountIcon(fromAccType)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-black text-brand-blue dark:text-white uppercase tracking-wider truncate leading-tight">
+                        {fromAccName}
+                      </p>
+                      <p className="text-[8px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mt-0.5">
+                        •• {fromAccLast4}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Arrow Indicator */}
+                  <div className="p-1 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-full shrink-0">
+                    <ArrowRight className="w-3.5 h-3.5 text-brand-cyan" />
+                  </div>
+
+                  {/* To Account block */}
+                  <div className="flex items-center gap-2.5 p-2 bg-neutral-50 dark:bg-white/[0.01] border border-neutral-100/50 dark:border-white/5 rounded-xl flex-1 min-w-0">
+                    <div className="p-1.5 bg-white dark:bg-[#1A1A1A] rounded-lg border border-neutral-100 dark:border-white/5 shrink-0 shadow-sm">
+                      {getAccountIcon(toAccType)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-black text-brand-blue dark:text-white uppercase tracking-wider truncate leading-tight">
+                        {toAccName}
+                      </p>
+                      <p className="text-[8px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mt-0.5">
+                        •• {toAccLast4}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer: Amount & Remarks */}
+                <div className="flex items-center justify-between mt-1 pt-2 border-t border-neutral-50 dark:border-white/5">
+                  <div className="min-w-0 pr-4">
+                    <p className="text-[9px] text-neutral-400 dark:text-neutral-500 font-bold uppercase tracking-wide truncate">
+                      {tx.note || 'Inter-Account Transfer'}
+                    </p>
+                  </div>
+                  <span className="text-sm font-heading font-black text-cyan-500 tracking-tight shrink-0">
+                    {currency}{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
                 </div>
               </div>
             );
