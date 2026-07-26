@@ -4,12 +4,12 @@ import { db } from '../models/db';
 import { useAuth } from '../context/AuthContext';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { useState, useMemo, Component, type ReactNode } from 'react';
-import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, PieChart as PieIcon, Tag, Store, Layers, AlertTriangle, CreditCard, BarChart2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, PieChart as PieIcon, Tag, Store, Layers, AlertTriangle, CreditCard, Wallet, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 import { CATEGORY_ICONS } from '../constants';
 import { useCurrency } from '../hooks/useCurrency';
 import { cn } from '../logic/utils';
 
-// ── Color palette matching the app's brand-green primary ─────────────────────
+// ── Color palette ─────────────────────────────────────────────────────────────
 const CAT_COLORS = [
   '#00A86B', '#1A237E', '#D4AF37', '#E53935', '#82EEFD',
   '#6366F1', '#F59E0B', '#EC4899', '#14B8A6', '#84CC16',
@@ -71,11 +71,11 @@ function safeNum(val: any): number {
 }
 
 // ── Mini Donut (pure SVG) ─────────────────────────────────────────────────────
-function MiniDonut({ data, colors, size = 140 }: { data: { name: string; value: number }[]; colors: string[]; size?: number }) {
+function MiniDonut({ data, colors, size = 120 }: { data: { name: string; value: number }[]; colors: string[]; size?: number }) {
   const total = data.reduce((s, d) => s + d.value, 0);
   if (total === 0) return null;
   const r = size / 2;
-  const innerR = r * 0.62;
+  const innerR = r * 0.65;
   const cx = r; const cy = r;
   let cumAngle = -90;
 
@@ -110,64 +110,22 @@ function EmptyState({ icon, msg }: { icon: ReactNode; msg: string }) {
   );
 }
 
-// ── Section Card wrapper ──────────────────────────────────────────────────────
-function SectionCard({ children }: { children: ReactNode }) {
-  return (
-    <div className="bg-white dark:bg-[#111111] p-5 rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm">
-      {children}
-    </div>
-  );
-}
+// ── Tab definitions ─────────────────────────────────────────────────────────
+const TABS = [
+  { key: 'category', label: 'Category', icon: <PieIcon className="w-3.5 h-3.5" /> },
+  { key: 'tags', label: 'Tags', icon: <Tag className="w-3.5 h-3.5" /> },
+  { key: 'accounts', label: 'Accounts', icon: <Layers className="w-3.5 h-3.5" /> },
+  { key: 'methods', label: 'Methods', icon: <CreditCard className="w-3.5 h-3.5" /> },
+  { key: 'payees', label: 'Payees', icon: <Store className="w-3.5 h-3.5" /> },
+] as const;
 
-// ── Section title ─────────────────────────────────────────────────────────────
-function SectionTitle({ icon, label }: { icon: ReactNode; label: string }) {
-  return (
-    <div className="flex items-center gap-3 mb-5">
-      <div className="p-2 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
-        <span className="text-brand-blue dark:text-[#F7F7F7]">{icon}</span>
-      </div>
-      <div>
-        <p className="font-bold text-sm text-brand-blue dark:text-[#F7F7F7]">{label}</p>
-      </div>
-    </div>
-  );
-}
-
-// ── Progress row ─────────────────────────────────────────────────────────────
-function ProgressRow({ label, amount, pct, color, icon, rank, fmt, onClick }:
-  { label: string; amount: number; pct: number; color: string; icon?: string; rank?: number; fmt: (n: number) => string; onClick?: () => void }) {
-  return (
-    <div 
-      onClick={onClick}
-      className={cn("p-3.5 rounded-2xl border border-neutral-100 dark:border-[#222222] bg-neutral-50 dark:bg-[#1A1A1A]/50", onClick && "cursor-pointer hover:bg-neutral-100 dark:hover:bg-[#222222] transition-colors")}
-    >
-      <div className="flex items-center justify-between mb-2.5">
-        <div className="flex items-center gap-2 min-w-0">
-          {rank !== undefined && (
-            <span className="w-5 h-5 rounded-full bg-brand-blue/5 dark:bg-white/10 text-neutral-400 text-[10px] font-bold flex items-center justify-center shrink-0">{rank}</span>
-          )}
-          {icon && <span className="text-[13px] shrink-0">{icon}</span>}
-          <span className="text-xs font-bold text-brand-blue dark:text-[#F7F7F7] truncate">{label}</span>
-        </div>
-        <div className="flex items-center gap-2.5 shrink-0 ml-3">
-          <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">{Math.round(pct)}%</span>
-          <span className="text-xs font-bold text-brand-blue dark:text-[#F7F7F7]">{fmt(amount)}</span>
-        </div>
-      </div>
-      <div className="w-full bg-neutral-100 dark:bg-[#222222] rounded-full h-1.5 overflow-hidden">
-        <div
-          className="h-1.5 rounded-full transition-all duration-500"
-          style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }}
-        />
-      </div>
-    </div>
-  );
-}
+type TabKey = typeof TABS[number]['key'];
 
 // ── Main Summary Component ────────────────────────────────────────────────────
 function SummaryContent() {
   const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
+  const [activeTab, setActiveTab] = useState<TabKey>('category');
   const navigate = useNavigate();
 
   const transactions = useLiveQuery(() => db.transactions.toArray(), [user?.uid]) || [];
@@ -236,7 +194,7 @@ function SummaryContent() {
         pieData: toSorted(byCategory),
         tagData: toSorted(byTag).slice(0, 6),
         accData: toSorted(byAccount),
-        partyData: toSorted(byParty).slice(0, 6),
+        partyData: toSorted(byParty).slice(0, 8),
         payMethodData: toSorted(byPayMethod),
       };
     } catch {
@@ -245,210 +203,304 @@ function SummaryContent() {
   }, [expenses, accounts]);
 
   const isCurrentMonth = format(currentMonth, 'yyyy-MM') === format(new Date(), 'yyyy-MM');
-  const monthName = format(currentMonth, 'MMMM');
 
   const currencySymbol = useCurrency();
   const fmt = (n: number) => `${currencySymbol}${Math.abs(n).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 
+  const TrendBadge = ({ pct, good }: { pct: number | null; good: (p: number) => boolean }) => {
+    if (pct === null) return null;
+    const isGood = good(pct);
+    return (
+      <span className={cn('inline-flex items-center gap-0.5 text-[9px] font-bold', isGood ? 'text-emerald-500' : 'text-rose-500')}>
+        {isGood ? <ArrowDownRight className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
+        {Math.abs(Math.round(pct))}%
+      </span>
+    );
+  };
+
+  // ── Render Active Tab Content ─────────────────────────────────────────────
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'category':
+        return pieData.length > 0 ? (
+          <div className="space-y-4">
+            {/* Donut centered above list */}
+            <div className="flex justify-center">
+              <div className="relative">
+                <MiniDonut data={pieData} colors={CAT_COLORS} size={120} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest">Spent</span>
+                  <span className="text-sm font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">{fmt(totalExpense)}</span>
+                </div>
+              </div>
+            </div>
+            {/* Category rows */}
+            <div className="space-y-2">
+              {pieData.map((d, i) => {
+                const pct = totalExpense > 0 ? (d.value / totalExpense) * 100 : 0;
+                const color = CAT_COLORS[i % CAT_COLORS.length];
+                return (
+                  <div
+                    key={d.name}
+                    onClick={() => navigate(`/transactions?category=${encodeURIComponent(d.name)}&month=${format(currentMonth, 'yyyy-MM')}`)}
+                    className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
+                  >
+                    {/* Color accent + icon */}
+                    <div className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                    <span className="text-base shrink-0">{CATEGORY_ICONS[d.name] || '📦'}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-brand-blue dark:text-white truncate">{d.name}</p>
+                      <div className="w-full bg-neutral-100 dark:bg-white/5 rounded-full h-1 mt-1 overflow-hidden">
+                        <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }} />
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs font-black text-brand-blue dark:text-white">{fmt(d.value)}</p>
+                      <p className="text-[9px] font-bold text-neutral-400">{Math.round(pct)}%</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : <EmptyState icon={<PieIcon className="w-6 h-6 text-neutral-400" />} msg="No spending data this month" />;
+
+      case 'tags':
+        return tagData.length > 0 ? (
+          <div className="space-y-2">
+            {tagData.map((d, i) => {
+              const pct = totalExpense > 0 ? (d.value / totalExpense) * 100 : 0;
+              const color = TAG_COLORS[i % TAG_COLORS.length];
+              return (
+                <div
+                  key={d.name}
+                  onClick={() => navigate(`/transactions?tag=${encodeURIComponent(d.name)}&month=${format(currentMonth, 'yyyy-MM')}`)}
+                  className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
+                >
+                  <div className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                  <span
+                    className="text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                    style={{ backgroundColor: `${color}15`, color }}
+                  >
+                    #{d.name}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="w-full bg-neutral-100 dark:bg-white/5 rounded-full h-1 overflow-hidden">
+                      <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }} />
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-black text-brand-blue dark:text-white">{fmt(d.value)}</p>
+                    <p className="text-[9px] font-bold text-neutral-400">{Math.round(pct)}%</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : <EmptyState icon={<Tag className="w-6 h-6 text-neutral-400" />} msg="No tags used this month" />;
+
+      case 'accounts':
+        return accData.length > 0 ? (
+          <div className="space-y-2">
+            {accData.map((d, i) => {
+              const pct = totalExpense > 0 ? (d.value / totalExpense) * 100 : 0;
+              const color = CAT_COLORS[(i + 1) % CAT_COLORS.length];
+              return (
+                <div
+                  key={d.name}
+                  onClick={() => {
+                    const acc = accounts.find(a => a.bankName === d.name);
+                    if (acc) navigate(`/transactions?account=${acc.id}&month=${format(currentMonth, 'yyyy-MM')}`);
+                  }}
+                  className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
+                >
+                  <div className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                  <div className="p-1.5 bg-white dark:bg-[#1A1A1A] rounded-lg border border-neutral-100 dark:border-white/5 shrink-0">
+                    <Wallet className="w-3.5 h-3.5 text-neutral-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-brand-blue dark:text-white truncate">{d.name}</p>
+                    <div className="w-full bg-neutral-100 dark:bg-white/5 rounded-full h-1 mt-1 overflow-hidden">
+                      <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }} />
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-black text-brand-blue dark:text-white">{fmt(d.value)}</p>
+                    <p className="text-[9px] font-bold text-neutral-400">{Math.round(pct)}%</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : <EmptyState icon={<Layers className="w-6 h-6 text-neutral-400" />} msg="No account data this month" />;
+
+      case 'methods':
+        return payMethodData.length > 0 ? (
+          <div className="space-y-2">
+            {payMethodData.map((d) => {
+              const pct = totalExpense > 0 ? (d.value / totalExpense) * 100 : 0;
+              const color = PAY_COLORS[d.name] || '#1A237E';
+              return (
+                <div
+                  key={d.name}
+                  onClick={() => navigate(`/transactions?method=${encodeURIComponent(d.name)}&month=${format(currentMonth, 'yyyy-MM')}`)}
+                  className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
+                >
+                  <div className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                  <div className="p-1.5 rounded-lg shrink-0" style={{ backgroundColor: `${color}15` }}>
+                    <CreditCard className="w-3.5 h-3.5" style={{ color }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-brand-blue dark:text-white truncate">{d.name}</p>
+                    <div className="w-full bg-neutral-100 dark:bg-white/5 rounded-full h-1 mt-1 overflow-hidden">
+                      <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }} />
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-black text-brand-blue dark:text-white">{fmt(d.value)}</p>
+                    <p className="text-[9px] font-bold text-neutral-400">{Math.round(pct)}%</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : <EmptyState icon={<CreditCard className="w-6 h-6 text-neutral-400" />} msg="No payment data this month" />;
+
+      case 'payees':
+        return partyData.length > 0 ? (
+          <div className="space-y-2">
+            {partyData.map((d, i) => {
+              const pct = totalExpense > 0 ? (d.value / totalExpense) * 100 : 0;
+              const initials = d.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+              const avatarColors = ['#00A86B', '#1A237E', '#E53935', '#6366F1', '#F59E0B', '#EC4899', '#14B8A6', '#D4AF37'];
+              const avatarColor = avatarColors[i % avatarColors.length];
+              return (
+                <div
+                  key={d.name}
+                  onClick={() => navigate(`/transactions?search=${encodeURIComponent(d.name)}&month=${format(currentMonth, 'yyyy-MM')}`)}
+                  className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
+                >
+                  {/* Rank */}
+                  <span className="w-5 h-5 rounded-full bg-neutral-100 dark:bg-white/10 text-neutral-400 text-[10px] font-bold flex items-center justify-center shrink-0">
+                    {i + 1}
+                  </span>
+                  {/* Avatar initials */}
+                  <div
+                    className="w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black text-white shrink-0"
+                    style={{ backgroundColor: avatarColor }}
+                  >
+                    {initials}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-brand-blue dark:text-white truncate">{d.name}</p>
+                    <div className="w-full bg-neutral-100 dark:bg-white/5 rounded-full h-1 mt-1 overflow-hidden">
+                      <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: avatarColor }} />
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-black text-brand-blue dark:text-white">{fmt(d.value)}</p>
+                    <p className="text-[9px] font-bold text-neutral-400">{Math.round(pct)}%</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : <EmptyState icon={<Store className="w-6 h-6 text-neutral-400" />} msg="No payee data this month" />;
+    }
+  };
+
   return (
-    <div className="space-y-6 max-w-2xl mx-auto pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-4 max-w-2xl mx-auto pb-16">
 
-      {/* ── HEADER ── */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-brand-green/5 dark:bg-[#111612] text-brand-green dark:text-brand-cyan rounded-2xl border border-brand-green/10 dark:border-brand-green/5">
-            <BarChart2 className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">Analytics</h1>
-            <p className="text-neutral-400 font-bold mt-0.5 uppercase tracking-widest text-[8px]">Monthly Insights & Visual Breakdown</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4 bg-white dark:bg-[#111111] px-4 py-2 rounded-[20px] shadow-sm border border-neutral-100 dark:border-[#222222] w-full sm:w-auto justify-between sm:justify-start">
+      {/* ── COMPACT HEADER + MONTH NAVIGATOR ── */}
+      <div className="flex items-center justify-between gap-3 px-1">
+        <h1 className="text-xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter leading-none">
+          Analytics
+        </h1>
+        <div className="flex items-center gap-2 bg-white dark:bg-[#111111] px-3 py-1.5 rounded-full shadow-sm border border-neutral-100 dark:border-white/5">
           <button
             onClick={() => setCurrentMonth(m => subMonths(m, 1))}
-            className="text-neutral-400 hover:text-neutral-600 dark:hover:text-[#F7F7F7] font-bold px-1 transition-colors"
-          >&lt;</button>
-          <span className="font-bold text-brand-blue dark:text-[#F7F7F7] min-w-[120px] text-center uppercase tracking-widest text-[9px]">
-            {format(currentMonth, 'MMMM yyyy')}
+            className="text-neutral-400 hover:text-neutral-600 dark:hover:text-white transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="font-bold text-brand-blue dark:text-[#F7F7F7] min-w-[90px] text-center text-[10px] uppercase tracking-widest">
+            {format(currentMonth, 'MMM yyyy')}
           </span>
           <button
             onClick={() => setCurrentMonth(m => { const next = new Date(m.getFullYear(), m.getMonth() + 1, 1); return next > new Date() ? m : next; })}
             disabled={isCurrentMonth}
-            className="text-neutral-400 hover:text-neutral-600 dark:hover:text-[#F7F7F7] font-bold px-1 transition-colors disabled:opacity-30"
-          >&gt;</button>
+            className="text-neutral-400 hover:text-neutral-600 dark:hover:text-white transition-colors disabled:opacity-30"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      {/* ── HERO BANNER ── */}
-      <div className="bg-brand-green rounded-[24px] p-5 shadow-sm relative overflow-hidden text-white">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-white/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="relative z-10">
-          <p className="text-white/60 text-[9px] font-bold uppercase tracking-widest mb-2">{monthName} Overview</p>
-          <h2 className="text-white font-heading font-bold text-[20px] leading-snug tracking-tight">
-            Earned <span className="font-extrabold">{fmt(totalIncome)}</span>
-            <span className="text-white/50 font-normal"> · </span>
-            Spent <span className="font-extrabold">{fmt(totalExpense)}</span>
-          </h2>
-          <p className="text-white/80 font-semibold text-[12px] mt-1">
-            {savings >= 0 ? `Saved ${fmt(savings)}` : `Deficit ${fmt(Math.abs(savings))}`}
-            {savingsRate !== 0 && <span className="ml-1 text-white/60">· {savingsRate}% rate</span>}
-          </p>
-        </div>
-      </div>
-
-      {/* ── KPI ROW ── */}
-      <div className="grid grid-cols-2 gap-3">
-        {[
-          { label: 'Income', value: totalIncome, pct: incomeChangePct, good: (p: number) => p >= 0 },
-          { label: 'Spent', value: totalExpense, pct: expenseChangePct, good: (p: number) => p <= 0 },
-        ].map(kpi => (
-          <div key={kpi.label} className="bg-white dark:bg-[#111111] p-4 rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm">
-            <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{kpi.label}</p>
-            <p className="text-[20px] font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">{fmt(kpi.value)}</p>
-            {kpi.pct !== null && (
-              <div className={cn('flex items-center gap-1 text-[10px] font-semibold mt-1', kpi.good(kpi.pct) ? 'text-brand-green' : 'text-brand-red')}>
-                {kpi.good(kpi.pct) ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                {Math.abs(Math.round(kpi.pct))}% vs last month
-              </div>
+      {/* ── HERO STATS CARD ── */}
+      <div className="bg-brand-green rounded-[24px] p-4 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/15 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="relative z-10 grid grid-cols-3 gap-3">
+          {/* Income */}
+          <div className="text-center">
+            <p className="text-white/50 text-[8px] font-bold uppercase tracking-widest mb-1">Income</p>
+            <p className="text-white font-heading font-black text-sm tracking-tight leading-none">{fmt(totalIncome)}</p>
+            {incomeChangePct !== null && (
+              <span className={cn('inline-flex items-center gap-0.5 text-[8px] font-bold mt-1', incomeChangePct >= 0 ? 'text-white/80' : 'text-rose-200')}>
+                {incomeChangePct >= 0 ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
+                {Math.abs(Math.round(incomeChangePct))}%
+              </span>
             )}
           </div>
+          {/* Spent */}
+          <div className="text-center border-x border-white/10">
+            <p className="text-white/50 text-[8px] font-bold uppercase tracking-widest mb-1">Spent</p>
+            <p className="text-white font-heading font-black text-sm tracking-tight leading-none">{fmt(totalExpense)}</p>
+            {expenseChangePct !== null && (
+              <span className={cn('inline-flex items-center gap-0.5 text-[8px] font-bold mt-1', expenseChangePct <= 0 ? 'text-white/80' : 'text-rose-200')}>
+                {expenseChangePct <= 0 ? <TrendingDown className="w-2.5 h-2.5" /> : <TrendingUp className="w-2.5 h-2.5" />}
+                {Math.abs(Math.round(expenseChangePct))}%
+              </span>
+            )}
+          </div>
+          {/* Saved */}
+          <div className="text-center">
+            <p className="text-white/50 text-[8px] font-bold uppercase tracking-widest mb-1">Saved</p>
+            <p className={cn('font-heading font-black text-sm tracking-tight leading-none', savings >= 0 ? 'text-white' : 'text-rose-200')}>
+              {savings >= 0 ? fmt(savings) : `-${fmt(Math.abs(savings))}`}
+            </p>
+            {savingsRate !== 0 && (
+              <span className="text-[8px] font-bold text-white/60 mt-1 inline-block">
+                {savingsRate}% rate
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── TAB BAR ── */}
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide no-scrollbar pb-1 -mx-1 px-1">
+        {TABS.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={cn(
+              'flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[10px] font-bold whitespace-nowrap transition-all border shrink-0',
+              activeTab === tab.key
+                ? 'bg-brand-blue dark:bg-white text-white dark:text-brand-blue border-brand-blue dark:border-white shadow-sm'
+                : 'bg-white dark:bg-[#111111] text-neutral-500 dark:text-neutral-400 border-neutral-100 dark:border-white/5 hover:bg-neutral-50 dark:hover:bg-white/[0.04]'
+            )}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
         ))}
       </div>
 
-      {/* ── 1. SPENDING BY CATEGORY ── */}
-      <SectionCard>
-        <SectionTitle icon={<PieIcon className="w-4 h-4" />} label="Spending by Category" />
-        {pieData.length > 0 ? (
-          <div className="flex flex-col sm:flex-row items-center gap-5">
-            {/* Donut */}
-            <div className="relative shrink-0">
-              <MiniDonut data={pieData} colors={CAT_COLORS} size={140} />
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Total</span>
-                <span className="text-[15px] font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">{fmt(totalExpense)}</span>
-              </div>
-            </div>
-            {/* Rows */}
-            <div className="flex-1 w-full space-y-2.5">
-              {pieData.map((d, i) => (
-                <ProgressRow
-                  key={d.name}
-                  label={d.name}
-                  amount={d.value}
-                  pct={totalExpense > 0 ? (d.value / totalExpense) * 100 : 0}
-                  color={CAT_COLORS[i % CAT_COLORS.length]}
-                  icon={CATEGORY_ICONS[d.name] || '📦'}
-                  fmt={fmt}
-                  onClick={() => navigate(`/transactions?category=${encodeURIComponent(d.name)}&month=${format(currentMonth, 'yyyy-MM')}`)}
-                />
-              ))}
-            </div>
-          </div>
-        ) : <EmptyState icon={<PieIcon className="w-6 h-6 text-neutral-400" />} msg="No spending data this month" />}
-      </SectionCard>
-
-      {/* ── 2. SPENDING BY TAG ── */}
-      <SectionCard>
-        <SectionTitle icon={<Tag className="w-4 h-4" />} label="Spending by Tag" />
-        {tagData.length > 0 ? (
-          <div className="space-y-2.5">
-            {tagData.map((d, i) => (
-              <div 
-                key={d.name} 
-                onClick={() => navigate(`/transactions?tag=${encodeURIComponent(d.name)}&month=${format(currentMonth, 'yyyy-MM')}`)}
-                className="p-3.5 rounded-2xl border border-neutral-100 dark:border-[#222222] bg-neutral-50 dark:bg-[#1A1A1A]/50 cursor-pointer hover:bg-neutral-100 dark:hover:bg-[#222222] transition-colors"
-              >
-                <div className="flex items-center justify-between mb-2.5">
-                  <span
-                    className="text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider"
-                    style={{ backgroundColor: `${TAG_COLORS[i % TAG_COLORS.length]}15`, color: TAG_COLORS[i % TAG_COLORS.length] }}
-                  >
-                    #{d.name}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">
-                      {totalExpense > 0 ? Math.round((d.value / totalExpense) * 100) : 0}%
-                    </span>
-                    <span className="text-xs font-bold text-brand-blue dark:text-[#F7F7F7]">{fmt(d.value)}</span>
-                  </div>
-                </div>
-                <div className="w-full bg-neutral-100 dark:bg-[#222222] rounded-full h-1.5 overflow-hidden">
-                  <div
-                    className="h-1.5 rounded-full transition-all duration-500"
-                    style={{ width: `${totalExpense > 0 ? Math.min((d.value / totalExpense) * 100, 100) : 0}%`, backgroundColor: TAG_COLORS[i % TAG_COLORS.length] }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : <EmptyState icon={<Tag className="w-6 h-6 text-neutral-400" />} msg="No tags used this month" />}
-      </SectionCard>
-
-      {/* ── 3. SPENDING BY ACCOUNT ── */}
-      <SectionCard>
-        <SectionTitle icon={<Layers className="w-4 h-4" />} label="Spending by Account" />
-        {accData.length > 0 ? (
-          <div className="space-y-2.5">
-            {accData.map((d, i) => (
-              <ProgressRow
-                key={d.name}
-                label={d.name}
-                amount={d.value}
-                pct={totalExpense > 0 ? (d.value / totalExpense) * 100 : 0}
-                color={CAT_COLORS[(i + 1) % CAT_COLORS.length]}
-                fmt={fmt}
-                onClick={() => {
-                  const acc = accounts.find(a => a.bankName === d.name);
-                  if (acc) navigate(`/transactions?account=${acc.id}&month=${format(currentMonth, 'yyyy-MM')}`);
-                }}
-              />
-            ))}
-          </div>
-        ) : <EmptyState icon={<Layers className="w-6 h-6 text-neutral-400" />} msg="No account data this month" />}
-      </SectionCard>
-
-      {/* ── 4. PAYMENT METHOD ── */}
-      {payMethodData.length > 0 && (
-        <SectionCard>
-          <SectionTitle icon={<CreditCard className="w-4 h-4" />} label="Payment Methods" />
-          <div className="space-y-2.5">
-            {payMethodData.map((d) => (
-              <ProgressRow
-                key={d.name}
-                label={d.name}
-                amount={d.value}
-                pct={totalExpense > 0 ? (d.value / totalExpense) * 100 : 0}
-                color={PAY_COLORS[d.name] || '#1A237E'}
-                fmt={fmt}
-                onClick={() => navigate(`/transactions?method=${encodeURIComponent(d.name)}&month=${format(currentMonth, 'yyyy-MM')}`)}
-              />
-            ))}
-          </div>
-        </SectionCard>
-      )}
-
-      {/* ── 5. TOP PAYEES ── */}
-      <SectionCard>
-        <SectionTitle icon={<Store className="w-4 h-4" />} label="Top Payees" />
-        {partyData.length > 0 ? (
-          <div className="space-y-2.5">
-            {partyData.map((d, i) => (
-              <ProgressRow
-                key={d.name}
-                label={d.name}
-                amount={d.value}
-                pct={totalExpense > 0 ? (d.value / totalExpense) * 100 : 0}
-                color="#E53935"
-                rank={i + 1}
-                fmt={fmt}
-                onClick={() => navigate(`/transactions?search=${encodeURIComponent(d.name)}&month=${format(currentMonth, 'yyyy-MM')}`)}
-              />
-            ))}
-          </div>
-        ) : <EmptyState icon={<Store className="w-6 h-6 text-neutral-400" />} msg="No payee data this month" />}
-      </SectionCard>
+      {/* ── TAB CONTENT ── */}
+      <div className="bg-white dark:bg-[#111111] p-4 rounded-[24px] border border-neutral-100 dark:border-white/5 shadow-sm">
+        {renderTabContent()}
+      </div>
 
     </div>
   );
