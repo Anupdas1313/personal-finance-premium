@@ -272,8 +272,8 @@ export default function Accounts() {
         {/* Title & Top Right Actions */}
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">Accounts</h1>
-            <p className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mt-0.5">Institutional Wealth</p>
+            <h1 className="text-3xl font-heading font-bold text-brand-blue dark:text-[#F7F7F7] tracking-tight">Accounts</h1>
+            <p className="text-[10px] font-medium text-neutral-400 dark:text-neutral-500 mt-0.5">Manage your financial accounts, cash & credit lines</p>
           </div>
 
           {/* Arrange Accounts Button in Top Right */}
@@ -316,9 +316,9 @@ export default function Accounts() {
           className="grid grid-cols-3 gap-2 sm:gap-6 p-4 sm:p-5 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/5 rounded-2xl sm:rounded-3xl shadow-sm cursor-pointer hover:border-neutral-200 dark:hover:border-white/10 transition-all"
         >
           <div className="flex flex-col gap-0.5 sm:gap-1">
-            <span className="text-[8px] sm:text-[9px] font-black text-neutral-400 uppercase tracking-widest">Net Worth</span>
+            <span className="text-[10px] font-medium text-neutral-400 dark:text-neutral-500">Net Worth</span>
             <p className={cn(
-              "text-sm sm:text-xl font-heading font-black text-brand-blue dark:text-white tracking-tighter transition-all duration-300",
+              "text-sm sm:text-lg font-bold text-brand-blue dark:text-white tracking-tight transition-all duration-300",
               shouldBlur && "blur-[5px] select-none"
             )}>
               {formatAmount(totalNetWorth)}
@@ -326,9 +326,9 @@ export default function Accounts() {
           </div>
           
           <div className="flex flex-col gap-0.5 sm:gap-1 border-x border-neutral-100 dark:border-white/5 px-2 sm:px-6">
-            <span className="text-[8px] sm:text-[9px] font-black text-neutral-400 uppercase tracking-widest">Cash</span>
+            <span className="text-[10px] font-medium text-neutral-400 dark:text-neutral-500">Cash</span>
             <p className={cn(
-              "text-sm sm:text-xl font-heading font-black text-brand-green tracking-tighter transition-all duration-300",
+              "text-sm sm:text-lg font-bold text-brand-green tracking-tight transition-all duration-300",
               shouldBlur && "blur-[5px] select-none"
             )}>
               {formatAmount(totalLiquid)}
@@ -336,9 +336,9 @@ export default function Accounts() {
           </div>
           
           <div className="flex flex-col gap-0.5 sm:gap-1 pl-2 sm:pl-6">
-            <span className="text-[8px] sm:text-[9px] font-black text-neutral-400 uppercase tracking-widest">Total Debt</span>
+            <span className="text-[10px] font-medium text-neutral-400 dark:text-neutral-500">Total Debt</span>
             <p className={cn(
-              "text-sm sm:text-xl font-heading font-black text-rose-500 tracking-tighter transition-all duration-300",
+              "text-sm sm:text-lg font-bold text-rose-500 tracking-tight transition-all duration-300",
               shouldBlur && "blur-[5px] select-none"
             )}>
               {formatAmount(totalLiabilities)}
@@ -627,14 +627,14 @@ export default function Accounts() {
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-2xl bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 flex items-center justify-center shadow-sm ${color}`}>{icon}</div>
                   <div>
-                    <h2 className="text-sm font-heading font-black text-brand-blue dark:text-white tracking-tight leading-none mb-1">{title}</h2>
-                    <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 tracking-wide">{accList.length === 1 ? '1 account' : `${accList.length} accounts`}</span>
+                    <h2 className="text-sm font-heading font-bold text-brand-blue dark:text-white tracking-tight leading-none mb-1">{title}</h2>
+                    <span className="text-[10px] font-medium text-neutral-400 dark:text-neutral-500">{accList.length === 1 ? '1 account' : `${accList.length} accounts`}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                     <p className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 mb-0.5">Total</p>
-                     <p className="text-sm font-heading font-black text-brand-blue dark:text-white tracking-tighter">{currency}{total.toLocaleString('en-IN')}</p>
+                     <p className="text-[10px] font-medium text-neutral-400 dark:text-neutral-500 mb-0.5">Total</p>
+                     <p className="text-sm font-heading font-bold text-brand-blue dark:text-white tracking-tight">{currency}{total.toLocaleString('en-IN')}</p>
                   </div>
                   {/* Toggle Button */}
                   <button 
@@ -682,8 +682,8 @@ export default function Accounts() {
                                       <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
                                     </div>
                                     <div className="min-w-0">
-                                      <h3 className="text-[13px] font-heading font-black text-brand-blue dark:text-white tracking-tight truncate">{account.bankName}</h3>
-                                      <p className={cn("text-[10px] text-neutral-400 dark:text-[#A0A0A0] font-bold mt-0.5", !isCash && "font-mono tracking-wider")}>
+                                      <h3 className="text-[13px] font-semibold text-brand-blue dark:text-white tracking-tight truncate">{account.bankName}</h3>
+                                      <p className={cn("text-[10px] text-neutral-400 dark:text-[#A0A0A0] font-medium mt-0.5", !isCash && "font-mono tracking-wider")}>
                                         {isCash ? 'Total Cash' : `••••   ${account.accountLast4}`}
                                       </p>
                                       {isCc && account.dueDate && (() => {
@@ -709,12 +709,12 @@ export default function Accounts() {
                                 </div>
  
                                 <div className="mb-6">
-                                  <p className="text-[10px] font-bold text-neutral-400 dark:text-[#A0A0A0] mb-1">
+                                  <p className="text-[10px] font-medium text-neutral-400 dark:text-[#A0A0A0] mb-1">
                                     {isCc ? 'Outstanding Balance' : 'Account Balance'}
                                   </p>
                                   <p 
                                     className={cn(
-                                      "text-3xl font-heading font-black tracking-tighter transition-all duration-300",
+                                      "text-2xl font-bold tracking-tight transition-all duration-300",
                                       currentBalance >= 0 ? (isCc ? 'text-brand-blue dark:text-white' : 'text-brand-green') : 'text-brand-red',
                                       shouldBlur && "blur-[7px] select-none cursor-pointer"
                                     )}
