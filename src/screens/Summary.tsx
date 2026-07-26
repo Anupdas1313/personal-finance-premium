@@ -486,7 +486,7 @@ function SummaryContent() {
       {/* ── COMPACT HEADER + MONTH NAVIGATOR ── */}
       <div className="flex items-center justify-between gap-3 px-1">
         <h1 className="text-xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter leading-none">
-          Analytics
+          Summary
         </h1>
         <div className="flex items-center gap-2 bg-white dark:bg-[#111111] px-3 py-1.5 rounded-full shadow-sm border border-neutral-100 dark:border-white/5">
           <button
