@@ -174,8 +174,8 @@ export default function Transactions() {
       {/* Page Header */}
       <div className="flex items-center justify-between gap-4 pt-1 pb-1">
         <div>
-          <h1 className="text-xl font-heading font-black text-brand-blue dark:text-white tracking-tight leading-none">Transactions</h1>
-          <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-[0.2em] mt-0.5">Activity History</p>
+          <h1 className="text-xl font-heading font-bold text-brand-blue dark:text-white tracking-tight leading-none">Transactions</h1>
+          <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Activity History</p>
         </div>
       </div>
 
@@ -186,8 +186,8 @@ export default function Transactions() {
             <ArrowDownLeft className="w-3 h-3" />
           </div>
           <div>
-            <p className="text-[6px] font-black text-neutral-400 dark:text-white/40 uppercase tracking-[0.1em] leading-none">Inflow</p>
-            <h3 className="text-xs font-heading font-black text-emerald-600 tracking-tight">{currency}{totals.income.toLocaleString()}</h3>
+            <p className="text-[8px] font-medium text-neutral-400 dark:text-white/40 leading-none">Inflow</p>
+            <h3 className="text-xs font-heading font-bold text-emerald-600 tracking-tight">{currency}{totals.income.toLocaleString()}</h3>
           </div>
         </div>
         <div className="w-px h-4 bg-neutral-100 dark:bg-white/5" />
@@ -196,8 +196,8 @@ export default function Transactions() {
             <ArrowUpRight className="w-3 h-3" />
           </div>
           <div>
-            <p className="text-[6px] font-black text-neutral-400 dark:text-white/40 uppercase tracking-[0.1em] leading-none">Outflow</p>
-            <h3 className="text-xs font-heading font-black text-rose-600 tracking-tight">{currency}{totals.expense.toLocaleString()}</h3>
+            <p className="text-[8px] font-medium text-neutral-400 dark:text-white/40 leading-none">Outflow</p>
+            <h3 className="text-xs font-heading font-bold text-rose-600 tracking-tight">{currency}{totals.expense.toLocaleString()}</h3>
           </div>
         </div>
       </div>
@@ -359,8 +359,8 @@ export default function Transactions() {
             return (
               <div key={tx.id || idx} className="space-y-1.5">
                 {showDateHeader && (
-                  <div className="pt-4 flex items-center gap-3">
-                    <span className="text-[8px] font-black text-neutral-400 dark:text-white/30 uppercase tracking-[0.2em] whitespace-nowrap">
+                  <div className="pt-3 flex items-center gap-3">
+                    <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 whitespace-nowrap">
                       {format(date, 'EEEE, dd MMM yyyy')}
                     </span>
                     <div className="h-px flex-1 bg-neutral-100 dark:bg-white/5" />
@@ -375,16 +375,16 @@ export default function Transactions() {
                     {CATEGORY_ICONS[tx.category || 'Other'] || '📝'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-black text-brand-blue dark:text-white truncate uppercase tracking-tight leading-tight mb-0.5">
+                    <h4 className="text-xs font-semibold text-brand-blue dark:text-white truncate leading-tight mb-0.5">
                       {tx.party || tx.category || 'Record'}
                     </h4>
                     <div className="flex items-center gap-2">
-                      <span className="text-[7px] font-bold text-neutral-400 tracking-widest uppercase">{format(date, 'hh:mm a')}</span>
-                      <div className="w-0.5 h-0.5 rounded-full bg-neutral-200" />
-                      <span className="text-[7px] font-black text-brand-blue/30 dark:text-white/20 tracking-widest uppercase">{tx.category}</span>
+                      <span className="text-[10px] font-medium text-neutral-400">{format(date, 'hh:mm a')}</span>
+                      <div className="w-1 h-1 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+                      <span className="text-[10px] font-medium text-neutral-400 dark:text-neutral-500">{tx.category}</span>
                     </div>
                   </div>
-                  <p className={`text-base font-heading font-black tracking-tighter ${normalizeType(tx.type) === 'DEBIT' ? 'text-rose-500' : normalizeType(tx.type) === 'TRANSFER' ? 'text-cyan-500' : 'text-emerald-500'}`}>
+                  <p className={`text-sm font-bold tracking-tight ${normalizeType(tx.type) === 'DEBIT' ? 'text-rose-500' : normalizeType(tx.type) === 'TRANSFER' ? 'text-cyan-500' : 'text-emerald-500'}`}>
                     {normalizeType(tx.type) === 'DEBIT' ? '−' : normalizeType(tx.type) === 'TRANSFER' ? '⇄' : '+'}{currency}{Number(tx.amount).toLocaleString()}
                   </p>
                 </motion.div>
@@ -412,9 +412,9 @@ export default function Transactions() {
                     {CATEGORY_ICONS[selectedTx.category || 'Other'] || '📝'}
                   </div>
                   <div>
-                    <span className="text-[7px] font-black text-brand-blue/40 dark:text-white/30 uppercase tracking-widest block mb-1">{selectedTx.category} Ledger</span>
-                    <h2 className="text-xl font-heading font-black text-brand-blue dark:text-white uppercase tracking-tight">{selectedTx.party || 'Statement Entry'}</h2>
-                    <p className="text-[8px] font-bold text-neutral-400 mt-0.5 uppercase tracking-widest">{format(new Date(selectedTx.dateTime), 'dd MMM yyyy, hh:mm a')}</p>
+                    <span className="text-[10px] font-medium text-neutral-400 dark:text-neutral-500 block mb-0.5">{selectedTx.category} Ledger</span>
+                    <h2 className="text-base font-bold text-brand-blue dark:text-white tracking-tight">{selectedTx.party || 'Statement Entry'}</h2>
+                    <p className="text-[10px] font-medium text-neutral-400 mt-0.5">{format(new Date(selectedTx.dateTime), 'dd MMM yyyy, hh:mm a')}</p>
                   </div>
                 </div>
                 <button onClick={() => setSelectedTx(null)} className="p-2 bg-neutral-50 dark:bg-white/5 rounded-full text-neutral-400">
