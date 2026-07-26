@@ -2,9 +2,9 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../models/db';
 import { useAuth } from '../context/AuthContext';
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import { useState, useMemo, Component, type ReactNode } from 'react';
-import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, PieChart as PieIcon, Tag, Store, Layers, AlertTriangle, CreditCard, Wallet, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, subMonths, differenceInDays, getDaysInMonth } from 'date-fns';
+import { useState, useMemo, useRef, useCallback, Component, type ReactNode } from 'react';
+import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, PieChart as PieIcon, Tag, Store, Layers, AlertTriangle, CreditCard, Wallet, ArrowUpRight, ArrowDownRight, Minus, RefreshCw, Zap } from 'lucide-react';
 import { CATEGORY_ICONS } from '../constants';
 import { useCurrency } from '../hooks/useCurrency';
 import { cn } from '../logic/utils';
@@ -128,6 +128,76 @@ function SummaryContent() {
   const [activeTab, setActiveTab] = useState<TabKey>('category');
   const navigate = useNavigate();
 
+  // ── Pull-to-refresh state ──────────────────────────────────────────────
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const pullStartY = useRef(0);
+  const isPulling = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handlePullStart = useCallback((e: React.TouchEvent) => {
+    const scrollTop = containerRef.current?.closest('main')?.scrollTop || 0;
+    if (scrollTop <= 0) {
+      pullStartY.current = e.touches[0].clientY;
+      isPulling.current = true;
+    }
+  }, []);
+
+  const handlePullMove = useCallback((e: React.TouchEvent) => {
+    if (!isPulling.current) return;
+    const diff = e.touches[0].clientY - pullStartY.current;
+    if (diff > 0) {
+      setPullDistance(Math.min(diff * 0.4, 80));
+    }
+  }, []);
+
+  const handlePullEnd = useCallback(() => {
+    if (pullDistance > 50) {
+      setIsRefreshing(true);
+      setPullDistance(50);
+      setTimeout(() => {
+        setIsRefreshing(false);
+        setPullDistance(0);
+      }, 1200);
+    } else {
+      setPullDistance(0);
+    }
+    isPulling.current = false;
+  }, [pullDistance]);
+
+  // ── Swipe-between-months gesture ───────────────────────────────────────
+  const swipeStartX = useRef(0);
+  const swipeStartY = useRef(0);
+  const isSwiping = useRef(false);
+
+  const handleSwipeStart = useCallback((e: React.TouchEvent) => {
+    swipeStartX.current = e.touches[0].clientX;
+    swipeStartY.current = e.touches[0].clientY;
+    isSwiping.current = true;
+  }, []);
+
+  const handleSwipeEnd = useCallback((e: React.TouchEvent) => {
+    if (!isSwiping.current) return;
+    isSwiping.current = false;
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const diffX = endX - swipeStartX.current;
+    const diffY = Math.abs(endY - swipeStartY.current);
+    // Only trigger if horizontal swipe is dominant and significant
+    if (Math.abs(diffX) > 60 && diffY < Math.abs(diffX) * 0.7) {
+      if (diffX > 0) {
+        // Swiped right → previous month
+        setCurrentMonth(m => subMonths(m, 1));
+      } else {
+        // Swiped left → next month
+        setCurrentMonth(m => {
+          const next = new Date(m.getFullYear(), m.getMonth() + 1, 1);
+          return next > new Date() ? m : next;
+        });
+      }
+    }
+  }, []);
+
   const transactions = useLiveQuery(() => db.transactions.toArray(), [user?.uid]) || [];
   const accounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
 
@@ -167,6 +237,16 @@ function SummaryContent() {
 
   const expenseChangePct = prevTotalExpense > 0 ? ((totalExpense - prevTotalExpense) / prevTotalExpense) * 100 : null;
   const incomeChangePct = prevTotalIncome > 0 ? ((totalIncome - prevTotalIncome) / prevTotalIncome) * 100 : null;
+
+  // ── Average daily spend ────────────────────────────────────────────────
+  const avgDailySpend = useMemo(() => {
+    const now = new Date();
+    const isThisMonth = format(currentMonth, 'yyyy-MM') === format(now, 'yyyy-MM');
+    const daysElapsed = isThisMonth
+      ? Math.max(differenceInDays(now, monthStart) + 1, 1)
+      : getDaysInMonth(currentMonth);
+    return totalExpense / daysElapsed;
+  }, [totalExpense, currentMonth, monthStart]);
 
   // ── Aggregations ──────────────────────────────────────────────────────────
   const { pieData, tagData, accData, partyData, payMethodData } = useMemo(() => {
@@ -410,7 +490,26 @@ function SummaryContent() {
   };
 
   return (
-    <div className="space-y-4 max-w-2xl mx-auto pb-16">
+    <div
+      ref={containerRef}
+      className="space-y-4 max-w-2xl mx-auto pb-16"
+      onTouchStart={(e) => { handlePullStart(e); handleSwipeStart(e); }}
+      onTouchMove={handlePullMove}
+      onTouchEnd={(e) => { handlePullEnd(); handleSwipeEnd(e); }}
+    >
+
+      {/* ── PULL-TO-REFRESH INDICATOR ── */}
+      <div
+        className="flex justify-center overflow-hidden transition-all duration-300"
+        style={{ height: pullDistance > 0 ? pullDistance : 0, opacity: pullDistance > 10 ? 1 : 0 }}
+      >
+        <div className="flex items-center gap-2 text-neutral-400">
+          <RefreshCw className={cn('w-4 h-4 transition-transform duration-300', isRefreshing && 'animate-spin', pullDistance > 50 && !isRefreshing && 'rotate-180')} />
+          <span className="text-[9px] font-bold uppercase tracking-widest">
+            {isRefreshing ? 'Refreshing…' : pullDistance > 50 ? 'Release to refresh' : 'Pull to refresh'}
+          </span>
+        </div>
+      </div>
 
       {/* ── COMPACT HEADER + MONTH NAVIGATOR ── */}
       <div className="flex items-center justify-between gap-3 px-1">
@@ -477,6 +576,20 @@ function SummaryContent() {
           </div>
         </div>
       </div>
+
+      {/* ── AVG DAILY SPEND PILL ── */}
+      {totalExpense > 0 && (
+        <div className="flex justify-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#111111] rounded-full shadow-sm border border-neutral-100 dark:border-white/5">
+            <Zap className="w-3.5 h-3.5 text-amber-500" />
+            <span className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400">Avg Daily Spend</span>
+            <span className="text-xs font-heading font-black text-brand-blue dark:text-white tracking-tight">
+              {fmt(Math.round(avgDailySpend))}
+            </span>
+            <span className="text-[9px] font-bold text-neutral-400">/day</span>
+          </div>
+        </div>
+      )}
 
       {/* ── TAB BAR ── */}
       <div className="flex gap-1.5 overflow-x-auto scrollbar-hide no-scrollbar pb-1 -mx-1 px-1">
