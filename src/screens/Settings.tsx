@@ -69,7 +69,6 @@ export default function Settings() {
   const budgetStartDay = budgetStartDaySetting?.value || 1;
   
   const [currencySearchQuery, setCurrencySearchQuery] = useState('');
-  const [newTag, setNewTag] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
