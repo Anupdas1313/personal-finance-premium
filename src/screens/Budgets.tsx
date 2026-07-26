@@ -152,10 +152,10 @@ export default function Budgets() {
 
   const handleDeletePool = async () => {
     if (!masterPool || !masterPool.id) return;
-    const confirmation = window.prompt(
-      "To delete this monthly pool, type 'DELETE'.\n\nNote: This will reset your total monthly pool to 0, but your category envelopes will not be deleted."
+    const confirmation = window.confirm(
+      "Are you sure you want to delete this monthly pool?\n\nThis will reset your total monthly pool to 0, but your category envelopes will not be deleted."
     );
-    if (confirmation?.trim().toUpperCase() === 'DELETE') {
+    if (confirmation) {
       await db.monthlyBudgets.delete(masterPool.id);
       setIsPoolModalOpen(false);
     }
