@@ -231,6 +231,48 @@ export default function Transfer() {
                 />
               </div>
             </div>
+
+            {/* Live Preview Widget */}
+            <AnimatePresence>
+              {amount && Number(amount) > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-3.5 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-2xl flex flex-col gap-2 shadow-sm">
+                    <p className="text-[8px] font-black text-neutral-400 dark:text-neutral-500 uppercase tracking-widest">
+                      Transfer Preview
+                    </p>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[8px] font-bold text-rose-500 uppercase tracking-wide">Outflow From</p>
+                        <p className="text-xs font-black text-brand-blue dark:text-white truncate">
+                          {accounts.find(a => a.id?.toString() === fromAccountId)?.bankName || 'Source'}
+                        </p>
+                      </div>
+                      
+                      <div className="flex flex-col items-center shrink-0 px-2">
+                        <span className="text-xs font-heading font-black text-brand-green">
+                          {currency}{Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </span>
+                        <div className="w-12 h-[1px] bg-neutral-200 dark:bg-white/10 relative my-1">
+                          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 border-t border-r border-neutral-400 rotate-45" />
+                        </div>
+                      </div>
+
+                      <div className="min-w-0 flex-1 text-right">
+                        <p className="text-[8px] font-bold text-emerald-500 uppercase tracking-wide">Inflow To</p>
+                        <p className="text-xs font-black text-brand-blue dark:text-white truncate">
+                          {accounts.find(a => a.id?.toString() === toAccountId)?.bankName || 'Destination'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <div className="pt-2 mt-auto">
