@@ -232,7 +232,7 @@ function SummaryContent() {
       const byAccount: Record<string, number> = {};
       const byParty: Record<string, number> = {};
       const byPayMethod: Record<string, number> = {};
-      const byDay: Record<string, { dateStr: string; dayName: string; value: number; count: number }> = {};
+      const byDay: Record<string, { dateStr: string; dayName: string; value: number; count: number; categories: Record<string, number> }> = {};
       const dayOfWeekTotals: Record<string, { total: number; count: number }> = {
         'Mon': { total: 0, count: 0 },
         'Tue': { total: 0, count: 0 },
@@ -245,6 +245,7 @@ function SummaryContent() {
 
       for (const tx of expenses) {
         const amt = safeNum(tx.amount);
+        const cat = tx.category || 'Other';
         if (tx.category) byCategory[tx.category] = (byCategory[tx.category] || 0) + amt;
         if (tx.expenseType) byTag[tx.expenseType] = (byTag[tx.expenseType] || 0) + amt;
         const accName = accounts.find(a => a.id === tx.accountId)?.bankName || 'Unknown';
@@ -261,11 +262,13 @@ function SummaryContent() {
             dateStr: format(txDate, 'dd MMM (EEE)'),
             dayName: format(txDate, 'EEE, dd MMM'),
             value: 0,
-            count: 0
+            count: 0,
+            categories: {}
           };
         }
         byDay[dayKey].value += amt;
         byDay[dayKey].count += 1;
+        byDay[dayKey].categories[cat] = (byDay[dayKey].categories[cat] || 0) + amt;
 
         if (dayOfWeekTotals[dowStr]) {
           dayOfWeekTotals[dowStr].total += amt;
@@ -277,7 +280,17 @@ function SummaryContent() {
         Object.entries(obj).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
 
       const dailySorted = Object.entries(byDay)
-        .map(([dayKey, data]) => ({ name: data.dayName, value: data.value, dateKey: dayKey, count: data.count }))
+        .map(([dayKey, data]) => {
+          const topCatEntry = Object.entries(data.categories).sort((a, b) => b[1] - a[1])[0];
+          return {
+            name: data.dayName,
+            value: data.value,
+            dateKey: dayKey,
+            count: data.count,
+            topCategory: topCatEntry ? topCatEntry[0] : 'Other',
+            topCategoryAmt: topCatEntry ? topCatEntry[1] : 0,
+          };
+        })
         .sort((a, b) => b.dateKey.localeCompare(a.dateKey));
 
       let peak = { name: '-', value: 0 };
@@ -578,6 +591,8 @@ function SummaryContent() {
 
               {dailySpendData.map((d) => {
                 const barPct = maxDaily > 0 ? (d.value / maxDaily) * 100 : 0;
+                const catIcon = CATEGORY_ICONS[d.topCategory] || '📦';
+                const catPct = d.value > 0 ? Math.round((d.topCategoryAmt / d.value) * 100) : 0;
                 return (
                   <div
                     key={d.dateKey}
@@ -590,8 +605,16 @@ function SummaryContent() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-center mb-1">
-                        <p className="text-xs font-semibold text-brand-blue dark:text-white truncate">{d.name}</p>
-                        <span className="text-[9px] font-medium text-neutral-400">{d.count} {d.count === 1 ? 'tx' : 'txs'}</span>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <p className="text-xs font-semibold text-brand-blue dark:text-white truncate">{d.name}</p>
+                          {/* Daily Dominant Category Pill */}
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white dark:bg-white/5 border border-neutral-200/60 dark:border-white/10 text-[9px] font-medium text-neutral-600 dark:text-neutral-300 shrink-0">
+                            <span>{catIcon}</span>
+                            <span className="truncate max-w-[80px]">{d.topCategory}</span>
+                            <span className="text-[8px] text-neutral-400 font-normal">({catPct}%)</span>
+                          </span>
+                        </div>
+                        <span className="text-[9px] font-medium text-neutral-400 shrink-0 ml-2">{d.count} {d.count === 1 ? 'tx' : 'txs'}</span>
                       </div>
                       <div className="w-full bg-neutral-100 dark:bg-white/5 rounded-full h-1.5 overflow-hidden">
                         <div className="h-1.5 rounded-full bg-amber-500 transition-all duration-500" style={{ width: `${Math.min(barPct, 100)}%` }} />
