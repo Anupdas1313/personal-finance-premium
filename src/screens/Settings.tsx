@@ -3,9 +3,10 @@ import { cn } from '../logic/utils';
 import { useLiveQuery } from 'dexie-react-hooks';
 
 import { db } from '../models/db';
-import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as SettingsIcon, X, Moon, Sun, Monitor, Palette, Tag, ShieldAlert, Coins, Sliders, CalendarClock, Database, ArrowUpDown, GripVertical, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as SettingsIcon, X, Moon, Sun, Monitor, Palette, Tag, ShieldAlert, Coins, Sliders, CalendarClock, Database, ArrowUpDown, GripVertical, ChevronDown, ChevronUp, Search, Smartphone } from 'lucide-react';
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
+import { useUpiApps } from '../hooks/useUpiApps';
 import { useTheme } from '../components/ThemeProvider';
 import { useCurrency } from '../hooks/useCurrency';
 import { RecurringBillsManager } from '../components/RecurringBillsManager';
@@ -18,12 +19,17 @@ export default function Settings() {
   const [isClearing, setIsClearing] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [newCategory, setNewCategory] = useState('');
+  const [newTag, setNewTag] = useState('');
+  const [newUpiApp, setNewUpiApp] = useState('');
   const [isReorderOpen, setIsReorderOpen] = useState(false);
   const [selectedSwapIndex, setSelectedSwapIndex] = useState<number | null>(null);
   const [isTagReorderOpen, setIsTagReorderOpen] = useState(false);
   const [selectedTagSwapIndex, setSelectedTagSwapIndex] = useState<number | null>(null);
+  const [isUpiAppReorderOpen, setIsUpiAppReorderOpen] = useState(false);
+  const [selectedUpiAppSwapIndex, setSelectedUpiAppSwapIndex] = useState<number | null>(null);
   const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
   const [isTagsExpanded, setIsTagsExpanded] = useState(false);
+  const [isUpiAppsExpanded, setIsUpiAppsExpanded] = useState(false);
   const [isThemeExpanded, setIsThemeExpanded] = useState(false);
   const [isCurrencyExpanded, setIsCurrencyExpanded] = useState(false);
   const [isPrivacyExpanded, setIsPrivacyExpanded] = useState(false);
@@ -33,6 +39,7 @@ export default function Settings() {
   
   const { categories, rawCategories, addCategory, removeCategory, resetCategories, updateCategoryOrder } = useCategories();
   const { tags, rawTags, addTag, removeTag, resetTags, updateTagOrder } = useTags();
+  const { upiApps, rawUpiApps, addUpiApp, removeUpiApp, resetUpiApps, updateUpiAppOrder } = useUpiApps();
   const { theme, setTheme } = useTheme();
   const currency = useCurrency();
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
@@ -337,6 +344,16 @@ export default function Settings() {
       showMessage('success', 'Tag added successfully');
     } else {
       showMessage('error', 'Tag already exists or is invalid');
+    }
+  };
+
+  const handleAddUpiApp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (await addUpiApp(newUpiApp)) {
+      setNewUpiApp('');
+      showMessage('success', 'UPI App added successfully');
+    } else {
+      showMessage('error', 'UPI App already exists or is invalid');
     }
   };
 
@@ -911,6 +928,91 @@ export default function Settings() {
                 )}
               </div>
             </section>
+            {/* UPI App Manager */}
+            <section>
+              <h2 className="text-[10px] font-semibold text-brand-blue/30 dark:text-[#A0A0A0] uppercase tracking-[0.2em] mb-4 px-2">UPI App Manager</h2>
+              <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm overflow-hidden">
+                {/* Collapsible Header */}
+                <button
+                  type="button"
+                  onClick={() => setIsUpiAppsExpanded(!isUpiAppsExpanded)}
+                  className="w-full p-5 flex items-center justify-between text-left hover:bg-neutral-50/50 dark:hover:bg-[#151518] transition-colors"
+                >
+                  <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
+                    <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
+                      <Smartphone className="w-4 h-4 text-brand-blue dark:text-inherit" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-brand-blue dark:text-[#F7F7F7]">UPI Applications</p>
+                      <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Configure custom UPI apps and payment options ({upiApps.length} active)</p>
+                    </div>
+                  </div>
+                  <div className="text-neutral-400 mr-1">
+                    {isUpiAppsExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </div>
+                </button>
+
+                {/* Collapsible Body */}
+                {isUpiAppsExpanded && (
+                  <div className="p-5 border-t border-neutral-100 dark:border-[#222222] flex flex-col gap-5 animate-in fade-in slide-in-from-top-4 duration-200">
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap gap-2">
+                        {upiApps.map((app) => (
+                          <div key={app} className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-50 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] rounded-full text-xs font-semibold border border-neutral-100 dark:border-[#333333] shadow-sm">
+                            📱 {app}
+                            <button type="button" onClick={() => removeUpiApp(app)} className="text-brand-blue/20 dark:text-[#666666] hover:text-brand-red transition-colors">
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-3 items-center">
+                        <form onSubmit={handleAddUpiApp} className="flex flex-1 gap-2 w-full">
+                          <input
+                            type="text"
+                            value={newUpiApp}
+                            onChange={(e) => setNewUpiApp(e.target.value)}
+                            placeholder="E.g., Super.money, Navi"
+                            className="flex-1 px-4 py-2.5 bg-neutral-50 dark:bg-[#1A1A1A] border border-neutral-100 dark:border-[#333333] rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/20 transition-all text-xs font-semibold text-brand-blue dark:text-[#F7F7F7]"
+                          />
+                          <button
+                            type="submit"
+                            disabled={!newUpiApp.trim()}
+                            className="px-5 py-2.5 bg-brand-green text-white rounded-xl font-bold hover:brightness-110 transition-all disabled:opacity-50 text-[9px] uppercase tracking-widest shadow-lg shadow-brand-green/10"
+                          >
+                            Add
+                          </button>
+                        </form>
+
+                        <div className="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setIsUpiAppReorderOpen(true)}
+                            className="flex items-center gap-1.5 px-4 py-2.5 border border-brand-green/20 hover:bg-brand-green/5 text-brand-green rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                          >
+                            <ArrowUpDown className="w-3.5 h-3.5" />
+                            Arrange Order
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm('Are you sure you want to restore default UPI apps?')) {
+                                resetUpiApps();
+                                showMessage('success', 'UPI Apps reset to default');
+                              }
+                            }}
+                            className="px-4 py-2.5 text-[9px] font-black text-neutral-400 hover:text-brand-blue dark:hover:text-[#F7F7F7] hover:bg-neutral-50 dark:hover:bg-[#222222] rounded-xl transition-all uppercase tracking-widest"
+                          >
+                            Restore Defaults
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
         )}
 
@@ -1143,6 +1245,81 @@ export default function Settings() {
                 onClick={() => {
                   setIsTagReorderOpen(false);
                   setSelectedTagSwapIndex(null);
+                }}
+                className="px-6 py-2 bg-brand-green text-white rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all text-[9px] uppercase tracking-widest shadow-lg shadow-brand-green/10"
+              >
+                Save & Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* REORDER UPI APPS MODAL OVERLAY */}
+      {isUpiAppReorderOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#111111] w-full max-w-md rounded-[32px] border border-neutral-100 dark:border-[#222222] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh]">
+            
+            {/* Modal Header */}
+            <div className="p-6 border-b border-neutral-100 dark:border-[#222222] flex items-center justify-between">
+              <div>
+                <h3 className="font-heading font-black text-base text-brand-blue dark:text-white tracking-tight flex items-center gap-2">
+                  <ArrowUpDown className="w-4 h-4 text-brand-green" />
+                  Arrange UPI Apps
+                </h3>
+                <p className="text-[9px] text-neutral-400 font-bold mt-0.5">Drag & drop or tap two items to swap their positions</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsUpiAppReorderOpen(false);
+                  setSelectedUpiAppSwapIndex(null);
+                }}
+                className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-[#222222] hover:bg-neutral-200 dark:hover:bg-[#333333] flex items-center justify-center text-neutral-500 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-2 flex-1 scrollbar-none">
+              {rawUpiApps.map((app, index) => {
+                const isSelected = selectedUpiAppSwapIndex === index;
+                return (
+                  <div
+                    key={app.id}
+                    draggable
+                    onDragStart={(e) => handleUpiAppDragStart(e, index)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleUpiAppDrop(e, index)}
+                    onClick={() => handleSwapUpiApp(index)}
+                    className={cn(
+                      "flex items-center justify-between p-3.5 rounded-xl text-xs font-bold transition-all border cursor-pointer select-none group",
+                      isSelected
+                        ? "border-brand-green bg-brand-green/5 text-brand-green ring-2 ring-brand-green/20"
+                        : "border-neutral-100 dark:border-white/5 bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white hover:bg-neutral-100 dark:hover:bg-[#222222]"
+                    )}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-neutral-300 dark:text-neutral-600 group-hover:text-brand-green select-none shrink-0"><GripVertical className="w-3.5 h-3.5" /></span>
+                      <span className="truncate">📱 {app.name}</span>
+                    </div>
+                    {isSelected && (
+                      <span className="text-[7px] font-black uppercase tracking-widest bg-brand-green/10 px-2 py-0.5 rounded-full">
+                        Swap Source
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-5 bg-neutral-50 dark:bg-[#151515] border-t border-neutral-100 dark:border-[#222222] flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsUpiAppReorderOpen(false);
+                  setSelectedUpiAppSwapIndex(null);
                 }}
                 className="px-6 py-2 bg-brand-green text-white rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all text-[9px] uppercase tracking-widest shadow-lg shadow-brand-green/10"
               >

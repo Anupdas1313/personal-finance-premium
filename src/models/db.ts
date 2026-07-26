@@ -172,6 +172,12 @@ export interface SaleItem {
   total: number;
 }
 
+export interface UpiApp {
+  id?: number;
+  name: string;
+  sortOrder?: number;
+}
+
 export class FinanceDatabase extends Dexie {
   accounts!: Table<Account, number>;
   transactions!: Table<Transaction, number>;
@@ -182,6 +188,7 @@ export class FinanceDatabase extends Dexie {
   accountClosings!: Table<AccountClosing, number>;
   categories!: Table<Category, number>;
   tags!: Table<Tag, number>;
+  upiApps!: Table<UpiApp, number>;
   recurringTemplates!: Table<RecurringTemplate, number>;
   userSettings!: Table<UserSetting, number>;
   wishlist!: Table<WishlistItem, number>;
@@ -318,6 +325,26 @@ export class FinanceDatabase extends Dexie {
       accountClosings: '++id, accountId, closingDate',
       categories: '++id, &name',
       tags: '++id, &name',
+      recurringTemplates: '++id, nextRunDate, isActive',
+      userSettings: '++id, &key',
+      wishlist: '++id, name, price, status, dateAdded',
+      monthlyBudgets: '++id, &month',
+      inventory: '++id, sku',
+      sales: '++id, customerId, status, date',
+      saleItems: '++id, saleId, skuId'
+    });
+
+    this.version(19).stores({
+      accounts: '++id, bankName, accountLast4',
+      transactions: '++id, accountId, type, dateTime, category, linkedBudgetId',
+      monthlyClosings: '++id, &month',
+      budgets: '++id, category, month, [category+month]',
+      parties: '++id, name, type',
+      ledgerTransactions: '++id, partyId, type, dateTime',
+      accountClosings: '++id, accountId, closingDate',
+      categories: '++id, &name',
+      tags: '++id, &name',
+      upiApps: '++id, &name',
       recurringTemplates: '++id, nextRunDate, isActive',
       userSettings: '++id, &key',
       wishlist: '++id, name, price, status, dateAdded',
