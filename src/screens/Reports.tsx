@@ -413,7 +413,7 @@ export default function Reports() {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-6 max-w-2xl mx-auto pb-32 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
       {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1">

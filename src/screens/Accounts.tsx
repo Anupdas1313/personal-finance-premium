@@ -1247,7 +1247,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="flex-1 overflow-y-auto pb-32" style={{ WebkitOverflowScrolling: 'touch' }}>
         <table className="w-full border-collapse">
           <thead className="sticky top-0 bg-white dark:bg-[#0C0C0F] z-10 border-b border-neutral-100 dark:border-[#222222]">
             <tr>
