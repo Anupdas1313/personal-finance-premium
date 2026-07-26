@@ -724,17 +724,17 @@ export default function Dashboard() {
 
       {/* Cash Flow Hero Card - REDUCED SIZE */}
       <div 
-        className="relative overflow-hidden rounded-[24px] bg-white p-4 shadow-sm border border-neutral-200 group"
+        className="relative overflow-hidden rounded-[24px] bg-white dark:bg-[#111111] p-4 shadow-sm border border-neutral-200 dark:border-white/5 group"
       >
         <div className="absolute top-0 right-0 w-32 h-32 bg-brand-green/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
         
         <div className="relative z-10 flex items-center justify-between mb-4">
-          <h2 className="text-[13px] font-semibold text-neutral-500 tracking-tight">Cash Flow</h2>
+          <h2 className="text-[13px] font-semibold text-neutral-500 dark:text-neutral-400 tracking-tight">Cash Flow</h2>
           <div className="relative" onClick={(e) => e.stopPropagation()}>
             <select
               value={timeFilter}
               onChange={(e) => setTimeFilter(e.target.value as any)}
-              className="appearance-none bg-neutral-50 text-neutral-700 text-[12px] font-semibold px-2.5 py-1 rounded-lg pr-6 cursor-pointer outline-none transition-colors border border-neutral-200"
+              className="appearance-none bg-neutral-50 dark:bg-[#1A1A1A] text-neutral-700 dark:text-neutral-300 text-[12px] font-semibold px-2.5 py-1 rounded-lg pr-6 cursor-pointer outline-none transition-colors border border-neutral-200 dark:border-white/10"
             >
               <option value="This Month">This Month</option>
               <option value="This Year">This Year</option>
@@ -748,19 +748,19 @@ export default function Dashboard() {
           <div className="flex-1">
             <p className="text-[13px] font-semibold text-rose-500 mb-1">Outflow</p>
             <p className={cn(
-              "text-xl font-bold text-neutral-900 tracking-tight transition-all duration-300",
+              "text-xl font-bold text-neutral-900 dark:text-white tracking-tight transition-all duration-300",
               shouldBlur && "blur-[6px] select-none cursor-pointer"
             )}>
               {formatAmount(totalSpending)}
             </p>
           </div>
           
-          <div className="w-px h-8 bg-neutral-200 mx-4"></div>
+          <div className="w-px h-8 bg-neutral-200 dark:bg-white/10 mx-4"></div>
 
           <div className="flex-1">
             <p className="text-[13px] font-semibold text-brand-green mb-1">Inflow</p>
             <p className={cn(
-              "text-xl font-bold text-neutral-900 tracking-tight transition-all duration-300",
+              "text-xl font-bold text-neutral-900 dark:text-white tracking-tight transition-all duration-300",
               shouldBlur && "blur-[6px] select-none cursor-pointer"
             )}>
               {formatAmount(totalIncome)}
@@ -768,7 +768,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="relative z-10 bg-neutral-50 border border-neutral-200 rounded-2xl p-3 flex justify-between items-center" onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
+        <div className="relative z-10 bg-neutral-50 dark:bg-[#1A1A1A]/60 border border-neutral-200 dark:border-white/10 rounded-2xl p-3 flex justify-between items-center" onClick={() => isPrivacyMode && setRevealBalances(!revealBalances)}>
           <div className="flex flex-col">
             <p className="text-[13px] font-semibold text-neutral-500 leading-none mb-1">Total Cash</p>
             {timeFilter !== 'All Time' && (
