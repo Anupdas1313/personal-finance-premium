@@ -76,7 +76,8 @@ export default function Transactions() {
 
   // ── Filters ───────────────────────────────────────────────────
   const [searchTerm, setSearchTerm] = useState(initialSearch);
-  const [typeFilter, setTypeFilter] = useState<'ALL' | 'CREDIT' | 'DEBIT' | 'TRANSFER'>('ALL');
+  const initialType = (searchParams.get('type') as any) || 'ALL';
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'CREDIT' | 'DEBIT' | 'TRANSFER'>(initialType);
   const [sourceTypeFilter, setSourceTypeFilter] = useState<'ALL' | 'BANK' | 'CREDIT_CARD' | 'CASH'>('ALL');
   const [categoryFilter, setCategoryFilter] = useState(initialCategory);
   const initialTag = searchParams.get('tag') || 'ALL';

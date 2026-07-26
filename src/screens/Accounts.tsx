@@ -40,7 +40,6 @@ export default function Accounts() {
   const [statementDate, setStatementDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [isReorderOpen, setIsReorderOpen] = useState(false);
-  const [isTransferOpen, setIsTransferOpen] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
   const isSectionCollapsed = (type: string, index: number) => {
@@ -301,7 +300,7 @@ export default function Accounts() {
 
           {/* Quick Transfer Pill */}
           <button
-            onClick={() => setIsTransferOpen(true)}
+            onClick={() => navigate('/transfer')}
             className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-neutral-50 dark:bg-white/5 border border-neutral-100 dark:border-white/5 text-neutral-600 dark:text-neutral-300 rounded-2xl hover:bg-neutral-100 dark:hover:bg-white/10 transition-all font-bold uppercase text-[10px] tracking-wider"
             title="Quick Transfer"
           >
@@ -791,10 +790,6 @@ export default function Accounts() {
 
       {isReorderOpen && (
         <AccountsReorderModal onClose={() => setIsReorderOpen(false)} />
-      )}
-
-      {isTransferOpen && (
-        <QuickTransferModal onClose={() => setIsTransferOpen(false)} />
       )}
     </div>
   );
@@ -1396,175 +1391,6 @@ function AccountsReorderModal({ onClose }: { onClose: () => void }) {
           <button onClick={onClose} className="px-4 py-2 text-[10px] font-bold text-neutral-400 hover:text-neutral-500 uppercase transition-colors">Cancel</button>
           <button onClick={handleSave} className="px-5 py-2 bg-brand-green text-white dark:text-brand-blue rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg shadow-brand-green/10 transition-all hover:brightness-110 active:scale-95">Save Order</button>
         </div>
-      </div>
-    </div>
-  );
-}
-
-// ── QUICK TRANSFER WIZARD ───────────────────────────────────────────────────
-function QuickTransferModal({ onClose }: { onClose: () => void }) {
-  const currency = useCurrency();
-  const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
-  const [fromAccountId, setFromAccountId] = useState('');
-  const [toAccountId, setToAccountId] = useState('');
-  const [amount, setAmount] = useState('');
-  const [note, setNote] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState('');
-
-  // Default select accounts
-  useEffect(() => {
-    if (accounts.length > 0) {
-      setFromAccountId(accounts[0].id!.toString());
-      if (accounts.length > 1) {
-        setToAccountId(accounts[1].id!.toString());
-      }
-    }
-  }, [accounts]);
-
-  const handleTransfer = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!fromAccountId || !toAccountId || !amount) return;
-    if (fromAccountId === toAccountId) {
-      setError('Source and destination accounts cannot be the same.');
-      return;
-    }
-    const amountVal = parseFloat(amount) || 0;
-    if (amountVal <= 0) {
-      setError('Please enter a valid transfer amount.');
-      return;
-    }
-
-    setIsSaving(true);
-    setError('');
-
-    try {
-      const fromAcc = accounts.find(a => a.id === Number(fromAccountId));
-      const toAcc = accounts.find(a => a.id === Number(toAccountId));
-      if (!fromAcc || !toAcc) throw new Error('Selected accounts not found');
-
-      const isTodaySelected = date === new Date().toISOString().split('T')[0];
-      const finalDateTime = isTodaySelected ? new Date() : new Date(date);
-
-      // Create linked DEBIT and CREDIT transactions
-      const debitId = await db.transactions.add({
-        accountId: Number(fromAccountId),
-        amount: amountVal,
-        type: 'DEBIT',
-        dateTime: finalDateTime,
-        note: note || `Transfer to ${toAcc.bankName}`,
-        category: 'Transfer',
-        party: toAcc.bankName
-      });
-
-      const creditId = await db.transactions.add({
-        accountId: Number(toAccountId),
-        amount: amountVal,
-        type: 'CREDIT',
-        dateTime: finalDateTime,
-        note: note || `Transfer from ${fromAcc.bankName}`,
-        category: 'Transfer',
-        party: fromAcc.bankName,
-        linkedTransactionId: debitId
-      });
-
-      await db.transactions.update(debitId, { linkedTransactionId: creditId });
-      onClose();
-    } catch (err) {
-      console.error(err);
-      setError('An error occurred during transfer.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-neutral-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-2xl p-6 max-w-md w-full mx-4 animate-scale-up">
-        <div className="flex justify-between items-center mb-5 pb-3 border-b border-neutral-50 dark:border-white/5">
-          <h3 className="text-sm font-heading font-black text-brand-blue dark:text-white uppercase tracking-wider">Quick Inter-Account Transfer</h3>
-          <button onClick={onClose} className="text-[10px] font-black text-neutral-400 dark:text-neutral-500 hover:text-brand-red uppercase tracking-wider">Cancel</button>
-        </div>
-
-        <form onSubmit={handleTransfer} className="space-y-4">
-          {error && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[10px] font-bold uppercase tracking-wider">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label className="block text-[8px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-widest mb-1.5">Source Account (Transfer From)</label>
-            <select
-              value={fromAccountId}
-              onChange={e => setFromAccountId(e.target.value)}
-              className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-[#333333] rounded-xl text-[11px] font-bold outline-none text-brand-blue dark:text-white"
-              required
-            >
-              {accounts.map(a => (
-                <option key={a.id} value={a.id} className="text-black">{a.bankName} (•• {a.accountLast4})</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[8px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-widest mb-1.5">Destination Account (Transfer To)</label>
-            <select
-              value={toAccountId}
-              onChange={e => setToAccountId(e.target.value)}
-              className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-[#333333] rounded-xl text-[11px] font-bold outline-none text-brand-blue dark:text-white"
-              required
-            >
-              {accounts.map(a => (
-                <option key={a.id} value={a.id} className="text-black" disabled={a.id!.toString() === fromAccountId}>{a.bankName} (•• {a.accountLast4})</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[8px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-widest mb-1.5">Amount ({currency})</label>
-              <input
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={amount}
-                onChange={e => setAmount(e.target.value)}
-                className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-[#333333] rounded-xl text-[11px] font-bold outline-none text-brand-blue dark:text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-[8px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-widest mb-1.5">Date</label>
-              <input
-                type="date"
-                value={date}
-                onChange={e => setDate(e.target.value)}
-                className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-[#333333] rounded-xl text-[11px] font-bold outline-none text-brand-blue dark:text-white"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[8px] font-black text-neutral-400 dark:text-[#A0A0A0] uppercase tracking-widest mb-1.5">Remarks / Optional Notes</label>
-            <input
-              type="text"
-              placeholder="e.g., Credit card bill payment, Wallet refill"
-              value={note}
-              onChange={e => setNote(e.target.value)}
-              className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-[#333333] rounded-xl text-[11px] font-bold outline-none text-brand-blue dark:text-white"
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-neutral-50 dark:border-white/5">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-[10px] font-bold text-neutral-400 hover:text-neutral-500 uppercase">Cancel</button>
-            <button type="submit" disabled={isSaving} className="px-5 py-2 bg-brand-green text-white dark:text-brand-blue rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg shadow-brand-green/10">
-              {isSaving ? 'Processing...' : 'Execute Transfer'}
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );
