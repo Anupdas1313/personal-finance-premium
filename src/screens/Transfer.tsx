@@ -99,7 +99,7 @@ export default function Transfer() {
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div className="flex-1">
-          <h1 className="text-lg font-heading font-black text-brand-blue dark:text-white uppercase tracking-wider leading-none">
+          <h1 className="text-xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter leading-none">
             Inter-Account Transfer
           </h1>
           <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest mt-0.5">
