@@ -5,6 +5,7 @@ import Dashboard from './screens/Dashboard';
 import Transactions from './screens/Transactions';
 import Accounts from './screens/Accounts';
 import Transfer from './screens/Transfer';
+import TransferLogs from './screens/TransferLogs';
 import Summary from './screens/Summary';
 import TransactionTable from './screens/TransactionTable';
 import Settings from './screens/Settings';
@@ -177,6 +178,7 @@ function AppRoutes() {
         <Route path="transactions" element={<Transactions />} />
         <Route path="accounts" element={<Accounts />} />
         <Route path="transfer" element={<Transfer />} />
+        <Route path="transfer/logs" element={<TransferLogs />} />
         <Route path="summary" element={<Summary />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />

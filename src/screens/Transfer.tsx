@@ -107,7 +107,7 @@ export default function Transfer() {
           </p>
         </div>
         <button 
-          onClick={() => navigate('/transactions?type=TRANSFER')} 
+          onClick={() => navigate('/transfer/logs')} 
           className="px-3 py-1.5 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/5 rounded-xl text-[9px] font-black text-neutral-600 dark:text-neutral-300 flex items-center gap-1 hover:bg-neutral-50 dark:hover:bg-white/10 transition-all uppercase tracking-wider shadow-sm"
         >
           <List className="w-3.5 h-3.5 text-brand-cyan" />
