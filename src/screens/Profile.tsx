@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { User, Mail, ShieldCheck, CheckCircle2, AlertTriangle, Save, ChevronDown } from 'lucide-react';
 import { cn } from '../logic/utils';
+import { useToast } from '../context/ToastContext';
 
 export default function Profile() {
   const { user, updateProfileName, logout, deleteAccount } = useAuth();
+  const toast = useToast();
   const [name, setName] = useState(user?.displayName || '');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDangerExpanded, setIsDangerExpanded] = useState(false);
@@ -168,6 +170,7 @@ export default function Profile() {
               type="button"
               onClick={() => setIsDangerExpanded(!isDangerExpanded)}
               className="flex items-center justify-between w-full text-left focus:outline-none"
+              aria-expanded={isDangerExpanded}
             >
               <div>
                 <h3 className="font-bold text-xs text-brand-red">Data & Privacy Options</h3>
@@ -197,7 +200,7 @@ export default function Profile() {
                 <button
                   disabled={isUpdating || !confirmDeleteCheckbox}
                   onClick={async () => {
-                    const confirmDelete = window.confirm(
+                    const confirmDelete = await toast.confirm(
                       'DANGER: This will permanently delete your account, including all your settings, transactions, and preferences from both this device and the cloud. This action CANNOT be undone.\n\nAre you absolutely sure?'
                     );
                     if (!confirmDelete) return;
@@ -262,7 +265,7 @@ export default function Profile() {
                             // Retry deletion after successful re-auth
                             await deleteAccount();
                           } else {
-                            alert("For security purposes, you must verify your identity to delete your account. You will be logged out now. Please log back in and try deleting your account again.");
+                            toast.warning("For security purposes, you must verify your identity to delete your account. You will be logged out now. Please log back in and try deleting your account again.");
                             logout();
                             return;
                           }

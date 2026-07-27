@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Sale, SaleItem, Party, InventoryItem } from '../models/db';
-import { Plus, Search, Receipt, CheckCircle, Clock, FileText } from 'lucide-react';
+import { Plus, Search, Receipt, CheckCircle, Clock, FileText, Trash2 } from 'lucide-react';
 import { cn } from '../logic/utils';
+import { useCurrency } from '../hooks/useCurrency';
+import { useToast } from '../context/ToastContext';
 
 export default function Sales() {
+  const toast = useToast();
+  const currency = useCurrency();
   const [search, setSearch] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
@@ -39,7 +43,7 @@ export default function Sales() {
     if (!customerId || !skuId) return;
 
     if (selectedItem && selectedItem.stockQuantity < Number(quantity)) {
-        alert("Not enough stock available!");
+        toast.error("Not enough stock available!");
         return;
     }
 
@@ -72,14 +76,32 @@ export default function Sales() {
 
       setIsAdding(false);
       resetForm();
+      toast.success("Sale recorded successfully");
     } catch (e) {
       console.error(e);
-      alert("Error saving sale");
+      toast.error("Error saving sale");
     }
   };
 
   const markAsPaid = async (sale: Sale) => {
     await db.sales.update(sale.id!, { status: 'PAID', paymentMethod: 'Cash' });
+  };
+
+  const handleDeleteSale = async (sale: Sale) => {
+      if (await toast.confirm('Are you sure you want to delete this sale? Stock will be reverted.')) {
+          const items = await db.saleItems.where('saleId').equals(sale.id!).toArray();
+          for (const item of items) {
+              const sku = await db.inventory.get(item.skuId);
+              if (sku) {
+                  await db.inventory.update(sku.id!, {
+                      stockQuantity: sku.stockQuantity + item.quantity
+                  });
+              }
+              await db.saleItems.delete(item.id!);
+          }
+          await db.sales.delete(sale.id!);
+          toast.success('Sale deleted and stock reverted');
+      }
   };
 
   const resetForm = () => {
@@ -152,7 +174,7 @@ export default function Sales() {
                       <div className="text-sm font-medium text-brand-blue dark:text-white">{partyMap.get(sale.customerId)?.name || 'Unknown'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-brand-blue dark:text-white">₹{sale.totalAmount.toLocaleString('en-IN')}</div>
+                      <div className="text-sm font-bold text-brand-blue dark:text-white">{currency}{sale.totalAmount.toLocaleString('en-IN')}</div>
                       {sale.paymentMethod && <div className="text-xs text-neutral-500">{sale.paymentMethod}</div>}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right flex items-center justify-end gap-3 h-full">
@@ -163,10 +185,13 @@ export default function Sales() {
                         {sale.status}
                       </span>
                       {sale.status === 'PENDING' && (
-                        <button onClick={() => markAsPaid(sale)} className="text-xs font-medium text-brand-blue hover:underline">
+                        <button onClick={(e) => { e.stopPropagation(); markAsPaid(sale); }} className="text-xs font-medium text-brand-blue hover:underline">
                           Mark Paid
                         </button>
                       )}
+                      <button onClick={(e) => { e.stopPropagation(); handleDeleteSale(sale); }} className="p-1 text-neutral-400 hover:text-brand-red transition-colors ml-2">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -220,7 +245,7 @@ export default function Sales() {
                   <input required type="number" min="1" max={selectedItem?.stockQuantity || undefined} value={quantity} onChange={(e) => setQuantity(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-black text-brand-blue dark:text-white focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-colors" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Total (₹)</label>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Total ({currency})</label>
                   <div className="w-full px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 text-brand-blue dark:text-white font-medium cursor-not-allowed">
                     {totalAmount.toLocaleString('en-IN')}
                   </div>

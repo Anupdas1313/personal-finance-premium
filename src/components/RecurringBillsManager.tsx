@@ -6,8 +6,10 @@ import { Repeat, Plus, Trash2, CheckCircle2 } from 'lucide-react';
 import { cn } from '../logic/utils';
 import { format } from 'date-fns';
 import { useCurrency } from '../hooks/useCurrency';
+import { useToast } from '../context/ToastContext';
 
 export function RecurringBillsManager() {
+  const { confirm, success } = useToast();
   const currency = useCurrency();
   const { user } = useAuth();
   const templates = useLiveQuery(() => db.recurringTemplates.toArray(), [user?.uid]) || [];
@@ -44,8 +46,9 @@ export function RecurringBillsManager() {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this recurring transaction?')) {
+    if (await confirm('Are you sure you want to delete this recurring transaction?')) {
       await db.recurringTemplates.delete(id);
+      success('Template deleted successfully');
     }
   };
 
@@ -70,7 +73,7 @@ export function RecurringBillsManager() {
             </div>
             <button 
               onClick={() => setIsAdding(!isAdding)}
-              className="w-8 h-8 rounded-full bg-brand-blue/5 dark:bg-[#222222] flex items-center justify-center hover:bg-brand-blue/10 dark:hover:bg-[#333333] transition-colors"
+              className="w-11 h-11 rounded-full bg-brand-blue/5 dark:bg-[#222222] flex items-center justify-center hover:bg-brand-blue/10 dark:hover:bg-[#333333] transition-colors"
             >
               <Plus className={cn("w-4 h-4 text-brand-blue dark:text-[#F7F7F7] transition-transform", isAdding && "rotate-45")} />
             </button>
@@ -167,10 +170,10 @@ export function RecurringBillsManager() {
                     <p className={cn("text-sm font-black", t.type === 'DEBIT' ? "text-brand-red" : "text-brand-green")}>
                       {t.type === 'DEBIT' ? '-' : '+'}{currency}{t.amount.toLocaleString('en-IN')}
                     </p>
-                    <button onClick={() => toggleActive(t)}>
+                    <button onClick={() => toggleActive(t)} className="min-w-[44px] min-h-[44px] flex items-center justify-center">
                       <CheckCircle2 className={cn("w-5 h-5", t.isActive ? "text-brand-green" : "text-neutral-300 dark:text-[#444]")} />
                     </button>
-                    <button onClick={() => handleDelete(t.id!)} className="text-rose-400 hover:text-rose-500">
+                    <button onClick={() => handleDelete(t.id!)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-rose-400 hover:text-rose-500">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>

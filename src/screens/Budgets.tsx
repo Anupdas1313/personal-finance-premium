@@ -8,6 +8,7 @@ import { useBudgets, getNextBudgetMonth, getPrevBudgetMonth, BudgetCardData } fr
 import { cn } from '../logic/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
 
 // ── Native UI Components ──────────────────────────────────────────────────────
 function SectionCard({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -99,6 +100,8 @@ function DonutChart({ spent, allocatedUnspent, unallocated, size = 120 }: { spen
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function Budgets() {
+  const currency = useCurrency();
+  const { confirm, success } = useToast();
   const navigate = useNavigate();
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
   const monthStr = format(currentMonth, 'yyyy-MM');
@@ -152,7 +155,7 @@ export default function Budgets() {
 
   const handleDeletePool = async () => {
     if (!masterPool || !masterPool.id) return;
-    const confirmation = window.confirm(
+    const confirmation = await confirm(
       "Are you sure you want to delete this monthly pool?\n\nThis will reset your total monthly pool to 0, but your category envelopes will not be deleted."
     );
     if (confirmation) {
@@ -192,7 +195,7 @@ export default function Budgets() {
   };
 
   const handleDeleteBudget = async (id: number) => {
-    if (window.confirm('Delete this budget?')) {
+    if (await confirm('Delete this budget?')) {
       await db.budgets.delete(id);
     }
   };
@@ -235,7 +238,7 @@ export default function Budgets() {
     const existingPool = await db.monthlyBudgets.where('month').equals(nextMonthStr).toArray();
 
     if (existingBudgets.length > 0 || existingPool.length > 0) {
-      if (!window.confirm(`Budgets already exist for ${format(nextMonth, 'MMMM yyyy')}. Replace them?`)) {
+      if (!await confirm(`Budgets already exist for ${format(nextMonth, 'MMMM yyyy')}. Replace them?`)) {
         setCopyStatus('exists');
         setTimeout(() => setCopyStatus('idle'), 2000);
         return;
@@ -320,11 +323,11 @@ export default function Budgets() {
         className="p-4 rounded-2xl border border-neutral-100 dark:border-[#222222] bg-neutral-50 dark:bg-[#1A1A1E]/50 group relative cursor-pointer hover:border-brand-green/30 hover:shadow-md transition-all duration-200 active:scale-[0.99]"
       >
         <div className="absolute top-3 right-3 flex gap-2 z-10">
-          <button onClick={() => openEditBudget(b)} className="p-1.5 text-brand-blue/40 dark:text-white/40 hover:text-brand-blue dark:hover:text-white transition-colors bg-transparent rounded-lg">
-            <Pencil className="w-3.5 h-3.5" />
+          <button onClick={() => openEditBudget(b)} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-brand-blue/40 dark:text-white/40 hover:text-brand-blue dark:hover:text-white transition-colors bg-transparent rounded-lg">
+            <Pencil className="w-4 h-4" />
           </button>
-          <button onClick={() => b.id && handleDeleteBudget(b.id)} className="p-1.5 text-brand-red/40 hover:text-brand-red transition-colors bg-transparent rounded-lg">
-            <Trash2 className="w-3.5 h-3.5" />
+          <button onClick={() => b.id && handleDeleteBudget(b.id)} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-brand-red/40 hover:text-brand-red transition-colors bg-transparent rounded-lg">
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
 

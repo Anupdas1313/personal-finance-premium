@@ -22,7 +22,7 @@ import { UnionBankLogo } from '../components/UnionBankLogo';
 import { BankLogo } from '../components/BankLogo';
 import TutorialOverlay from '../components/TutorialOverlay';
 import { useCurrency, useCurrencyFormatter } from '../hooks/useCurrency';
-import { cn } from '../logic/utils';
+import { cn, roundCurrency } from '../logic/utils';
 
 // ── Budget Health Widget ────────────────────────────────────────────────────
 function BudgetHealthWidget({ formatAmount, shouldBlur }: { formatAmount: (n: number) => string; shouldBlur: boolean }) {
@@ -289,13 +289,13 @@ export default function Dashboard() {
     const start = startOfMonth(new Date(transactionDate));
     const end = endOfMonth(new Date(transactionDate));
     const txs = await db.transactions.where('dateTime').between(start, end).toArray();
-    return txs.reduce((sum, tx) => {
+    return roundCurrency(txs.reduce((sum, tx) => {
       if (tx.type !== 'DEBIT') return sum;
       if (tx.linkedBudgetId) {
         return tx.linkedBudgetId === selectedBudget.id ? sum + Number(tx.amount) : sum;
       }
       return tx.category === selectedBudget.category ? sum + Number(tx.amount) : sum;
-    }, 0);
+    }, 0));
   }, [selectedBudget, transactionDate]) || 0;
 
   // Set default expense type once tags load
@@ -553,7 +553,7 @@ export default function Dashboard() {
       }
     });
 
-    const totalWealth = calculatedBalances.reduce((sum, b) => sum + b, 0);
+    const totalWealth = roundCurrency(calculatedBalances.reduce((sum, b) => sum + b, 0));
 
     // 3. Insights calculations
     let thisMonthSpendingToDate = 0;
@@ -616,7 +616,7 @@ export default function Dashboard() {
   }, [timeFilter, user?.uid]) || { balances: [], totalIncome: 0, totalSpending: 0, totalWealth: 0, thisMonthSpendingToDate: 0, lastMonthSpendingToDate: 0, todaySpending: 0, yesterdaySpending: 0, thisWeekSpending: 0, lastWeekSpending: 0 };
   
   const monthDelta = totalIncome - totalSpending;
-  const totalBalance = balances.reduce((sum, acc) => sum + acc.currentBalance, 0);
+  const totalBalance = roundCurrency(balances.reduce((sum, acc) => sum + acc.currentBalance, 0));
 
   const groupedAccounts = useMemo(() => {
     const groups: Record<string, typeof balances> = {
@@ -938,7 +938,7 @@ export default function Dashboard() {
               } else {
                 title = 'Cash & Wallets';
               }
-              const total = accList.reduce((sum, a) => sum + ((a as any).currentBalance || 0), 0);
+              const total = roundCurrency(accList.reduce((sum, a) => sum + ((a as any).currentBalance || 0), 0));
               
               return (
                 <div key={type} className="space-y-2">

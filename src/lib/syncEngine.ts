@@ -6,14 +6,14 @@ let syncingKeys = new Set<string>();
 let syncUnsubscribes: (() => void)[] = [];
 
 // Helper to convert Firestore Timestamps to JS Dates
-function convertTimestampsToDates(obj: any): any {
+function convertTimestampsToDates(obj: unknown): unknown {
   if (obj === null || obj === undefined) return obj;
   if (obj instanceof Timestamp) return obj.toDate();
   if (Array.isArray(obj)) return obj.map(convertTimestampsToDates);
   if (typeof obj === 'object') {
-    const newObj: any = {};
-    for (const key in obj) {
-      newObj[key] = convertTimestampsToDates(obj[key]);
+    const newObj: Record<string, unknown> = {};
+    for (const key in obj as Record<string, unknown>) {
+      newObj[key] = convertTimestampsToDates((obj as Record<string, unknown>)[key]);
     }
     return newObj;
   }
@@ -56,9 +56,18 @@ export function startSync(uid: string | null, db: FinanceDatabase) {
         syncingKeys.add(syncKey);
         try {
           const rawData = change.doc.data();
-          const data = convertTimestampsToDates(rawData);
+          const data = convertTimestampsToDates(rawData) as any;
           
           if (change.type === 'added' || change.type === 'modified') {
+            const existingRecord = await table.get(id);
+            if (existingRecord && existingRecord.updatedAt && data.updatedAt) {
+              const localTime = new Date(existingRecord.updatedAt).getTime();
+              const remoteTime = new Date(data.updatedAt).getTime();
+              if (localTime > remoteTime) {
+                // Local is newer, ignore remote
+                return;
+              }
+            }
             await table.put({ ...data, id });
           } else if (change.type === 'removed') {
             await table.delete(id);
@@ -73,9 +82,11 @@ export function startSync(uid: string | null, db: FinanceDatabase) {
     syncUnsubscribes.push(unsub);
 
     // 2. Listen to Dexie changes and update Firestore
-    table.hook('creating', function (primKey, obj, transaction) {
+    const creatingFn: any = function (this: any, primKey: any, obj: any, transaction: any) {
+      if (!obj.updatedAt) obj.updatedAt = new Date();
+      if (!obj.createdAt) obj.createdAt = new Date();
       // Use Dexie's this.onsuccess callback to get the actual generated ID for auto-increment keys
-      this.onsuccess = function (actualPrimKey) {
+      this.onsuccess = function (actualPrimKey: any) {
         const id = Number(actualPrimKey);
         const syncKey = `${tableName}-${id}`;
         if (syncingKeys.has(syncKey)) return;
@@ -83,31 +94,44 @@ export function startSync(uid: string | null, db: FinanceDatabase) {
         const objWithId = { ...obj, id };
         // Firestore rejects undefined values synchronously, which would crash this callback
         Object.keys(objWithId).forEach(key => {
-          if (objWithId[key] === undefined) delete objWithId[key];
+          if ((objWithId as any)[key] === undefined) delete (objWithId as any)[key];
         });
         
         setDoc(doc(firestoreDb, `${pathPrefix}_${tableName}`, String(id)), objWithId).catch(console.error);
       };
-    });
+    };
+    table.hook('creating', creatingFn);
+    syncUnsubscribes.push(() => table.hook('creating').unsubscribe(creatingFn));
 
-    table.hook('updating', function (mods, primKey, obj) {
+    const updatingFn: any = function (mods: any, primKey: any, obj: any) {
       const syncKey = `${tableName}-${primKey}`;
-      if (syncingKeys.has(syncKey)) return;
       
-      const updatedObj = { ...obj };
-      for (const key in mods) {
-         if (mods[key] === undefined) delete updatedObj[key as keyof typeof updatedObj];
-         else updatedObj[key as keyof typeof updatedObj] = mods[key];
+      let finalMods = mods;
+      if (!mods.updatedAt && !syncingKeys.has(syncKey)) {
+         finalMods = { ...mods, updatedAt: new Date() };
+      }
+
+      if (syncingKeys.has(syncKey)) return finalMods === mods ? undefined : finalMods;
+      
+      const updatedObj = { ...obj, ...finalMods };
+      for (const key in finalMods) {
+         if (finalMods[key] === undefined) delete (updatedObj as any)[key];
       }
       
       setDoc(doc(firestoreDb, `${pathPrefix}_${tableName}`, String(primKey)), updatedObj).catch(console.error);
-    });
+      
+      if (finalMods !== mods) return finalMods;
+    };
+    table.hook('updating', updatingFn);
+    syncUnsubscribes.push(() => table.hook('updating').unsubscribe(updatingFn));
 
-    table.hook('deleting', function (primKey, obj) {
+    const deletingFn: any = function (primKey: any, obj: any) {
       const syncKey = `${tableName}-${primKey}`;
       if (syncingKeys.has(syncKey)) return;
       
       deleteDoc(doc(firestoreDb, `${pathPrefix}_${tableName}`, String(primKey))).catch(console.error);
-    });
+    };
+    table.hook('deleting', deletingFn);
+    syncUnsubscribes.push(() => table.hook('deleting').unsubscribe(deletingFn));
   });
 }

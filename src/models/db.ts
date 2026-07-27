@@ -48,7 +48,7 @@ export interface Transaction {
  * Handles undefined, null, empty strings, and case mismatches.
  * Defaults to 'DEBIT' for any unrecognized value.
  */
-export function normalizeType(type: any): 'DEBIT' | 'CREDIT' | 'TRANSFER' {
+export function normalizeType(type: string | undefined | null): 'DEBIT' | 'CREDIT' | 'TRANSFER' {
   if (!type) return 'DEBIT';
   const upper = String(type).toUpperCase().trim();
   if (upper === 'CREDIT') return 'CREDIT';
@@ -62,6 +62,7 @@ export interface Budget {
   amount: number;
   month: string; // 'YYYY-MM'
   type?: 'ENVELOPE' | 'CUSTOM';
+  rollover?: boolean;
 }
 
 export interface MonthlyBudget {
@@ -99,7 +100,7 @@ export interface MonthlyClose {
 export interface UserSetting {
   id?: number;
   key: string;
-  value: any;
+  value: string | number | boolean | object;
 }
 
 export interface Party {
@@ -337,6 +338,26 @@ export class FinanceDatabase extends Dexie {
     this.version(19).stores({
       accounts: '++id, bankName, accountLast4',
       transactions: '++id, accountId, type, dateTime, category, linkedBudgetId',
+      monthlyClosings: '++id, &month',
+      budgets: '++id, category, month, [category+month]',
+      parties: '++id, name, type',
+      ledgerTransactions: '++id, partyId, type, dateTime',
+      accountClosings: '++id, accountId, closingDate',
+      categories: '++id, &name',
+      tags: '++id, &name',
+      upiApps: '++id, &name',
+      recurringTemplates: '++id, nextRunDate, isActive',
+      userSettings: '++id, &key',
+      wishlist: '++id, name, price, status, dateAdded',
+      monthlyBudgets: '++id, &month',
+      inventory: '++id, sku',
+      sales: '++id, customerId, status, date',
+      saleItems: '++id, saleId, skuId'
+    });
+
+    this.version(20).stores({
+      accounts: '++id, bankName, accountLast4',
+      transactions: '++id, accountId, type, dateTime, category, linkedBudgetId, paymentMethod, expenseType, party',
       monthlyClosings: '++id, &month',
       budgets: '++id, category, month, [category+month]',
       parties: '++id, name, type',

@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Budget, MonthlyBudget, Transaction } from '../models/db';
 import { useAuth } from '../context/AuthContext';
 import { startOfMonth, endOfMonth, addMonths, subMonths, differenceInDays, format } from 'date-fns';
+import { roundCurrency } from '../logic/utils';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -125,22 +126,58 @@ export function useBudgets(monthStr: string, currentMonth: Date): UseBudgetsRetu
     [monthStr, user?.uid]
   ) || [];
 
-  const envelopeBudgets = useMemo(() => budgets.filter(b => b.type !== 'CUSTOM'), [budgets]);
-  const customBudgets = useMemo(() => budgets.filter(b => b.type === 'CUSTOM'), [budgets]);
+  const enhancedBudgets = useMemo(() => {
+    return budgets.map(b => {
+      if (!b.rollover) return b;
+      
+      const isCustom = b.type === 'CUSTOM';
+      const pastBudgetsForCat = allPastBudgets.filter(pb => pb.category === b.category && pb.type === (isCustom ? 'CUSTOM' : 'ENVELOPE'));
+      const totalPastBudget = pastBudgetsForCat.reduce((sum, pb) => sum + Number(pb.amount), 0);
+      
+      const pastTxsForCat = allPastTxs.filter(tx => tx.type === 'DEBIT' && tx.category !== 'Transfer');
+      let totalPastSpent = 0;
+      
+      if (isCustom) {
+        const target = b.category.toLowerCase();
+        totalPastSpent = pastTxsForCat.filter(tx => tx.category.toLowerCase() === target || (tx.expenseType && tx.expenseType.toLowerCase() === target)).reduce((s, tx) => s + Number(tx.amount), 0);
+      } else {
+        totalPastSpent = pastTxsForCat.filter(tx => {
+          if (tx.linkedBudgetId) {
+            return pastBudgetsForCat.some(pb => pb.id === tx.linkedBudgetId);
+          }
+          return tx.category === b.category;
+        }).reduce((s, tx) => s + Number(tx.amount), 0);
+      }
+      
+      const rolloverAmt = totalPastBudget - totalPastSpent;
+      return { ...b, amount: Number(b.amount) + rolloverAmt };
+    });
+  }, [budgets, allPastBudgets, allPastTxs]);
+
+  const envelopeBudgets = useMemo(() => enhancedBudgets.filter(b => b.type !== 'CUSTOM'), [enhancedBudgets]);
+  const customBudgets = useMemo(() => enhancedBudgets.filter(b => b.type === 'CUSTOM'), [enhancedBudgets]);
 
   // 4. Transactions for the budget period
-  const transactions = useLiveQuery(() => db.transactions.toArray(), [user?.uid]) || [];
+  const monthTxs = useLiveQuery(
+    () => {
+      return db.transactions
+        .where('dateTime')
+        .between(periodStart, periodEnd, true, true)
+        .toArray();
+    },
+    [periodStartTs, periodEndTs, user?.uid]
+  ) || [];
 
-  const monthTxs = useMemo(() => {
-    return transactions.filter(tx => {
-      try {
-        const t = new Date(tx.dateTime).getTime();
-        return !isNaN(t) && t >= periodStartTs && t <= periodEndTs;
-      } catch {
-        return false;
-      }
-    });
-  }, [transactions, periodStartTs, periodEndTs]);
+  const allPastBudgets = useLiveQuery(
+    () => db.budgets.where('month').below(monthStr).toArray(),
+    [monthStr, user?.uid]
+  ) || [];
+
+  const allPastTxs = useLiveQuery(
+    () => db.transactions.where('dateTime').below(periodStart).toArray(),
+    [periodStartTs, user?.uid]
+  ) || [];
+
 
   const expenses = useMemo(() => {
     let debits = monthTxs.filter(tx => tx.type === 'DEBIT' && tx.category !== 'Transfer');
@@ -155,7 +192,7 @@ export function useBudgets(monthStr: string, currentMonth: Date): UseBudgetsRetu
 
   // 5. Metrics
   const totalAllocated = useMemo(
-    () => envelopeBudgets.reduce((sum, b) => sum + Number(b.amount || 0), 0),
+    () => roundCurrency(envelopeBudgets.reduce((sum, b) => sum + Number(b.amount || 0), 0)),
     [envelopeBudgets]
   );
   const unallocated = masterBudgetAmt - totalAllocated;
@@ -164,26 +201,26 @@ export function useBudgets(monthStr: string, currentMonth: Date): UseBudgetsRetu
   const getSpentForBudget = (budget: Budget, isCustom: boolean): number => {
     if (isCustom) {
       const target = budget.category.toLowerCase();
-      return monthTxs
+      return roundCurrency(monthTxs
         .filter(tx => tx.type === 'DEBIT' && tx.category !== 'Transfer')
         .filter(tx =>
           tx.category.toLowerCase() === target ||
           (tx.expenseType && tx.expenseType.toLowerCase() === target)
         )
-        .reduce((s, tx) => s + Number(tx.amount), 0);
+        .reduce((s, tx) => s + Number(tx.amount), 0));
     }
-    return expenses
+    return roundCurrency(expenses
       .filter(tx => {
         if (tx.linkedBudgetId) {
           return tx.linkedBudgetId === budget.id;
         }
         return tx.category === budget.category;
       })
-      .reduce((s, tx) => s + Number(tx.amount), 0);
+      .reduce((s, tx) => s + Number(tx.amount), 0));
   };
 
   const totalSpent = useMemo(
-    () => envelopeBudgets.reduce((sum, b) => sum + getSpentForBudget(b, false), 0),
+    () => roundCurrency(envelopeBudgets.reduce((sum, b) => sum + getSpentForBudget(b, false), 0)),
     [envelopeBudgets, expenses]
   );
 

@@ -6,8 +6,10 @@ import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../logic/utils';
 import { CURRENCY_OPTIONS, CurrencyInfo } from '../constants/currencies';
+import { useToast } from '../context/ToastContext';
 
 export default function SetupAccount() {
+  const toast = useToast();
   const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const navigate = useNavigate();
@@ -88,7 +90,7 @@ export default function SetupAccount() {
       navigate('/', { replace: true });
     } catch (error) {
       console.error('Failed to setup account:', error);
-      alert('An error occurred while saving your setup. Please try again.');
+      toast.error('An error occurred while saving your setup. Please try again.');
       setIsSaving(false);
     }
   };

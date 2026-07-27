@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 
 const DEFAULT_CATEGORIES = ['Food', 'Transport', 'Rent', 'Shopping', 'Bills', 'Entertainment', 'Salary', 'Transfer', 'Groceries', 'Travel', 'Health', 'Investment', 'Loan', 'Housing', 'Education', 'Donations', 'Other'];
 
-let categoriesInitialized = false;
+let initializedForUid: string | null = null;
 
 export function useCategories() {
   const { user } = useAuth();
@@ -25,8 +25,8 @@ export function useCategories() {
 
   React.useEffect(() => {
     async function initCategories() {
-      if (categoriesInitialized) return;
-      categoriesInitialized = true;
+      if (!user?.uid || initializedForUid === user.uid) return;
+      initializedForUid = user.uid;
       try {
         const count = await db.categories.count();
         if (count === 0) {
@@ -51,14 +51,14 @@ export function useCategories() {
           }
         }
       } catch (e) {
-        categoriesInitialized = false;
+        initializedForUid = null;
         console.error('Failed to init categories:', e);
       }
     }
-    if (dbCategories.length === 0) {
+    if (dbCategories.length === 0 && user?.uid) {
       initCategories();
     }
-  }, [dbCategories.length]);
+  }, [dbCategories.length, user?.uid]);
 
   const addCategory = async (category: string) => {
     const trimmed = category.trim();

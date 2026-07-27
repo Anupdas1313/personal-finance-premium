@@ -6,9 +6,11 @@ import { useAuth } from '../context/AuthContext';
 import { ArrowLeft, Plus, TrendingUp, TrendingDown, Clock, Search, Trash2, Calendar, FileText, Download, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useCurrency } from '../hooks/useCurrency';
+import { useToast } from '../context/ToastContext';
 
 export default function PartyLedger() {
   const currency = useCurrency();
+  const { confirm, success } = useToast();
   const { user } = useAuth();
   const { id } = useParams();
   const partyId = Number(id);
@@ -68,22 +70,32 @@ export default function PartyLedger() {
   };
 
   const handleDelete = async (txId: number) => {
-    if (confirm('Are you sure you want to delete this recording?')) {
+    if (await confirm('Are you sure you want to delete this recording?')) {
         await db.ledgerTransactions.delete(txId);
+        success('Recording deleted successfully');
     }
   };
 
   const exportCSV = () => {
-    const headers = ['Date', 'Remarks', 'Cash Out (Given)', 'Cash In (Received)', 'Resulting Balance'];
+    const csvEscape = (value: any) => {
+      if (value == null) return '';
+      const str = String(value);
+      if (/[",\n\r]/.test(str)) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const headers = ['Date', 'Remarks', 'Cash Out (Given)', 'Cash In (Received)', 'Resulting Balance'].map(csvEscape);
     const rows = transactions.map((tx, i) => [
       format(tx.dateTime, 'dd/MM/yyyy'),
       tx.remarks || '-',
       tx.type === 'CASH_OUT' ? tx.amount : '0',
       tx.type === 'CASH_IN' ? tx.amount : '0',
       runningBalances[i].toString()
-    ]);
+    ].map(csvEscape));
 
-    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);

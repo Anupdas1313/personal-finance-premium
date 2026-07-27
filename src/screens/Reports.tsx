@@ -11,8 +11,7 @@ import {
   Download, FileText, Printer, ChevronDown, Filter,
   TrendingUp, TrendingDown, Search, ArrowLeftRight, Tag, RefreshCw
 } from 'lucide-react';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
 import { useCurrency } from '../hooks/useCurrency';
@@ -20,7 +19,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   XAxis, YAxis, CartesianGrid, BarChart, Bar
 } from 'recharts';
-import { cn } from '../logic/utils';
+import { cn, roundCurrency } from '../logic/utils';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CHART_COLORS = ['#00A86B', '#1A237E', '#D4AF37', '#82EEFD', '#E53935', '#3B3B98', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
@@ -62,8 +61,8 @@ const generateInsights = (txs: Transaction[], prevTxs: Transaction[], currency: 
 
   const debits = txs.filter(t => t.type === 'DEBIT');
   const credits = txs.filter(t => t.type === 'CREDIT');
-  const totalExpense = debits.reduce((s, t) => s + t.amount, 0);
-  const totalIncome = credits.reduce((s, t) => s + t.amount, 0);
+  const totalExpense = roundCurrency(debits.reduce((s, t) => s + t.amount, 0));
+  const totalIncome = roundCurrency(credits.reduce((s, t) => s + t.amount, 0));
 
   // Biggest single expense
   if (debits.length > 0) {
@@ -130,7 +129,7 @@ export default function Reports() {
   const [transactionType, setTransactionType] = useState<'ALL' | 'CREDIT' | 'DEBIT'>('ALL');
   const [payeeSearch, setPayeeSearch] = useState('');
   const [comparisonMode, setComparisonMode] = useState(false);
-  const [activeChart, setActiveChart] = useState<'category' | 'daily' | 'tags'>('category');
+  const [activeChart, setActiveChart] = useState<'category' | 'daily' | 'tags' | 'cashflow' | 'networth'>('category');
 
   const bankAccounts = useMemo(() => accounts.filter(a => (a.type || 'BANK') === 'BANK'), [accounts]);
   const creditCards = useMemo(() => accounts.filter(a => a.type === 'CREDIT_CARD'), [accounts]);
@@ -249,6 +248,37 @@ export default function Reports() {
     return map;
   }, [comparisonMode, comparisonTransactions]);
 
+  const netWorthData = useMemo(() => {
+    const months = [];
+    const today = new Date();
+    for (let i = 5; i >= 0; i--) {
+      months.push(subMonths(today, i));
+    }
+    
+    return months.map(m => {
+      const start = startOfMonth(m).getTime();
+      const end = endOfMonth(m).getTime();
+      
+      let inflow = 0;
+      let outflow = 0;
+      
+      allTransactions.forEach(t => {
+        const time = new Date(t.dateTime).getTime();
+        if (time >= start && time <= end) {
+          if (t.type === 'CREDIT') inflow += t.amount;
+          else if (t.type === 'DEBIT') outflow += t.amount;
+        }
+      });
+      
+      return {
+        month: format(m, 'MMM yy'),
+        netFlow: inflow - outflow,
+        inflow,
+        outflow
+      };
+    });
+  }, [allTransactions]);
+
   const dailyData = useMemo(() => {
     try {
       const start = new Date(dateRange.start);
@@ -288,7 +318,9 @@ export default function Reports() {
     return ((current - previous) / previous * 100);
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
+    const { jsPDF } = await import('jspdf');
+    const autoTable = (await import('jspdf-autotable')).default;
     const doc = new jsPDF();
     const pageW = doc.internal.pageSize.getWidth();
 
@@ -390,19 +422,28 @@ export default function Reports() {
   };
 
   const exportCSV = () => {
-    const headers = ['Date', 'Time', 'Party', 'Note', 'Category', 'Type', 'Method', 'Tag', 'Amount', 'Running Balance'];
+    const csvEscape = (value: any) => {
+      if (value == null) return '';
+      const str = String(value);
+      if (/[",\n\r]/.test(str)) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const headers = ['Date', 'Time', 'Party', 'Note', 'Category', 'Type', 'Method', 'Tag', 'Amount', 'Running Balance'].map(csvEscape);
     const rows = txsWithBalance.map(tx => [
       format(new Date(tx.dateTime), 'yyyy-MM-dd'),
       format(new Date(tx.dateTime), 'HH:mm'),
-      `"${(tx.party || '').replace(/"/g, '""')}"`,
-      `"${(tx.note || '').replace(/"/g, '""')}"`,
+      tx.party || '',
+      tx.note || '',
       tx.category,
       tx.type,
       tx.paymentMethod || '',
       tx.expenseType || '',
       tx.amount,
       tx.runningBalance
-    ]);
+    ].map(csvEscape));
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -686,10 +727,10 @@ export default function Reports() {
             <h2 className="text-xs font-bold text-brand-blue dark:text-[#F7F7F7] uppercase tracking-widest flex items-center gap-2">
               <span className="p-2 bg-neutral-100 dark:bg-[#222222] rounded-xl"><Filter className="w-3.5 h-3.5 text-brand-green" /></span> Analytics
             </h2>
-            <div className="flex bg-neutral-100 dark:bg-[#1A1A1E] p-0.5 rounded-xl">
-              {([['category', 'Category'], ['daily', 'Daily'], ['tags', 'Tags']] as const).map(([key, label]) => (
+            <div className="flex bg-neutral-100 dark:bg-[#1A1A1E] p-0.5 rounded-xl overflow-x-auto scrollbar-none">
+              {([['category', 'Category'], ['daily', 'Daily'], ['tags', 'Tags'], ['cashflow', 'Cash Flow'], ['networth', 'Net Worth Growth']] as const).map(([key, label]) => (
                 <button key={key} onClick={() => setActiveChart(key)}
-                  className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
+                  className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                     activeChart === key ? 'bg-white dark:bg-[#222222] text-brand-green shadow-sm' : 'text-neutral-400'
                   }`}>{label}</button>
               ))}
@@ -774,6 +815,46 @@ export default function Reports() {
                   <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-brand-red" /><span className="text-[10px] text-neutral-400 font-bold">Expense</span></div>
                   <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-brand-green" /><span className="text-[10px] text-neutral-400 font-bold">Income</span></div>
                 </div>
+              </div>
+            )}
+
+            {/* Cash Flow Statement */}
+            {activeChart === 'cashflow' && (
+              <div className="p-4 bg-neutral-50 dark:bg-[#1A1A1E] rounded-xl border border-neutral-100 dark:border-white/5 space-y-4">
+                <div className="flex justify-between items-center pb-2 border-b border-neutral-200 dark:border-[#333]">
+                  <span className="text-xs font-bold text-neutral-500">Total Inflow</span>
+                  <span className="text-sm font-bold text-emerald-500">{currency}{totals.income.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-neutral-200 dark:border-[#333]">
+                  <span className="text-xs font-bold text-neutral-500">Total Outflow</span>
+                  <span className="text-sm font-bold text-rose-500">{currency}{totals.expense.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-sm font-black text-brand-blue dark:text-white uppercase tracking-widest">Net Cash Flow</span>
+                  <span className={`text-lg font-black ${totals.income - totals.expense >= 0 ? 'text-brand-green' : 'text-rose-500'}`}>
+                    {currency}{(totals.income - totals.expense).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Net Worth Growth */}
+            {activeChart === 'networth' && (
+              <div className="h-[240px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={netWorthData} barSize={16}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                    <XAxis dataKey="month" tick={{ fontSize: 9, fill: '#A0A0A0', fontWeight: 700 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 8, fill: '#A0A0A0' }} axisLine={false} tickLine={false} tickFormatter={v => `${currency}${(Math.abs(v) / 1000).toFixed(0)}k`} />
+                    <Tooltip contentStyle={{ background: '#111', border: '1px solid #222', borderRadius: 12, fontSize: 11 }}
+                      formatter={(v: number) => [`${currency}${v.toLocaleString('en-IN')}`, 'Net Cash Flow']} />
+                    <Bar dataKey="netFlow" radius={[4, 4, 4, 4]}>
+                      {netWorthData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.netFlow >= 0 ? '#10B981' : '#E53935'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             )}
           </div>

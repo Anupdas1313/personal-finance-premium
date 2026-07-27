@@ -6,16 +6,17 @@ import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, 
 import { BankLogo } from '../components/BankLogo';
 import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
 import { format, startOfDay, parseISO, endOfMonth, startOfMonth, subMonths, endOfDay, startOfWeek, endOfWeek, startOfYear, endOfYear, addMonths, subWeeks, addWeeks, subDays, addDays, subYears, addYears } from 'date-fns';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+
 import { Reorder, motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency, useCurrencyFormatter } from '../hooks/useCurrency';
-import { cn } from '../logic/utils';
+import { cn, roundCurrency } from '../logic/utils';
+import { useToast } from '../context/ToastContext';
 
 export default function Accounts() {
   const { currency, hideDecimals, formatAmount } = useCurrencyFormatter();
+  const { confirm, success } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
   const accounts = useLiveQuery(async () => {
@@ -99,8 +100,8 @@ export default function Accounts() {
         return time >= monthStart && time <= monthEnd;
       });
 
-      const inflow = currentMonthTxs.filter(tx => normalizeType(tx.type) === 'CREDIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
-      const outflow = currentMonthTxs.filter(tx => normalizeType(tx.type) === 'DEBIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+      const inflow = roundCurrency(currentMonthTxs.filter(tx => normalizeType(tx.type) === 'CREDIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0));
+      const outflow = roundCurrency(currentMonthTxs.filter(tx => normalizeType(tx.type) === 'DEBIT').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0));
       
       // Get Recent Activity
       const recentActivity = allAccountTxs.slice(0, 3);
@@ -111,19 +112,19 @@ export default function Accounts() {
   }, [accounts, allTransactions]);
 
   const totalNetWorth = useMemo(() => 
-    Object.values(accountBreakdown).reduce((sum, b) => sum + (b.currentBalance || 0), 0)
+    roundCurrency(Object.values(accountBreakdown).reduce((sum, b) => sum + (b.currentBalance || 0), 0))
   , [accountBreakdown]);
 
   const totalLiquid = useMemo(() => 
-    Object.entries(accountBreakdown)
+    roundCurrency(Object.entries(accountBreakdown)
       .filter(([id]) => accounts.find(a => a.id === Number(id))?.type !== 'CREDIT_CARD')
-      .reduce((sum, [, b]) => sum + (b.currentBalance || 0), 0)
+      .reduce((sum, [, b]) => sum + (b.currentBalance || 0), 0))
   , [accountBreakdown, accounts]);
 
   const totalLiabilities = useMemo(() => 
-    Math.abs(Object.entries(accountBreakdown)
+    Math.abs(roundCurrency(Object.entries(accountBreakdown)
       .filter(([id]) => accounts.find(a => a.id === Number(id))?.type === 'CREDIT_CARD')
-      .reduce((sum, [, b]) => sum + (b.currentBalance || 0), 0))
+      .reduce((sum, [, b]) => sum + (b.currentBalance || 0), 0)))
   , [accountBreakdown, accounts]);
 
   const handleAddAccount = async (e: React.FormEvent) => {
@@ -208,7 +209,7 @@ export default function Accounts() {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this account?')) {
+    if (await confirm('Are you sure you want to delete this account?')) {
       await db.accounts.delete(id);
       const txs = await db.transactions.where('accountId').equals(id).toArray();
       for (const tx of txs) {
@@ -263,7 +264,7 @@ export default function Accounts() {
   };
 
   const getGroupTotal = (accList: any[]) => {
-    return accList.reduce((sum, acc) => sum + (accountBreakdown[acc.id!]?.currentBalance || 0), 0);
+    return roundCurrency(accList.reduce((sum, acc) => sum + (accountBreakdown[acc.id!]?.currentBalance || 0), 0));
   };
 
   return (
@@ -813,6 +814,7 @@ function PartitionRow({ partition }: { partition: any }) {
 
 function AccountStatementDetail({ accountId, onClose }: { accountId: number, onClose: () => void }) {
   const currency = useCurrency();
+  const { confirm } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
   const account = useLiveQuery(() => db.accounts.get(accountId), [accountId, user?.uid]);
@@ -898,8 +900,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     });
   }, [statementData, typeFilter, searchTerm]);
 
-  const totalCredit = statementData.filter(t => normalizeType(t.type) === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
-  const totalDebit = statementData.filter(t => normalizeType(t.type) === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
+  const totalCredit = roundCurrency(statementData.filter(t => normalizeType(t.type) === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0));
+  const totalDebit = roundCurrency(statementData.filter(t => normalizeType(t.type) === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0));
 
   const actualTotalBalance = useMemo(() => {
     let bal = Number(account?.startingBalance) || 0;
@@ -950,8 +952,10 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     setShowExportMenu(false);
   };
 
-  const downloadPDF = () => {
+  const downloadPDF = async () => {
     if (!account) return;
+    const { jsPDF } = await import('jspdf');
+    const autoTable = (await import('jspdf-autotable')).default;
     const doc = new jsPDF();
     doc.setFontSize(20);
     doc.text('Account Statement', 14, 22);
@@ -978,7 +982,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
 
   const handleStartNewBalance = async () => {
     if (!account) return;
-    const confirmReset = window.confirm(`Start a new balance period using the current balance?`);
+    const confirmReset = await confirm(`Start a new balance period using the current balance?`);
     if (!confirmReset) return;
 
     setIsProcessingPartition(true);
@@ -992,8 +996,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
       const lastClosing = closings.length > 0 ? closings[closings.length - 1] : null;
       const startLimit = lastClosing ? new Date(lastClosing.closingDate).getTime() : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
       const liveTxs = transactions.filter(tx => new Date(tx.dateTime).getTime() > startLimit);
-      const inflow = liveTxs.filter(t => normalizeType(t.type) === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
-      const outflow = liveTxs.filter(t => normalizeType(t.type) === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
+      const inflow = roundCurrency(liveTxs.filter(t => normalizeType(t.type) === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0));
+      const outflow = roundCurrency(liveTxs.filter(t => normalizeType(t.type) === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0));
       const opening = lastClosing ? lastClosing.closingBalance : account.startingBalance;
 
       await db.accountClosings.add({
@@ -1019,7 +1023,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
 
   const handleCreatePartitionAt = async (targetTx: Transaction & { runningBalance: number }) => {
     if (!account) return;
-    const confirmReset = window.confirm(`Start a new balance period from this transaction?`);
+    const confirmReset = await confirm(`Start a new balance period from this transaction?`);
     if (!confirmReset) return;
     const partitionTime = new Date(targetTx.dateTime).getTime() + 1;
     const prevClosing = [...closings].filter(c => new Date(c.closingDate).getTime() < partitionTime).sort((a,b) => new Date(b.closingDate).getTime() - new Date(a.closingDate).getTime())[0];
@@ -1028,8 +1032,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         const time = new Date(tx.dateTime).getTime();
         return time > startLimit && time < partitionTime;
     });
-    const inflow = periodTxs.filter(t => normalizeType(t.type) === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0);
-    const outflow = periodTxs.filter(t => normalizeType(t.type) === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0);
+    const inflow = roundCurrency(periodTxs.filter(t => normalizeType(t.type) === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0));
+    const outflow = roundCurrency(periodTxs.filter(t => normalizeType(t.type) === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0));
     const opening = prevClosing ? prevClosing.closingBalance : account.startingBalance;
     await db.accountClosings.add({
       accountId: account.id!,

@@ -15,7 +15,8 @@ export default defineConfig(({mode}) => {
         registerType: 'autoUpdate',
         includeAssets: ['icon.svg', 'pwa-192.png', 'pwa-512.png', 'apple-touch-icon.png'],
         workbox: {
-          maximumFileSizeToCacheInBytes: 5000000
+          maximumFileSizeToCacheInBytes: 5000000,
+          navigateFallback: '/personal-finance-premium/index.html'
         },
         manifest: {
           name: 'Expensify',
@@ -51,7 +52,6 @@ export default defineConfig(({mode}) => {
       })
     ],
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
     },
     resolve: {
       alias: {
@@ -61,5 +61,18 @@ export default defineConfig(({mode}) => {
     server: {
       hmr: true,
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+            'firebase-vendor': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+            'dexie-vendor': ['dexie', 'dexie-react-hooks'],
+            'chart-vendor': ['recharts'],
+            'ui-vendor': ['framer-motion', 'lucide-react'],
+          }
+        }
+      }
+    }
   };
 });

@@ -4,10 +4,8 @@ import { db, normalizeType } from '../models/db';
 import { useAuth } from '../context/AuthContext';
 import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Download, ZoomIn, ZoomOut, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Calendar, FileText, Share2, ArrowUpRight, ArrowDownLeft, Wallet, Landmark, Filter } from 'lucide-react';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { toBlob } from 'html-to-image';
+import { ArrowLeft, Download, ZoomIn, ZoomOut, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Calendar, FileText, Share2, ArrowUpRight, ArrowDownLeft, Wallet, Landmark, Filter, CheckSquare, Square, Trash2, Edit3, X } from 'lucide-react';
+
 import { motion, useSpring, useTransform } from 'framer-motion';
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
@@ -100,6 +98,10 @@ export default function TransactionTable() {
   const [sortConfig, setSortConfig] = useState<{key: string, direction: 'asc' | 'desc'}>({ key: 'date', direction: 'desc' });
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  
+  const [selectedTxIds, setSelectedTxIds] = useState<Set<number>>(new Set());
+  const [isBulkCategoryModalOpen, setIsBulkCategoryModalOpen] = useState(false);
+  const [bulkCategory, setBulkCategory] = useState('');
   const summaryRef = useRef<HTMLDivElement>(null);
   
   const { categories: appCategories } = useCategories();
@@ -237,6 +239,61 @@ export default function TransactionTable() {
     });
   };
 
+  const handleToggleSelectAll = () => {
+    if (selectedTxIds.size === paginatedTransactions.length && paginatedTransactions.length > 0) {
+      setSelectedTxIds(new Set());
+    } else {
+      const newSelected = new Set(selectedTxIds);
+      paginatedTransactions.forEach(tx => { if (tx.id) newSelected.add(tx.id) });
+      setSelectedTxIds(newSelected);
+    }
+  };
+
+  const handleToggleSelect = (id: number) => {
+    const newSelected = new Set(selectedTxIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedTxIds(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedTxIds.size === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedTxIds.size} transaction(s)?`)) return;
+    
+    try {
+      const idsToDelete = new Set(selectedTxIds);
+      for (const id of selectedTxIds) {
+        const tx = await db.transactions.get(id);
+        if (tx?.linkedTransactionId) {
+          idsToDelete.add(tx.linkedTransactionId);
+        }
+      }
+      await db.transactions.bulkDelete(Array.from(idsToDelete));
+      setSelectedTxIds(new Set());
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleBulkEditCategory = async () => {
+    if (selectedTxIds.size === 0 || !bulkCategory) return;
+    try {
+      const updates = Array.from(selectedTxIds).map(id => ({
+        key: id,
+        changes: { category: bulkCategory }
+      }));
+      await Promise.all(updates.map(u => db.transactions.update(u.key, u.changes)));
+      setIsBulkCategoryModalOpen(false);
+      setSelectedTxIds(new Set());
+      setBulkCategory('');
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const SortIcon = ({ columnKey }: { columnKey: string }) => {
     if (sortConfig.key !== columnKey) return <ChevronDown className="w-4 h-4 text-[#B0B0B0] dark:text-[#666666] opacity-0 group-hover:opacity-100" />;
     return sortConfig.direction === 'asc' ? <ChevronUp className="w-4 h-4 text-[#222222] dark:text-[#F7F7F7]" /> : <ChevronDown className="w-4 h-4 text-[#222222] dark:text-[#F7F7F7]" />;
@@ -291,6 +348,8 @@ export default function TransactionTable() {
   };
 
   const handleExportPDF = async () => {
+    const { jsPDF } = await import('jspdf');
+    const autoTable = (await import('jspdf-autotable')).default;
     const doc = new jsPDF();
     
     doc.setFontSize(18);
@@ -331,6 +390,7 @@ export default function TransactionTable() {
   const handleShareSummary = async () => {
     if (!summaryRef.current) return;
     try {
+      const { toBlob } = await import('html-to-image');
       const blob = await toBlob(summaryRef.current, { backgroundColor: '#f9fafb', pixelRatio: 2 });
       if (!blob) return;
       const url = URL.createObjectURL(blob);
@@ -383,6 +443,7 @@ export default function TransactionTable() {
     document.body.appendChild(container);
 
     try {
+      const { toBlob } = await import('html-to-image');
       const blob = await toBlob(container, { pixelRatio: 2 });
       if (!blob) return;
       const url = URL.createObjectURL(blob);
@@ -613,6 +674,11 @@ export default function TransactionTable() {
 
 
                 <tr>
+                  <th className="px-4 py-3 w-10">
+                    <button onClick={handleToggleSelectAll} className="text-brand-blue dark:text-white/70">
+                      {paginatedTransactions.length > 0 && selectedTxIds.size === paginatedTransactions.length ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                    </button>
+                  </th>
                   <th className="px-4 py-3 cursor-pointer" onClick={() => handleSort('date')}>Date <SortIcon columnKey="date" /></th>
                   <th className="hidden md:table-cell px-4 py-3">Type</th>
                   <th className="hidden sm:table-cell px-4 py-3">Category</th>
@@ -624,7 +690,12 @@ export default function TransactionTable() {
               </thead>
               <tbody className="divide-y divide-[#EBEBEB] dark:divide-[#222222]">
                 {paginatedTransactions.map(tx => (
-                  <tr key={tx.id} className="hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] transition-colors border-b border-[#EBEBEB] dark:border-transparent">
+                  <tr key={tx.id} className={`hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] transition-colors border-b border-[#EBEBEB] dark:border-transparent ${tx.id && selectedTxIds.has(tx.id) ? 'bg-brand-blue/5 dark:bg-brand-blue/10' : ''}`}>
+                    <td className="px-4 py-4 sm:py-3 text-brand-blue dark:text-white w-10">
+                      <button onClick={() => tx.id && handleToggleSelect(tx.id)} className="text-brand-blue/50 dark:text-white/50">
+                        {tx.id && selectedTxIds.has(tx.id) ? <CheckSquare className="w-4 h-4 text-brand-blue dark:text-brand-cyan" /> : <Square className="w-4 h-4" />}
+                      </button>
+                    </td>
                     <td className="px-4 py-4 sm:py-3 text-brand-blue dark:text-white">
                       <div className="font-semibold text-sm">
                         {safeFormatDate(tx.dateTime, 'MMM d, yyyy')}
@@ -678,6 +749,70 @@ export default function TransactionTable() {
           )}
         </div>
       </main>
+
+      {/* Bulk Action Bar */}
+      {selectedTxIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white dark:bg-[#111] px-6 py-4 rounded-full shadow-2xl border border-neutral-200 dark:border-white/10 flex items-center gap-6 z-50 animate-in slide-in-from-bottom-10 fade-in">
+          <span className="text-sm font-bold text-brand-blue dark:text-white">
+            {selectedTxIds.size} selected
+          </span>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsBulkCategoryModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue dark:text-white rounded-full text-sm font-bold transition-colors"
+            >
+              <Edit3 className="w-4 h-4" />
+              Edit Category
+            </button>
+            <button 
+              onClick={handleBulkDelete}
+              className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-full text-sm font-bold transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </button>
+            <button 
+              onClick={() => setSelectedTxIds(new Set())}
+              className="p-2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Edit Category Modal */}
+      {isBulkCategoryModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111] p-6 rounded-3xl w-full max-w-sm border border-neutral-200 dark:border-white/10 shadow-2xl">
+            <h3 className="text-lg font-bold text-brand-blue dark:text-white mb-4">Edit Category for {selectedTxIds.size} items</h3>
+            <select 
+              value={bulkCategory} 
+              onChange={e => setBulkCategory(e.target.value)}
+              className="w-full h-12 bg-neutral-50 dark:bg-black/20 border border-neutral-200 dark:border-white/10 px-4 rounded-xl text-sm font-bold text-brand-blue dark:text-white outline-none mb-6"
+            >
+              <option value="" disabled>Select Category...</option>
+              {appCategories.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setIsBulkCategoryModalOpen(false)}
+                className="flex-1 py-3 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 text-brand-blue dark:text-white rounded-xl font-bold transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleBulkEditCategory}
+                disabled={!bulkCategory}
+                className="flex-1 py-3 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-xl font-bold transition-colors disabled:opacity-50"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

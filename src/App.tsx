@@ -1,33 +1,35 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
-import Dashboard from './screens/Dashboard';
-import Transactions from './screens/Transactions';
-import Accounts from './screens/Accounts';
-import Transfer from './screens/Transfer';
-import TransferLogs from './screens/TransferLogs';
-import Summary from './screens/Summary';
-import TransactionTable from './screens/TransactionTable';
-import Settings from './screens/Settings';
-import Budgets from './screens/Budgets';
-import BudgetCustomize from './screens/BudgetCustomize';
-import Ledger from './screens/Ledger';
-import PartyLedger from './screens/PartyLedger';
-import Reports from './screens/Reports';
-import Profile from './screens/Profile';
-import Wishlist from './screens/Wishlist';
-import Auth from './screens/Auth';
-import Welcome from './screens/Welcome';
-import SetupAccount from './screens/SetupAccount';
+const Dashboard = lazy(() => import('./screens/Dashboard'));
+const Transactions = lazy(() => import('./screens/Transactions'));
+const Accounts = lazy(() => import('./screens/Accounts'));
+const Transfer = lazy(() => import('./screens/Transfer'));
+const TransferLogs = lazy(() => import('./screens/TransferLogs'));
+const Summary = lazy(() => import('./screens/Summary'));
+const TransactionTable = lazy(() => import('./screens/TransactionTable'));
+const Settings = lazy(() => import('./screens/Settings'));
+const Budgets = lazy(() => import('./screens/Budgets'));
+const BudgetCustomize = lazy(() => import('./screens/BudgetCustomize'));
+const Ledger = lazy(() => import('./screens/Ledger'));
+const PartyLedger = lazy(() => import('./screens/PartyLedger'));
+const Reports = lazy(() => import('./screens/Reports'));
+const Profile = lazy(() => import('./screens/Profile'));
+const Wishlist = lazy(() => import('./screens/Wishlist'));
+const Auth = lazy(() => import('./screens/Auth'));
+const Welcome = lazy(() => import('./screens/Welcome'));
+const SetupAccount = lazy(() => import('./screens/SetupAccount'));
 import PwaInstallPromoter from './components/PwaInstallPromoter';
+import ErrorBoundary from './components/ErrorBoundary';
 
 import { ThemeProvider } from './components/ThemeProvider';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppModeProvider, useAppMode } from './context/AppModeContext';
+import { ToastProvider } from './context/ToastContext';
 import { useRecurringEngine } from './logic/useRecurringEngine';
-import BusinessDashboard from './screens/BusinessDashboard';
-import Inventory from './screens/Inventory';
-import Sales from './screens/Sales';
+const BusinessDashboard = lazy(() => import('./screens/BusinessDashboard'));
+const Inventory = lazy(() => import('./screens/Inventory'));
+const Sales = lazy(() => import('./screens/Sales'));
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './models/db';
 
@@ -50,13 +52,13 @@ function ProtectedRoute({ children, requireSetup = true }: { children: React.Rea
 
   // Listen for localStorage changes from SetupAccount (same tab)
   React.useEffect(() => {
-    const interval = setInterval(() => {
-      if (user && !isSetupLocal) {
-        const val = localStorage.getItem(`onboardingComplete_${user.uid}`) === 'true';
-        if (val) setIsSetupLocal(true);
+    const handleStorageChange = (e: StorageEvent) => {
+      if (user && !isSetupLocal && e.key === `onboardingComplete_${user.uid}` && e.newValue === 'true') {
+        setIsSetupLocal(true);
       }
-    }, 300);
-    return () => clearInterval(interval);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, [user, isSetupLocal]);
   
   // Also check Dexie in case it synced from cloud
@@ -215,12 +217,25 @@ export default function App() {
     <ThemeProvider defaultTheme="light" storageKey="app-theme">
       <AppModeProvider>
         <AuthProvider>
-          <HashRouter>
-            <LoadingWrapper>
-              <PwaInstallPromoter />
-              <AppRoutes />
-            </LoadingWrapper>
-          </HashRouter>
+          <ToastProvider>
+            <HashRouter>
+              <LoadingWrapper>
+                <PwaInstallPromoter />
+                <ErrorBoundary>
+                  <Suspense fallback={
+                    <div className="flex items-center justify-center h-screen bg-white dark:bg-[#060608]">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-8 h-8 border-3 border-brand-blue/20 border-t-brand-blue rounded-full animate-spin" />
+                        <p className="text-sm font-medium text-neutral-400">Loading...</p>
+                      </div>
+                    </div>
+                  }>
+                    <AppRoutes />
+                  </Suspense>
+                </ErrorBoundary>
+              </LoadingWrapper>
+            </HashRouter>
+          </ToastProvider>
         </AuthProvider>
       </AppModeProvider>
     </ThemeProvider>

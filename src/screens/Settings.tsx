@@ -7,6 +7,7 @@ import { Download, Upload, Trash2, AlertTriangle, CheckCircle2, Settings as Sett
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
 import { useUpiApps } from '../hooks/useUpiApps';
+import { useToast } from '../context/ToastContext';
 import { UPI_APP_ICONS, getUpiAppIcon } from '../constants';
 import { useTheme } from '../components/ThemeProvider';
 import { useCurrency } from '../hooks/useCurrency';
@@ -42,6 +43,7 @@ export default function Settings() {
   const { tags, rawTags, addTag, removeTag, resetTags, updateTagOrder } = useTags();
   const { upiApps, rawUpiApps, addUpiApp, removeUpiApp, resetUpiApps, updateUpiAppOrder } = useUpiApps();
   const { theme, setTheme } = useTheme();
+  const { confirm } = useToast();
   const currency = useCurrency();
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
   const countrySetting = useLiveQuery(
@@ -269,7 +271,7 @@ export default function Settings() {
         throw new Error('Invalid backup file format');
       }
 
-      const confirmImport = window.confirm(
+      const confirmImport = await confirm(
         'Warning: Importing data will overwrite your current data. Are you sure you want to proceed?'
       );
 
@@ -305,8 +307,8 @@ export default function Settings() {
   };
 
   const handleClearData = async () => {
-    const confirmClear = window.confirm(
-      'DANGER: This will permanently delete all your transactions and accounts. This action cannot be undone. Are you absolutely sure?'
+    const confirmClear = await confirm(
+      'DANGER: This will permanently delete all your transactions, accounts, and budgets. This action cannot be undone.\n\nAre you absolutely sure you want to proceed?'
     );
 
     if (!confirmClear) return;
@@ -418,6 +420,7 @@ export default function Settings() {
                   type="button"
                   onClick={() => setIsThemeExpanded(!isThemeExpanded)}
                   className="w-full p-5 flex items-center justify-between text-left hover:bg-neutral-50/50 dark:hover:bg-[#151518] transition-colors"
+                  aria-expanded={isThemeExpanded}
                 >
                   <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
                     <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
@@ -493,6 +496,7 @@ export default function Settings() {
                   type="button"
                   onClick={() => setIsCurrencyExpanded(!isCurrencyExpanded)}
                   className="w-full p-5 flex items-center justify-between text-left hover:bg-neutral-50/50 dark:hover:bg-[#151518] transition-colors"
+                  aria-expanded={isCurrencyExpanded}
                 >
                   <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
                     <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
@@ -568,6 +572,7 @@ export default function Settings() {
                   type="button"
                   onClick={() => setIsPrivacyExpanded(!isPrivacyExpanded)}
                   className="w-full p-5 flex items-center justify-between text-left hover:bg-neutral-50/50 dark:hover:bg-[#151518] transition-colors"
+                  aria-expanded={isPrivacyExpanded}
                 >
                   <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
                     <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
@@ -621,6 +626,7 @@ export default function Settings() {
                   type="button"
                   onClick={() => setIsDecimalsExpanded(!isDecimalsExpanded)}
                   className="w-full p-5 flex items-center justify-between text-left hover:bg-neutral-50/50 dark:hover:bg-[#151518] transition-colors"
+                  aria-expanded={isDecimalsExpanded}
                 >
                   <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
                     <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
@@ -674,6 +680,7 @@ export default function Settings() {
                   type="button"
                   onClick={() => setIsDefaultAccountExpanded(!isDefaultAccountExpanded)}
                   className="w-full p-5 flex items-center justify-between text-left hover:bg-neutral-50/50 dark:hover:bg-[#151518] transition-colors"
+                  aria-expanded={isDefaultAccountExpanded}
                 >
                   <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
                     <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
@@ -719,6 +726,7 @@ export default function Settings() {
                   type="button"
                   onClick={() => setIsBudgetCycleExpanded(!isBudgetCycleExpanded)}
                   className="w-full p-5 flex items-center justify-between text-left hover:bg-neutral-50/50 dark:hover:bg-[#151518] transition-colors"
+                  aria-expanded={isBudgetCycleExpanded}
                 >
                   <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
                     <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
@@ -766,6 +774,7 @@ export default function Settings() {
                   type="button"
                   onClick={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
                   className="w-full p-5 flex items-center justify-between text-left hover:bg-neutral-50/50 dark:hover:bg-[#151518] transition-colors"
+                  aria-expanded={isCategoriesExpanded}
                 >
                   <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
                     <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
@@ -825,8 +834,8 @@ export default function Settings() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => {
-                              if (window.confirm('Are you sure you want to restore default categories?')) {
+                            onClick={async () => {
+                              if (await confirm('Are you sure you want to restore default categories?')) {
                                 resetCategories();
                                 showMessage('success', 'Categories reset to default');
                               }
@@ -852,6 +861,7 @@ export default function Settings() {
                   type="button"
                   onClick={() => setIsTagsExpanded(!isTagsExpanded)}
                   className="w-full p-5 flex items-center justify-between text-left hover:bg-neutral-50/50 dark:hover:bg-[#151518] transition-colors"
+                  aria-expanded={isTagsExpanded}
                 >
                   <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
                     <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
@@ -911,8 +921,8 @@ export default function Settings() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => {
-                              if (window.confirm('Are you sure you want to restore default tags?')) {
+                            onClick={async () => {
+                              if (await confirm('Are you sure you want to restore default tags?')) {
                                 resetTags();
                                 showMessage('success', 'Tags reset to default');
                               }
@@ -937,6 +947,7 @@ export default function Settings() {
                   type="button"
                   onClick={() => setIsUpiAppsExpanded(!isUpiAppsExpanded)}
                   className="w-full p-5 flex items-center justify-between text-left hover:bg-neutral-50/50 dark:hover:bg-[#151518] transition-colors"
+                  aria-expanded={isUpiAppsExpanded}
                 >
                   <div className="flex items-center gap-4 text-brand-blue dark:text-[#F7F7F7]">
                     <div className="p-2.5 bg-neutral-100 dark:bg-[#222222] rounded-xl flex-shrink-0 border border-brand-blue/5 dark:border-transparent">
@@ -1000,8 +1011,8 @@ export default function Settings() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => {
-                              if (window.confirm('Are you sure you want to restore default UPI apps?')) {
+                            onClick={async () => {
+                              if (await confirm('Are you sure you want to restore default UPI apps?')) {
                                 resetUpiApps();
                                 showMessage('success', 'UPI Apps reset to default');
                               }

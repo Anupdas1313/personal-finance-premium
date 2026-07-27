@@ -12,6 +12,14 @@
   --color-brand-cyan: #82EEFD;
   --color-brand-gold: #D4AF37;
   --color-brand-red: #E53935;
+  --color-surface-dark: #060608;
+  --color-surface-card: #0C0C0F;
+  --color-surface-elevated: #15151A;
+  --color-surface-hover: #1A1A1E;
+  --color-border-dark: #1A1A1E;
+  --color-text-primary: #F7F7F7;
+  --color-text-muted: #A0A0A0;
+  --color-text-subtle: #55555E;
 }
 
 /* ── Base ──────────────────────────────────────────────────────────────── */

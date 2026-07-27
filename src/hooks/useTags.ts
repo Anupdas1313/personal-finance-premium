@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 
 const DEFAULT_TAGS = ['Personal', 'Household', 'Miscellaneous', 'Tenant / Customer'];
 
-let tagsInitialized = false;
+let initializedForUid: string | null = null;
 
 export function useTags() {
   const { user } = useAuth();
@@ -24,8 +24,8 @@ export function useTags() {
 
   React.useEffect(() => {
     async function initTags() {
-      if (tagsInitialized) return;
-      tagsInitialized = true;
+      if (!user?.uid || initializedForUid === user.uid) return;
+      initializedForUid = user.uid;
       try {
         const count = await db.tags.count();
         if (count === 0) {
@@ -33,14 +33,14 @@ export function useTags() {
           await db.tags.bulkPut(initial);
         }
       } catch (e) {
-        tagsInitialized = false;
+        initializedForUid = null;
         console.error('Failed to init tags:', e);
       }
     }
-    if (dbTags.length === 0) {
+    if (dbTags.length === 0 && user?.uid) {
       initTags();
     }
-  }, [dbTags.length]);
+  }, [dbTags.length, user?.uid]);
 
   const addTag = async (tag: string) => {
     const trimmed = tag.trim();

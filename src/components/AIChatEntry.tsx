@@ -8,13 +8,13 @@ import {
 import { useLiveQuery } from 'dexie-react-hooks';
 import { format, subDays, subWeeks, subMonths } from 'date-fns';
 import { CATEGORY_ICONS } from '../constants';
-import { db } from '../models/db';
+import { db, Account, Transaction } from '../models/db';
 import { useCategories } from '../hooks/useCategories';
 import { useCurrency } from '../hooks/useCurrency';
 
 interface AIChatEntryProps {
-  onSave: (transaction: any) => void;
-  accounts: any[];
+  onSave: (transaction: Transaction) => void;
+  accounts: Account[];
   tags: string[];
   isSaving?: boolean;
   showSuccess?: boolean;

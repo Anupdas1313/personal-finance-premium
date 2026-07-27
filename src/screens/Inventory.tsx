@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, InventoryItem } from '../models/db';
 import { Plus, Search, Edit2, Package, Tag, IndianRupee } from 'lucide-react';
+import { useCurrency } from '../hooks/useCurrency';
 
 export default function Inventory() {
+  const currency = useCurrency();
   const [search, setSearch] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
@@ -124,8 +126,8 @@ export default function Inventory() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-brand-blue dark:text-white">₹{item.sellingPrice.toLocaleString('en-IN')}</div>
-                      <div className="text-xs text-neutral-500">Cost: ₹{item.costPrice.toLocaleString('en-IN')}</div>
+                      <div className="text-sm text-brand-blue dark:text-white">{currency}{item.sellingPrice.toLocaleString('en-IN')}</div>
+                      <div className="text-xs text-neutral-500">Cost: {currency}{item.costPrice.toLocaleString('en-IN')}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button onClick={() => openEdit(item)} className="text-brand-blue hover:text-brand-blue/80 dark:text-brand-cyan transition-colors p-2 rounded-lg hover:bg-brand-blue/5">
@@ -172,11 +174,11 @@ export default function Inventory() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Cost Price (₹)</label>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Cost Price ({currency})</label>
                   <input required type="number" min="0" step="0.01" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-black text-brand-blue dark:text-white focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-colors" placeholder="0.00" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Selling Price (₹)</label>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Selling Price ({currency})</label>
                   <input required type="number" min="0" step="0.01" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-black text-brand-blue dark:text-white focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-colors" placeholder="0.00" />
                 </div>
               </div>

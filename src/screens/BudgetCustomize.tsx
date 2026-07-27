@@ -45,20 +45,24 @@ export default function BudgetCustomize() {
   const monthlyBudgets = useLiveQuery(() => month ? db.monthlyBudgets.where('month').equals(month).toArray() : [], [month, user?.uid]);
   const masterPool = monthlyBudgets && monthlyBudgets.length > 0 ? monthlyBudgets[0] : null;
 
+  const currentMonthBudgets = useLiveQuery(() => month ? db.budgets.where('month').equals(month).toArray() : [], [month, user?.uid]) || [];
+
   const [tempLinkedAccounts, setTempLinkedAccounts] = useState<number[]>([]);
   const [tempLinkedTags, setTempLinkedTags] = useState<string[]>([]);
+  const [tempRollovers, setTempRollovers] = useState<number[]>([]);
   
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    if (monthlyBudgets && !isInitialized) {
+    if (monthlyBudgets && currentMonthBudgets && !isInitialized) {
       if (masterPool) {
         setTempLinkedAccounts(masterPool.linkedAccountIds || []);
         setTempLinkedTags(masterPool.linkedTags || []);
       }
+      setTempRollovers(currentMonthBudgets.filter(b => b.rollover).map(b => b.id!).filter(Boolean));
       setIsInitialized(true);
     }
-  }, [monthlyBudgets, masterPool, isInitialized]);
+  }, [monthlyBudgets, currentMonthBudgets, masterPool, isInitialized]);
 
   const toggleAccount = (accId: number) => {
     setTempLinkedAccounts(prev => 
@@ -69,6 +73,12 @@ export default function BudgetCustomize() {
   const toggleTag = (tagName: string) => {
     setTempLinkedTags(prev => 
       prev.includes(tagName) ? prev.filter(t => t !== tagName) : [...prev, tagName]
+    );
+  };
+
+  const toggleRollover = (budgetId: number) => {
+    setTempRollovers(prev => 
+      prev.includes(budgetId) ? prev.filter(id => id !== budgetId) : [...prev, budgetId]
     );
   };
 
@@ -88,6 +98,17 @@ export default function BudgetCustomize() {
         linkedTags: tempLinkedTags
       });
     }
+
+    const updates = currentMonthBudgets.map(b => {
+      if (!b.id) return Promise.resolve();
+      const shouldRollover = tempRollovers.includes(b.id);
+      if (!!b.rollover !== shouldRollover) {
+        return db.budgets.update(b.id, { rollover: shouldRollover });
+      }
+      return Promise.resolve();
+    });
+    await Promise.all(updates);
+
     navigate('/budgets');
   };
 
@@ -186,6 +207,33 @@ export default function BudgetCustomize() {
           
           {tags.map(tag => {
             return renderToggleRow(`#${tag.name}`, tempLinkedTags.includes(tag.name), () => toggleTag(tag.name));
+          })}
+        </div>
+      </SectionCard>
+
+      {/* ── ENVELOPES ROLLOVER SECTION ── */}
+      <SectionCard>
+        <SectionTitle 
+          icon={<Check className="w-4 h-4" />} 
+          label="Envelope Rollovers" 
+          action={
+            <span className="text-[9px] font-bold uppercase tracking-widest text-neutral-400">
+              {tempRollovers.length === 0 ? 'None' : `${tempRollovers.length} Enabled`}
+            </span>
+          }
+        />
+        
+        <p className="text-[10px] font-semibold text-neutral-400/80 leading-relaxed px-2 mb-4">
+          Enable rollover to carry forward unspent funds from previous months into the current month's budget.
+        </p>
+
+        <div className="flex flex-col divide-y divide-neutral-100 dark:divide-[#222222]">
+          {currentMonthBudgets.length === 0 && (
+            <p className="text-[10px] text-neutral-400 text-center py-4">No envelopes defined for this month.</p>
+          )}
+          {currentMonthBudgets.map(b => {
+            if (!b.id) return null;
+            return renderToggleRow(b.category, tempRollovers.includes(b.id), () => toggleRollover(b.id!));
           })}
         </div>
       </SectionCard>

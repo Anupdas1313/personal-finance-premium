@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 
 export type AppMode = 'PERSONAL' | 'BUSINESS';
 
@@ -19,16 +19,18 @@ export function AppModeProvider({ children }: { children: React.ReactNode }) {
   const setAppMode = (mode: AppMode) => {
     setAppModeState(mode);
     localStorage.setItem('appMode', mode);
-    // Reloading to ensure the database correctly reinitializes for the new mode and all state clears
-    window.location.reload();
   };
 
   const toggleAppMode = () => {
     setAppMode(appMode === 'PERSONAL' ? 'BUSINESS' : 'PERSONAL');
   };
 
+  const contextValue = useMemo(() => ({
+    appMode, setAppMode, toggleAppMode
+  }), [appMode]);
+
   return (
-    <AppModeContext.Provider value={{ appMode, setAppMode, toggleAppMode }}>
+    <AppModeContext.Provider value={contextValue}>
       {children}
     </AppModeContext.Provider>
   );

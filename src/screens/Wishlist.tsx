@@ -4,6 +4,7 @@ import { db, WishlistItem } from '../models/db';
 import { useAuth } from '../context/AuthContext';
 import { useCurrencyFormatter } from '../hooks/useCurrency';
 import { cn } from '../logic/utils';
+import { useToast } from '../context/ToastContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, Link as LinkIcon, Clock, Coins, Trash2, CheckCircle2, X, Star, ExternalLink, Plus, Landmark, AlertCircle } from 'lucide-react';
 
@@ -12,6 +13,7 @@ const COOLING_OFF_MS = 48 * 60 * 60 * 1000; // 48 Hours
 export default function Wishlist() {
   const { user } = useAuth();
   const { formatAmount } = useCurrencyFormatter();
+  const { confirm, success, error } = useToast();
   
   // Database Queries
   const wishlistItems = useLiveQuery(() => db.wishlist.toArray(), [user?.uid]) || [];
@@ -173,11 +175,13 @@ export default function Wishlist() {
 
   // Delete Permanently
   const handleDeleteItem = async (id: number) => {
-    if (confirm("Are you sure you want to delete this item permanently?")) {
+    if (await confirm("Are you sure you want to delete this item permanently?")) {
       try {
         await db.wishlist.delete(id);
+        success("Item deleted permanently");
       } catch (err) {
         console.error("Failed to delete wishlist item:", err);
+        error("Failed to delete wishlist item");
       }
     }
   };

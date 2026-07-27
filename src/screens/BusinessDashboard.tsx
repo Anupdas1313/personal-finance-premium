@@ -3,8 +3,10 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../models/db';
 import { IndianRupee, Clock, AlertTriangle, TrendingUp, Receipt } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useCurrency } from '../hooks/useCurrency';
 
 export default function BusinessDashboard() {
+  const currency = useCurrency();
   const sales = useLiveQuery(() => db.sales.toArray()) || [];
   const inventory = useLiveQuery(() => db.inventory.toArray()) || [];
 
@@ -67,7 +69,7 @@ export default function BusinessDashboard() {
           </div>
           <div className="relative z-10">
             <div className="text-3xl font-bold text-brand-blue dark:text-white mb-1">
-              ₹{metrics.todaysSales.toLocaleString('en-IN')}
+              {currency}{metrics.todaysSales.toLocaleString('en-IN')}
             </div>
           </div>
         </div>
@@ -85,7 +87,7 @@ export default function BusinessDashboard() {
           </div>
           <div className="relative z-10">
             <div className="text-3xl font-bold text-brand-blue dark:text-white mb-1">
-              ₹{metrics.pendingAmount.toLocaleString('en-IN')}
+              {currency}{metrics.pendingAmount.toLocaleString('en-IN')}
             </div>
             <Link to="/sales" className="text-sm font-medium text-orange-600 dark:text-orange-400 hover:underline">
               View pending sales →
@@ -130,7 +132,7 @@ export default function BusinessDashboard() {
                         <Receipt className="w-6 h-6 text-brand-blue" />
                      </div>
                      <div>
-                        <div className="font-semibold text-brand-blue dark:text-white">₹{sale.totalAmount.toLocaleString('en-IN')}</div>
+                        <div className="font-semibold text-brand-blue dark:text-white">{currency}{sale.totalAmount.toLocaleString('en-IN')}</div>
                         <div className="text-sm text-neutral-500">{new Date(sale.date).toLocaleDateString()} • {sale.status}</div>
                      </div>
                   </div>

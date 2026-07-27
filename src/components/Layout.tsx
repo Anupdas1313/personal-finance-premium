@@ -62,6 +62,7 @@ export default function Layout() {
                     : 'text-brand-blue/60 dark:text-[#A0A0A0] hover:bg-brand-blue/5 dark:hover:bg-[#15151A] hover:text-brand-blue dark:hover:text-[#F7F7F7]'
 
                 )}
+                aria-current={isActive ? 'page' : undefined}
               >
                 <Icon className={cn('w-5 h-5', isActive ? 'text-brand-blue dark:text-[#F7F7F7]' : 'text-brand-blue/40 dark:text-[#55555E]')} />
 
@@ -118,6 +119,7 @@ export default function Layout() {
                   'flex flex-col items-center justify-center flex-1 h-full space-y-1',
                   isActive ? 'text-brand-blue dark:text-[#F7F7F7]' : 'text-brand-blue/50 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-[#F7F7F7]'
                 )}
+                aria-current={isActive ? 'page' : undefined}
 
               >
                 <Icon className={cn('w-6 h-6', isActive ? 'text-brand-blue dark:text-[#F7F7F7]' : 'text-brand-blue/30 dark:text-[#55555E]')} />
@@ -153,6 +155,7 @@ export default function Layout() {
                   'flex flex-col items-center justify-center flex-1 h-full space-y-1',
                   isActive ? 'text-brand-blue dark:text-[#F7F7F7]' : 'text-brand-blue/50 dark:text-[#A0A0A0] hover:text-brand-blue dark:hover:text-[#F7F7F7]'
                 )}
+                aria-current={isActive ? 'page' : undefined}
 
               >
                 <Icon className={cn('w-6 h-6', isActive ? 'text-brand-blue dark:text-[#F7F7F7]' : 'text-brand-blue/30 dark:text-[#55555E]')} />
@@ -171,6 +174,8 @@ export default function Layout() {
                 ? 'text-brand-blue dark:text-[#F7F7F7]'
                 : 'text-brand-blue/50 dark:text-[#A0A0A0]'
             )}
+            aria-expanded={isMobileMenuOpen}
+            aria-label="Open navigation menu"
           >
             <MoreHorizontal className={cn('w-6 h-6', isMobileMenuOpen || moreNavItems.some(item => location.pathname === item.path) ? 'text-brand-blue dark:text-[#F7F7F7]' : 'text-brand-blue/30 dark:text-[#55555E]')} />
             <span className="text-[10px] font-medium">More</span>
@@ -181,7 +186,16 @@ export default function Layout() {
 
       {/* Mobile More Menu Overlay */}
       {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setIsMobileMenuOpen(false)}>
+        <div 
+          className="md:hidden fixed inset-0 z-40 bg-black/50" 
+          onClick={() => setIsMobileMenuOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setIsMobileMenuOpen(false);
+            }
+          }}
+          tabIndex={-1}
+        >
           <div
             className="absolute left-0 right-0 bg-white dark:bg-[#0C0C0F] rounded-t-[24px] p-4 shadow-xl transform transition-transform"
             style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}

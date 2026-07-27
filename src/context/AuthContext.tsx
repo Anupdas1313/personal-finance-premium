@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { 
   User, 
   signInWithEmailAndPassword, 
@@ -16,8 +16,16 @@ import { auth } from '../lib/firebase';
 import { startSync, stopSync } from '../lib/syncEngine';
 import { db, initializeDB } from '../models/db';
 
+export interface AuthUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  emailVerified: boolean;
+  photoURL: string | null;
+}
+
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   loading: boolean;
   logout: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
@@ -31,7 +39,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,13 +57,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (firebaseUser) {
         // Create a stable copy of the user object to avoid proxy issues
-        const mappedUser = {
+        const mappedUser: AuthUser = {
           uid: firebaseUser.uid,
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
           emailVerified: firebaseUser.emailVerified,
           photoURL: firebaseUser.photoURL,
-        } as User;
+        };
         
         setUser(mappedUser);
         const savedMode = localStorage.getItem('appMode');
@@ -120,8 +128,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const contextValue = useMemo(() => ({
+    user, loading, logout, signIn, signUp, signInWithGoogle, resetPassword, updateProfileName, deleteAccount
+  }), [user, loading]);
+
   return (
-    <AuthContext.Provider value={{ user, loading, logout, signIn, signUp, signInWithGoogle, resetPassword, updateProfileName, deleteAccount }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

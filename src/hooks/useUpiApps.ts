@@ -1,12 +1,12 @@
 import React from 'react';
-import { db } from '../models/db';
+import { db, UpiApp } from '../models/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useAuth } from '../context/AuthContext';
 import { UPI_APPS_LIST } from '../constants';
 
 export const DEFAULT_UPI_APPS = UPI_APPS_LIST;
 
-let upiAppsInitialized = false;
+let initializedForUid: string | null = null;
 
 export function useUpiApps() {
   const { user } = useAuth();
@@ -14,7 +14,7 @@ export function useUpiApps() {
   const dbUpiApps = useLiveQuery(
     async () => {
       const apps = await db.upiApps?.toArray() || [];
-      apps.sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || (a.id ?? 0) - (b.id ?? 0));
+      apps.sort((a: UpiApp, b: UpiApp) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || (a.id ?? 0) - (b.id ?? 0));
       return apps;
     },
     [user?.uid]
@@ -22,15 +22,15 @@ export function useUpiApps() {
 
   const upiApps = React.useMemo(() => {
     if (dbUpiApps.length > 0) {
-      return dbUpiApps.map((a: any) => a.name);
+      return dbUpiApps.map((a: UpiApp) => a.name);
     }
     return DEFAULT_UPI_APPS;
   }, [dbUpiApps]);
 
   React.useEffect(() => {
     async function initUpiApps() {
-      if (upiAppsInitialized) return;
-      upiAppsInitialized = true;
+      if (!user?.uid || initializedForUid === user.uid) return;
+      initializedForUid = user.uid;
       try {
         if (db.upiApps) {
           const count = await db.upiApps.count();
@@ -40,14 +40,14 @@ export function useUpiApps() {
           }
         }
       } catch (e) {
-        upiAppsInitialized = false;
+        initializedForUid = null;
         console.error('Failed to init UPI apps:', e);
       }
     }
-    if (dbUpiApps.length === 0) {
+    if (dbUpiApps.length === 0 && user?.uid) {
       initUpiApps();
     }
-  }, [dbUpiApps.length]);
+  }, [dbUpiApps.length, user?.uid]);
 
   const addUpiApp = async (name: string) => {
     const trimmed = name.trim();

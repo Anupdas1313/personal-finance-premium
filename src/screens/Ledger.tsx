@@ -2,14 +2,16 @@ import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../models/db';
 import { useAuth } from '../context/AuthContext';
-import { Plus, Search, UserPlus, Phone, ChevronRight, TrendingUp, TrendingDown, Users } from 'lucide-react';
+import { Plus, Search, UserPlus, Phone, ChevronRight, TrendingUp, TrendingDown, Users, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCurrency } from '../hooks/useCurrency';
 import { cn } from '../logic/utils';
+import { useToast } from '../context/ToastContext';
 
 export default function Ledger() {
   const currency = useCurrency();
   const { user } = useAuth();
+  const { confirm, success } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
   const [newPartyName, setNewPartyName] = useState('');
@@ -58,6 +60,18 @@ export default function Ledger() {
     setNewPartyName('');
     setNewPartyPhone('');
     setIsPartyModalOpen(false);
+  };
+
+  const handleDeleteParty = async (e: React.MouseEvent, id: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (await confirm('Are you sure you want to delete this party and all associated transactions?')) {
+      await db.parties.delete(id);
+      const partyTxs = await db.ledgerTransactions.where('partyId').equals(id).toArray();
+      const txIds = partyTxs.map(t => t.id!).filter(Boolean);
+      await db.ledgerTransactions.bulkDelete(txIds);
+      success('Party deleted successfully');
+    }
   };
 
   return (
@@ -172,8 +186,16 @@ export default function Ledger() {
                                     {currency}{Math.abs(balance).toLocaleString('en-IN')}
                                 </p>
                             </div>
-                            <div className="w-9 h-9 rounded-full bg-neutral-50 dark:bg-white/5 flex items-center justify-center text-neutral-400 group-hover:bg-brand-blue group-hover:text-white transition-all shadow-sm">
-                                <ChevronRight className="w-4 h-4" />
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={(e) => handleDeleteParty(e, party.id!)}
+                                    className="w-9 h-9 rounded-full bg-neutral-50 dark:bg-white/5 flex items-center justify-center text-neutral-400 hover:bg-brand-red hover:text-white transition-all shadow-sm z-10"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                                <div className="w-9 h-9 rounded-full bg-neutral-50 dark:bg-white/5 flex items-center justify-center text-neutral-400 group-hover:bg-brand-blue group-hover:text-white transition-all shadow-sm">
+                                    <ChevronRight className="w-4 h-4" />
+                                </div>
                             </div>
                         </div>
                     </Link>

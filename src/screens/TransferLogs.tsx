@@ -5,10 +5,12 @@ import { db } from '../models/db';
 import { useCurrency } from '../hooks/useCurrency';
 import { ArrowLeft, Trash2, Landmark, Wallet, CreditCard, ArrowLeftRight } from 'lucide-react';
 import { format } from 'date-fns';
+import { useToast } from '../context/ToastContext';
 
 export default function TransferLogs() {
   const navigate = useNavigate();
   const currency = useCurrency();
+  const { confirm, error } = useToast();
   
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
   const allTransactions = useLiveQuery(() => db.transactions.toArray()) || [];
@@ -19,7 +21,7 @@ export default function TransferLogs() {
     .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
 
   const handleDeleteTransfer = async (debitId: number, creditId?: number) => {
-    if (!window.confirm('Are you sure you want to delete this transfer? This will restore balances on both accounts.')) {
+    if (!await confirm('Are you sure you want to delete this transfer? This will restore balances on both accounts.')) {
       return;
     }
 
@@ -32,7 +34,7 @@ export default function TransferLogs() {
       });
     } catch (err) {
       console.error('Failed to delete transfer:', err);
-      alert('An error occurred while deleting the transfer.');
+      error('An error occurred while deleting the transfer.');
     }
   };
 

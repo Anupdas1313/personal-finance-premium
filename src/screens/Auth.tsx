@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Wallet, AlertCircle, Mail } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 export default function Auth() {
   const { user, signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
+  const toast = useToast();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -57,7 +59,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col justify-center px-5 py-6 sm:px-6 lg:px-8 relative overflow-hidden antialiased">
+    <div className="min-h-screen bg-white dark:bg-[#060608] flex flex-col justify-center px-5 py-6 sm:px-6 lg:px-8 relative overflow-hidden antialiased">
       
       {/* Decorative background blobs */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-brand-green/10 blur-[100px] pointer-events-none" />
@@ -68,22 +70,22 @@ export default function Auth() {
           <div className="w-14 h-14 bg-brand-green/10 border border-brand-green/20 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
             <Wallet className="w-7 h-7 text-brand-green" />
           </div>
-          <h1 className="text-3xl font-extrabold text-neutral-900 tracking-tight">Expensify</h1>
-          <p className="text-[15px] font-medium text-neutral-500 mt-1">Master your money</p>
+          <h1 className="text-3xl font-extrabold text-neutral-900 dark:text-white tracking-tight">Expensify</h1>
+          <p className="text-[15px] font-medium text-neutral-500 dark:text-[#A0A0A0] mt-1">Master your money</p>
         </div>
 
-        <div className="w-full bg-white rounded-3xl p-6 shadow-2xl shadow-neutral-200/50 border border-neutral-100 relative overflow-hidden">
+        <div className="w-full bg-white dark:bg-[#0C0C0F] rounded-3xl p-6 shadow-2xl shadow-neutral-200/50 dark:shadow-none border border-neutral-100 dark:border-[#1A1A1E] relative overflow-hidden">
           
           {isVerificationSent ? (
             <div className="text-center py-4">
               <div className="w-16 h-16 bg-brand-green/10 border border-brand-green/20 rounded-2xl mx-auto flex items-center justify-center mb-6 shadow-sm">
                 <Mail className="w-8 h-8 text-brand-green" />
               </div>
-              <h2 className="text-2xl font-extrabold text-neutral-900 mb-2 tracking-tight">
+              <h2 className="text-2xl font-extrabold text-neutral-900 dark:text-white mb-2 tracking-tight">
                 Check your email
               </h2>
-              <p className="text-[15px] text-neutral-500 leading-relaxed mb-8">
-                We have sent you a verification email to <span className="text-neutral-900 font-semibold">{email}</span>. Please verify it and log in.
+              <p className="text-[15px] text-neutral-500 dark:text-[#A0A0A0] leading-relaxed mb-8">
+                We have sent you a verification email to <span className="text-neutral-900 dark:text-white font-semibold">{email}</span>. Please verify it and log in.
               </p>
               <button
                 onClick={() => {
@@ -97,32 +99,32 @@ export default function Auth() {
             </div>
           ) : (
             <>
-              <h2 className="text-2xl font-extrabold text-neutral-900 mb-6 tracking-tight text-center">
+              <h2 className="text-2xl font-extrabold text-neutral-900 dark:text-white mb-6 tracking-tight text-center">
                 {isLogin ? 'Welcome back' : 'Create an account'}
               </h2>
 
               {error && (
-                <div className="mb-6 p-4 bg-rose-50 rounded-xl flex items-start gap-3 border border-rose-100">
+                <div className="mb-6 p-4 bg-rose-50 dark:bg-rose-500/10 rounded-xl flex items-start gap-3 border border-rose-100 dark:border-rose-500/20">
                   <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-                  <p className="text-[14px] font-medium text-rose-700 leading-relaxed">{error}</p>
+                  <p className="text-[14px] font-medium text-rose-700 dark:text-rose-400 leading-relaxed">{error}</p>
                 </div>
               )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-[13px] font-semibold text-neutral-700 mb-1.5 ml-1">Email Address</label>
+                  <label className="block text-[13px] font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 ml-1">Email Address</label>
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-xl px-4 py-3 text-[15px] font-medium outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
+                    className="w-full bg-neutral-50 dark:bg-[#15151A] border border-neutral-200 dark:border-[#1A1A1E] focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-xl px-4 py-3 text-[15px] font-medium outline-none transition-all placeholder:text-neutral-400 dark:placeholder-neutral-500 text-neutral-900 dark:text-white"
                     placeholder="you@example.com"
                   />
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-1.5 ml-1">
-                    <label className="block text-[13px] font-semibold text-neutral-700">Password</label>
+                    <label className="block text-[13px] font-semibold text-neutral-700 dark:text-neutral-300">Password</label>
                     {isLogin && (
                       <button 
                         type="button" 
@@ -135,7 +137,7 @@ export default function Auth() {
                             setLoading(true);
                             await resetPassword(email);
                             setError('');
-                            alert('Password reset link sent to your email.');
+                            toast.success('Password reset link sent to your email.');
                           } catch (err: any) {
                             setError(err.message || 'Failed to send reset link');
                           } finally {
@@ -153,7 +155,7 @@ export default function Auth() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-neutral-50 border border-neutral-200 focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-xl px-4 py-3 text-[15px] font-medium outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
+                    className="w-full bg-neutral-50 dark:bg-[#15151A] border border-neutral-200 dark:border-[#1A1A1E] focus:border-brand-green focus:ring-1 focus:ring-brand-green rounded-xl px-4 py-3 text-[15px] font-medium outline-none transition-all placeholder:text-neutral-400 dark:placeholder-neutral-500 text-neutral-900 dark:text-white"
                     placeholder="••••••••"
                   />
                 </div>
@@ -171,16 +173,16 @@ export default function Auth() {
 
               <div className="relative my-6 flex items-center justify-center">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-neutral-200"></div>
+                  <div className="w-full border-t border-neutral-200 dark:border-[#1A1A1E]"></div>
                 </div>
-                <span className="relative bg-white px-4 text-[13px] font-medium text-neutral-400">Or continue with</span>
+                <span className="relative bg-white dark:bg-[#0C0C0F] px-4 text-[13px] font-medium text-neutral-400 dark:text-neutral-500">Or continue with</span>
               </div>
 
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
                 disabled={loading}
-                className="w-full bg-white hover:bg-neutral-50 border border-neutral-200 text-neutral-700 font-semibold h-[52px] rounded-xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-sm text-[15px] active:scale-[0.98]"
+                className="w-full bg-white dark:bg-[#15151A] hover:bg-neutral-50 dark:hover:bg-[#1A1A1E] border border-neutral-200 dark:border-[#1A1A1E] text-neutral-700 dark:text-white font-semibold h-[52px] rounded-xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-sm text-[15px] active:scale-[0.98]"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -197,7 +199,7 @@ export default function Auth() {
                     setIsLogin(!isLogin);
                     setError('');
                   }}
-                  className="text-[14px] font-medium text-neutral-500 hover:text-neutral-700 transition-colors"
+                  className="text-[14px] font-medium text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
                 >
                   {isLogin ? (
                     <>Don't have an account? <span className="text-brand-green font-semibold">Sign up</span></>

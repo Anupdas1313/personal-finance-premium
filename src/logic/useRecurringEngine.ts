@@ -9,7 +9,7 @@ export function useRecurringEngine(uid?: string | null) {
 
     const processRecurring = async () => {
       try {
-        const templates = await db.recurringTemplates.where('isActive').equals('true').toArray();
+        const templates = await db.recurringTemplates.filter(t => t.isActive === true).toArray();
         const activeTemplates = templates.filter(t => t.isActive); // Dexie sometimes returns booleans as true/false or 1/0, fallback filter
         const today = startOfDay(new Date());
 
