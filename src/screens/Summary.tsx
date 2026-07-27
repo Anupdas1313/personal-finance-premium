@@ -133,6 +133,7 @@ function SummaryContent() {
   const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const [activeTab, setActiveTab] = useState<TabKey>('category');
+  const [flowType, setFlowType] = useState<'DEBIT' | 'CREDIT' | 'TRANSFER'>('DEBIT');
   const [selectedDetail, setSelectedDetail] = useState<{ type: TabKey; name: string } | null>(null);
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const navigate = useNavigate();
@@ -214,15 +215,39 @@ function SummaryContent() {
   const expenseChangePct = prevTotalExpense > 0 ? ((totalExpense - prevTotalExpense) / prevTotalExpense) * 100 : null;
   const incomeChangePct = prevTotalIncome > 0 ? ((totalIncome - prevTotalIncome) / prevTotalIncome) * 100 : null;
 
-  // ── Average daily spend ────────────────────────────────────────────────
-  const avgDailySpend = useMemo(() => {
+  // Active flow transactions, amount, and history
+  const activeTransactions = useMemo(() => {
+    if (flowType === 'DEBIT') {
+      return monthTxs.filter(tx => normalizeType(tx.type) === 'DEBIT' && tx.category !== 'Transfer');
+    }
+    if (flowType === 'CREDIT') {
+      return monthTxs.filter(tx => normalizeType(tx.type) === 'CREDIT' && tx.category !== 'Transfer');
+    }
+    return monthTxs.filter(tx => normalizeType(tx.type) === 'TRANSFER' || tx.category === 'Transfer');
+  }, [monthTxs, flowType]);
+
+  const prevActiveTransactions = useMemo(() => {
+    if (flowType === 'DEBIT') {
+      return prevMonthTxs.filter(tx => normalizeType(tx.type) === 'DEBIT' && tx.category !== 'Transfer');
+    }
+    if (flowType === 'CREDIT') {
+      return prevMonthTxs.filter(tx => normalizeType(tx.type) === 'CREDIT' && tx.category !== 'Transfer');
+    }
+    return prevMonthTxs.filter(tx => normalizeType(tx.type) === 'TRANSFER' || tx.category === 'Transfer');
+  }, [prevMonthTxs, flowType]);
+
+  const totalActiveAmount = useMemo(() => activeTransactions.reduce((s, tx) => s + safeNum(tx.amount), 0), [activeTransactions]);
+  const prevTotalActiveAmount = useMemo(() => prevActiveTransactions.reduce((s, tx) => s + safeNum(tx.amount), 0), [prevActiveTransactions]);
+
+  // ── Average daily spend/income/transfer ────────────────────────────────────────────────
+  const avgDailyActive = useMemo(() => {
     const now = new Date();
     const isThisMonth = format(currentMonth, 'yyyy-MM') === format(now, 'yyyy-MM');
     const daysElapsed = isThisMonth
       ? Math.max(differenceInDays(now, monthStart) + 1, 1)
       : getDaysInMonth(currentMonth);
-    return totalExpense / daysElapsed;
-  }, [totalExpense, currentMonth, monthStart]);
+    return totalActiveAmount / daysElapsed;
+  }, [totalActiveAmount, currentMonth, monthStart]);
 
   // ── Aggregations ──────────────────────────────────────────────────────────
   const { pieData, tagData, accData, partyData, payMethodData, dailySpendData, dayOfWeekData, peakDay, busiestDay } = useMemo(() => {
@@ -243,7 +268,7 @@ function SummaryContent() {
         'Sun': { total: 0, count: 0 },
       };
 
-      for (const tx of expenses) {
+      for (const tx of activeTransactions) {
         const amt = safeNum(tx.amount);
         const cat = tx.category || 'Other';
         if (tx.category) byCategory[tx.category] = (byCategory[tx.category] || 0) + amt;
@@ -324,7 +349,7 @@ function SummaryContent() {
         dayOfWeekData: [], peakDay: { name: '-', value: 0 }, busiestDay: { name: '-', count: 0 }
       };
     }
-  }, [expenses, accounts]);
+  }, [activeTransactions, accounts]);
 
   const isCurrentMonth = format(currentMonth, 'yyyy-MM') === format(new Date(), 'yyyy-MM');
 
@@ -353,15 +378,17 @@ function SummaryContent() {
               <div className="relative">
                 <MiniDonut data={pieData} colors={CAT_COLORS} size={120} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest">Spent</span>
-                  <span className="text-sm font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">{fmt(totalExpense)}</span>
+                  <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest">
+                    {flowType === 'DEBIT' ? 'Spent' : flowType === 'CREDIT' ? 'Received' : 'Transferred'}
+                  </span>
+                  <span className="text-sm font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">{fmt(totalActiveAmount)}</span>
                 </div>
               </div>
             </div>
             {/* Category rows */}
             <div className="space-y-2">
               {pieData.map((d, i) => {
-                const pct = totalExpense > 0 ? (d.value / totalExpense) * 100 : 0;
+                const pct = totalActiveAmount > 0 ? (d.value / totalActiveAmount) * 100 : 0;
                 const color = CAT_COLORS[i % CAT_COLORS.length];
                 return (
                   <div
@@ -387,13 +414,13 @@ function SummaryContent() {
               })}
             </div>
           </div>
-        ) : <EmptyState icon={<PieIcon className="w-6 h-6 text-neutral-400" />} msg="No spending data this month" />;
+        ) : <EmptyState icon={<PieIcon className="w-6 h-6 text-neutral-400" />} msg={flowType === 'DEBIT' ? "No spending data this month" : flowType === 'CREDIT' ? "No income data this month" : "No transfer data this month"} />;
 
       case 'tags':
         return tagData.length > 0 ? (
           <div className="space-y-2">
             {tagData.map((d, i) => {
-              const pct = totalExpense > 0 ? (d.value / totalExpense) * 100 : 0;
+              const pct = totalActiveAmount > 0 ? (d.value / totalActiveAmount) * 100 : 0;
               const color = TAG_COLORS[i % TAG_COLORS.length];
               return (
                 <div
@@ -421,13 +448,13 @@ function SummaryContent() {
               );
             })}
           </div>
-        ) : <EmptyState icon={<Tag className="w-6 h-6 text-neutral-400" />} msg="No tags used this month" />;
+        ) : <EmptyState icon={<Tag className="w-6 h-6 text-neutral-400" />} msg={flowType === 'DEBIT' ? "No tags used this month" : flowType === 'CREDIT' ? "No tags used for income this month" : "No tags used for transfers this month"} />;
 
       case 'accounts':
         return accData.length > 0 ? (
           <div className="space-y-2">
             {accData.map((d, i) => {
-              const pct = totalExpense > 0 ? (d.value / totalExpense) * 100 : 0;
+              const pct = totalActiveAmount > 0 ? (d.value / totalActiveAmount) * 100 : 0;
               const color = CAT_COLORS[(i + 1) % CAT_COLORS.length];
               return (
                 <div
@@ -453,13 +480,13 @@ function SummaryContent() {
               );
             })}
           </div>
-        ) : <EmptyState icon={<Layers className="w-6 h-6 text-neutral-400" />} msg="No account data this month" />;
+        ) : <EmptyState icon={<Layers className="w-6 h-6 text-neutral-400" />} msg={flowType === 'DEBIT' ? "No account data this month" : flowType === 'CREDIT' ? "No income account data this month" : "No transfer account data this month"} />;
 
       case 'methods':
         return payMethodData.length > 0 ? (
           <div className="space-y-2">
             {payMethodData.map((d) => {
-              const pct = totalExpense > 0 ? (d.value / totalExpense) * 100 : 0;
+              const pct = totalActiveAmount > 0 ? (d.value / totalActiveAmount) * 100 : 0;
               const color = PAY_COLORS[d.name] || '#1A237E';
               return (
                 <div
@@ -485,13 +512,13 @@ function SummaryContent() {
               );
             })}
           </div>
-        ) : <EmptyState icon={<CreditCard className="w-6 h-6 text-neutral-400" />} msg="No payment data this month" />;
+        ) : <EmptyState icon={<CreditCard className="w-6 h-6 text-neutral-400" />} msg={flowType === 'DEBIT' ? "No payment data this month" : flowType === 'CREDIT' ? "No income payment data this month" : "No transfer payment data this month"} />;
 
       case 'payees':
         return partyData.length > 0 ? (
           <div className="space-y-2">
             {partyData.map((d, i) => {
-              const pct = totalExpense > 0 ? (d.value / totalExpense) * 100 : 0;
+              const pct = totalActiveAmount > 0 ? (d.value / totalActiveAmount) * 100 : 0;
               const initials = d.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
               const avatarColors = ['#00A86B', '#1A237E', '#E53935', '#6366F1', '#F59E0B', '#EC4899', '#14B8A6', '#D4AF37'];
               const avatarColor = avatarColors[i % avatarColors.length];
@@ -526,29 +553,58 @@ function SummaryContent() {
               );
             })}
           </div>
-        ) : <EmptyState icon={<Store className="w-6 h-6 text-neutral-400" />} msg="No payee data this month" />;
+        ) : <EmptyState icon={<Store className="w-6 h-6 text-neutral-400" />} msg={flowType === 'DEBIT' ? "No payee data this month" : flowType === 'CREDIT' ? "No payer data this month" : "No transfer party data this month"} />;
 
       case 'daily':
         const maxDaily = dailySpendData.reduce((m, d) => Math.max(m, d.value), 0);
         const maxDow = dayOfWeekData.reduce((m, d) => Math.max(m, d.total), 0);
 
+        // Theme colors config based on flowType:
+        const themeColors = {
+          DEBIT: {
+            bg: 'from-rose-500/10 via-rose-500/5 to-transparent',
+            border: 'border-rose-500/20',
+            text: 'text-rose-600 dark:text-rose-400',
+            icon: 'text-rose-500',
+            bar: 'bg-rose-500 hover:bg-rose-400',
+          },
+          CREDIT: {
+            bg: 'from-emerald-500/10 via-emerald-500/5 to-transparent',
+            border: 'border-emerald-500/20',
+            text: 'text-emerald-600 dark:text-emerald-400',
+            icon: 'text-emerald-500',
+            bar: 'bg-emerald-500 hover:bg-emerald-400',
+          },
+          TRANSFER: {
+            bg: 'from-cyan-500/10 via-cyan-500/5 to-transparent',
+            border: 'border-cyan-500/20',
+            text: 'text-cyan-600 dark:text-cyan-400',
+            icon: 'text-cyan-500',
+            bar: 'bg-cyan-500 hover:bg-cyan-400',
+          }
+        }[flowType];
+
         return dailySpendData.length > 0 ? (
           <div className="space-y-4">
             {/* 1. Daily Avg KPI Stats Grid */}
             <div className="grid grid-cols-2 gap-2.5">
-              <div className="p-3 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent rounded-2xl border border-amber-500/20">
+              <div className={cn("p-3 bg-gradient-to-br rounded-2xl border", themeColors.bg, themeColors.border)}>
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Zap className="w-3.5 h-3.5 text-amber-500" />
-                  <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">Daily Average</span>
+                  <Zap className={cn("w-3.5 h-3.5", themeColors.icon)} />
+                  <span className={cn("text-[10px] font-medium", themeColors.text)}>
+                    {flowType === 'DEBIT' ? 'Daily Avg Spent' : flowType === 'CREDIT' ? 'Daily Avg Received' : 'Daily Avg Transferred'}
+                  </span>
                 </div>
-                <p className="text-base font-bold text-brand-blue dark:text-white tracking-tight">{fmt(Math.round(avgDailySpend))}</p>
-                <p className="text-[9px] font-medium text-neutral-400 mt-0.5">{dailySpendData.length} active spend days</p>
+                <p className="text-base font-bold text-brand-blue dark:text-white tracking-tight">{fmt(Math.round(avgDailyActive))}</p>
+                <p className="text-[9px] font-medium text-neutral-400 mt-0.5">{dailySpendData.length} active {flowType === 'DEBIT' ? 'spend' : flowType === 'CREDIT' ? 'income' : 'transfer'} days</p>
               </div>
 
-              <div className="p-3 bg-gradient-to-br from-rose-500/10 via-rose-500/5 to-transparent rounded-2xl border border-rose-500/20">
+              <div className={cn("p-3 bg-gradient-to-br rounded-2xl border", themeColors.bg, themeColors.border)}>
                 <div className="flex items-center gap-1.5 mb-1">
-                  <TrendingUp className="w-3.5 h-3.5 text-rose-500" />
-                  <span className="text-[10px] font-medium text-rose-600 dark:text-rose-400">Single Peak Day</span>
+                  <TrendingUp className={cn("w-3.5 h-3.5", themeColors.icon)} />
+                  <span className={cn("text-[10px] font-medium", themeColors.text)}>
+                    {flowType === 'DEBIT' ? 'Single Peak Spend' : flowType === 'CREDIT' ? 'Single Peak Income' : 'Single Peak Transfer'}
+                  </span>
                 </div>
                 <p className="text-base font-bold text-brand-blue dark:text-white tracking-tight">{fmt(peakDay.value)}</p>
                 <p className="text-[9px] font-medium text-neutral-400 truncate mt-0.5">{peakDay.name}</p>
@@ -558,7 +614,9 @@ function SummaryContent() {
             {/* 2. Day-of-Week Distribution (Mon-Sun Bar Chart) */}
             <div className="p-3.5 bg-neutral-50 dark:bg-white/[0.02] rounded-2xl border border-neutral-100 dark:border-white/5 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Weekly Spend Pattern</span>
+                <span className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                  Weekly {flowType === 'DEBIT' ? 'Spend' : flowType === 'CREDIT' ? 'Income' : 'Transfer'} Pattern
+                </span>
                 <span className="text-[9px] font-medium text-neutral-400">By Day of Week</span>
               </div>
               <div className="grid grid-cols-7 gap-1 pt-2 items-end h-24">
@@ -566,12 +624,12 @@ function SummaryContent() {
                   const heightPct = maxDow > 0 ? (d.total / maxDow) * 100 : 0;
                   return (
                     <div key={d.day} className="flex flex-col items-center gap-1 h-full justify-end group">
-                      <span className="text-[8px] font-bold text-neutral-400 group-hover:text-amber-500 transition-colors">
+                      <span className="text-[8px] font-bold text-neutral-400 group-hover:text-brand-blue dark:group-hover:text-white transition-colors">
                         {d.total > 0 ? fmt(d.total) : '0'}
                       </span>
                       <div className="w-full bg-neutral-200/50 dark:bg-white/5 rounded-t-lg flex-1 flex items-end overflow-hidden">
                         <div
-                          className="w-full bg-amber-500 rounded-t-lg transition-all duration-500 group-hover:bg-amber-400"
+                          className={cn("w-full rounded-t-lg transition-all duration-500", themeColors.bar)}
                           style={{ height: `${Math.max(heightPct, 6)}%` }}
                         />
                       </div>
@@ -585,7 +643,9 @@ function SummaryContent() {
             {/* 3. Daily Breakdown Timeline */}
             <div className="space-y-2">
               <div className="flex items-center justify-between px-1">
-                <span className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Daily Activity Timeline</span>
+                <span className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                  Daily Activity Timeline
+                </span>
                 <span className="text-[9px] font-medium text-neutral-400">{dailySpendData.length} recorded days</span>
               </div>
 
@@ -600,7 +660,7 @@ function SummaryContent() {
                     className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
                   >
                     <div className="w-10 h-10 rounded-xl bg-white dark:bg-white/5 border border-neutral-100 dark:border-white/5 flex flex-col items-center justify-center shrink-0">
-                      <span className="text-[9px] font-bold text-amber-500 leading-none">{d.name.split(',')[0]}</span>
+                      <span className="text-[9px] font-bold text-neutral-400 leading-none">{d.name.split(',')[0]}</span>
                       <span className="text-[10px] font-bold text-brand-blue dark:text-white leading-none mt-0.5">{d.name.split(',')[1]?.trim().split(' ')[0]}</span>
                     </div>
                     <div className="flex-1 min-w-0">
@@ -617,18 +677,21 @@ function SummaryContent() {
                         <span className="text-[9px] font-medium text-neutral-400 shrink-0 ml-2">{d.count} {d.count === 1 ? 'tx' : 'txs'}</span>
                       </div>
                       <div className="w-full bg-neutral-100 dark:bg-white/5 rounded-full h-1.5 overflow-hidden">
-                        <div className="h-1.5 rounded-full bg-amber-500 transition-all duration-500" style={{ width: `${Math.min(barPct, 100)}%` }} />
+                        <div className={cn("h-1.5 rounded-full transition-all duration-500", flowType === 'CREDIT' ? 'bg-emerald-500' : flowType === 'TRANSFER' ? 'bg-cyan-500' : 'bg-rose-500')} style={{ width: `${Math.min(barPct, 100)}%` }} />
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-xs font-bold text-rose-500">{fmt(d.value)}</p>
+                      <p className={cn(
+                        "text-xs font-bold",
+                        flowType === 'CREDIT' ? 'text-emerald-500' : flowType === 'TRANSFER' ? 'text-cyan-500' : 'text-rose-500'
+                      )}>{fmt(d.value)}</p>
                     </div>
                   </div>
                 );
               })}
             </div>
           </div>
-        ) : <EmptyState icon={<Zap className="w-6 h-6 text-neutral-400" />} msg="No daily spending data this month" />;
+        ) : <EmptyState icon={<Zap className="w-6 h-6 text-neutral-400" />} msg={flowType === 'DEBIT' ? "No daily spending data this month" : flowType === 'CREDIT' ? "No daily income data this month" : "No daily transfer data this month"} />;
     }
   };
 
@@ -702,6 +765,28 @@ function SummaryContent() {
         </div>
       </div>
 
+      {/* ── FLOW TYPE SELECTOR (Expenses / Income / Transfers) ── */}
+      <div className="bg-white dark:bg-[#111111] p-1 rounded-2xl flex gap-1 border border-neutral-100 dark:border-white/5 shadow-sm">
+        {[
+          { key: 'DEBIT', label: 'Expenses', activeColor: 'bg-rose-500 text-white dark:bg-rose-600', textColor: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white' },
+          { key: 'CREDIT', label: 'Income', activeColor: 'bg-emerald-500 text-white dark:bg-emerald-600', textColor: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white' },
+          { key: 'TRANSFER', label: 'Transfers', activeColor: 'bg-cyan-500 text-white dark:bg-cyan-600', textColor: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white' },
+        ].map(item => (
+          <button
+            key={item.key}
+            onClick={() => setFlowType(item.key as any)}
+            className={cn(
+              "flex-1 py-2 text-[10px] font-bold rounded-xl transition-all tracking-wider uppercase text-center",
+              flowType === item.key
+                ? item.activeColor
+                : item.textColor
+            )}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
       {/* ── TAB BAR ── */}
       <div className="flex gap-1.5 overflow-x-auto scrollbar-hide no-scrollbar pb-1 -mx-1 px-1">
         {TABS.map(tab => (
@@ -730,7 +815,7 @@ function SummaryContent() {
       <AnimatePresence>
         {selectedDetail && (() => {
           // Filter transactions for this specific detail selection in the current month
-          const detailTxs = expenses.filter(tx => {
+          const detailTxs = activeTransactions.filter(tx => {
             if (selectedDetail.type === 'category') return tx.category === selectedDetail.name;
             if (selectedDetail.type === 'tags') return tx.expenseType === selectedDetail.name;
             if (selectedDetail.type === 'accounts') {
@@ -744,7 +829,7 @@ function SummaryContent() {
           });
 
           const detailTotal = detailTxs.reduce((s, tx) => s + safeNum(tx.amount), 0);
-          const detailPct = totalExpense > 0 ? (detailTotal / totalExpense) * 100 : 0;
+          const detailPct = totalActiveAmount > 0 ? (detailTotal / totalActiveAmount) * 100 : 0;
           const count = detailTxs.length;
 
           return (
@@ -795,8 +880,13 @@ function SummaryContent() {
                 {/* Summary Stat Card */}
                 <div className="grid grid-cols-3 gap-2 p-3 bg-neutral-50 dark:bg-white/[0.03] rounded-2xl border border-neutral-100 dark:border-white/5 mb-4 shrink-0">
                   <div className="text-center">
-                    <p className="text-[9px] font-medium text-neutral-400 dark:text-neutral-500">Total Spent</p>
-                    <p className="text-sm font-bold text-rose-500 tracking-tight">{fmt(detailTotal)}</p>
+                    <p className="text-[9px] font-medium text-neutral-400 dark:text-neutral-500">
+                      {flowType === 'DEBIT' ? 'Total Spent' : flowType === 'CREDIT' ? 'Total Received' : 'Total Transferred'}
+                    </p>
+                    <p className={cn(
+                      "text-sm font-bold tracking-tight",
+                      flowType === 'CREDIT' ? 'text-emerald-500' : flowType === 'TRANSFER' ? 'text-cyan-500' : 'text-rose-500'
+                    )}>{fmt(detailTotal)}</p>
                   </div>
                   <div className="text-center border-x border-neutral-100 dark:border-white/5">
                     <p className="text-[9px] font-medium text-neutral-400 dark:text-neutral-500">Share</p>
@@ -832,8 +922,11 @@ function SummaryContent() {
                             </p>
                           </div>
                         </div>
-                        <p className="text-xs font-bold text-rose-500 shrink-0 ml-2">
-                          -{fmt(tx.amount)}
+                        <p className={cn(
+                          "text-xs font-bold shrink-0 ml-2",
+                          flowType === 'CREDIT' ? 'text-emerald-500' : flowType === 'TRANSFER' ? 'text-cyan-500' : 'text-rose-500'
+                        )}>
+                          {flowType === 'CREDIT' ? '+' : flowType === 'TRANSFER' ? '⇄' : '-'}{fmt(tx.amount)}
                         </p>
                       </div>
                     ))
