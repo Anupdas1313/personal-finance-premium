@@ -126,6 +126,16 @@ export function useBudgets(monthStr: string, currentMonth: Date): UseBudgetsRetu
     [monthStr, user?.uid]
   ) || [];
 
+  const allPastBudgets = useLiveQuery(
+    () => db.budgets.where('month').below(monthStr).toArray(),
+    [monthStr, user?.uid]
+  ) || [];
+
+  const allPastTxs = useLiveQuery(
+    () => db.transactions.where('dateTime').below(periodStart).toArray(),
+    [periodStartTs, user?.uid]
+  ) || [];
+
   const enhancedBudgets = useMemo(() => {
     return budgets.map(b => {
       if (!b.rollover) return b;
@@ -166,16 +176,6 @@ export function useBudgets(monthStr: string, currentMonth: Date): UseBudgetsRetu
         .toArray();
     },
     [periodStartTs, periodEndTs, user?.uid]
-  ) || [];
-
-  const allPastBudgets = useLiveQuery(
-    () => db.budgets.where('month').below(monthStr).toArray(),
-    [monthStr, user?.uid]
-  ) || [];
-
-  const allPastTxs = useLiveQuery(
-    () => db.transactions.where('dateTime').below(periodStart).toArray(),
-    [periodStartTs, user?.uid]
   ) || [];
 
 
