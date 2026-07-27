@@ -14,7 +14,7 @@ export default function Layout() {
   const mainNavItems = appMode === 'PERSONAL' ? [
     { name: 'Home', path: '/', icon: LayoutDashboard },
     { name: 'Transactions', path: '/transactions', icon: BarChart3 },
-    { name: 'Accounts', path: '/accounts', icon: Landmark },
+    { name: 'Summary', path: '/summary', icon: PieChart },
   ] : [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Sales', path: '/sales', icon: BarChart3 },
@@ -22,7 +22,7 @@ export default function Layout() {
   ];
 
   const moreNavItems = appMode === 'PERSONAL' ? [
-    { name: 'Summary', path: '/summary', icon: PieChart },
+    { name: 'Accounts', path: '/accounts', icon: Landmark },
     { name: 'Budgets', path: '/budgets', icon: Target },
     { name: 'Reports', path: '/reports', icon: FileText },
     { name: 'Ledger', path: '/ledger', icon: BookOpen },
