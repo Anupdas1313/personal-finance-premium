@@ -6,7 +6,7 @@ import { db, Transaction, normalizeType } from '../models/db';
 import { useAuth } from '../context/AuthContext';
 import { format, startOfMonth, endOfMonth, subMonths, differenceInDays, getDaysInMonth } from 'date-fns';
 import { useState, useMemo, useRef, useCallback, Component, type ReactNode } from 'react';
-import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, PieChart as PieIcon, Tag, Store, Layers, AlertTriangle, CreditCard, Wallet, ArrowUpRight, ArrowDownRight, Minus, RefreshCw, Zap, X, Landmark, Smartphone, Tag as TagIcon, ArrowDownLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, PieChart as PieIcon, Tag, Store, Layers, AlertTriangle, CreditCard, Wallet, ArrowUpRight, ArrowDownRight, Minus, RefreshCw, Zap, X, Landmark, Smartphone, Tag as TagIcon, ArrowDownLeft, Sparkles } from 'lucide-react';
 import { CATEGORY_ICONS } from '../constants';
 import { useCurrency } from '../hooks/useCurrency';
 import { cn } from '../logic/utils';
