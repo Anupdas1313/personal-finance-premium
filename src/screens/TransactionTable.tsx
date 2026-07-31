@@ -52,8 +52,8 @@ export default function TransactionTable() {
   const [filterExpenseType, setFilterExpenseType] = useState('ALL');
   const [datePreset, setDatePreset] = useState('CUSTOM');
   
-  const [startDate, setStartDate] = useState(startParam ? format(new Date(startParam), 'yyyy-MM-dd') : '');
-  const [endDate, setEndDate] = useState(endParam ? format(new Date(endParam), 'yyyy-MM-dd') : '');
+  const [startDate, setStartDate] = useState(startParam ? format(new Date(startParam + 'T00:00:00'), 'yyyy-MM-dd') : '');
+  const [endDate, setEndDate] = useState(endParam ? format(new Date(endParam + 'T00:00:00'), 'yyyy-MM-dd') : '');
 
   const handleDatePresetChange = (preset: string) => {
     setDatePreset(preset);
@@ -113,8 +113,8 @@ export default function TransactionTable() {
 
   const allTransactionsRaw = useLiveQuery(() => {
     if (startDate && endDate) {
-      const start = startOfDay(new Date(startDate));
-      const end = endOfDay(new Date(endDate));
+      const start = startOfDay(new Date(startDate + 'T00:00:00'));
+      const end = endOfDay(new Date(endDate + 'T00:00:00'));
       return db.transactions.where('dateTime').between(start, end, true, true).toArray();
     }
     return db.transactions.toArray();
@@ -135,8 +135,8 @@ export default function TransactionTable() {
     // 1. Date Range Filter
     if (startDate && endDate) {
       try {
-        const start = startOfDay(new Date(startDate)).getTime();
-        const end = endOfDay(new Date(endDate)).getTime();
+        const start = startOfDay(new Date(startDate + 'T00:00:00')).getTime();
+        const end = endOfDay(new Date(endDate + 'T00:00:00')).getTime();
         result = result.filter(tx => {
           const txDate = new Date(tx.dateTime).getTime();
           return txDate >= start && txDate <= end;

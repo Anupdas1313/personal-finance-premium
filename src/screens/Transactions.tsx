@@ -168,7 +168,7 @@ export default function Transactions() {
     let end: Date | number = new Date(8640000000000000);
     if (granularity === 'MONTH') { start = startOfMonth(referenceDate); end = endOfMonth(referenceDate); }
     else if (granularity === 'YEAR') { start = startOfYear(referenceDate); end = endOfYear(referenceDate); }
-    else if (granularity === 'CUSTOM') { start = startOfDay(new Date(customRange.start)); end = endOfDay(new Date(customRange.end)); }
+    else if (granularity === 'CUSTOM') { start = startOfDay(new Date(customRange.start + 'T00:00:00')); end = endOfDay(new Date(customRange.end + 'T00:00:00')); }
     return { start, end };
   }, [granularity, referenceDate, customRange]);
 
