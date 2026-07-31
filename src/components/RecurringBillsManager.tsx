@@ -22,7 +22,7 @@ export function RecurringBillsManager() {
   const [accountId, setAccountId] = useState('');
   const [category, setCategory] = useState('');
   const [frequency, setFrequency] = useState<'DAILY'|'WEEKLY'|'MONTHLY'|'YEARLY'>('MONTHLY');
-  const [nextRunDate, setNextRunDate] = useState(new Date().toISOString().split('T')[0]);
+  const [nextRunDate, setNextRunDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [type, setType] = useState<'DEBIT'|'CREDIT'>('DEBIT');
 
   const handleAdd = async () => {
@@ -34,7 +34,7 @@ export function RecurringBillsManager() {
       category,
       note,
       frequency,
-      nextRunDate: new Date(nextRunDate),
+      nextRunDate: new Date(nextRunDate + 'T00:00:00'),
       type,
       isActive: true,
       paymentMethod: 'Bank'

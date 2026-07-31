@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../models/db';
 import { useCurrency } from '../hooks/useCurrency';
+import { format } from 'date-fns';
 import { ArrowLeft, Landmark, List, Calendar, FileText, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -15,7 +16,7 @@ export default function Transfer() {
   const [toAccountId, setToAccountId] = useState('');
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
@@ -50,8 +51,8 @@ export default function Transfer() {
       const toAcc = accounts.find(a => a.id === Number(toAccountId));
       if (!fromAcc || !toAcc) throw new Error('Selected accounts not found');
 
-      const isTodaySelected = date === new Date().toISOString().split('T')[0];
-      const finalDateTime = isTodaySelected ? new Date() : new Date(date);
+      const isTodaySelected = date === format(new Date(), 'yyyy-MM-dd');
+      const finalDateTime = isTodaySelected ? new Date() : new Date(date + 'T00:00:00');
 
       const debitId = await db.transactions.add({
         accountId: Number(fromAccountId),

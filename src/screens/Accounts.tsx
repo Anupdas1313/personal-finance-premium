@@ -34,7 +34,7 @@ export default function Accounts() {
   const [bankName, setBankName] = useState('');
   const [accountLast4, setAccountLast4] = useState('');
   const [startingBalance, setStartingBalance] = useState('');
-  const [startingBalanceDate, setStartingBalanceDate] = useState(new Date().toISOString().split('T')[0]);
+  const [startingBalanceDate, setStartingBalanceDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [accountType, setAccountType] = useState<'BANK' | 'CASH' | 'CREDIT_CARD'>('BANK');
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
   const [creditLimit, setCreditLimit] = useState('');
@@ -184,7 +184,7 @@ export default function Accounts() {
     setBankName('');
     setAccountLast4('');
     setStartingBalance('');
-    setStartingBalanceDate(new Date().toISOString().split('T')[0]);
+    setStartingBalanceDate(format(new Date(), 'yyyy-MM-dd'));
     setAccountType('BANK');
     setCreditLimit('');
     setStatementDate('');
@@ -198,7 +198,7 @@ export default function Accounts() {
     setAccountLast4(account.accountLast4);
     const balanceVal = account.type === 'CREDIT_CARD' ? Math.abs(account.startingBalance) : account.startingBalance;
     setStartingBalance(balanceVal.toString());
-    setStartingBalanceDate(account.startingBalanceDate ? new Date(account.startingBalanceDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+    setStartingBalanceDate(account.startingBalanceDate ? format(new Date(account.startingBalanceDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'));
     setAccountType(account.type || 'BANK');
     setCreditLimit(account.creditLimit ? account.creditLimit.toString() : '');
     setStatementDate(account.statementDate ? account.statementDate.toString() : '');
