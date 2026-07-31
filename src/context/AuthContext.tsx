@@ -15,6 +15,7 @@ import {
 import { auth } from '../lib/firebase';
 import { startSync, stopSync } from '../lib/syncEngine';
 import { db, initializeDB } from '../models/db';
+import { seedDemoData } from '../logic/demoSeeder';
 
 export interface AuthUser {
   uid: string;
@@ -34,6 +35,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<void>;
   updateProfileName: (name: string) => Promise<void>;
   deleteAccount: () => Promise<void>;
+  signInAsDemo: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -43,6 +45,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const demoSession = localStorage.getItem('demo_session') === 'true';
+    if (demoSession) {
+      const demoUser: AuthUser = {
+        uid: 'demo-user',
+        email: 'demo@expensify.app',
+        displayName: 'Demo User',
+        emailVerified: true,
+        photoURL: null
+      };
+      setUser(demoUser);
+      const savedMode = localStorage.getItem('appMode');
+      const mode = savedMode === 'BUSINESS' ? 'BUSINESS' : 'PERSONAL';
+      initializeDB(demoUser.uid, mode);
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       // For email/password users, require email verification
       const isPasswordUser = firebaseUser?.providerData.some(p => p.providerId === 'password');
@@ -81,6 +100,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = async () => {
+    localStorage.removeItem('demo_session');
+    setUser(null);
     await signOut(auth);
   };
 
@@ -128,8 +149,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInAsDemo = async () => {
+    localStorage.setItem('demo_session', 'true');
+    const demoUser: AuthUser = {
+      uid: 'demo-user',
+      email: 'demo@expensify.app',
+      displayName: 'Demo User',
+      emailVerified: true,
+      photoURL: null
+    };
+    const savedMode = localStorage.getItem('appMode');
+    const mode = savedMode === 'BUSINESS' ? 'BUSINESS' : 'PERSONAL';
+    const activeDB = initializeDB(demoUser.uid, mode);
+    
+    await seedDemoData(activeDB);
+    
+    localStorage.setItem(`onboardingComplete_demo-user`, 'true');
+    await activeDB.userSettings.put({ key: 'setupComplete', value: true });
+
+    setUser(demoUser);
+  };
+
   const contextValue = useMemo(() => ({
-    user, loading, logout, signIn, signUp, signInWithGoogle, resetPassword, updateProfileName, deleteAccount
+    user, loading, logout, signIn, signUp, signInWithGoogle, resetPassword, updateProfileName, deleteAccount, signInAsDemo
   }), [user, loading]);
 
   return (

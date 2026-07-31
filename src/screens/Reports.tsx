@@ -20,6 +20,7 @@ import {
   XAxis, YAxis, CartesianGrid, BarChart, Bar
 } from 'recharts';
 import { cn, roundCurrency } from '../logic/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CHART_COLORS = ['#00A86B', '#1A237E', '#D4AF37', '#82EEFD', '#E53935', '#3B3B98', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
@@ -130,6 +131,21 @@ export default function Reports() {
   const [payeeSearch, setPayeeSearch] = useState('');
   const [comparisonMode, setComparisonMode] = useState(false);
   const [activeChart, setActiveChart] = useState<'category' | 'daily' | 'tags' | 'cashflow' | 'networth'>('category');
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (selectedAccountId !== 'ALL') count++;
+    if (selectedCategory !== 'ALL') count++;
+    if (selectedTag !== 'ALL') count++;
+    if (selectedMethod !== 'ALL') count++;
+    if (selectedUpiApp !== 'ALL') count++;
+    if (selectedMethodAccount !== 'ALL') count++;
+    if (payeeSearch.trim() !== '') count++;
+    if (transactionType !== 'ALL') count++;
+    if (activePreset === 'Custom') count++;
+    return count;
+  }, [selectedAccountId, selectedCategory, selectedTag, selectedMethod, selectedUpiApp, selectedMethodAccount, payeeSearch, transactionType, activePreset]);
 
   const bankAccounts = useMemo(() => accounts.filter(a => (a.type || 'BANK') === 'BANK'), [accounts]);
   const creditCards = useMemo(() => accounts.filter(a => a.type === 'CREDIT_CARD'), [accounts]);
@@ -506,171 +522,226 @@ export default function Reports() {
         ))}
       </div>
 
-      {/* ── Control Panel ── */}
-      <div className="bg-white dark:bg-[#111111] p-5 rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {/* Account */}
-          <div className="space-y-1.5">
-            <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">Account</label>
-            <div className="relative">
-              <select value={selectedAccountId} onChange={(e) => { setSelectedAccountId(e.target.value); setActivePreset(''); }}
-                className="w-full appearance-none bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all">
-                <option value="ALL">All Accounts</option>
-                {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.bankName} (****{acc.accountLast4})</option>)}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* Date Start */}
-          <div className="space-y-1.5">
-            <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">From</label>
-            <input type="date" value={dateRange.start} onChange={(e) => { setDateRange(prev => ({ ...prev, start: e.target.value })); setActivePreset('Custom'); }}
-              className="w-full bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all" />
-          </div>
-
-          {/* Date End */}
-          <div className="space-y-1.5">
-            <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">To</label>
-            <input type="date" value={dateRange.end} onChange={(e) => { setDateRange(prev => ({ ...prev, end: e.target.value })); setActivePreset('Custom'); }}
-              className="w-full bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all" />
-          </div>
-
-          {/* Type */}
-          <div className="space-y-1.5">
-            <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">Flow</label>
-            <div className="flex bg-neutral-50 dark:bg-[#1A1A1E] p-1 rounded-xl border border-neutral-100 dark:border-white/5">
-              {(['ALL', 'DEBIT', 'CREDIT'] as const).map(t => (
-                <button key={t} onClick={() => setTransactionType(t)}
-                  className={`flex-1 py-1.5 rounded-lg text-[9px] font-black tracking-widest transition-all cursor-pointer ${
-                    transactionType === t ? 'bg-white dark:bg-white/10 shadow-sm text-brand-blue dark:text-white' : 'text-neutral-400'
-                  }`}>{t}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Category */}
-          <div className="space-y-1.5">
-            <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">Category</label>
-            <div className="relative">
-              <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full appearance-none bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all">
-                <option value="ALL">All Categories</option>
-                {categories.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* Method (Cascading) */}
-          <div className="space-y-1.5">
-            <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">Payment Channel</label>
-            <div className="relative">
-              <select value={selectedMethod} onChange={(e) => { setSelectedMethod(e.target.value); setSelectedUpiApp('ALL'); setSelectedMethodAccount('ALL'); }}
-                className="w-full appearance-none bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all">
-                <option value="ALL">All Channels</option>
-                <option value="UPI">📱 UPI</option>
-                <option value="Bank Transfer">🏦 Bank Transfer</option>
-                <option value="Credit Card">💳 Credit Card</option>
-                <option value="Cash">💵 Cash</option>
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* UPI App (only when UPI selected) */}
-          {selectedMethod === 'UPI' && (
-            <div className="space-y-1.5">
-              <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">UPI App</label>
-              <div className="relative">
-                <select value={selectedUpiApp} onChange={(e) => setSelectedUpiApp(e.target.value)}
-                  className="w-full appearance-none bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all">
-                  <option value="ALL">All UPI Apps</option>
-                  {uniqueUpiApps.map(app => <option key={app} value={app}>{app}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
-              </div>
-            </div>
-          )}
-
-          {/* Deducted From Account (contextual based on channel) */}
-          {selectedMethod !== 'ALL' && (
-            <div className="space-y-1.5">
-              <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">
-                {selectedMethod === 'UPI' ? 'Linked Bank A/C' : selectedMethod === 'Credit Card' ? 'Which Card' : selectedMethod === 'Bank Transfer' ? 'Which Bank' : 'Cash A/C'}
-              </label>
-              <div className="relative">
-                <select value={selectedMethodAccount} onChange={(e) => setSelectedMethodAccount(e.target.value)}
-                  className="w-full appearance-none bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all">
-                  <option value="ALL">
-                    {selectedMethod === 'UPI' ? 'All Linked Banks' : selectedMethod === 'Credit Card' ? 'All Cards' : selectedMethod === 'Bank Transfer' ? 'All Banks' : 'All Cash A/Cs'}
-                  </option>
-                  {(selectedMethod === 'UPI' || selectedMethod === 'Bank Transfer') && bankAccounts.map(acc => <option key={acc.id} value={acc.id}>{acc.bankName} (****{acc.accountLast4})</option>)}
-                  {selectedMethod === 'Credit Card' && creditCards.map(acc => <option key={acc.id} value={acc.id}>{acc.bankName} (****{acc.accountLast4})</option>)}
-                  {selectedMethod === 'Cash' && cashAccounts.map(acc => <option key={acc.id} value={acc.id}>{acc.bankName} (****{acc.accountLast4})</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
-              </div>
-            </div>
-          )}
-
-          {/* Tag */}
-          <div className="space-y-1.5">
-            <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">Classifier Tag</label>
-            <div className="relative">
-              <select value={selectedTag} onChange={(e) => setSelectedTag(e.target.value)}
-                className="w-full appearance-none bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all">
-                <option value="ALL">All Tags</option>
-                {tags.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* Payee Search */}
-          <div className="space-y-1.5">
-            <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">Payee / Party</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
-              <input type="text" value={payeeSearch} onChange={(e) => setPayeeSearch(e.target.value)}
-                placeholder="Search payee..."
-                list="payee-suggestions"
-                className="w-full bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white pl-8 pr-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all placeholder:text-neutral-300" />
-              <datalist id="payee-suggestions">
-                {uniquePayees.slice(0, 20).map(p => <option key={p} value={p} />)}
-              </datalist>
-            </div>
-          </div>
+      {/* ── Search & Filter Trigger Bar ── */}
+      <div className="bg-white dark:bg-[#111111] p-3.5 rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+          <input
+            type="text"
+            value={payeeSearch}
+            onChange={(e) => setPayeeSearch(e.target.value)}
+            placeholder="Search payee or note..."
+            list="payee-suggestions"
+            className="w-full bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white pl-10 pr-4 py-2.5 rounded-2xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/20 transition-all placeholder:text-neutral-400"
+          />
+          <datalist id="payee-suggestions">
+            {uniquePayees.slice(0, 20).map(p => <option key={p} value={p} />)}
+          </datalist>
         </div>
-
-        {/* Active filter pills */}
-        {(selectedCategory !== 'ALL' || selectedTag !== 'ALL' || selectedMethod !== 'ALL' || selectedUpiApp !== 'ALL' || selectedMethodAccount !== 'ALL' || payeeSearch || transactionType !== 'ALL') && (
-          <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-neutral-100 dark:border-[#222222]">
-            <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest py-1">Active:</span>
-            {selectedCategory !== 'ALL' && <span className="px-2 py-0.5 bg-neutral-100 dark:bg-[#222222] text-neutral-500 rounded-full text-[9px] font-bold">{selectedCategory} ×</span>}
-            {selectedTag !== 'ALL' && <span className="px-2 py-0.5 bg-neutral-100 dark:bg-[#222222] text-neutral-500 rounded-full text-[9px] font-bold">#{selectedTag} ×</span>}
-            {selectedMethod !== 'ALL' && (
-              <span className="px-2 py-0.5 bg-neutral-100 dark:bg-[#222222] text-neutral-500 rounded-full text-[9px] font-bold">
-                {selectedMethod} ×
+        
+        <div className="flex gap-2 shrink-0">
+          <button
+            onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+            className={cn(
+              "flex-1 sm:flex-initial px-4 py-2.5 border rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 cursor-pointer",
+              isFilterExpanded || activeFiltersCount > 0
+                ? "bg-brand-blue text-white border-brand-blue shadow-md"
+                : "bg-white dark:bg-[#111111] border-neutral-200 dark:border-[#333333] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-[#222222]"
+            )}
+          >
+            <Filter className="w-3.5 h-3.5" />
+            <span>Filters</span>
+            {activeFiltersCount > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 bg-brand-green text-white text-[8px] font-black rounded-full leading-none">
+                {activeFiltersCount}
               </span>
             )}
-            {selectedUpiApp !== 'ALL' && (
-              <span className="px-2 py-0.5 bg-neutral-100 dark:bg-[#222222] text-neutral-500 rounded-full text-[9px] font-bold">
-                App: {selectedUpiApp} ×
-              </span>
-            )}
-            {selectedMethodAccount !== 'ALL' && (
-              <span className="px-2 py-0.5 bg-neutral-100 dark:bg-[#222222] text-neutral-500 rounded-full text-[9px] font-bold">
-                A/C: {accounts.find(a => a.id === Number(selectedMethodAccount))?.bankName || selectedMethodAccount} ×
-              </span>
-            )}
-            {payeeSearch && <span className="px-2 py-0.5 bg-neutral-100 dark:bg-[#222222] text-neutral-500 rounded-full text-[9px] font-bold">"{payeeSearch}" ×</span>}
-            {transactionType !== 'ALL' && <span className="px-2 py-0.5 bg-neutral-100 dark:bg-[#222222] text-neutral-500 rounded-full text-[9px] font-bold">{transactionType} ×</span>}
-            <button onClick={() => { setSelectedCategory('ALL'); setSelectedTag('ALL'); setSelectedMethod('ALL'); setSelectedUpiApp('ALL'); setSelectedMethodAccount('ALL'); setPayeeSearch(''); setTransactionType('ALL'); }}
-              className="px-2 py-0.5 text-[9px] font-bold text-rose-500 hover:text-rose-600 flex items-center gap-0.5"><RefreshCw className="w-2.5 h-2.5" /> Clear</button>
-          </div>
-        )}
+          </button>
+        </div>
       </div>
+
+      {/* ── Collapsible Filter Panel ── */}
+      <AnimatePresence>
+        {isFilterExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="overflow-hidden"
+          >
+            <div className="bg-white dark:bg-[#111111] p-5 rounded-[24px] border border-neutral-100 dark:border-[#222222] shadow-sm space-y-4">
+              {/* Group 1: Core Timeline & Account */}
+              <div className="space-y-2">
+                <h4 className="text-[8px] font-black text-neutral-400 uppercase tracking-widest pb-1 border-b border-neutral-100 dark:border-white/5">Timeline & Account</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Account */}
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Account</label>
+                    <div className="relative">
+                      <select value={selectedAccountId} onChange={(e) => { setSelectedAccountId(e.target.value); setActivePreset(''); }}
+                        className="w-full appearance-none bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all">
+                        <option value="ALL">All Accounts</option>
+                        {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.bankName} (****{acc.accountLast4})</option>)}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* Date Start */}
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest ml-1">From</label>
+                    <input type="date" value={dateRange.start} onChange={(e) => { setDateRange(prev => ({ ...prev, start: e.target.value })); setActivePreset('Custom'); }}
+                      className="w-full bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all" />
+                  </div>
+
+                  {/* Date End */}
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest ml-1">To</label>
+                    <input type="date" value={dateRange.end} onChange={(e) => { setDateRange(prev => ({ ...prev, end: e.target.value })); setActivePreset('Custom'); }}
+                      className="w-full bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Group 2: Categorization & Type */}
+              <div className="space-y-2">
+                <h4 className="text-[8px] font-black text-neutral-400 uppercase tracking-widest pb-1 border-b border-neutral-100 dark:border-white/5">Flow & Categorization</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Flow/Type */}
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest ml-1 flex items-center justify-between">Flow</label>
+                    <div className="flex bg-neutral-50 dark:bg-[#1A1A1E] p-1 rounded-xl border border-neutral-100 dark:border-white/5">
+                      {(['ALL', 'DEBIT', 'CREDIT'] as const).map(t => (
+                        <button key={t} onClick={() => setTransactionType(t)}
+                          className={`flex-1 py-1 rounded-lg text-[9px] font-black tracking-widest transition-all cursor-pointer ${
+                            transactionType === t ? 'bg-white dark:bg-white/10 shadow-sm text-brand-blue dark:text-white' : 'text-neutral-400'
+                          }`}>{t}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Category */}
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Category</label>
+                    <div className="relative">
+                      <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="w-full appearance-none bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all">
+                        <option value="ALL">All Categories</option>
+                        {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* Tag */}
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Classifier Tag</label>
+                    <div className="relative">
+                      <select value={selectedTag} onChange={(e) => setSelectedTag(e.target.value)}
+                        className="w-full appearance-none bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all">
+                        <option value="ALL">All Tags</option>
+                        {tags.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Group 3: Payments & Channels */}
+              <div className="space-y-2">
+                <h4 className="text-[8px] font-black text-neutral-400 uppercase tracking-widest pb-1 border-b border-neutral-100 dark:border-white/5">Payment Channels</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Method */}
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Payment Channel</label>
+                    <div className="relative">
+                      <select value={selectedMethod} onChange={(e) => { setSelectedMethod(e.target.value); setSelectedUpiApp('ALL'); setSelectedMethodAccount('ALL'); }}
+                        className="w-full appearance-none bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all">
+                        <option value="ALL">All Channels</option>
+                        <option value="UPI">📱 UPI</option>
+                        <option value="Bank Transfer">🏦 Bank Transfer</option>
+                        <option value="Credit Card">💳 Credit Card</option>
+                        <option value="Cash">💵 Cash</option>
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* UPI App (only when UPI selected) */}
+                  {selectedMethod === 'UPI' && (
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest ml-1">UPI App</label>
+                      <div className="relative">
+                        <select value={selectedUpiApp} onChange={(e) => setSelectedUpiApp(e.target.value)}
+                          className="w-full appearance-none bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all">
+                          <option value="ALL">All UPI Apps</option>
+                          {uniqueUpiApps.map(app => <option key={app} value={app}>{app}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Deducted From Account (contextual based on channel) */}
+                  {selectedMethod !== 'ALL' && (
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest ml-1">
+                        {selectedMethod === 'UPI' ? 'Linked Bank A/C' : selectedMethod === 'Credit Card' ? 'Which Card' : selectedMethod === 'Bank Transfer' ? 'Which Bank' : 'Cash A/C'}
+                      </label>
+                      <div className="relative">
+                        <select value={selectedMethodAccount} onChange={(e) => setSelectedMethodAccount(e.target.value)}
+                          className="w-full appearance-none bg-neutral-50 dark:bg-[#1A1A1E] text-brand-blue dark:text-white px-3 py-2.5 rounded-xl text-xs font-bold outline-none border border-neutral-100 dark:border-white/5 focus:ring-2 focus:ring-brand-green/10 transition-all">
+                          <option value="ALL">
+                            {selectedMethod === 'UPI' ? 'All Linked Banks' : selectedMethod === 'Credit Card' ? 'All Cards' : selectedMethod === 'Bank Transfer' ? 'All Banks' : 'All Cash A/Cs'}
+                          </option>
+                          {(selectedMethod === 'UPI' || selectedMethod === 'Bank Transfer') && bankAccounts.map(acc => <option key={acc.id} value={acc.id}>{acc.bankName} (****{acc.accountLast4})</option>)}
+                          {selectedMethod === 'Credit Card' && creditCards.map(acc => <option key={acc.id} value={acc.id}>{acc.bankName} (****{acc.accountLast4})</option>)}
+                          {selectedMethod === 'Cash' && cashAccounts.map(acc => <option key={acc.id} value={acc.id}>{acc.bankName} (****{acc.accountLast4})</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Active filter pills */}
+      {(selectedCategory !== 'ALL' || selectedTag !== 'ALL' || selectedMethod !== 'ALL' || selectedUpiApp !== 'ALL' || selectedMethodAccount !== 'ALL' || payeeSearch.trim() !== '' || transactionType !== 'ALL' || activePreset === 'Custom') && (
+        <div className="flex flex-wrap gap-1.5 p-3 bg-neutral-50 dark:bg-white/[0.02] rounded-2xl border border-neutral-100 dark:border-white/5 items-center">
+          <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest">Active Filters:</span>
+          {selectedCategory !== 'ALL' && <span className="px-2.5 py-1 bg-white dark:bg-[#111111] border border-neutral-200 dark:border-[#222222] text-neutral-600 dark:text-neutral-400 rounded-xl text-[9px] font-bold flex items-center gap-1">{selectedCategory} <button onClick={() => setSelectedCategory('ALL')} className="hover:text-rose-500 font-bold ml-0.5">×</button></span>}
+          {selectedTag !== 'ALL' && <span className="px-2.5 py-1 bg-white dark:bg-[#111111] border border-neutral-200 dark:border-[#222222] text-neutral-600 dark:text-neutral-400 rounded-xl text-[9px] font-bold flex items-center gap-1">#{selectedTag} <button onClick={() => setSelectedTag('ALL')} className="hover:text-rose-500 font-bold ml-0.5">×</button></span>}
+          {selectedMethod !== 'ALL' && (
+            <span className="px-2.5 py-1 bg-white dark:bg-[#111111] border border-neutral-200 dark:border-[#222222] text-neutral-600 dark:text-neutral-400 rounded-xl text-[9px] font-bold flex items-center gap-1">
+              {selectedMethod} <button onClick={() => { setSelectedMethod('ALL'); setSelectedUpiApp('ALL'); setSelectedMethodAccount('ALL'); }} className="hover:text-rose-500 font-bold ml-0.5">×</button>
+            </span>
+          )}
+          {selectedUpiApp !== 'ALL' && (
+            <span className="px-2.5 py-1 bg-white dark:bg-[#111111] border border-neutral-200 dark:border-[#222222] text-neutral-600 dark:text-neutral-400 rounded-xl text-[9px] font-bold flex items-center gap-1">
+              App: {selectedUpiApp} <button onClick={() => setSelectedUpiApp('ALL')} className="hover:text-rose-500 font-bold ml-0.5">×</button>
+            </span>
+          )}
+          {selectedMethodAccount !== 'ALL' && (
+            <span className="px-2.5 py-1 bg-white dark:bg-[#111111] border border-neutral-200 dark:border-[#222222] text-neutral-600 dark:text-neutral-400 rounded-xl text-[9px] font-bold flex items-center gap-1">
+              A/C: {accounts.find(a => a.id === Number(selectedMethodAccount))?.bankName || selectedMethodAccount} <button onClick={() => setSelectedMethodAccount('ALL')} className="hover:text-rose-500 font-bold ml-0.5">×</button>
+            </span>
+          )}
+          {payeeSearch.trim() !== '' && <span className="px-2.5 py-1 bg-white dark:bg-[#111111] border border-neutral-200 dark:border-[#222222] text-neutral-600 dark:text-neutral-400 rounded-xl text-[9px] font-bold flex items-center gap-1">Search: "{payeeSearch}" <button onClick={() => setPayeeSearch('')} className="hover:text-rose-500 font-bold ml-0.5">×</button></span>}
+          {transactionType !== 'ALL' && <span className="px-2.5 py-1 bg-white dark:bg-[#111111] border border-neutral-200 dark:border-[#222222] text-neutral-600 dark:text-neutral-400 rounded-xl text-[9px] font-bold flex items-center gap-1">{transactionType} <button onClick={() => setTransactionType('ALL')} className="hover:text-rose-500 font-bold ml-0.5">×</button></span>}
+          {activePreset === 'Custom' && <span className="px-2.5 py-1 bg-white dark:bg-[#111111] border border-neutral-200 dark:border-[#222222] text-neutral-600 dark:text-neutral-400 rounded-xl text-[9px] font-bold flex items-center gap-1">Custom Dates <button onClick={() => applyPreset(DATE_PRESETS.find(p => p.label === 'This Month') || DATE_PRESETS[2])} className="hover:text-rose-500 font-bold ml-0.5">×</button></span>}
+          
+          <button onClick={() => { setSelectedCategory('ALL'); setSelectedTag('ALL'); setSelectedMethod('ALL'); setSelectedUpiApp('ALL'); setSelectedMethodAccount('ALL'); setPayeeSearch(''); setTransactionType('ALL'); applyPreset(DATE_PRESETS[2]); }}
+            className="px-2 py-1 text-[9px] font-black text-rose-500 hover:text-rose-600 flex items-center gap-1 ml-auto cursor-pointer">
+            <RefreshCw className="w-2.5 h-2.5" /> Reset All
+          </button>
+        </div>
+      )}
 
       {/* ── Stats Summary ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

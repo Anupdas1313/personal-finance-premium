@@ -94,68 +94,7 @@ export default function Transactions() {
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // ── Bulk Select ─────────────────────────────────────────────
-  const [selectedTxIds, setSelectedTxIds] = useState<Set<number>>(new Set());
-  const [isBulkCategoryModalOpen, setIsBulkCategoryModalOpen] = useState(false);
-  const [bulkCategory, setBulkCategory] = useState('');
-
-  const handleToggleSelectAll = () => {
-    if (selectedTxIds.size === filteredTxs.length && filteredTxs.length > 0) {
-      setSelectedTxIds(new Set());
-    } else {
-      const newSelected = new Set(selectedTxIds);
-      filteredTxs.forEach(tx => { if (tx.id) newSelected.add(tx.id) });
-      setSelectedTxIds(newSelected);
-    }
-  };
-
-  const handleToggleSelect = (e: React.MouseEvent, id: number) => {
-    e.stopPropagation();
-    const newSelected = new Set(selectedTxIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedTxIds(newSelected);
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedTxIds.size === 0) return;
-    if (!await confirm(`Are you sure you want to delete ${selectedTxIds.size} transaction(s)?`)) return;
-    
-    try {
-      const idsToDelete = new Set(selectedTxIds);
-      for (const id of selectedTxIds) {
-        const tx = await db.transactions.get(id);
-        if (tx?.linkedTransactionId) {
-          idsToDelete.add(tx.linkedTransactionId);
-        }
-      }
-      await db.transactions.bulkDelete(Array.from(idsToDelete));
-      setSelectedTxIds(new Set());
-      success(`Deleted ${selectedTxIds.size} transactions`);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleBulkEditCategory = async () => {
-    if (selectedTxIds.size === 0 || !bulkCategory) return;
-    try {
-      const updates = Array.from(selectedTxIds).map(id => ({
-        key: id,
-        changes: { category: bulkCategory }
-      }));
-      await Promise.all(updates.map(u => db.transactions.update(u.key, u.changes)));
-      setIsBulkCategoryModalOpen(false);
-      setSelectedTxIds(new Set());
-      setBulkCategory('');
-      success('Categories updated successfully');
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  // ── Bulk Select Removed ──
 
   // ── Data ──────────────────────────────────────────────────────
   const accounts = useLiveQuery(async () => {
@@ -428,25 +367,13 @@ export default function Transactions() {
                       {format(date, 'EEEE, dd MMM yyyy')}
                     </span>
                     <div className="h-px flex-1 bg-neutral-100 dark:bg-white/5" />
-                    {idx === 0 && (
-                      <button onClick={handleToggleSelectAll} className="flex items-center gap-1.5 text-[10px] font-bold text-brand-blue/60 dark:text-white/60 hover:text-brand-blue dark:hover:text-white transition-colors">
-                        {filteredTxs.length > 0 && selectedTxIds.size === filteredTxs.length ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
-                        Select All
-                      </button>
-                    )}
                   </div>
                 )}
                 <motion.div
                   initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setSelectedTx(tx)}
-                  className={`bg-white dark:bg-[#0C0C0F] hover:bg-neutral-50 dark:hover:bg-white/5 border ${tx.id && selectedTxIds.has(tx.id) ? 'border-brand-blue dark:border-brand-cyan' : 'border-neutral-100 dark:border-white/5'} p-3 rounded-[20px] shadow-sm flex items-center gap-3 transition-all cursor-pointer active:shadow-inner pointer-events-auto`}>
-                  <button 
-                    onClick={(e) => tx.id && handleToggleSelect(e, tx.id)} 
-                    className="p-1 text-brand-blue/30 hover:text-brand-blue dark:text-white/30 dark:hover:text-white transition-colors"
-                  >
-                    {tx.id && selectedTxIds.has(tx.id) ? <CheckSquare className="w-5 h-5 text-brand-blue dark:text-brand-cyan" /> : <Square className="w-5 h-5" />}
-                  </button>
+                  className={`bg-white dark:bg-[#0C0C0F] hover:bg-neutral-50 dark:hover:bg-white/5 border border-neutral-100 dark:border-white/5 p-3 rounded-[20px] shadow-sm flex items-center gap-3 transition-all cursor-pointer active:shadow-inner pointer-events-auto`}>
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg border ${CATEGORY_COLORS[tx.category || 'Other'] || 'bg-neutral-50'} shrink-0`}>
                     {CATEGORY_ICONS[tx.category || 'Other'] || '📝'}
                   </div>
@@ -538,73 +465,7 @@ export default function Transactions() {
         )}
       </AnimatePresence>
 
-      {/* Bulk Action Bar */}
-      {selectedTxIds.size > 0 && (
-        <Portal>
-          <div className="fixed bottom-24 md:bottom-12 left-1/2 -translate-x-1/2 bg-white dark:bg-[#111] px-6 py-4 rounded-full shadow-2xl border border-neutral-200 dark:border-white/10 flex items-center gap-6 z-[100] animate-in slide-in-from-bottom-10 fade-in w-[90%] md:w-auto max-w-md justify-between md:justify-start">
-            <span className="text-sm font-bold text-brand-blue dark:text-white shrink-0">
-              {selectedTxIds.size} <span className="hidden sm:inline">selected</span>
-            </span>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <button 
-                onClick={() => setIsBulkCategoryModalOpen(true)}
-                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue dark:text-white rounded-full text-xs sm:text-sm font-bold transition-colors"
-              >
-                <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden xs:inline">Edit</span> Category
-              </button>
-              <button 
-                onClick={handleBulkDelete}
-                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-full text-xs sm:text-sm font-bold transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                Delete
-              </button>
-              <button 
-                onClick={() => setSelectedTxIds(new Set())}
-                className="p-2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors shrink-0 ml-1"
-              >
-                <X className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-            </div>
-          </div>
-        </Portal>
-      )}
 
-      {/* Bulk Edit Category Modal */}
-      {isBulkCategoryModalOpen && (
-        <Portal>
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-[#111] p-6 rounded-3xl w-full max-w-sm border border-neutral-200 dark:border-white/10 shadow-2xl">
-              <h3 className="text-lg font-bold text-brand-blue dark:text-white mb-4">Edit Category</h3>
-              <p className="text-xs text-neutral-500 mb-4">Change category for {selectedTxIds.size} selected transaction(s).</p>
-              <select 
-                value={bulkCategory} 
-                onChange={e => setBulkCategory(e.target.value)}
-                className="w-full h-12 bg-neutral-50 dark:bg-black/20 border border-neutral-200 dark:border-white/10 px-4 rounded-xl text-sm font-bold text-brand-blue dark:text-white outline-none mb-6"
-              >
-                <option value="" disabled>Select Category...</option>
-                {appCategories.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => setIsBulkCategoryModalOpen(false)}
-                  className="flex-1 py-3 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 text-brand-blue dark:text-white rounded-xl font-bold transition-colors"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleBulkEditCategory}
-                  disabled={!bulkCategory}
-                  className="flex-1 py-3 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-xl font-bold transition-colors disabled:opacity-50"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </div>
-          </div>
-        </Portal>
-      )}
 
     </motion.div>
   );

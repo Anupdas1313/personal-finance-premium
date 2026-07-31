@@ -30,7 +30,7 @@ export function startSync(uid: string | null, db: FinanceDatabase) {
   stopSync();
   syncingKeys.clear();
 
-  if (!uid) return;
+  if (!uid || uid === 'demo-user') return;
 
   const mode = localStorage.getItem('appMode') === 'BUSINESS' ? 'BUSINESS' : 'PERSONAL';
   const pathPrefix = `users/${uid}/${mode}`;
