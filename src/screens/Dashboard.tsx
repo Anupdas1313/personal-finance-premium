@@ -192,6 +192,7 @@ export default function Dashboard() {
           setNote(tx.note || '');
           setPartyName(tx.party || '');
           setTransactionDate(format(new Date(tx.dateTime), "yyyy-MM-dd'T'HH:mm"));
+          setIsDateModified(true);
           setPaymentMethod(tx.paymentMethod as any || 'UPI');
           setUpiApp((tx as any).upiApp || 'GPay');
           setExpenseType(tx.expenseType || '');
@@ -226,7 +227,8 @@ export default function Dashboard() {
       });
     } else if (searchParams.get('add') === 'true') {
       setIsAddingManual(true);
-      setTransactionDate(new Date().toISOString().slice(0, 16));
+      setTransactionDate(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+      setIsDateModified(false);
       const paramAccountId = searchParams.get('accountId');
       if (paramAccountId) {
         setSelectedAccountId(Number(paramAccountId));
@@ -252,8 +254,9 @@ export default function Dashboard() {
   const [selectedAccountId, setSelectedAccountId] = useState<number | ''>('');
   const [toAccountId, setToAccountId] = useState<number | ''>('');
   const [transactionDate, setTransactionDate] = useState<string>(
-    new Date().toISOString().slice(0, 16)
+    format(new Date(), "yyyy-MM-dd'T'HH:mm")
   );
+  const [isDateModified, setIsDateModified] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'Bank' | 'Cash' | 'Credit Card' | 'Bank Transfer'>('UPI');
   const [upiApp, setUpiApp] = useState('GPay');
   const { tags } = useTags();
@@ -264,7 +267,8 @@ export default function Dashboard() {
   useEffect(() => {
     // Only reset date for NEW transactions, not when editing existing ones
     if (isAddingManual && !editingTransactionId) {
-      setTransactionDate(new Date().toISOString().slice(0, 16));
+      setTransactionDate(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+      setIsDateModified(false);
     }
   }, [isAddingManual, editingTransactionId]);
 
@@ -361,8 +365,9 @@ export default function Dashboard() {
           return;
         }
 
-        const isTodaySelected = format(new Date(currentTransactionDate), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
-        const finalDateTime = isTodaySelected ? new Date() : new Date(currentTransactionDate);
+        const finalDateTime = isFromChat
+          ? (txData.transactionDate ? new Date(txData.transactionDate) : new Date())
+          : (isDateModified ? new Date(currentTransactionDate) : new Date());
         const amountVal = parseFloat(currentAmount.toString().replace(/,/g, '')) || 0;
 
         // Base Debit Payload
@@ -433,8 +438,9 @@ export default function Dashboard() {
           });
         }
       } else {
-        const isTodaySelected = format(new Date(currentTransactionDate), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
-        const finalDateTime = isTodaySelected ? new Date() : new Date(currentTransactionDate);
+        const finalDateTime = isFromChat
+          ? (txData.transactionDate ? new Date(txData.transactionDate) : new Date())
+          : (isDateModified ? new Date(currentTransactionDate) : new Date());
 
         // If editing an existing transaction that was previously a transfer, delete its counterpart
         if (editingTransactionId) {
@@ -485,7 +491,8 @@ export default function Dashboard() {
         setNote('');
         setPartyName('');
         setCategory('Other');
-        setTransactionDate(new Date().toISOString().slice(0, 16));
+        setTransactionDate(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+        setIsDateModified(false);
         setPaymentMethod('UPI');
         setUpiApp('GPay');
         setExpenseType(tags[0] || '');
@@ -1041,7 +1048,7 @@ export default function Dashboard() {
                         <Calendar className="w-3 h-3 text-neutral-400 shrink-0" />
                         <span className="text-[9px] font-extrabold uppercase tracking-widest leading-none">{format(new Date(transactionDate), 'dd MMM, hh:mm a')}</span>
                       </div>
-                      <input type="datetime-local" value={transactionDate} onChange={(e) => setTransactionDate(e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+                      <input type="datetime-local" value={transactionDate} onChange={(e) => { setTransactionDate(e.target.value); setIsDateModified(true); }} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
                     </div>
                   </div>
                 </div>
