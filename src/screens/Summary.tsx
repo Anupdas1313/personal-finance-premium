@@ -857,8 +857,7 @@ function SummaryContent() {
                 <div className="flex items-start justify-between mb-4 shrink-0">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-11 h-11 bg-neutral-100 dark:bg-white/5 rounded-2xl flex items-center justify-center text-xl border border-neutral-100 dark:border-white/10 shrink-0">
-
-                       selectedDetail.type === 'tags' ? '🏷️' :
+                      {selectedDetail.type === 'tags' ? '🏷️' :
                        selectedDetail.type === 'accounts' ? '🏦' :
                        selectedDetail.type === 'methods' ? '💳' : '👤'}
                     </div>
