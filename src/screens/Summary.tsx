@@ -118,7 +118,6 @@ const Portal: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 // ── Tab definitions ─────────────────────────────────────────────────────────
 const TABS = [
-  { key: 'category', label: 'Category', icon: <PieIcon className="w-3.5 h-3.5" /> },
   { key: 'tags', label: 'Tags', icon: <Tag className="w-3.5 h-3.5" /> },
   { key: 'daily', label: 'Daily Avg', icon: <Zap className="w-3.5 h-3.5" /> },
   { key: 'accounts', label: 'Accounts', icon: <Layers className="w-3.5 h-3.5" /> },
@@ -132,7 +131,7 @@ type TabKey = typeof TABS[number]['key'];
 function SummaryContent() {
   const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
-  const [activeTab, setActiveTab] = useState<TabKey>('category');
+  const [activeTab, setActiveTab] = useState<TabKey>('tags');
   const [flowType, setFlowType] = useState<'DEBIT' | 'CREDIT' | 'TRANSFER'>('DEBIT');
   const [selectedDetail, setSelectedDetail] = useState<{ type: TabKey; name: string } | null>(null);
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
@@ -404,13 +403,13 @@ function SummaryContent() {
   // ── Render Active Tab Content ─────────────────────────────────────────────
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'category':
-        return pieData.length > 0 ? (
+      case 'tags':
+        return tagData.length > 0 ? (
           <div className="space-y-4">
             {/* Donut centered above list */}
             <div className="flex justify-center">
               <div className="relative">
-                <MiniDonut data={pieData} colors={CAT_COLORS} size={120} />
+                <MiniDonut data={tagData} colors={TAG_COLORS} size={120} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest">
                     {flowType === 'DEBIT' ? 'Spent' : flowType === 'CREDIT' ? 'Received' : 'Transferred'}
@@ -419,23 +418,26 @@ function SummaryContent() {
                 </div>
               </div>
             </div>
-            {/* Category rows */}
+            {/* Tag rows */}
             <div className="space-y-2">
-              {pieData.map((d, i) => {
+              {tagData.map((d, i) => {
                 const pct = totalActiveAmount > 0 ? (d.value / totalActiveAmount) * 100 : 0;
-                const color = CAT_COLORS[i % CAT_COLORS.length];
+                const color = TAG_COLORS[i % TAG_COLORS.length];
                 return (
                   <div
                     key={d.name}
-                    onClick={() => setSelectedDetail({ type: 'category', name: d.name })}
+                    onClick={() => setSelectedDetail({ type: 'tags', name: d.name })}
                     className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
                   >
-                    {/* Color accent + icon */}
                     <div className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                    <span className="text-base shrink-0">{CATEGORY_ICONS[d.name] || '📦'}</span>
+                    <span
+                      className="text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                      style={{ backgroundColor: `${color}15`, color }}
+                    >
+                      #{d.name}
+                    </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-brand-blue dark:text-white truncate">{d.name}</p>
-                      <div className="w-full bg-neutral-100 dark:bg-white/5 rounded-full h-1 mt-1 overflow-hidden">
+                      <div className="w-full bg-neutral-100 dark:bg-white/5 rounded-full h-1 overflow-hidden">
                         <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }} />
                       </div>
                     </div>
@@ -447,40 +449,6 @@ function SummaryContent() {
                 );
               })}
             </div>
-          </div>
-        ) : <EmptyState icon={<PieIcon className="w-6 h-6 text-neutral-400" />} msg={flowType === 'DEBIT' ? "No spending data this month" : flowType === 'CREDIT' ? "No income data this month" : "No transfer data this month"} />;
-
-      case 'tags':
-        return tagData.length > 0 ? (
-          <div className="space-y-2">
-            {tagData.map((d, i) => {
-              const pct = totalActiveAmount > 0 ? (d.value / totalActiveAmount) * 100 : 0;
-              const color = TAG_COLORS[i % TAG_COLORS.length];
-              return (
-                <div
-                  key={d.name}
-                  onClick={() => setSelectedDetail({ type: 'tags', name: d.name })}
-                  className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
-                >
-                  <div className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                  <span
-                    className="text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0"
-                    style={{ backgroundColor: `${color}15`, color }}
-                  >
-                    #{d.name}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="w-full bg-neutral-100 dark:bg-white/5 rounded-full h-1 overflow-hidden">
-                      <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }} />
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-xs font-black text-brand-blue dark:text-white">{fmt(d.value)}</p>
-                    <p className="text-[9px] font-bold text-neutral-400">{Math.round(pct)}%</p>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         ) : <EmptyState icon={<Tag className="w-6 h-6 text-neutral-400" />} msg={flowType === 'DEBIT' ? "No tags used this month" : flowType === 'CREDIT' ? "No tags used for income this month" : "No tags used for transfers this month"} />;
 
@@ -850,7 +818,7 @@ function SummaryContent() {
         {selectedDetail && (() => {
           // Filter transactions for this specific detail selection in the current month
           const detailTxs = activeTransactions.filter(tx => {
-            if (selectedDetail.type === 'category') return tx.category === selectedDetail.name;
+
             if (selectedDetail.type === 'tags') return tx.expenseType === selectedDetail.name;
             if (selectedDetail.type === 'accounts') {
               const acc = accounts.find(a => a.id === tx.accountId);
@@ -889,7 +857,7 @@ function SummaryContent() {
                 <div className="flex items-start justify-between mb-4 shrink-0">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-11 h-11 bg-neutral-100 dark:bg-white/5 rounded-2xl flex items-center justify-center text-xl border border-neutral-100 dark:border-white/10 shrink-0">
-                      {selectedDetail.type === 'category' ? (CATEGORY_ICONS[selectedDetail.name] || '📦') :
+
                        selectedDetail.type === 'tags' ? '🏷️' :
                        selectedDetail.type === 'accounts' ? '🏦' :
                        selectedDetail.type === 'methods' ? '💳' : '👤'}
