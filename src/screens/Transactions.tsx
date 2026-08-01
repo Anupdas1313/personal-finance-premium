@@ -147,7 +147,7 @@ export default function Transactions() {
         if (!tx.note?.toLowerCase().includes(q) && !tx.party?.toLowerCase().includes(q) && !tx.category?.toLowerCase().includes(q)) return false;
       }
       return true;
-    });
+    }).sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
   }, [currentTxs, sourceTypeFilter, typeFilter, categoryFilter, accountFilter, tagFilter, methodFilter, searchTerm, accounts, searchParams]);
 
   const totals = useMemo(() =>
