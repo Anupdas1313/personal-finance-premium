@@ -123,7 +123,7 @@ export default function Wishlist() {
     }
   };
 
-  // Eliminate Item (Bye)
+  // Eliminate Item
   const handleEliminateItem = async (id: number) => {
     try {
       await db.wishlist.update(id, {
@@ -211,7 +211,7 @@ export default function Wishlist() {
       <div className="flex items-center justify-between px-1">
         <div>
           <p className="text-[10px] font-bold text-brand-blue/40 dark:text-neutral-500 tracking-[0.2em] uppercase">Impulse Guard</p>
-          <h1 className="text-2xl font-heading font-black text-brand-blue dark:text-white leading-tight tracking-tight">Buy Or Bye</h1>
+          <h1 className="text-2xl font-heading font-black text-brand-blue dark:text-white leading-tight tracking-tight">Wishlist</h1>
         </div>
         
         <button
@@ -228,7 +228,7 @@ export default function Wishlist() {
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="relative z-10 flex justify-between items-center">
           <div>
-            <p className="text-[8px] font-black text-white/70 uppercase tracking-[0.2em] mb-1">Money Saved By Saying Bye</p>
+            <p className="text-[8px] font-black text-white/70 uppercase tracking-[0.2em] mb-1">Money Saved By Eliminating Items</p>
             <p className={cn(
               "text-3xl font-heading font-black tracking-tight transition-all duration-300",
               shouldBlur && "blur-[7px] select-none"
@@ -266,7 +266,7 @@ export default function Wishlist() {
                   transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                 />
               )}
-              {tab === 'ACTIVE' ? `Active (${stats.activeCount})` : tab === 'ELIMINATED' ? `Bye (${stats.eliminatedCount})` : `Bought (${stats.boughtCount})`}
+              {tab === 'ACTIVE' ? `Active (${stats.activeCount})` : tab === 'ELIMINATED' ? `Eliminated (${stats.eliminatedCount})` : `Bought (${stats.boughtCount})`}
             </button>
           );
         })}
@@ -365,7 +365,7 @@ export default function Wishlist() {
                     ) : item.status === 'BOUGHT' ? (
                       <span className="text-[9px] font-black uppercase tracking-widest text-brand-green bg-brand-green/5 px-2.5 py-1 rounded-lg">Bought</span>
                     ) : (
-                      <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/5 px-2.5 py-1 rounded-lg">Bye / Eliminated</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/5 px-2.5 py-1 rounded-lg">Eliminated</span>
                     )}
                   </div>
 
@@ -376,7 +376,7 @@ export default function Wishlist() {
                           onClick={() => handleEliminateItem(item.id!)}
                           className="px-3.5 py-1.5 border border-rose-500/20 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/5 transition-all cursor-pointer"
                         >
-                          Bye
+                          Eliminate
                         </button>
                         <button
                           onClick={() => initiateBuyFlow(item)}
