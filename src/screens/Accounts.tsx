@@ -1230,55 +1230,6 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         </div>
       </div>
 
-      {chartData.length > 1 && (
-        <div className="px-4 py-3 bg-neutral-50 dark:bg-[#0C0C0F] border-b border-neutral-200 dark:border-[#222222] shrink-0">
-          <div className="h-28 w-full bg-white dark:bg-[#111111] rounded-xl border border-neutral-100 dark:border-white/5 p-2 shadow-inner">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={account.type === 'CREDIT_CARD' ? '#f43f5e' : '#10b981'} stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor={account.type === 'CREDIT_CARD' ? '#f43f5e' : '#10b981'} stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <XAxis 
-                  dataKey="date" 
-                  stroke="#888888" 
-                  fontSize={6} 
-                  tickLine={false} 
-                  axisLine={false}
-                />
-                <YAxis 
-                  stroke="#888888" 
-                  fontSize={6} 
-                  tickLine={false} 
-                  axisLine={false}
-                  tickFormatter={(v) => `${currency}${v.toLocaleString()}`}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    background: 'rgba(0,0,0,0.85)', 
-                    border: 'none', 
-                    borderRadius: '8px', 
-                    fontSize: '7px', 
-                    color: '#fff' 
-                  }}
-                  labelStyle={{ fontWeight: 'black', color: '#10b981' }}
-                  formatter={(v: any) => [`${currency}${parseFloat(v).toLocaleString()}`, 'Balance']}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="Balance" 
-                  stroke={account.type === 'CREDIT_CARD' ? '#f43f5e' : '#10b981'} 
-                  strokeWidth={1.5}
-                  fillOpacity={1} 
-                  fill="url(#colorBalance)" 
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
 
       <div className="flex-1 overflow-y-auto pb-32" style={{ WebkitOverflowScrolling: 'touch' }}>
         <table className="w-full border-collapse">
