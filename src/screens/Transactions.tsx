@@ -55,7 +55,7 @@ export default function Transactions() {
   const [searchParams] = useSearchParams();
   const initialCategory = searchParams.get('category') || 'ALL';
   const initialSearch = searchParams.get('search') || '';
-  const initialGranularity = (searchParams.get('granularity') as 'MONTH' | 'YEAR' | 'ALL' | 'CUSTOM') || 'ALL';
+  const initialGranularity = (searchParams.get('granularity') as 'MONTH' | 'YEAR' | 'ALL' | 'CUSTOM') || 'MONTH';
   
   const initialDate = useMemo(() => {
     const monthParam = searchParams.get('month'); // 'YYYY-MM'
