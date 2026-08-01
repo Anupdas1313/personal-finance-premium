@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction, normalizeType } from '../models/db';
-import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark, Download, FileText, CheckCircle2, History, Calendar, ChevronDown, Printer, MoreHorizontal, Scissors, Filter, Search, ArrowUpDown, ArrowRightLeft, X, Hash } from 'lucide-react';
+import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark, Download, FileText, CheckCircle2, History, Calendar, ChevronDown, ChevronLeft, ChevronRight, Printer, MoreHorizontal, Scissors, Filter, Search, ArrowUpDown, ArrowRightLeft, X, Hash } from 'lucide-react';
 import { BankLogo } from '../components/BankLogo';
 import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
 import { format, startOfDay, parseISO, endOfMonth, startOfMonth, subMonths, endOfDay, startOfWeek, endOfWeek, startOfYear, endOfYear, addMonths, subWeeks, addWeeks, subDays, addDays, subYears, addYears } from 'date-fns';
@@ -1126,6 +1126,40 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             ))}
           </div>
         </div>
+
+        {/* Date Navigator */}
+        {granularity !== 'ALL' && granularity !== 'CUSTOM' && (
+          <div className="mt-2 flex items-center justify-between bg-white dark:bg-[#111111] border border-neutral-200 dark:border-white/5 rounded-xl p-1 shadow-sm">
+            <button 
+              onClick={() => {
+                if (granularity === 'MONTH') setReferenceDate(subMonths(referenceDate, 1));
+                else if (granularity === 'YEAR') setReferenceDate(subYears(referenceDate, 1));
+                else if (granularity === 'WEEK') setReferenceDate(subWeeks(referenceDate, 1));
+                else if (granularity === 'DAY') setReferenceDate(subDays(referenceDate, 1));
+              }}
+              className="p-1.5 hover:bg-neutral-100 dark:hover:bg-[#222] rounded-lg transition-all"
+            >
+              <ChevronLeft className="w-4 h-4 text-neutral-500" />
+            </button>
+            <div className="flex-1 text-center font-heading font-black text-brand-blue dark:text-white uppercase tracking-widest text-[10px]">
+              {granularity === 'YEAR' && format(referenceDate, 'yyyy')}
+              {granularity === 'MONTH' && format(referenceDate, 'MMMM yyyy')}
+              {granularity === 'WEEK' && `Week of ${format(startOfWeek(referenceDate, { weekStartsOn: 1 }), 'MMM d')}`}
+              {granularity === 'DAY' && format(referenceDate, 'MMM d, yyyy')}
+            </div>
+            <button 
+              onClick={() => {
+                if (granularity === 'MONTH') setReferenceDate(addMonths(referenceDate, 1));
+                else if (granularity === 'YEAR') setReferenceDate(addYears(referenceDate, 1));
+                else if (granularity === 'WEEK') setReferenceDate(addWeeks(referenceDate, 1));
+                else if (granularity === 'DAY') setReferenceDate(addDays(referenceDate, 1));
+              }}
+              className="p-1.5 hover:bg-neutral-100 dark:hover:bg-[#222] rounded-lg transition-all"
+            >
+              <ChevronRight className="w-4 h-4 text-neutral-500" />
+            </button>
+          </div>
+        )}
 
         <div className="mt-2 flex flex-col gap-1.5">
           <div className="bg-white dark:bg-[#111111] px-2 py-1.5 rounded-xl shadow-sm border border-neutral-100 dark:border-white/5 flex items-center justify-between">
