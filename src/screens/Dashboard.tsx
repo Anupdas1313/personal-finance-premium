@@ -322,7 +322,7 @@ export default function Dashboard() {
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [timeFilter, setTimeFilter] = useState<'All Time' | 'This Month' | 'This Year'>('All Time');
+  const [timeFilter, setTimeFilter] = useState<'All Time' | 'This Month' | 'This Year'>('This Month');
   const [isAmountsHidden, setIsAmountsHidden] = useState(false);
   
   const { categories: appCategories } = useCategories();
