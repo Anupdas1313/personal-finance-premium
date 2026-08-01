@@ -798,38 +798,6 @@ function SummaryContent() {
           </div>
       </div>
     </div>
-      {/* ── PREDICTIVE FORECAST ── */}
-      {isCurrentMonth && monthEndForecast && (
-        <div className="bg-white dark:bg-[#111111] p-4 rounded-[20px] shadow-sm border border-neutral-100 dark:border-white/5 relative overflow-hidden">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="p-1.5 bg-brand-cyan/10 rounded-lg">
-              <Sparkles className="w-4 h-4 text-brand-cyan" />
-            </div>
-            <div>
-              <h3 className="text-xs font-bold text-brand-blue dark:text-white leading-tight">Month-End Forecast</h3>
-              <p className="text-[9px] text-neutral-400 font-medium">Based on run-rate & recurring bills</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <div className="p-3 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-2xl">
-              <p className="text-[9px] text-neutral-400 font-medium mb-1">Avg Daily Spend</p>
-              <p className="text-sm font-bold text-brand-blue dark:text-white">{fmt(monthEndForecast.avgDailyExpense)}</p>
-            </div>
-            <div className="p-3 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-2xl">
-              <p className="text-[9px] text-neutral-400 font-medium mb-1">Upcoming Bills</p>
-              <p className="text-sm font-bold text-rose-500">{fmt(monthEndForecast.upcomingRecurringSpend)}</p>
-            </div>
-          </div>
-          <div className="p-3 bg-rose-50 dark:bg-rose-500/5 border border-rose-100 dark:border-rose-500/10 rounded-2xl flex items-center justify-between">
-            <span className="text-[10px] text-rose-600 dark:text-rose-400 font-bold uppercase tracking-widest">
-              Projected Total Spend
-            </span>
-            <span className="text-base font-black text-rose-600 dark:text-rose-400">
-              {fmt(monthEndForecast.projectedTotalSpend)}
-            </span>
-          </div>
-        </div>
-      )}
 
       {/* ── FLOW TYPE SELECTOR (Expenses / Income / Transfers) ── */}
       <div className="bg-white dark:bg-[#111111] p-1 rounded-2xl flex gap-1 border border-neutral-100 dark:border-white/5 shadow-sm">
