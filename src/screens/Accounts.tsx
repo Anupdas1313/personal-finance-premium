@@ -1257,19 +1257,19 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
           </thead>
           <tbody>
             {/* Opening Balance Row */}
-            <tr className="bg-brand-blue/[0.02] dark:bg-white/[0.01] border-b border-neutral-100/50 dark:border-[#222222]">
-              <td className="px-2 py-2 whitespace-nowrap"><span className="text-[9px] font-black text-neutral-400 uppercase tracking-tighter">
-                {granularity === 'ALL' 
-                  ? (account.startingBalanceDate ? format(new Date(account.startingBalanceDate), 'dd MMM yyyy') : '-') 
-                  : format(new Date(startDateLimit), 'dd MMM yyyy')}
-              </span></td>
-              <td className="px-2 py-2"><span className="text-[9px] font-black text-brand-blue/50 dark:text-white/40 uppercase tracking-widest">
-                {granularity === 'ALL' ? 'System Start Balance' : 'Opening Balance Carry Forward'}
-              </span></td>
-              <td className="px-2 py-2 opacity-50"><span className="text-[9px]">-</span></td>
-              <td className="px-2 py-2 text-right whitespace-nowrap"><span className="text-[11px] font-black text-neutral-200">-</span></td>
-              <td className="px-2 py-2 text-right whitespace-nowrap"><span className="text-[10px] font-black text-brand-blue/70 dark:text-white/60 tracking-tighter">{currency}{granularity === 'ALL' ? account.startingBalance.toLocaleString() : openingBalanceForView.toLocaleString()}</span></td>
-            </tr>
+            {granularity === 'ALL' && (
+              <tr className="bg-brand-blue/[0.02] dark:bg-white/[0.01] border-b border-neutral-100/50 dark:border-[#222222]">
+                <td className="px-2 py-2 whitespace-nowrap"><span className="text-[9px] font-black text-neutral-400 uppercase tracking-tighter">
+                  {account.startingBalanceDate ? format(new Date(account.startingBalanceDate), 'dd MMM yyyy') : '-'}
+                </span></td>
+                <td className="px-2 py-2"><span className="text-[9px] font-black text-brand-blue/50 dark:text-white/40 uppercase tracking-widest">
+                  System Start Balance
+                </span></td>
+                <td className="px-2 py-2 opacity-50"><span className="text-[9px]">-</span></td>
+                <td className="px-2 py-2 text-right whitespace-nowrap"><span className="text-[11px] font-black text-neutral-200">-</span></td>
+                <td className="px-2 py-2 text-right whitespace-nowrap"><span className="text-[10px] font-black text-brand-blue/70 dark:text-white/60 tracking-tighter">{currency}{account.startingBalance.toLocaleString()}</span></td>
+              </tr>
+            )}
 
             {filteredStatementData.map((tx, idx) => {
               // Find any partitions that occurred between the previous transaction and this one
