@@ -15,7 +15,7 @@ const Ledger = lazy(() => import('./screens/Ledger'));
 const PartyLedger = lazy(() => import('./screens/PartyLedger'));
 const Reports = lazy(() => import('./screens/Reports'));
 const Profile = lazy(() => import('./screens/Profile'));
-const Wishlist = lazy(() => import('./screens/Wishlist'));
+
 const Auth = lazy(() => import('./screens/Auth'));
 const Welcome = lazy(() => import('./screens/Welcome'));
 const SetupAccount = lazy(() => import('./screens/SetupAccount'));
@@ -166,7 +166,7 @@ function AppRoutes() {
             <Route path="budgets/customize/:month" element={<BudgetCustomize />} />
             <Route path="ledger" element={<Ledger />} />
             <Route path="ledger/:id" element={<PartyLedger />} />
-            <Route path="wishlist" element={<Wishlist />} />
+
           </>
         ) : (
           <>

@@ -26,7 +26,7 @@ export default function Layout() {
     { name: 'Budgets', path: '/budgets', icon: Target },
     { name: 'Reports', path: '/reports', icon: FileText },
     { name: 'Ledger', path: '/ledger', icon: BookOpen },
-    { name: 'Wishlist', path: '/wishlist', icon: ShoppingBag },
+
     { name: 'Settings', path: '/settings', icon: Settings },
     { name: 'Profile', path: '/profile', icon: User },
   ] : [
