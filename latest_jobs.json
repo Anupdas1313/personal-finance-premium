@@ -1,0 +1,134 @@
+{
+  "total_count": 2,
+  "jobs": [
+    {
+      "id": 91493687446,
+      "run_id": 30746809554,
+      "workflow_name": "Deploy React App to GitHub Pages",
+      "head_branch": "main",
+      "run_url": "https://api.github.com/repos/Anupdas1313/personal-finance-premium/actions/runs/30746809554",
+      "run_attempt": 1,
+      "node_id": "CR_kwDORny6Js8AAAAVTXLglg",
+      "head_sha": "3c02ff76bef53ef5c2ebe6e63c8c924e1a1033c9",
+      "url": "https://api.github.com/repos/Anupdas1313/personal-finance-premium/actions/jobs/91493687446",
+      "html_url": "https://github.com/Anupdas1313/personal-finance-premium/actions/runs/30746809554/job/91493687446",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-08-02T11:57:34Z",
+      "started_at": "2026-08-02T11:57:37Z",
+      "completed_at": "2026-08-02T11:58:20Z",
+      "name": "build",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-08-02T11:57:38Z",
+          "completed_at": "2026-08-02T11:57:39Z"
+        },
+        {
+          "name": "Checkout repository",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-08-02T11:57:39Z",
+          "completed_at": "2026-08-02T11:57:40Z"
+        },
+        {
+          "name": "Set up Node.js",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-08-02T11:57:40Z",
+          "completed_at": "2026-08-02T11:57:45Z"
+        },
+        {
+          "name": "Install dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-08-02T11:57:45Z",
+          "completed_at": "2026-08-02T11:58:05Z"
+        },
+        {
+          "name": "Build project",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-08-02T11:58:05Z",
+          "completed_at": "2026-08-02T11:58:17Z"
+        },
+        {
+          "name": "Upload Pages artifact",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-08-02T11:58:17Z",
+          "completed_at": "2026-08-02T11:58:18Z"
+        },
+        {
+          "name": "Post Set up Node.js",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-08-02T11:58:18Z",
+          "completed_at": "2026-08-02T11:58:18Z"
+        },
+        {
+          "name": "Post Checkout repository",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-08-02T11:58:18Z",
+          "completed_at": "2026-08-02T11:58:19Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-08-02T11:58:19Z",
+          "completed_at": "2026-08-02T11:58:19Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/Anupdas1313/personal-finance-premium/check-runs/91493687446",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000000746,
+      "runner_name": "GitHub Actions 1000000746",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 91493752803,
+      "run_id": 30746809554,
+      "workflow_name": "Deploy React App to GitHub Pages",
+      "head_branch": "main",
+      "run_url": "https://api.github.com/repos/Anupdas1313/personal-finance-premium/actions/runs/30746809554",
+      "run_attempt": 1,
+      "node_id": "CR_kwDORny6Js8AAAAVTXPf4w",
+      "head_sha": "3c02ff76bef53ef5c2ebe6e63c8c924e1a1033c9",
+      "url": "https://api.github.com/repos/Anupdas1313/personal-finance-premium/actions/jobs/91493752803",
+      "html_url": "https://github.com/Anupdas1313/personal-finance-premium/actions/runs/30746809554/job/91493752803",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-08-02T11:58:20Z",
+      "started_at": "2026-08-02T11:58:20Z",
+      "completed_at": "2026-08-02T11:58:22Z",
+      "name": "deploy",
+      "steps": [
+
+      ],
+      "check_run_url": "https://api.github.com/repos/Anupdas1313/personal-finance-premium/check-runs/91493752803",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 0,
+      "runner_name": "",
+      "runner_group_id": 0,
+      "runner_group_name": ""
+    }
+  ]
+}

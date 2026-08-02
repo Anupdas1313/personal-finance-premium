@@ -89,6 +89,8 @@ export default function Transactions() {
   const [tagFilter, setTagFilter] = useState(initialTag);
   const [methodFilter, setMethodFilter] = useState(initialMethod);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{key: 'date' | 'amount'; direction: 'asc' | 'desc'}>({ key: 'date', direction: 'desc' });
 
   // ── Detail drawer ─────────────────────────────────────────────
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
@@ -147,8 +149,23 @@ export default function Transactions() {
         if (!tx.note?.toLowerCase().includes(q) && !tx.party?.toLowerCase().includes(q) && !tx.category?.toLowerCase().includes(q)) return false;
       }
       return true;
-    }).sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
-  }, [currentTxs, sourceTypeFilter, typeFilter, categoryFilter, accountFilter, tagFilter, methodFilter, searchTerm, accounts, searchParams]);
+    });
+    
+    result.sort((a, b) => {
+      if (sortConfig.key === 'date') {
+        const dateA = new Date(a.dateTime).getTime();
+        const dateB = new Date(b.dateTime).getTime();
+        return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+      if (sortConfig.key === 'amount') {
+        const amountA = Number(a.amount) || 0;
+        const amountB = Number(b.amount) || 0;
+        return sortConfig.direction === 'asc' ? amountA - amountB : amountB - amountA;
+      }
+      return 0;
+    });
+    return result;
+  }, [currentTxs, sourceTypeFilter, typeFilter, categoryFilter, accountFilter, tagFilter, methodFilter, searchTerm, accounts, searchParams, sortConfig]);
 
   const totals = useMemo(() =>
     filteredTxs.reduce((acc, tx) => {
@@ -224,9 +241,16 @@ export default function Transactions() {
               <input type="text" placeholder="Search…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
                 className="w-full h-7 bg-transparent border border-transparent focus:border-neutral-100 dark:focus:border-white/5 pl-7 pr-2 rounded-lg text-[9px] font-bold text-brand-blue dark:text-white outline-none transition-all" />
             </div>
+            <button onClick={() => setIsSortOpen(!isSortOpen)}
+              className={`px-2.5 h-7 rounded-lg flex items-center justify-center border transition-all
+                ${isSortOpen ? 'bg-brand-blue text-white border-brand-blue' : 'bg-transparent border-transparent text-neutral-400 hover:bg-neutral-50 dark:hover:bg-white/5'}`}
+              title="Sort Transactions">
+              <ListOrdered className="w-3 h-3" />
+            </button>
             <button onClick={() => setIsFilterOpen(!isFilterOpen)}
               className={`px-2.5 h-7 rounded-lg flex items-center justify-center border transition-all
-                ${isFilterOpen ? 'bg-brand-blue text-white border-brand-blue' : 'bg-transparent border-transparent text-neutral-400 hover:bg-neutral-50 dark:hover:bg-white/5'}`}>
+                ${isFilterOpen ? 'bg-brand-blue text-white border-brand-blue' : 'bg-transparent border-transparent text-neutral-400 hover:bg-neutral-50 dark:hover:bg-white/5'}`}
+              title="Filter Transactions">
               <Filter className="w-3 h-3" />
             </button>
           </div>
@@ -249,94 +273,254 @@ export default function Transactions() {
               </div>
             </motion.div>
           )}
+        </AnimatePresence>
 
-          {isFilterOpen && (
-            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}
-              className="pointer-events-auto bg-white dark:bg-[#111] p-4 rounded-[24px] border border-neutral-200 dark:border-white/10 shadow-2xl space-y-3">
+        {/* Active Filter Chips */}
+        {((sourceTypeFilter !== 'ALL' || typeFilter !== 'ALL' || categoryFilter !== 'ALL' || accountFilter !== 'ALL' || tagFilter !== 'ALL' || methodFilter !== 'ALL') || granularity !== 'ALL') && (
+          <div className="pointer-events-auto flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-1 px-1 mt-1">
+            <span className="text-[7px] font-black text-neutral-400 dark:text-neutral-500 uppercase tracking-widest shrink-0">Active</span>
+            
+            {granularity !== 'ALL' && (
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-brand-blue/5 dark:bg-white/5 border border-brand-blue/10 dark:border-white/10 rounded-full text-[8px] font-bold text-brand-blue dark:text-white shrink-0">
+                <span>Time: {granularity}</span>
+                <X className="w-2.5 h-2.5 cursor-pointer opacity-60 hover:opacity-100" onClick={() => setGranularity('ALL')} />
+              </div>
+            )}
 
-              {/* Source type */}
-              <div className="space-y-1">
-                <label className="text-[7px] font-black text-neutral-400 uppercase tracking-widest pl-1">Source Type</label>
-                <div className="flex bg-neutral-50 dark:bg-black/20 p-1 rounded-lg">
-                  {(['ALL', 'BANK', 'CREDIT_CARD', 'CASH'] as const).map(t => (
-                    <button key={t} onClick={() => { setSourceTypeFilter(t); setAccountFilter('ALL'); setMethodFilter('ALL'); }}
-                      className={`flex-1 py-1 rounded-md text-[8px] font-black tracking-widest transition-all
-                        ${sourceTypeFilter === t ? 'bg-white dark:bg-white/10 shadow-sm text-brand-blue dark:text-white' : 'text-neutral-400'}`}>
-                      {t === 'CREDIT_CARD' ? 'CC' : t}
+            {sourceTypeFilter !== 'ALL' && (
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-brand-blue/5 dark:bg-white/5 border border-brand-blue/10 dark:border-white/10 rounded-full text-[8px] font-bold text-brand-blue dark:text-white shrink-0">
+                <span>Source: {sourceTypeFilter}</span>
+                <X className="w-2.5 h-2.5 cursor-pointer opacity-60 hover:opacity-100" onClick={() => { setSourceTypeFilter('ALL'); setAccountFilter('ALL'); setMethodFilter('ALL'); }} />
+              </div>
+            )}
+
+            {typeFilter !== 'ALL' && (
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-brand-blue/5 dark:bg-white/5 border border-brand-blue/10 dark:border-white/10 rounded-full text-[8px] font-bold text-brand-blue dark:text-white shrink-0">
+                <span>Flow: {typeFilter === 'DEBIT' ? 'Out' : typeFilter === 'CREDIT' ? 'In' : 'Trf'}</span>
+                <X className="w-2.5 h-2.5 cursor-pointer opacity-60 hover:opacity-100" onClick={() => setTypeFilter('ALL')} />
+              </div>
+            )}
+
+            {categoryFilter !== 'ALL' && (
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-brand-blue/5 dark:bg-white/5 border border-brand-blue/10 dark:border-white/10 rounded-full text-[8px] font-bold text-brand-blue dark:text-white shrink-0">
+                <span>Cat: {categoryFilter}</span>
+                <X className="w-2.5 h-2.5 cursor-pointer opacity-60 hover:opacity-100" onClick={() => setCategoryFilter('ALL')} />
+              </div>
+            )}
+
+            {tagFilter !== 'ALL' && (
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-brand-blue/5 dark:bg-white/5 border border-brand-blue/10 dark:border-white/10 rounded-full text-[8px] font-bold text-brand-blue dark:text-white shrink-0">
+                <span>#{tagFilter}</span>
+                <X className="w-2.5 h-2.5 cursor-pointer opacity-60 hover:opacity-100" onClick={() => setTagFilter('ALL')} />
+              </div>
+            )}
+
+            {accountFilter !== 'ALL' && (
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-brand-blue/5 dark:bg-white/5 border border-brand-blue/10 dark:border-white/10 rounded-full text-[8px] font-bold text-brand-blue dark:text-white shrink-0">
+                <span>Acc: {accounts.find(a => a.id === Number(accountFilter))?.bankName || accountFilter}</span>
+                <X className="w-2.5 h-2.5 cursor-pointer opacity-60 hover:opacity-100" onClick={() => setAccountFilter('ALL')} />
+              </div>
+            )}
+
+            {methodFilter !== 'ALL' && (
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-brand-blue/5 dark:bg-white/5 border border-brand-blue/10 dark:border-white/10 rounded-full text-[8px] font-bold text-brand-blue dark:text-white shrink-0">
+                <span>Method: {methodFilter}</span>
+                <X className="w-2.5 h-2.5 cursor-pointer opacity-60 hover:opacity-100" onClick={() => setMethodFilter('ALL')} />
+              </div>
+            )}
+            
+            <button onClick={() => { setSourceTypeFilter('ALL'); setTypeFilter('ALL'); setCategoryFilter('ALL'); setAccountFilter('ALL'); setTagFilter('ALL'); setMethodFilter('ALL'); setGranularity('ALL'); }}
+              className="text-[8px] font-black text-rose-500 uppercase tracking-widest pl-2 shrink-0">
+              Clear All
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Sort Bottom Sheet */}
+      <AnimatePresence>
+        {isSortOpen && (
+          <Portal>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSortOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-md z-[9999] pointer-events-auto"
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-white dark:bg-[#0C0C0F] border-t border-neutral-100 dark:border-white/5 rounded-t-[32px] p-6 pb-20 md:pb-6 z-[10000] pointer-events-auto shadow-2xl"
+            >
+              <div className="w-10 h-1 bg-neutral-100 dark:bg-white/10 rounded-full mx-auto mb-6" />
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-sm font-heading font-black text-brand-blue dark:text-white uppercase tracking-wider">Sort Transactions</h3>
+                <button onClick={() => setIsSortOpen(false)} className="p-2 bg-neutral-50 dark:bg-white/5 rounded-full text-neutral-400">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              
+              <div className="space-y-2">
+                {[
+                  { label: 'Date: Newest First', key: 'date', direction: 'desc' },
+                  { label: 'Date: Oldest First', key: 'date', direction: 'asc' },
+                  { label: 'Amount: High to Low', key: 'amount', direction: 'desc' },
+                  { label: 'Amount: Low to High', key: 'amount', direction: 'asc' }
+                ].map((option, idx) => {
+                  const isSelected = sortConfig.key === option.key && sortConfig.direction === option.direction;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setSortConfig({ key: option.key, direction: option.direction });
+                        setIsSortOpen(false);
+                      }}
+                      className={`w-full p-4 rounded-2xl text-left text-xs font-bold flex items-center justify-between border transition-all active:scale-98
+                        ${isSelected 
+                          ? 'bg-brand-blue/5 dark:bg-white/5 border-brand-blue/20 dark:border-white/20 text-brand-blue dark:text-white' 
+                          : 'bg-neutral-50/50 dark:bg-white/[0.02] hover:bg-neutral-100 dark:hover:bg-white/5 border-transparent text-neutral-600 dark:text-neutral-400'}`}
+                    >
+                      <span>{option.label}</span>
+                      {isSelected && <CheckCircle2 className="w-4 h-4 text-brand-blue dark:text-white" />}
                     </button>
-                  ))}
-                </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </Portal>
+        )}
+      </AnimatePresence>
+
+      {/* Filter Bottom Sheet */}
+      <AnimatePresence>
+        {isFilterOpen && (
+          <Portal>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setIsFilterOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-md z-[9999] pointer-events-auto" />
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0C0C0F] z-[10000] rounded-t-[32px] p-6 pb-20 md:pb-6 max-w-lg mx-auto shadow-2xl border-t border-white/10 max-h-[85vh] flex flex-col pointer-events-auto">
+              <div className="w-10 h-1 bg-neutral-100 dark:bg-white/10 rounded-full mx-auto mb-6 shrink-0" />
+              
+              <div className="flex items-center justify-between mb-4 shrink-0">
+                <h2 className="text-sm font-heading font-black text-brand-blue dark:text-white uppercase tracking-wider">Filter Transactions</h2>
+                <button onClick={() => setIsFilterOpen(false)} className="p-2 bg-neutral-50 dark:bg-white/5 rounded-full text-neutral-400">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              {/* Flow */}
-              <div className="space-y-1">
-                <label className="text-[7px] font-black text-neutral-400 uppercase tracking-widest pl-1">Flow</label>
-                <div className="flex bg-neutral-50 dark:bg-black/20 p-1 rounded-lg">
-                  {(['ALL', 'DEBIT', 'CREDIT', 'TRANSFER'] as const).map(t => (
-                    <button key={t} onClick={() => setTypeFilter(t)}
-                      className={`flex-1 py-1 rounded-md text-[8px] font-black tracking-widest transition-all
-                        ${typeFilter === t ? 'bg-white dark:bg-white/10 shadow-sm text-brand-blue dark:text-white' : 'text-neutral-400'}`}>
-                      {t === 'DEBIT' ? 'OUT' : t === 'CREDIT' ? 'IN' : t === 'TRANSFER' ? 'TRF' : 'ALL'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[7px] font-black text-neutral-400 uppercase tracking-widest pl-1">Category</label>
-                  <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-                    className="w-full h-8 bg-neutral-50 dark:bg-black/20 border border-neutral-100 dark:border-white/5 px-2 rounded-lg text-[10px] font-bold text-brand-blue dark:text-white outline-none appearance-none">
-                    <option value="ALL">All Categories</option>
-                    {appCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[7px] font-black text-neutral-400 uppercase tracking-widest pl-1">Tag</label>
-                  <select value={tagFilter} onChange={e => setTagFilter(e.target.value)}
-                    className="w-full h-8 bg-neutral-50 dark:bg-black/20 border border-neutral-100 dark:border-white/5 px-2 rounded-lg text-[10px] font-bold text-brand-blue dark:text-white outline-none appearance-none">
-                    <option value="ALL">All Tags</option>
-                    {tags.map(t => <option key={t} value={t}>#{t}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[7px] font-black text-neutral-400 uppercase tracking-widest pl-1">Account</label>
-                  <select value={accountFilter} onChange={e => setAccountFilter(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                    className="w-full h-8 bg-neutral-50 dark:bg-black/20 border border-neutral-100 dark:border-white/5 px-2 rounded-lg text-[10px] font-bold text-brand-blue dark:text-white outline-none appearance-none">
-                    <option value="ALL">All Accounts</option>
-                    {accounts.filter(a => sourceTypeFilter === 'ALL' || a.type === sourceTypeFilter).map(a => (
-                      <option key={a.id} value={a.id}>{a.bankName} (..{a.accountLast4})</option>
+              {/* Scrollable content container */}
+              <div className="flex-1 overflow-y-auto space-y-5 pr-1 pb-4">
+                {/* Source Type */}
+                <div className="space-y-1.5">
+                  <label className="text-[8px] font-black text-neutral-400 dark:text-neutral-500 uppercase tracking-widest pl-1">Source Type</label>
+                  <div className="flex bg-neutral-50 dark:bg-black/20 p-1 rounded-xl">
+                    {(['ALL', 'BANK', 'CREDIT_CARD', 'CASH'] as const).map(t => (
+                      <button key={t} onClick={() => { setSourceTypeFilter(t); setAccountFilter('ALL'); setMethodFilter('ALL'); }}
+                        className={`flex-1 py-2 rounded-lg text-[9px] font-black tracking-widest transition-all
+                          ${sourceTypeFilter === t ? 'bg-white dark:bg-white/10 shadow-sm text-brand-blue dark:text-white' : 'text-neutral-400'}`}>
+                        {t === 'CREDIT_CARD' ? 'CC' : t}
+                      </button>
                     ))}
-                  </select>
-                </div>
-                {sourceTypeFilter !== 'CREDIT_CARD' && sourceTypeFilter !== 'CASH' && (
-                  <div className="space-y-1">
-                    <label className="text-[7px] font-black text-neutral-400 uppercase tracking-widest pl-1">Method</label>
-                    <select value={methodFilter} onChange={e => setMethodFilter(e.target.value)}
-                      className="w-full h-8 bg-neutral-50 dark:bg-black/20 border border-neutral-100 dark:border-white/5 px-2 rounded-lg text-[10px] font-bold text-brand-blue dark:text-white outline-none appearance-none">
-                      <option value="ALL">All Methods</option>
-                      {['Bank Transfer', 'UPI', 'GPay', 'PhonePe', 'Paytm', 'Amazon Pay', 'CRED', 'BHIM'].map(m => (
-                        <option key={m} value={m}>{m}</option>
-                      ))}
-                    </select>
                   </div>
-                )}
+                </div>
+
+                {/* Flow / Type */}
+                <div className="space-y-1.5">
+                  <label className="text-[8px] font-black text-neutral-400 dark:text-neutral-500 uppercase tracking-widest pl-1">Flow</label>
+                  <div className="flex bg-neutral-50 dark:bg-black/20 p-1 rounded-xl">
+                    {(['ALL', 'DEBIT', 'CREDIT', 'TRANSFER'] as const).map(t => (
+                      <button key={t} onClick={() => setTypeFilter(t)}
+                        className={`flex-1 py-2 rounded-lg text-[9px] font-black tracking-widest transition-all
+                          ${typeFilter === t ? 'bg-white dark:bg-white/10 shadow-sm text-brand-blue dark:text-white' : 'text-neutral-400'}`}>
+                        {t === 'DEBIT' ? 'OUT' : t === 'CREDIT' ? 'IN' : t === 'TRANSFER' ? 'TRF' : 'ALL'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Dropdowns styled as select buttons */}
+                <div className="grid grid-cols-1 gap-4">
+                  {/* Category */}
+                  <div className="space-y-1.5">
+                    <label className="text-[8px] font-black text-neutral-400 dark:text-neutral-500 uppercase tracking-widest pl-1">Category</label>
+                    <div className="relative">
+                      <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
+                        className="w-full h-11 bg-neutral-50 dark:bg-black/20 border border-neutral-100 dark:border-white/5 px-3 rounded-xl text-xs font-bold text-brand-blue dark:text-white outline-none appearance-none">
+                        <option value="ALL">All Categories</option>
+                        {appCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* Tag */}
+                  <div className="space-y-1.5">
+                    <label className="text-[8px] font-black text-neutral-400 dark:text-neutral-500 uppercase tracking-widest pl-1">Tag</label>
+                    <div className="relative">
+                      <select value={tagFilter} onChange={e => setTagFilter(e.target.value)}
+                        className="w-full h-11 bg-neutral-50 dark:bg-black/20 border border-neutral-100 dark:border-white/5 px-3 rounded-xl text-xs font-bold text-brand-blue dark:text-white outline-none appearance-none">
+                        <option value="ALL">All Tags</option>
+                        {tags.map(t => <option key={t} value={t}>#{t}</option>)}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* Account */}
+                  <div className="space-y-1.5">
+                    <label className="text-[8px] font-black text-neutral-400 dark:text-neutral-500 uppercase tracking-widest pl-1">Account</label>
+                    <div className="relative">
+                      <select value={accountFilter} onChange={e => setAccountFilter(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
+                        className="w-full h-11 bg-neutral-50 dark:bg-black/20 border border-neutral-100 dark:border-white/5 px-3 rounded-xl text-xs font-bold text-brand-blue dark:text-white outline-none appearance-none">
+                        <option value="ALL">All Accounts</option>
+                        {accounts.filter(a => sourceTypeFilter === 'ALL' || a.type === sourceTypeFilter).map(a => (
+                          <option key={a.id} value={a.id}>{a.bankName} (..{a.accountLast4})</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* Method */}
+                  {sourceTypeFilter !== 'CREDIT_CARD' && sourceTypeFilter !== 'CASH' && (
+                    <div className="space-y-1.5">
+                      <label className="text-[8px] font-black text-neutral-400 dark:text-neutral-500 uppercase tracking-widest pl-1">Method</label>
+                      <div className="relative">
+                        <select value={methodFilter} onChange={e => setMethodFilter(e.target.value)}
+                          className="w-full h-11 bg-neutral-50 dark:bg-black/20 border border-neutral-100 dark:border-white/5 px-3 rounded-xl text-xs font-bold text-brand-blue dark:text-white outline-none appearance-none">
+                          <option value="ALL">All Methods</option>
+                          {['Bank Transfer', 'UPI', 'GPay', 'PhonePe', 'Paytm', 'Amazon Pay', 'CRED', 'BHIM'].map(m => (
+                            <option key={m} value={m}>{m}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="flex items-center justify-between pt-1">
+              {/* Bottom Actions */}
+              <div className="flex items-center justify-between pt-4 mt-auto border-t border-neutral-100 dark:border-white/5 shrink-0">
                 <button onClick={() => { setSourceTypeFilter('ALL'); setTypeFilter('ALL'); setCategoryFilter('ALL'); setAccountFilter('ALL'); setTagFilter('ALL'); setMethodFilter('ALL'); }}
-                  className="text-[10px] font-bold text-rose-500/80 hover:text-rose-500 transition-colors">
+                  className="text-[11px] font-black uppercase tracking-widest text-rose-500/80 hover:text-rose-500 transition-colors">
                   Clear Filters
                 </button>
                 <button onClick={() => setIsFilterOpen(false)}
-                  className="px-4 py-1.5 bg-brand-blue dark:bg-white/10 text-white rounded-lg text-[10px] font-bold active:scale-95 transition-all shadow-md">
-                  Apply
+                  className="px-6 py-3 bg-brand-blue dark:bg-white/10 text-white rounded-xl text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-md">
+                  Apply Filters
                 </button>
               </div>
             </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+          </Portal>
+        )}
+      </AnimatePresence>
 
       {/* Transaction list */}
       <div className="space-y-2.5">
