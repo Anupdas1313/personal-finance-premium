@@ -4,7 +4,7 @@ import { db, normalizeType } from '../models/db';
 import { useAuth } from '../context/AuthContext';
 import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Download, ZoomIn, ZoomOut, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Calendar, FileText, Share2, ArrowUpRight, ArrowDownLeft, Wallet, Landmark, Filter, CheckSquare, Square, Trash2, Edit3, X, CheckCircle2, ListOrdered } from 'lucide-react';
+import { ArrowLeft, Download, ZoomIn, ZoomOut, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Calendar, FileText, Share2, ArrowUpRight, ArrowDownLeft, Wallet, Landmark, Filter, CheckSquare, Square, Trash2, Edit3, X, CheckCircle2, ListOrdered, Plus } from 'lucide-react';
 
 import { motion, useSpring, useTransform, AnimatePresence } from 'framer-motion';
 import { useCategories } from '../hooks/useCategories';
@@ -94,7 +94,8 @@ export default function TransactionTable() {
     }
   };
 
-  const [activeDropdown, setActiveDropdown] = useState<'timeline' | 'nature' | 'category' | 'account' | 'tag' | 'sort' | null>(null);
+  const [activePopover, setActivePopover] = useState<string | null>(null);
+  const togglePopover = (popover: string) => setActivePopover(prev => prev === popover ? null : popover);
   const toggleDropdown = (dropdown: typeof activeDropdown) => {
     setActiveDropdown(prev => prev === dropdown ? null : dropdown);
   };
@@ -551,54 +552,131 @@ export default function TransactionTable() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#111111] p-3 sm:p-4 rounded-[24px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_6px_16px_rgba(0,0,0,0.04)] flex flex-col gap-2">
+        <div className="bg-white dark:bg-[#111111] p-3 rounded-[20px] border border-[#EBEBEB] dark:border-[#222222] shadow-[0_6px_16px_rgba(0,0,0,0.04)] flex flex-col gap-2">
+          {/* Notion/Linear Style Desktop Filter Bar */}
           <div className="flex items-center gap-2">
-            <div className="flex-1 relative">
+            {/* Search Input */}
+            <div className="relative flex-1">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
               <input
                 type="text"
-                placeholder="Locate within manifest..."
+                placeholder="Filter or search manifest..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-1.5 bg-neutral-50 dark:bg-[#1A1A1A] border border-[#EBEBEB] dark:border-[#222222] rounded-xl outline-none text-xs font-semibold text-brand-blue dark:text-[#F7F7F7] focus:border-brand-blue transition-all"
+                className="w-full pl-9 pr-7 py-1.5 bg-neutral-50 dark:bg-[#1A1A1A] border border-transparent focus:border-neutral-200 dark:focus:border-white/10 rounded-xl outline-none text-xs font-semibold text-brand-blue dark:text-[#F7F7F7] transition-all"
               />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200">
+                  <X className="w-3 h-3" />
+                </button>
+              )}
             </div>
-            
-            {/* Sort Dropdown */}
+
+            {/* + Filter Add Button */}
             <div className="relative">
               <button
-                onClick={() => toggleDropdown('sort')}
-                className={`px-3 py-1.5 border rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all
-                  ${activeDropdown === 'sort' ? 'bg-neutral-100 dark:bg-[#222] border-neutral-300 dark:border-neutral-700 text-brand-blue dark:text-white' : 'bg-white dark:bg-[#111] border-[#EBEBEB] dark:border-[#222] text-[#717171] dark:text-[#A0A0A0] hover:bg-neutral-50'}`}
+                onClick={() => togglePopover('addFilter')}
+                className="h-8 px-3 bg-neutral-100/60 dark:bg-white/5 hover:bg-neutral-200/50 dark:hover:bg-white/10 border border-transparent rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 flex items-center gap-1 transition-all"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Filter</span>
+              </button>
+
+              {/* Add Filter Popover Menu */}
+              <AnimatePresence>
+                {activePopover === 'addFilter' && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 5 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 5 }}
+                      className="absolute right-0 mt-1.5 w-44 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5"
+                    >
+                      <div className="px-2 py-1 text-[9px] font-black uppercase tracking-wider text-neutral-400">Add filter by</div>
+                      {[
+                        { key: 'category', label: 'Category', icon: '🏷️' },
+                        { key: 'nature', label: 'Nature (In/Out)', icon: '⇄' },
+                        { key: 'account', label: 'Account', icon: '🏦' },
+                        { key: 'tag', label: 'Tag', icon: '🔖' },
+                        { key: 'timeline', label: 'Timeline', icon: '📅' },
+                      ].map(prop => (
+                        <button
+                          key={prop.key}
+                          onClick={() => {
+                            setActivePopover(null);
+                            if (prop.key === 'category' && filterCategory === 'ALL') setFilterCategory(appCategories[0] || 'Food');
+                            if (prop.key === 'nature' && filterType === 'ALL') setFilterType('DEBIT');
+                            if (prop.key === 'account' && filterAccount === 'ALL' && accounts.length > 0) setFilterAccount(String(accounts[0].id));
+                            if (prop.key === 'tag' && filterExpenseType === 'ALL' && tags.length > 0) setFilterExpenseType(tags[0]);
+                            if (prop.key === 'timeline' && datePreset === 'ALL_TIME') handleDatePresetChange('THIS_MONTH');
+                            setActivePopover(prop.key);
+                          }}
+                          className="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/5 flex items-center gap-2 transition-all"
+                        >
+                          <span className="text-xs">{prop.icon}</span>
+                          <span>{prop.label}</span>
+                        </button>
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Sort Button */}
+            <div className="relative">
+              <button
+                onClick={() => togglePopover('sort')}
+                className={`h-8 px-3 border rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                  sortConfig.key !== 'date' || sortConfig.direction !== 'desc'
+                    ? 'bg-brand-blue/10 text-brand-blue dark:text-white border-brand-blue/20'
+                    : 'bg-neutral-100/60 dark:bg-white/5 border-transparent text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200/50 dark:hover:bg-white/10'
+                }`}
               >
                 <ListOrdered className="w-3.5 h-3.5" />
-                <span>Sort: {sortConfig.key === 'date' ? (sortConfig.direction === 'desc' ? 'Newest' : 'Oldest') : (sortConfig.direction === 'desc' ? 'Highest' : 'Lowest')}</span>
+                <span>
+                  {sortConfig.key === 'date'
+                    ? sortConfig.direction === 'desc' ? 'Newest' : 'Oldest'
+                    : sortConfig.direction === 'desc' ? 'Highest' : 'Lowest'}
+                </span>
                 <ChevronDown className="w-3 h-3 opacity-60" />
               </button>
 
+              {/* Sort Options Popover */}
               <AnimatePresence>
-                {activeDropdown === 'sort' && (
+                {activePopover === 'sort' && (
                   <>
-                    <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
-                    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                      className="absolute right-0 mt-1.5 w-44 bg-white dark:bg-[#18181B] border border-[#EBEBEB] dark:border-[#27272A] rounded-xl shadow-lg p-1 z-20">
+                    <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 5 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 5 }}
+                      className="absolute right-0 mt-1.5 w-48 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5"
+                    >
+                      <div className="px-2 py-1 text-[9px] font-black uppercase tracking-wider text-neutral-400">Sort by</div>
                       {[
                         { label: 'Date: Newest First', key: 'date', direction: 'desc' },
                         { label: 'Date: Oldest First', key: 'date', direction: 'asc' },
                         { label: 'Amount: High to Low', key: 'amount', direction: 'desc' },
-                        { label: 'Amount: Low to High', key: 'amount', direction: 'asc' }
+                        { label: 'Amount: Low to High', key: 'amount', direction: 'asc' },
                       ].map((opt, idx) => {
-                        const isSel = sortConfig.key === opt.key && sortConfig.direction === opt.direction;
+                        const isSelected = sortConfig.key === opt.key && sortConfig.direction === opt.direction;
                         return (
-                          <button key={idx}
+                          <button
+                            key={idx}
                             onClick={() => {
-                              setSortConfig({ key: opt.key, direction: opt.direction });
-                              setActiveDropdown(null);
+                              setSortConfig({ key: opt.key, direction: opt.direction as any });
+                              setActivePopover(null);
                             }}
-                            className={`w-full px-3 py-2 rounded-lg text-left text-xs font-semibold flex items-center justify-between transition-all
-                              ${isSel ? 'bg-brand-blue/5 dark:bg-white/5 text-brand-blue dark:text-white' : 'hover:bg-neutral-50 dark:hover:bg-[#27272A] text-neutral-600 dark:text-neutral-400'}`}>
+                            className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between transition-all ${
+                              isSelected
+                                ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold'
+                                : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/5'
+                            }`}
+                          >
                             <span>{opt.label}</span>
-                            {isSel && <CheckCircle2 className="w-3 h-3 text-brand-blue dark:text-white" />}
+                            {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-brand-blue dark:text-white" />}
                           </button>
                         );
                       })}
@@ -609,201 +687,195 @@ export default function TransactionTable() {
             </div>
           </div>
 
-          {/* Inline Dropdown Filters Bar */}
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#EBEBEB] dark:border-[#222222] mt-1">
-            {/* Timeline Filter */}
-            <div className="relative">
-              <button onClick={() => toggleDropdown('timeline')}
-                className={`px-3 py-1.5 border rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all
-                  ${datePreset !== 'ALL_TIME' ? 'bg-brand-blue/5 dark:bg-white/5 border-brand-blue/20 dark:border-white/20 text-brand-blue dark:text-white' : 'bg-white dark:bg-[#111] border-[#EBEBEB] dark:border-[#222] text-[#717171] dark:text-[#A0A0A0]'}`}>
-                <span>Timeline: {datePreset.replace('_', ' ')}</span>
-                <ChevronDown className="w-3 h-3 opacity-60" />
-              </button>
-              <AnimatePresence>
-                {activeDropdown === 'timeline' && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
-                    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                      className="absolute left-0 mt-1.5 w-48 bg-white dark:bg-[#18181B] border border-[#EBEBEB] dark:border-[#27272A] rounded-xl shadow-lg p-1.5 z-20 space-y-1">
-                      {['ALL_TIME', 'TODAY', 'YESTERDAY', 'THIS_WEEK', 'THIS_MONTH', 'CUSTOM'].map(p => (
-                        <button key={p} onClick={() => { handleDatePresetChange(p); if (p !== 'CUSTOM') setActiveDropdown(null); }}
-                          className={`w-full px-3 py-1.5 rounded-lg text-left text-xs font-semibold flex items-center justify-between
-                            ${datePreset === p ? 'bg-brand-blue/5 dark:bg-white/5 text-brand-blue dark:text-white' : 'hover:bg-neutral-50 dark:hover:bg-[#27272A] text-neutral-600 dark:text-neutral-400'}`}>
-                          <span>{p.replace('_', ' ')}</span>
-                          {datePreset === p && <CheckCircle2 className="w-3.5 h-3.5" />}
-                        </button>
-                      ))}
-                      {datePreset === 'CUSTOM' && (
-                        <div className="p-2 bg-neutral-50 dark:bg-black/10 rounded-lg space-y-1.5 mt-1 border border-neutral-100 dark:border-neutral-800">
-                          <div>
-                            <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest block mb-0.5">From</span>
-                            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-2 py-1 border border-neutral-200 dark:border-neutral-700 rounded-md text-[10px] bg-white dark:bg-[#111]" />
-                          </div>
-                          <div>
-                            <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest block mb-0.5">To</span>
-                            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-2 py-1 border border-neutral-200 dark:border-neutral-700 rounded-md text-[10px] bg-white dark:bg-[#111]" />
-                          </div>
-                        </div>
-                      )}
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
+          {/* Active Filter Pills (Notion Style) */}
+          {(filterCategory !== 'ALL' || filterType !== 'ALL' || filterAccount !== 'ALL' || filterExpenseType !== 'ALL' || datePreset !== 'ALL_TIME') && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              {/* Category Pill */}
+              {filterCategory !== 'ALL' && (
+                <div className="relative">
+                  <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-neutral-100 dark:bg-white/10 border border-neutral-200/60 dark:border-white/10 rounded-xl text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                    <button onClick={() => togglePopover('category')} className="flex items-center gap-1 hover:opacity-80">
+                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Category is</span>
+                      <span className="font-bold">{filterCategory}</span>
+                      <ChevronDown className="w-3 h-3 text-neutral-400" />
+                    </button>
+                    <button onClick={() => setFilterCategory('ALL')} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <AnimatePresence>
+                    {activePopover === 'category' && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
+                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
+                          className="absolute left-0 mt-1.5 w-48 max-h-56 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                          {appCategories.map(c => (
+                            <button key={c} onClick={() => { setFilterCategory(c); setActivePopover(null); }}
+                              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${filterCategory === c ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
+                              <span>{c}</span>
+                              {filterCategory === c && <CheckCircle2 className="w-3.5 h-3.5 text-brand-blue dark:text-white" />}
+                            </button>
+                          ))}
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
 
-            {/* Type/Nature Filter */}
-            <div className="relative">
-              <button onClick={() => toggleDropdown('nature')}
-                className={`px-3 py-1.5 border rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all
-                  ${filterType !== 'ALL' ? 'bg-brand-blue/5 dark:bg-white/5 border-brand-blue/20 dark:border-white/20 text-brand-blue dark:text-white' : 'bg-white dark:bg-[#111] border-[#EBEBEB] dark:border-[#222] text-[#717171] dark:text-[#A0A0A0]'}`}>
-                <span>Nature: {filterType === 'DEBIT' ? 'Outflow' : filterType === 'CREDIT' ? 'Inflow' : filterType === 'TRANSFER' ? 'Transfer' : 'All'}</span>
-                <ChevronDown className="w-3 h-3 opacity-60" />
-              </button>
-              <AnimatePresence>
-                {activeDropdown === 'nature' && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
-                    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                      className="absolute left-0 mt-1.5 w-44 bg-white dark:bg-[#18181B] border border-[#EBEBEB] dark:border-[#27272A] rounded-xl shadow-lg p-1 z-20">
-                      {[
-                        { label: 'All Types', val: 'ALL' },
-                        { label: 'Outflow (Debit)', val: 'DEBIT' },
-                        { label: 'Inflow (Credit)', val: 'CREDIT' },
-                        { label: 'Inter-Account', val: 'TRANSFER' }
-                      ].map(opt => (
-                        <button key={opt.val} onClick={() => { setFilterType(opt.val); setActiveDropdown(null); }}
-                          className={`w-full px-3 py-2 rounded-lg text-left text-xs font-semibold flex items-center justify-between
-                            ${filterType === opt.val ? 'bg-brand-blue/5 dark:bg-white/5 text-brand-blue dark:text-white' : 'hover:bg-neutral-50 dark:hover:bg-[#27272A] text-neutral-600 dark:text-neutral-400'}`}>
-                          <span>{opt.label}</span>
-                          {filterType === opt.val && <CheckCircle2 className="w-3.5 h-3.5" />}
-                        </button>
-                      ))}
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
+              {/* Nature / Flow Pill */}
+              {filterType !== 'ALL' && (
+                <div className="relative">
+                  <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-neutral-100 dark:bg-white/10 border border-neutral-200/60 dark:border-white/10 rounded-xl text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                    <button onClick={() => togglePopover('nature')} className="flex items-center gap-1 hover:opacity-80">
+                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Nature is</span>
+                      <span className="font-bold">{filterType === 'DEBIT' ? 'Outflow' : filterType === 'CREDIT' ? 'Inflow' : 'Transfer'}</span>
+                      <ChevronDown className="w-3 h-3 text-neutral-400" />
+                    </button>
+                    <button onClick={() => setFilterType('ALL')} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <AnimatePresence>
+                    {activePopover === 'nature' && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
+                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
+                          className="absolute left-0 mt-1.5 w-44 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                          {[
+                            { label: 'Outflow (Debit)', val: 'DEBIT' },
+                            { label: 'Inflow (Credit)', val: 'CREDIT' },
+                            { label: 'Inter-Account', val: 'TRANSFER' }
+                          ].map(opt => (
+                            <button key={opt.val} onClick={() => { setFilterType(opt.val); setActivePopover(null); }}
+                              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${filterType === opt.val ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
+                              <span>{opt.label}</span>
+                              {filterType === opt.val && <CheckCircle2 className="w-3.5 h-3.5 text-brand-blue dark:text-white" />}
+                            </button>
+                          ))}
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
 
-            {/* Category Filter */}
-            <div className="relative">
-              <button onClick={() => toggleDropdown('category')}
-                className={`px-3 py-1.5 border rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all
-                  ${filterCategory !== 'ALL' ? 'bg-brand-blue/5 dark:bg-white/5 border-brand-blue/20 dark:border-white/20 text-brand-blue dark:text-white' : 'bg-white dark:bg-[#111] border-[#EBEBEB] dark:border-[#222] text-[#717171] dark:text-[#A0A0A0]'}`}>
-                <span>Category: {filterCategory}</span>
-                <ChevronDown className="w-3 h-3 opacity-60" />
-              </button>
-              <AnimatePresence>
-                {activeDropdown === 'category' && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
-                    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                      className="absolute left-0 mt-1.5 w-48 max-h-60 overflow-y-auto bg-white dark:bg-[#18181B] border border-[#EBEBEB] dark:border-[#27272A] rounded-xl shadow-lg p-1 z-20">
-                      <button onClick={() => { setFilterCategory('ALL'); setActiveDropdown(null); }}
-                        className={`w-full px-3 py-2 rounded-lg text-left text-xs font-semibold flex items-center justify-between
-                          ${filterCategory === 'ALL' ? 'bg-brand-blue/5 dark:bg-white/5 text-brand-blue dark:text-white' : 'hover:bg-neutral-50 dark:hover:bg-[#27272A] text-neutral-600 dark:text-neutral-400'}`}>
-                        <span>All Categories</span>
-                        {filterCategory === 'ALL' && <CheckCircle2 className="w-3.5 h-3.5" />}
-                      </button>
-                      {appCategories.map(c => (
-                        <button key={c} onClick={() => { setFilterCategory(c); setActiveDropdown(null); }}
-                          className={`w-full px-3 py-2 rounded-lg text-left text-xs font-semibold flex items-center justify-between
-                            ${filterCategory === c ? 'bg-brand-blue/5 dark:bg-white/5 text-brand-blue dark:text-white' : 'hover:bg-neutral-50 dark:hover:bg-[#27272A] text-neutral-600 dark:text-neutral-400'}`}>
-                          <span>{c}</span>
-                          {filterCategory === c && <CheckCircle2 className="w-3.5 h-3.5" />}
-                        </button>
-                      ))}
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
+              {/* Account Pill */}
+              {filterAccount !== 'ALL' && (
+                <div className="relative">
+                  <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-neutral-100 dark:bg-white/10 border border-neutral-200/60 dark:border-white/10 rounded-xl text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                    <button onClick={() => togglePopover('account')} className="flex items-center gap-1 hover:opacity-80">
+                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Account is</span>
+                      <span className="font-bold">{accounts.find(a => String(a.id) === filterAccount)?.bankName || filterAccount}</span>
+                      <ChevronDown className="w-3 h-3 text-neutral-400" />
+                    </button>
+                    <button onClick={() => setFilterAccount('ALL')} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <AnimatePresence>
+                    {activePopover === 'account' && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
+                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
+                          className="absolute left-0 mt-1.5 w-52 max-h-56 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                          {accounts.map(acc => (
+                            <button key={acc.id} onClick={() => { setFilterAccount(String(acc.id)); setActivePopover(null); }}
+                              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${filterAccount === String(acc.id) ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
+                              <span className="truncate">{acc.bankName}</span>
+                              {filterAccount === String(acc.id) && <CheckCircle2 className="w-3.5 h-3.5 text-brand-blue dark:text-white" />}
+                            </button>
+                          ))}
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
 
-            {/* Account Filter */}
-            <div className="relative">
-              <button onClick={() => toggleDropdown('account')}
-                className={`px-3 py-1.5 border rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all
-                  ${filterAccount !== 'ALL' ? 'bg-brand-blue/5 dark:bg-white/5 border-brand-blue/20 dark:border-white/20 text-brand-blue dark:text-white' : 'bg-white dark:bg-[#111] border-[#EBEBEB] dark:border-[#222] text-[#717171] dark:text-[#A0A0A0]'}`}>
-                <span>Account: {filterAccount === 'ALL' ? 'All' : (accounts.find(a => String(a.id) === filterAccount)?.bankName || 'Selected')}</span>
-                <ChevronDown className="w-3 h-3 opacity-60" />
-              </button>
-              <AnimatePresence>
-                {activeDropdown === 'account' && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
-                    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                      className="absolute left-0 mt-1.5 w-52 max-h-60 overflow-y-auto bg-white dark:bg-[#18181B] border border-[#EBEBEB] dark:border-[#27272A] rounded-xl shadow-lg p-1 z-20">
-                      <button onClick={() => { setFilterAccount('ALL'); setActiveDropdown(null); }}
-                        className={`w-full px-3 py-2 rounded-lg text-left text-xs font-semibold flex items-center justify-between
-                          ${filterAccount === 'ALL' ? 'bg-brand-blue/5 dark:bg-white/5 text-brand-blue dark:text-white' : 'hover:bg-neutral-50 dark:hover:bg-[#27272A] text-neutral-600 dark:text-neutral-400'}`}>
-                        <span>All Accounts</span>
-                        {filterAccount === 'ALL' && <CheckCircle2 className="w-3.5 h-3.5" />}
-                      </button>
-                      {accounts.map(acc => (
-                        <button key={acc.id} onClick={() => { setFilterAccount(String(acc.id)); setActiveDropdown(null); }}
-                          className={`w-full px-3 py-2 rounded-lg text-left text-xs font-semibold flex items-center justify-between
-                            ${filterAccount === String(acc.id) ? 'bg-brand-blue/5 dark:bg-white/5 text-brand-blue dark:text-white' : 'hover:bg-neutral-50 dark:hover:bg-[#27272A] text-neutral-600 dark:text-neutral-400'}`}>
-                          <span className="truncate">{acc.bankName}</span>
-                          {filterAccount === String(acc.id) && <CheckCircle2 className="w-3.5 h-3.5" />}
-                        </button>
-                      ))}
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
+              {/* Tag Pill */}
+              {filterExpenseType !== 'ALL' && (
+                <div className="relative">
+                  <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-neutral-100 dark:bg-white/10 border border-neutral-200/60 dark:border-white/10 rounded-xl text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                    <button onClick={() => togglePopover('tag')} className="flex items-center gap-1 hover:opacity-80">
+                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Tag is</span>
+                      <span className="font-bold">#{filterExpenseType}</span>
+                      <ChevronDown className="w-3 h-3 text-neutral-400" />
+                    </button>
+                    <button onClick={() => setFilterExpenseType('ALL')} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <AnimatePresence>
+                    {activePopover === 'tag' && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
+                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
+                          className="absolute left-0 mt-1.5 w-48 max-h-56 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                          {tags.map(t => (
+                            <button key={t} onClick={() => { setFilterExpenseType(t); setActivePopover(null); }}
+                              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${filterExpenseType === t ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
+                              <span>#{t}</span>
+                              {filterExpenseType === t && <CheckCircle2 className="w-3.5 h-3.5 text-brand-blue dark:text-white" />}
+                            </button>
+                          ))}
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
 
-            {/* Tag Filter */}
-            <div className="relative">
-              <button onClick={() => toggleDropdown('tag')}
-                className={`px-3 py-1.5 border rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all
-                  ${filterExpenseType !== 'ALL' ? 'bg-brand-blue/5 dark:bg-white/5 border-brand-blue/20 dark:border-white/20 text-brand-blue dark:text-white' : 'bg-white dark:bg-[#111] border-[#EBEBEB] dark:border-[#222] text-[#717171] dark:text-[#A0A0A0]'}`}>
-                <span>Tag: {filterExpenseType}</span>
-                <ChevronDown className="w-3 h-3 opacity-60" />
-              </button>
-              <AnimatePresence>
-                {activeDropdown === 'tag' && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
-                    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                      className="absolute left-0 mt-1.5 w-48 max-h-60 overflow-y-auto bg-white dark:bg-[#18181B] border border-[#EBEBEB] dark:border-[#27272A] rounded-xl shadow-lg p-1 z-20">
-                      <button onClick={() => { setFilterExpenseType('ALL'); setActiveDropdown(null); }}
-                        className={`w-full px-3 py-2 rounded-lg text-left text-xs font-semibold flex items-center justify-between
-                          ${filterExpenseType === 'ALL' ? 'bg-brand-blue/5 dark:bg-white/5 text-brand-blue dark:text-white' : 'hover:bg-neutral-50 dark:hover:bg-[#27272A] text-neutral-600 dark:text-neutral-400'}`}>
-                        <span>All Tags</span>
-                        {filterExpenseType === 'ALL' && <CheckCircle2 className="w-3.5 h-3.5" />}
-                      </button>
-                      {tags.map(t => (
-                        <button key={t} onClick={() => { setFilterExpenseType(t); setActiveDropdown(null); }}
-                          className={`w-full px-3 py-2 rounded-lg text-left text-xs font-semibold flex items-center justify-between
-                            ${filterExpenseType === t ? 'bg-brand-blue/5 dark:bg-white/5 text-brand-blue dark:text-white' : 'hover:bg-neutral-50 dark:hover:bg-[#27272A] text-neutral-600 dark:text-neutral-400'}`}>
-                          <span>#{t}</span>
-                          {filterExpenseType === t && <CheckCircle2 className="w-3.5 h-3.5" />}
-                        </button>
-                      ))}
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
+              {/* Timeline Pill */}
+              {datePreset !== 'ALL_TIME' && (
+                <div className="relative">
+                  <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-neutral-100 dark:bg-white/10 border border-neutral-200/60 dark:border-white/10 rounded-xl text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                    <button onClick={() => togglePopover('timeline')} className="flex items-center gap-1 hover:opacity-80">
+                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Time is</span>
+                      <span className="font-bold">{datePreset.replace('_', ' ')}</span>
+                      <ChevronDown className="w-3 h-3 text-neutral-400" />
+                    </button>
+                    <button onClick={() => handleDatePresetChange('ALL_TIME')} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <AnimatePresence>
+                    {activePopover === 'timeline' && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
+                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
+                          className="absolute left-0 mt-1.5 w-48 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                          {['ALL_TIME', 'TODAY', 'YESTERDAY', 'THIS_WEEK', 'THIS_MONTH', 'CUSTOM'].map(p => (
+                            <button key={p} onClick={() => { handleDatePresetChange(p); if (p !== 'CUSTOM') setActivePopover(null); }}
+                              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${datePreset === p ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
+                              <span>{p.replace('_', ' ')}</span>
+                              {datePreset === p && <CheckCircle2 className="w-3.5 h-3.5 text-brand-blue dark:text-white" />}
+                            </button>
+                          ))}
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
 
-            {/* Clear All Filters Button */}
-            {(datePreset !== 'ALL_TIME' || filterType !== 'ALL' || filterCategory !== 'ALL' || filterAccount !== 'ALL' || filterExpenseType !== 'ALL') && (
+              {/* Clear All Text Button */}
               <button
                 onClick={() => {
-                  setFilterType('ALL');
                   setFilterCategory('ALL');
+                  setFilterType('ALL');
                   setFilterAccount('ALL');
                   setFilterExpenseType('ALL');
                   handleDatePresetChange('ALL_TIME');
                 }}
-                className="text-[10px] font-black text-rose-500 hover:text-rose-600 hover:underline uppercase tracking-wider ml-2"
+                className="text-[10px] font-bold text-rose-500 hover:text-rose-600 hover:underline uppercase tracking-wider ml-1"
               >
                 Clear All
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-        <div className="bg-white dark:bg-[#111111] border border-brand-blue/5 dark:border-[#222222] rounded-[24px] shadow-sm overflow-hidden">
+<div className="bg-white dark:bg-[#111111] border border-brand-blue/5 dark:border-[#222222] rounded-[24px] shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-brand-blue text-white uppercase tracking-[0.2em] text-[10px] font-semibold">
