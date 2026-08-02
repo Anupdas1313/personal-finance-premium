@@ -48,6 +48,8 @@ export default function TransactionTable() {
   const [filterType, setFilterType] = useState<string[]>([]);
   const [filterCategory, setFilterCategory] = useState<string[]>([]);
   const [filterAccount, setFilterAccount] = useState<string[]>([]);
+  const [filterAccountType, setFilterAccountType] = useState<string[]>([]);
+  const [filterMethod, setFilterMethod] = useState<string[]>([]);
   const [filterPaymentMethod, setFilterPaymentMethod] = useState('ALL');
   const [filterExpenseType, setFilterExpenseType] = useState<string[]>([]);
 
@@ -55,6 +57,8 @@ export default function TransactionTable() {
   const toggleAccount = (a: string) => setFilterAccount(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
   const toggleType = (t: string) => setFilterType(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
   const toggleTag = (tg: string) => setFilterExpenseType(prev => prev.includes(tg) ? prev.filter(x => x !== tg) : [...prev, tg]);
+  const toggleAccountType = (at: string) => setFilterAccountType(prev => prev.includes(at) ? prev.filter(x => x !== at) : [...prev, at]);
+  const toggleMethod = (m: string) => setFilterMethod(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
   const [datePreset, setDatePreset] = useState('CUSTOM');
   
   const [startDate, setStartDate] = useState(startParam ? format(new Date(startParam + 'T00:00:00'), 'yyyy-MM-dd') : '');
@@ -787,7 +791,99 @@ export default function TransactionTable() {
                 </div>
               )}
 
-              {/* Account Pill */}
+              {/* Account Type Filter Pill */}
+              {filterAccountType.length > 0 && (
+                <div className="relative">
+                  <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
+                    <button onClick={() => togglePopover('accountType')} className="flex items-center gap-1 hover:opacity-80">
+                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Account Type</span>
+                      <span className="font-bold">{filterAccountType.length === 1 ? (filterAccountType[0] === 'BANK' ? 'Bank' : filterAccountType[0] === 'CREDIT_CARD' ? 'Credit Card' : 'Cash/Wallet') : `${filterAccountType.length} selected` }</span>
+                      <ChevronDown className="w-3 h-3 text-neutral-400" />
+                    </button>
+                    <button onClick={() => setFilterAccountType([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <AnimatePresence>
+                    {activePopover === 'accountType' && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
+                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
+                          className="absolute left-0 mt-1.5 w-52 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                          <div className="flex items-center justify-between px-2.5 py-1 border-b border-neutral-100 dark:border-white/5 mb-1">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Account Classification</span>
+                            <button onClick={() => setFilterAccountType([])} className="text-[9px] font-bold text-rose-500 hover:underline">Clear</button>
+                          </div>
+                          {[
+                            { id: 'BANK', label: '🏦 Bank Accounts' },
+                            { id: 'CREDIT_CARD', label: '💳 Credit Cards' },
+                            { id: 'CASH', label: '💵 Cash & Wallets' }
+                          ].map(typeOpt => {
+                            const isSelected = filterAccountType.includes(typeOpt.id);
+                            return (
+                              <button key={typeOpt.id} onClick={() => toggleAccountType(typeOpt.id)}
+                                className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${isSelected ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
+                                    {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
+                                  </div>
+                                  <span>{typeOpt.label}</span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+
+              {/* Payment Method Filter Pill */}
+              {filterMethod.length > 0 && (
+                <div className="relative">
+                  <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
+                    <button onClick={() => togglePopover('method')} className="flex items-center gap-1 hover:opacity-80">
+                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Method</span>
+                      <span className="font-bold">{filterMethod.length === 1 ? filterMethod[0] : `${filterMethod[0]} +${filterMethod.length - 1}`}</span>
+                      <ChevronDown className="w-3 h-3 text-neutral-400" />
+                    </button>
+                    <button onClick={() => setFilterMethod([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <AnimatePresence>
+                    {activePopover === 'method' && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
+                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
+                          className="absolute left-0 mt-1.5 w-52 max-h-60 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                          <div className="flex items-center justify-between px-2.5 py-1 border-b border-neutral-100 dark:border-white/5 mb-1">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Payment Medium</span>
+                            <button onClick={() => setFilterMethod([])} className="text-[9px] font-bold text-rose-500 hover:underline">Clear</button>
+                          </div>
+                          {['UPI', 'Credit Card', 'Debit Card', 'Cash', 'Bank Transfer', 'Net Banking', 'Wallet'].map(m => {
+                            const isSelected = filterMethod.includes(m);
+                            return (
+                              <button key={m} onClick={() => toggleMethod(m)}
+                                className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${isSelected ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
+                                    {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
+                                  </div>
+                                  <span>{m}</span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+
+              {/* Grouped Specific Account Filter Pill */}
               {filterAccount.length > 0 && (
                 <div className="relative">
                   <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
@@ -805,23 +901,37 @@ export default function TransactionTable() {
                       <>
                         <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
                         <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                          className="absolute left-0 mt-1.5 w-56 max-h-60 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
-                          <div className="flex items-center justify-between px-2.5 py-1 border-b border-neutral-100 dark:border-white/5 mb-1">
-                            <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Accounts</span>
+                          className="absolute left-0 mt-1.5 w-60 max-h-72 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-2 z-50 space-y-2">
+                          <div className="flex items-center justify-between px-2 py-1 border-b border-neutral-100 dark:border-white/5">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Specific Accounts</span>
                             <button onClick={() => setFilterAccount([])} className="text-[9px] font-bold text-rose-500 hover:underline">Clear</button>
                           </div>
-                          {accounts.map(acc => {
-                            const isSelected = filterAccount.includes(String(acc.id));
+
+                          {[
+                            { title: '🏦 Bank Accounts', typeKey: 'BANK' },
+                            { title: '💳 Credit Cards', typeKey: 'CREDIT_CARD' },
+                            { title: '💵 Cash & Wallets', typeKey: 'CASH' }
+                          ].map(section => {
+                            const sectionAccs = accounts.filter(a => a.type === section.typeKey);
+                            if (sectionAccs.length === 0) return null;
                             return (
-                              <button key={acc.id} onClick={() => toggleAccount(String(acc.id))}
-                                className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${isSelected ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
-                                <div className="flex items-center gap-2 truncate">
-                                  <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center shrink-0 ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
-                                    {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
-                                  </div>
-                                  <span className="truncate">{acc.bankName}</span>
-                                </div>
-                              </button>
+                              <div key={section.typeKey} className="space-y-1">
+                                <div className="px-2 text-[9px] font-extrabold uppercase tracking-widest text-neutral-400">{section.title}</div>
+                                {sectionAccs.map(acc => {
+                                  const isSelected = filterAccount.includes(String(acc.id));
+                                  return (
+                                    <button key={acc.id} onClick={() => toggleAccount(String(acc.id))}
+                                      className={`w-full px-2.5 py-1 rounded-xl text-left text-xs font-medium flex items-center justify-between ${isSelected ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
+                                      <div className="flex items-center gap-2 truncate">
+                                        <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center shrink-0 ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
+                                          {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
+                                        </div>
+                                        <span className="truncate">{acc.bankName}</span>
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
                             );
                           })}
                         </motion.div>
