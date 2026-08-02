@@ -109,16 +109,16 @@ export default function Transactions() {
 
 
   // ── Data ──────────────────────────────────────────────────────
+  const accounts = useLiveQuery(async () => {
+    const arr = await db.accounts.toArray();
+    return [...arr].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  }, [user?.uid]) || [];
+
   const accountsMap = useMemo(() => {
     const map: Record<string, any> = {};
     accounts.forEach(a => { map[String(a.id)] = a; });
     return map;
   }, [accounts]);
-
-  const accounts = useLiveQuery(async () => {
-    const arr = await db.accounts.toArray();
-    return [...arr].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-  }, [user?.uid]) || [];
 
   const dateLimits = useMemo(() => {
     let start: Date | number = 0;
