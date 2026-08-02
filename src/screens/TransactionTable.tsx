@@ -46,17 +46,10 @@ export default function TransactionTable() {
   const [zoom, setZoom] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('ALL');
-  const [filterCategory, setFilterCategory] = useState<string[]>([]);
-  const [filterAccount, setFilterAccount] = useState<string[]>([]);
-  const [filterPaymentMethod, setFilterPaymentMethod] = useState<string[]>([]);
-  const [filterExpenseType, setFilterExpenseType] = useState<string[]>([]);
-  
-  const toggleArrayFilter = (arr: any[], setArr: any, val: any) => {
-    if (arr.includes(val)) setArr(arr.filter((v: any) => v !== val));
-    else setArr([...arr, val]);
-  };
-  
-  const activeFiltersCount = filterCategory.length + filterExpenseType.length + filterAccount.length + filterPaymentMethod.length + (filterType !== 'ALL' ? 1 : 0) + (datePreset !== 'ALL_TIME' ? 1 : 0);
+  const [filterCategory, setFilterCategory] = useState('ALL');
+  const [filterAccount, setFilterAccount] = useState('ALL');
+  const [filterPaymentMethod, setFilterPaymentMethod] = useState('ALL');
+  const [filterExpenseType, setFilterExpenseType] = useState('ALL');
   const [datePreset, setDatePreset] = useState('CUSTOM');
   
   const [startDate, setStartDate] = useState(startParam ? format(new Date(startParam + 'T00:00:00'), 'yyyy-MM-dd') : '');
@@ -177,20 +170,20 @@ export default function TransactionTable() {
     if (filterType !== 'ALL') {
       result = result.filter(tx => normalizeType(tx.type) === filterType);
     }
-    if (filterCategory.length > 0) {
-      result = result.filter(tx => filterCategory.includes(tx.category || ''));
+    if (filterCategory !== 'ALL') {
+      result = result.filter(tx => tx.category === filterCategory);
     }
-    if (filterAccount.length > 0) {
-      result = result.filter(tx => filterAccount.includes(String(tx.accountId)));
+    if (filterAccount !== 'ALL') {
+      result = result.filter(tx => String(tx.accountId) === filterAccount);
     }
-    if (filterPaymentMethod.length > 0) {
+    if (filterPaymentMethod !== 'ALL') {
       result = result.filter(tx => {
         const resolvedMethod = tx.paymentMethod === 'UPI' ? 'UPI' : tx.paymentMethod === 'Bank' ? 'Bank' : 'Cash';
-        return filterPaymentMethod.includes(resolvedMethod);
+        return resolvedMethod === filterPaymentMethod;
       });
     }
-    if (filterExpenseType.length > 0) {
-      result = result.filter(tx => filterExpenseType.includes(tx.expenseType || ''));
+    if (filterExpenseType !== 'ALL') {
+      result = result.filter(tx => (tx.expenseType || '').toLowerCase() === filterExpenseType.toLowerCase());
     }
 
     // 4. Sorting
@@ -673,168 +666,6 @@ export default function TransactionTable() {
             </motion.div>
           )}
         </div>
-
-        
-        {/* Side Panel for Filters & Sorting */}
-        <AnimatePresence>
-          {isFiltersExpanded && (
-            <>
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                onClick={() => setIsFiltersExpanded(false)}
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999]" />
-              
-              <motion.div
-                initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="fixed top-0 right-0 bottom-0 w-full sm:w-[400px] bg-white dark:bg-[#111] z-[10000] shadow-2xl border-l border-[#EBEBEB] dark:border-[#222] flex flex-col">
-                
-                <div className="p-6 border-b border-[#EBEBEB] dark:border-[#222] flex items-center justify-between bg-white dark:bg-[#111] z-10 sticky top-0">
-                  <h3 className="text-xl font-heading font-bold text-brand-blue dark:text-white">Sort & Filter</h3>
-                  <button onClick={() => setIsFiltersExpanded(false)} className="p-2 bg-neutral-100 dark:bg-[#222] rounded-full text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-white transition-colors">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-6 space-y-8 pb-32">
-                  
-                  {/* Sorting */}
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-bold text-[#717171] uppercase tracking-widest">Sort By</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button onClick={() => setSortConfig({ key: 'date', direction: 'desc' })} className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 ${sortConfig.key === 'date' && sortConfig.direction === 'desc' ? 'bg-brand-blue text-white border-brand-blue shadow-md' : 'bg-white dark:bg-[#111] text-brand-blue dark:text-white border-[#EBEBEB] dark:border-[#222]'}`}>
-                        <Calendar className="w-4 h-4" /> Newest First
-                      </button>
-                      <button onClick={() => setSortConfig({ key: 'date', direction: 'asc' })} className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 ${sortConfig.key === 'date' && sortConfig.direction === 'asc' ? 'bg-brand-blue text-white border-brand-blue shadow-md' : 'bg-white dark:bg-[#111] text-brand-blue dark:text-white border-[#EBEBEB] dark:border-[#222]'}`}>
-                        <Calendar className="w-4 h-4 opacity-50" /> Oldest First
-                      </button>
-                      <button onClick={() => setSortConfig({ key: 'amount', direction: 'desc' })} className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 ${sortConfig.key === 'amount' && sortConfig.direction === 'desc' ? 'bg-brand-blue text-white border-brand-blue shadow-md' : 'bg-white dark:bg-[#111] text-brand-blue dark:text-white border-[#EBEBEB] dark:border-[#222]'}`}>
-                        <ArrowUpRight className="w-4 h-4" /> Highest Amount
-                      </button>
-                      <button onClick={() => setSortConfig({ key: 'amount', direction: 'asc' })} className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 ${sortConfig.key === 'amount' && sortConfig.direction === 'asc' ? 'bg-brand-blue text-white border-brand-blue shadow-md' : 'bg-white dark:bg-[#111] text-brand-blue dark:text-white border-[#EBEBEB] dark:border-[#222]'}`}>
-                        <ArrowDownLeft className="w-4 h-4" /> Lowest Amount
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Date Preset */}
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-bold text-[#717171] uppercase tracking-widest">Timeline</label>
-                    <div className="flex overflow-x-auto scrollbar-hide gap-2 pb-1">
-                      {['ALL_TIME', 'TODAY', 'YESTERDAY', 'THIS_WEEK', 'THIS_MONTH'].map(p => (
-                        <button key={p} onClick={() => handleDatePresetChange(p)}
-                          className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border
-                            ${datePreset === p ? 'bg-[#222] dark:bg-white text-white dark:text-[#111] border-[#222] dark:border-white shadow-sm' : 'bg-white dark:bg-[#1A1A1A] text-brand-blue dark:text-white border-[#EBEBEB] dark:border-[#333]'}`}>
-                          {p.replace('_', ' ')}
-                        </button>
-                      ))}
-                    </div>
-                    {datePreset === 'CUSTOM' && (
-                      <div className="flex items-center gap-3 p-3 bg-neutral-50 dark:bg-[#1A1A1A] rounded-xl mt-2 border border-[#EBEBEB] dark:border-[#333]">
-                        <div className="flex-1">
-                          <label className="text-[9px] font-semibold text-[#717171] uppercase tracking-widest block mb-1">From</label>
-                          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-2 py-1.5 border border-[#EBEBEB] dark:border-[#333] rounded-lg text-sm bg-white dark:bg-[#111]" />
-                        </div>
-                        <div className="flex-1">
-                          <label className="text-[9px] font-semibold text-[#717171] uppercase tracking-widest block mb-1">To</label>
-                          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-2 py-1.5 border border-[#EBEBEB] dark:border-[#333] rounded-lg text-sm bg-white dark:bg-[#111]" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Flow Type */}
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-bold text-[#717171] uppercase tracking-widest">Nature</label>
-                    <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-1 rounded-xl">
-                      {(['ALL', 'DEBIT', 'CREDIT', 'TRANSFER'] as const).map(t => (
-                        <button key={t} onClick={() => setFilterType(t)}
-                          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all
-                            ${filterType === t ? 'bg-white dark:bg-[#333] shadow-sm text-brand-blue dark:text-white' : 'text-[#717171] dark:text-[#A0A0A0] hover:text-[#222] dark:hover:text-[#F7F7F7]'}`}>
-                          {t === 'DEBIT' ? 'OUTFLOW' : t === 'CREDIT' ? 'INFLOW' : t === 'TRANSFER' ? 'TRANSFER' : 'ALL'}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Categories (Multi-select) */}
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-bold text-[#717171] uppercase tracking-widest flex justify-between">
-                      Taxonomy
-                      <span className="text-brand-blue dark:text-white opacity-50">{filterCategory.length > 0 ? `${filterCategory.length} selected` : 'All'}</span>
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {appCategories.map(c => {
-                        const isSelected = filterCategory.includes(c);
-                        return (
-                          <button key={c} onClick={() => toggleArrayFilter(filterCategory, setFilterCategory, c)}
-                            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all
-                              ${isSelected ? 'bg-brand-blue/10 border-brand-blue/30 text-brand-blue dark:text-[#F7F7F7]' : 'bg-white dark:bg-[#111] border-[#EBEBEB] dark:border-[#333] text-[#717171] dark:text-[#A0A0A0]'}`}>
-                            {c}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Tags (Multi-select) */}
-                  {tags.length > 0 && (
-                    <div className="space-y-3">
-                      <label className="text-[10px] font-bold text-[#717171] uppercase tracking-widest flex justify-between">
-                        Classifier
-                        <span className="text-brand-blue dark:text-white opacity-50">{filterExpenseType.length > 0 ? `${filterExpenseType.length} selected` : 'All'}</span>
-                      </label>
-                      <div className="flex flex-wrap gap-2">
-                        {tags.map(t => {
-                          const isSelected = filterExpenseType.includes(t);
-                          return (
-                            <button key={t} onClick={() => toggleArrayFilter(filterExpenseType, setFilterExpenseType, t)}
-                              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all
-                                ${isSelected ? 'bg-brand-blue/10 border-brand-blue/30 text-brand-blue dark:text-[#F7F7F7]' : 'bg-white dark:bg-[#111] border-[#EBEBEB] dark:border-[#333] text-[#717171] dark:text-[#A0A0A0]'}`}>
-                              #{t}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Accounts (Multi-select) */}
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-bold text-[#717171] uppercase tracking-widest flex justify-between">
-                      Sub-Ledger
-                      <span className="text-brand-blue dark:text-white opacity-50">{filterAccount.length > 0 ? `${filterAccount.length} selected` : 'All'}</span>
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {accounts.map(a => {
-                        const isSelected = filterAccount.includes(String(a.id));
-                        return (
-                          <button key={a.id} onClick={() => toggleArrayFilter(filterAccount, setFilterAccount, String(a.id))}
-                            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all flex items-center gap-2
-                              ${isSelected ? 'bg-brand-blue/10 border-brand-blue/30 text-brand-blue dark:text-[#F7F7F7]' : 'bg-white dark:bg-[#111] border-[#EBEBEB] dark:border-[#333] text-[#717171] dark:text-[#A0A0A0]'}`}>
-                            <Landmark className="w-3 h-3" />
-                            {a.bankName}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                </div>
-
-                <div className="absolute bottom-0 left-0 right-0 p-6 bg-white dark:bg-[#0C0C0F] border-t border-[#EBEBEB] dark:border-[#222] flex gap-3 z-10">
-                  <button onClick={() => { setFilterType('ALL'); setFilterCategory([]); setFilterAccount([]); setFilterExpenseType([]); setFilterPaymentMethod([]); handleDatePresetChange('ALL_TIME'); setSortConfig({key: 'date', direction: 'desc'}); }}
-                    className="flex-1 py-3 bg-neutral-100 dark:bg-[#222] text-[#222] dark:text-[#F7F7F7] rounded-xl text-xs font-bold transition-all">
-                    Reset
-                  </button>
-                  <button onClick={() => setIsFiltersExpanded(false)}
-                    className="flex-[2] py-3 bg-brand-blue text-white rounded-xl text-xs font-bold shadow-lg shadow-brand-blue/20 transition-all">
-                    Show Results
-                  </button>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
 
         <div className="bg-white dark:bg-[#111111] border border-brand-blue/5 dark:border-[#222222] rounded-[24px] shadow-sm overflow-hidden">
           <div className="overflow-x-auto">

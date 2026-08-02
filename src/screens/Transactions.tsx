@@ -80,22 +80,15 @@ export default function Transactions() {
   const initialType = (searchParams.get('type') as any) || 'ALL';
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'CREDIT' | 'DEBIT' | 'TRANSFER'>(initialType);
   const [sourceTypeFilter, setSourceTypeFilter] = useState<'ALL' | 'BANK' | 'CREDIT_CARD' | 'CASH'>('ALL');
-  
-  const [categoryFilters, setCategoryFilters] = useState<string[]>(initialCategory !== 'ALL' ? [initialCategory] : []);
-  const initialTag = searchParams.get('tag');
-  const [tagFilters, setTagFilters] = useState<string[]>(initialTag && initialTag !== 'ALL' ? [initialTag] : []);
-  const [accountFilters, setAccountFilters] = useState<number[]>(searchParams.has('account') ? [Number(searchParams.get('account'))] : []);
-  const initialMethod = searchParams.get('method');
-  const [methodFilters, setMethodFilters] = useState<string[]>(initialMethod && initialMethod !== 'ALL' ? [initialMethod] : []);
-  
+  const [categoryFilter, setCategoryFilter] = useState(initialCategory);
+  const initialTag = searchParams.get('tag') || 'ALL';
+  const initialAccount = searchParams.has('account') ? Number(searchParams.get('account')) : 'ALL';
+  const initialMethod = searchParams.get('method') || 'ALL';
+
+  const [accountFilter, setAccountFilter] = useState<number | 'ALL'>(initialAccount);
+  const [tagFilter, setTagFilter] = useState(initialTag);
+  const [methodFilter, setMethodFilter] = useState(initialMethod);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [sortOrder, setSortOrder] = useState<'NEWEST' | 'OLDEST' | 'HIGHEST' | 'LOWEST' | 'A-Z'>('NEWEST');
-  
-  const toggleArrayFilter = (arr: any[], setArr: any, val: any) => {
-    if (arr.includes(val)) setArr(arr.filter((v: any) => v !== val));
-    else setArr([...arr, val]);
-  };
-  const activeFiltersCount = categoryFilters.length + tagFilters.length + accountFilters.length + methodFilters.length + (typeFilter !== 'ALL' ? 1 : 0) + (sourceTypeFilter !== 'ALL' ? 1 : 0);
 
   // ── Detail drawer ─────────────────────────────────────────────
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
