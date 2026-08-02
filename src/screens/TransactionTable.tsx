@@ -614,11 +614,13 @@ export default function TransactionTable() {
                           key={prop.key}
                           onClick={() => {
                             setActivePopover(null);
-                            if (prop.key === 'category' && filterCategory === 'ALL') setFilterCategory(appCategories[0] || 'Food');
-                            if (prop.key === 'nature' && filterType === 'ALL') setFilterType('DEBIT');
-                            if (prop.key === 'account' && filterAccount === 'ALL' && accounts.length > 0) setFilterAccount(String(accounts[0].id));
-                            if (prop.key === 'tag' && filterExpenseType === 'ALL' && tags.length > 0) setFilterExpenseType(tags[0]);
-                            if (prop.key === 'timeline' && datePreset === 'ALL_TIME') handleDatePresetChange('THIS_MONTH');
+                            if (prop.key === 'category' && filterCategory.length === 0 && appCategories.length > 0) setFilterCategory([appCategories[0]]);
+                            if (prop.key === 'type' && filterType.length === 0) setFilterType(['DEBIT']);
+                            if (prop.key === 'accountType' && filterAccountType.length === 0) setFilterAccountType(['BANK']);
+                            if (prop.key === 'account' && filterAccount.length === 0 && accounts.length > 0) setFilterAccount([String(accounts[0].id)]);
+                            if (prop.key === 'method' && filterMethod.length === 0) setFilterMethod(['UPI']);
+                            if (prop.key === 'tag' && filterExpenseType.length === 0 && tags.length > 0) setFilterExpenseType([tags[0]]);
+                            if (prop.key === 'granularity' && datePreset === 'ALL_TIME') handleDatePresetChange('THIS_MONTH');
                             setActivePopover(prop.key);
                           }}
                           className="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/5 flex items-center gap-2 transition-all"

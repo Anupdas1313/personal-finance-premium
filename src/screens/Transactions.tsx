@@ -306,7 +306,9 @@ export default function Transactions() {
                           setActivePopover(null);
                           if (prop.key === 'category' && categoryFilter.length === 0 && appCategories.length > 0) setCategoryFilter([appCategories[0]]);
                           if (prop.key === 'type' && typeFilter.length === 0) setTypeFilter(['DEBIT']);
+                          if (prop.key === 'accountType' && accountTypeFilter.length === 0) setAccountTypeFilter(['BANK']);
                           if (prop.key === 'account' && accountFilter.length === 0 && accounts.length > 0) setAccountFilter([accounts[0].id]);
+                          if (prop.key === 'method' && methodFilter.length === 0) setMethodFilter(['UPI']);
                           if (prop.key === 'tag' && tagFilter.length === 0 && tags.length > 0) setTagFilter([tags[0]]);
                           if (prop.key === 'granularity' && granularity === 'ALL') setGranularity('MONTH');
                           setActivePopover(prop.key);
