@@ -699,130 +699,14 @@ export default function TransactionTable() {
           </div>
 
           
-          {/* Revolut / Apple Finance Horizontal Smart Filter Chips Bar */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs font-semibold select-none pt-0.5">
-            <button
-              onClick={() => toggleType('DEBIT')}
-              className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
-                filterType.includes('DEBIT')
-                  ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
-                  : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
-              }`}
-            >
-              <span>💸 Outflow</span>
-              {filterType.includes('DEBIT') && <X className="w-3 h-3 ml-0.5 opacity-80" />}
-            </button>
-
-            <button
-              onClick={() => toggleAccountType('CREDIT_CARD')}
-              className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
-                filterAccountType.includes('CREDIT_CARD')
-                  ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
-                  : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
-              }`}
-            >
-              <span>💳 Credit Cards</span>
-              {filterAccountType.includes('CREDIT_CARD') && <X className="w-3 h-3 ml-0.5 opacity-80" />}
-            </button>
-
-            <button
-              onClick={() => toggleAccountType('BANK')}
-              className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
-                filterAccountType.includes('BANK')
-                  ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
-                  : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
-              }`}
-            >
-              <span>🏦 Bank Accounts</span>
-              {filterAccountType.includes('BANK') && <X className="w-3 h-3 ml-0.5 opacity-80" />}
-            </button>
-
-            <button
-              onClick={() => toggleAccountType('CASH')}
-              className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
-                filterAccountType.includes('CASH')
-                  ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
-                  : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
-              }`}
-            >
-              <span>💵 Cash & Wallets</span>
-              {filterAccountType.includes('CASH') && <X className="w-3 h-3 ml-0.5 opacity-80" />}
-            </button>
-
-            <button
-              onClick={() => handleDatePresetChange(datePreset === 'THIS_MONTH' ? 'ALL_TIME' : 'THIS_MONTH')}
-              className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
-                datePreset === 'THIS_MONTH'
-                  ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
-                  : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
-              }`}
-            >
-              <span>📅 This Month</span>
-              {datePreset === 'THIS_MONTH' && <X className="w-3 h-3 ml-0.5 opacity-80" />}
-            </button>
-
-            <button
-              onClick={() => handleDatePresetChange(datePreset === 'LAST_MONTH' ? 'ALL_TIME' : 'LAST_MONTH')}
-              className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
-                datePreset === 'LAST_MONTH'
-                  ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
-                  : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
-              }`}
-            >
-              <span>🗓️ Last Month</span>
-              {datePreset === 'LAST_MONTH' && <X className="w-3 h-3 ml-0.5 opacity-80" />}
-            </button>
-
-            {appCategories.includes('Food') && (
-              <button
-                onClick={() => toggleCategory('Food')}
-                className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
-                  filterCategory.includes('Food')
-                    ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
-                    : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
-                }`}
-              >
-                <span>🍔 Food & Dining</span>
-                {filterCategory.includes('Food') && <X className="w-3 h-3 ml-0.5 opacity-80" />}
-              </button>
-            )}
-
-            <button
-              onClick={() => togglePopover('addFilter')}
-              className="px-3 py-1 rounded-xl border border-dashed border-neutral-300 dark:border-white/20 bg-transparent text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/5 flex items-center gap-1 shrink-0 transition-all cursor-pointer font-medium"
-            >
-              <Plus className="w-3 h-3 text-neutral-400" />
-              <span>More</span>
-            </button>
-
-            {(filterCategory.length > 0 || filterType.length > 0 || filterAccount.length > 0 || filterAccountType.length > 0 || filterMethod.length > 0 || filterExpenseType.length > 0 || datePreset !== 'ALL_TIME') && (
-              <button
-                onClick={() => {
-                  setFilterCategory([]);
-                  setFilterType([]);
-                  setFilterAccount([]);
-                  setFilterAccountType([]);
-                  setFilterMethod([]);
-                  setFilterExpenseType([]);
-                  handleDatePresetChange('ALL_TIME');
-                }}
-                className="px-2.5 py-1 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 shrink-0 font-bold uppercase tracking-wider text-[10px] transition-colors ml-1"
-              >
-                Clear All
-              </button>
-            )}
-          </div>
-
-          {/* Active Filter Pills (Notion Style) */}
-          {(filterCategory.length > 0 || filterType.length > 0 || filterAccount.length > 0 || filterExpenseType.length > 0 || datePreset !== 'ALL_TIME') && (
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          {/* 0-Click Property Filter Chips Bar */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs font-semibold select-none pt-0.5">
               {/* Category Pill */}
-              {filterCategory.length > 0 && (
-                <div className="relative">
+              <div className="relative shrink-0">
                   <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                     <button onClick={() => togglePopover('category')} className="flex items-center gap-1 hover:opacity-80">
-                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Category</span>
-                      <span className="font-bold">{filterCategory.length === 1 ? filterCategory[0] : `${filterCategory[0]} +${filterCategory.length - 1}`}</span>
+                      
+                      <span className="font-bold">🏷️ {filterCategory.length === 0 ? 'Category' : (filterCategory.length === 1 ? filterCategory[0] : `${filterCategory[0]} +${filterCategory.length - 1}`)}</span>
                       <ChevronDown className="w-3 h-3 text-neutral-400" />
                     </button>
                     <button onClick={() => setFilterCategory([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
@@ -857,16 +741,14 @@ export default function TransactionTable() {
                       </>
                     )}
                   </AnimatePresence>
-                </div>
-              )}
+              </div>
 
               {/* Nature / Flow Pill */}
-              {filterType.length > 0 && (
-                <div className="relative">
+              <div className="relative shrink-0">
                   <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                     <button onClick={() => togglePopover('nature')} className="flex items-center gap-1 hover:opacity-80">
-                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Nature</span>
-                      <span className="font-bold">{filterType.length === 1 ? (filterType[0] === 'DEBIT' ? 'Outflow' : filterType[0] === 'CREDIT' ? 'Inflow' : 'Transfer') : `${filterType.length} selected` }</span>
+                      
+                      <span className="font-bold">⇄ {filterType.length === 0 ? 'Flow' : (filterType.length === 1 ? (filterType[0] === 'DEBIT' ? 'Outflow' : filterType[0] === 'CREDIT' ? 'Inflow' : 'Transfer') : `${filterType.length} selected`)}</span>
                       <ChevronDown className="w-3 h-3 text-neutral-400" />
                     </button>
                     <button onClick={() => setFilterType([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
@@ -905,16 +787,14 @@ export default function TransactionTable() {
                       </>
                     )}
                   </AnimatePresence>
-                </div>
-              )}
+              </div>
 
               {/* Account Type Filter Pill */}
-              {filterAccountType.length > 0 && (
-                <div className="relative">
+              <div className="relative shrink-0">
                   <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                     <button onClick={() => togglePopover('accountType')} className="flex items-center gap-1 hover:opacity-80">
-                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Account Type</span>
-                      <span className="font-bold">{filterAccountType.length === 1 ? (filterAccountType[0] === 'BANK' ? 'Bank' : filterAccountType[0] === 'CREDIT_CARD' ? 'Credit Card' : 'Cash/Wallet') : `${filterAccountType.length} selected` }</span>
+                      
+                      <span className="font-bold">💳 {filterAccountType.length === 0 ? 'Account Type' : (filterAccountType.length === 1 ? (filterAccountType[0] === 'BANK' ? 'Bank' : filterAccountType[0] === 'CREDIT_CARD' ? 'Credit Card' : 'Cash/Wallet') : `${filterAccountType.length} selected`)}</span>
                       <ChevronDown className="w-3 h-3 text-neutral-400" />
                     </button>
                     <button onClick={() => setFilterAccountType([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
@@ -953,15 +833,13 @@ export default function TransactionTable() {
                       </>
                     )}
                   </AnimatePresence>
-                </div>
-              )}
+              </div>
 
               {/* Payment Method Filter Pill */}
-              {filterMethod.length > 0 && (
-                <div className="relative">
+              <div className="relative shrink-0">
                   <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                     <button onClick={() => togglePopover('method')} className="flex items-center gap-1 hover:opacity-80">
-                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Method</span>
+                      
                       <span className="font-bold">{filterMethod.length === 1 ? filterMethod[0] : `${filterMethod[0]} +${filterMethod.length - 1}`}</span>
                       <ChevronDown className="w-3 h-3 text-neutral-400" />
                     </button>
@@ -997,15 +875,13 @@ export default function TransactionTable() {
                       </>
                     )}
                   </AnimatePresence>
-                </div>
-              )}
+              </div>
 
               {/* Grouped Specific Account Filter Pill */}
-              {filterAccount.length > 0 && (
-                <div className="relative">
+              <div className="relative shrink-0">
                   <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                     <button onClick={() => togglePopover('account')} className="flex items-center gap-1 hover:opacity-80">
-                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Account</span>
+                      
                       <span className="font-bold">{filterAccount.length === 1 ? (accounts.find(a => String(a.id) === filterAccount[0])?.bankName || filterAccount[0]) : `${accounts.find(a => String(a.id) === filterAccount[0])?.bankName || 'Account'} +${filterAccount.length - 1}`}</span>
                       <ChevronDown className="w-3 h-3 text-neutral-400" />
                     </button>
@@ -1055,15 +931,13 @@ export default function TransactionTable() {
                       </>
                     )}
                   </AnimatePresence>
-                </div>
-              )}
+              </div>
 
               {/* Tag Pill */}
-              {filterExpenseType.length > 0 && (
-                <div className="relative">
+              <div className="relative shrink-0">
                   <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                     <button onClick={() => togglePopover('tag')} className="flex items-center gap-1 hover:opacity-80">
-                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Tag</span>
+                      
                       <span className="font-bold">{filterExpenseType.length === 1 ? `#${filterExpenseType[0]}` : `#${filterExpenseType[0]} +${filterExpenseType.length - 1}`}</span>
                       <ChevronDown className="w-3 h-3 text-neutral-400" />
                     </button>
@@ -1099,15 +973,13 @@ export default function TransactionTable() {
                       </>
                     )}
                   </AnimatePresence>
-                </div>
-              )}
+              </div>
 
               {/* Timeline Pill */}
-              {datePreset !== 'ALL_TIME' && (
-                <div className="relative">
+              <div className="relative shrink-0">
                   <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                     <button onClick={() => togglePopover('timeline')} className="flex items-center gap-1 hover:opacity-80">
-                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Time</span>
+                      
                       <span className="font-bold">
                         {datePreset === 'CUSTOM' && startDate && endDate
                           ? `${format(new Date(startDate + 'T00:00:00'), 'MMM d')} – ${format(new Date(endDate + 'T00:00:00'), 'MMM d')}`
@@ -1204,10 +1076,9 @@ export default function TransactionTable() {
                       </>
                     )}
                   </AnimatePresence>
-                </div>
-              )}
+              </div>
 
-              {/* Clear All Text Button */}
+              {/* Clear All Chip */}
               <button
                 onClick={() => {
                   setFilterCategory([]);
@@ -1221,7 +1092,6 @@ export default function TransactionTable() {
                 Clear All
               </button>
             </div>
-          )}
         </div>
 <div className="bg-white dark:bg-[#111111] border border-brand-blue/5 dark:border-[#222222] rounded-[24px] shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
