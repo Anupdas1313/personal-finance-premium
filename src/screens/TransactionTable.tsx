@@ -881,7 +881,11 @@ export default function TransactionTable() {
                   <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                     <button onClick={() => togglePopover('timeline')} className="flex items-center gap-1 hover:opacity-80">
                       <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Time</span>
-                      <span className="font-bold">{datePreset.replace('_', ' ')}</span>
+                      <span className="font-bold">
+                        {datePreset === 'CUSTOM' && startDate && endDate
+                          ? `${format(new Date(startDate + 'T00:00:00'), 'MMM d')} – ${format(new Date(endDate + 'T00:00:00'), 'MMM d')}`
+                          : datePreset.replace('_', ' ')}
+                      </span>
                       <ChevronDown className="w-3 h-3 text-neutral-400" />
                     </button>
                     <button onClick={() => handleDatePresetChange('ALL_TIME')} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
@@ -893,7 +897,8 @@ export default function TransactionTable() {
                       <>
                         <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
                         <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                          className="absolute left-0 mt-1.5 w-48 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                          className="absolute left-0 mt-1.5 w-60 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-2.5 z-50 space-y-1">
+                          <div className="px-2 py-1 text-[9px] font-black uppercase tracking-wider text-neutral-400">Timeline</div>
                           {['ALL_TIME', 'TODAY', 'YESTERDAY', 'THIS_WEEK', 'THIS_MONTH', 'CUSTOM'].map(p => (
                             <button key={p} onClick={() => { handleDatePresetChange(p); if (p !== 'CUSTOM') setActivePopover(null); }}
                               className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${datePreset === p ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
@@ -901,6 +906,64 @@ export default function TransactionTable() {
                               {datePreset === p && <CheckCircle2 className="w-3.5 h-3.5 text-brand-blue dark:text-white" />}
                             </button>
                           ))}
+
+                          {datePreset === 'CUSTOM' && (
+                            <div className="pt-2 mt-1 border-t border-neutral-100 dark:border-white/5 space-y-2">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest block mb-1">From</span>
+                                  <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={e => setStartDate(e.target.value)}
+                                    className="w-full px-2 py-1 bg-neutral-50 dark:bg-black/20 border border-neutral-200 dark:border-neutral-700 rounded-lg text-[10px] font-semibold text-neutral-800 dark:text-white"
+                                  />
+                                </div>
+                                <div>
+                                  <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest block mb-1">To</span>
+                                  <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={e => setEndDate(e.target.value)}
+                                    className="w-full px-2 py-1 bg-neutral-50 dark:bg-black/20 border border-neutral-200 dark:border-neutral-700 rounded-lg text-[10px] font-semibold text-neutral-800 dark:text-white"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="flex flex-wrap gap-1 pt-1">
+                                <button
+                                  onClick={() => {
+                                    setStartDate(format(subDays(new Date(), 7), 'yyyy-MM-dd'));
+                                    setEndDate(format(new Date(), 'yyyy-MM-dd'));
+                                  }}
+                                  className="px-2 py-0.5 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-md text-[9px] font-semibold text-neutral-600 dark:text-neutral-300">
+                                  Last 7d
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setStartDate(format(subDays(new Date(), 30), 'yyyy-MM-dd'));
+                                    setEndDate(format(new Date(), 'yyyy-MM-dd'));
+                                  }}
+                                  className="px-2 py-0.5 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-md text-[9px] font-semibold text-neutral-600 dark:text-neutral-300">
+                                  Last 30d
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setStartDate(format(startOfYear(new Date()), 'yyyy-MM-dd'));
+                                    setEndDate(format(new Date(), 'yyyy-MM-dd'));
+                                  }}
+                                  className="px-2 py-0.5 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-md text-[9px] font-semibold text-neutral-600 dark:text-neutral-300">
+                                  YTD
+                                </button>
+                              </div>
+
+                              <button
+                                onClick={() => setActivePopover(null)}
+                                className="w-full py-1.5 bg-brand-blue text-white rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all">
+                                Apply Range
+                              </button>
+                            </div>
+                          )}
                         </motion.div>
                       </>
                     )}

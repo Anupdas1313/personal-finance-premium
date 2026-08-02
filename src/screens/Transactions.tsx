@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction, normalizeType } from '../models/db';
-import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, addMonths, subMonths, startOfYear, endOfYear, isSameDay } from 'date-fns';
+import { format, subDays, startOfMonth, endOfMonth, startOfDay, endOfDay, addMonths, subMonths, startOfYear, endOfYear, isSameDay } from 'date-fns';
 import { X, Trash2, Filter, Search, Edit3, Download, FileText, Plus, CheckSquare,
   ChevronLeft, ChevronRight, ListOrdered, ArrowDownLeft, ArrowUpRight,
   Layers, Tag as TagIcon, Landmark, Smartphone,
@@ -554,7 +554,13 @@ export default function Transactions() {
                 <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                   <button onClick={() => togglePopover('granularity')} className="flex items-center gap-1 hover:opacity-80">
                     <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Time</span>
-                    <span className="font-bold">{granularity}</span>
+                    <span className="font-bold">
+                      {granularity === 'CUSTOM'
+                        ? `${format(new Date(customRange.start + 'T00:00:00'), 'MMM d')} – ${format(new Date(customRange.end + 'T00:00:00'), 'MMM d')}`
+                        : granularity === 'MONTH'
+                        ? format(referenceDate, 'MMM yyyy')
+                        : granularity}
+                    </span>
                     <ChevronDown className="w-3 h-3 text-neutral-400" />
                   </button>
                   <button onClick={() => setGranularity('ALL')} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
@@ -566,14 +572,84 @@ export default function Transactions() {
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
                       <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                        className="absolute left-0 mt-1.5 w-44 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
-                        {(['MONTH', 'YEAR', 'ALL', 'CUSTOM'] as const).map(g => (
-                          <button key={g} onClick={() => { setGranularity(g); setActivePopover(null); }}
-                            className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${granularity === g ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
-                            <span>{g}</span>
-                            {granularity === g && <CheckCircle2 className="w-3.5 h-3.5 text-brand-blue dark:text-white" />}
+                        className="absolute left-0 mt-1.5 w-60 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-2.5 z-50 space-y-1">
+                        <div className="px-2 py-1 text-[9px] font-black uppercase tracking-wider text-neutral-400">Timeline</div>
+                        {[
+                          { id: 'MONTH', label: 'This Month' },
+                          { id: 'YEAR', label: 'This Year' },
+                          { id: 'ALL', label: 'All Time' },
+                          { id: 'CUSTOM', label: 'Custom Range...' }
+                        ].map(g => (
+                          <button key={g.id} onClick={() => { setGranularity(g.id as any); if (g.id !== 'CUSTOM') setActivePopover(null); }}
+                            className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${granularity === g.id ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
+                            <span>{g.label}</span>
+                            {granularity === g.id && <CheckCircle2 className="w-3.5 h-3.5 text-brand-blue dark:text-white" />}
                           </button>
                         ))}
+
+                        {granularity === 'CUSTOM' && (
+                          <div className="pt-2 mt-1 border-t border-neutral-100 dark:border-white/5 space-y-2">
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest block mb-1">From</span>
+                                <input
+                                  type="date"
+                                  value={customRange.start}
+                                  onChange={e => setCustomRange(prev => ({ ...prev, start: e.target.value }))}
+                                  className="w-full px-2 py-1 bg-neutral-50 dark:bg-black/20 border border-neutral-200 dark:border-neutral-700 rounded-lg text-[10px] font-semibold text-neutral-800 dark:text-white"
+                                />
+                              </div>
+                              <div>
+                                <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest block mb-1">To</span>
+                                <input
+                                  type="date"
+                                  value={customRange.end}
+                                  onChange={e => setCustomRange(prev => ({ ...prev, end: e.target.value }))}
+                                  className="w-full px-2 py-1 bg-neutral-50 dark:bg-black/20 border border-neutral-200 dark:border-neutral-700 rounded-lg text-[10px] font-semibold text-neutral-800 dark:text-white"
+                                />
+                              </div>
+                            </div>
+                            
+                            <div className="flex flex-wrap gap-1 pt-1">
+                              <button
+                                onClick={() => {
+                                  setCustomRange({
+                                    start: format(subDays(new Date(), 7), 'yyyy-MM-dd'),
+                                    end: format(new Date(), 'yyyy-MM-dd')
+                                  });
+                                }}
+                                className="px-2 py-0.5 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-md text-[9px] font-semibold text-neutral-600 dark:text-neutral-300">
+                                Last 7d
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setCustomRange({
+                                    start: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
+                                    end: format(new Date(), 'yyyy-MM-dd')
+                                  });
+                                }}
+                                className="px-2 py-0.5 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-md text-[9px] font-semibold text-neutral-600 dark:text-neutral-300">
+                                Last 30d
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setCustomRange({
+                                    start: format(startOfYear(new Date()), 'yyyy-MM-dd'),
+                                    end: format(new Date(), 'yyyy-MM-dd')
+                                  });
+                                }}
+                                className="px-2 py-0.5 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-md text-[9px] font-semibold text-neutral-600 dark:text-neutral-300">
+                                YTD
+                              </button>
+                            </div>
+
+                            <button
+                              onClick={() => setActivePopover(null)}
+                              className="w-full py-1.5 bg-brand-blue text-white rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all">
+                              Apply Range
+                            </button>
+                          </div>
+                        )}
                       </motion.div>
                     </>
                   )}
