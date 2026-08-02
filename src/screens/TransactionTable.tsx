@@ -915,12 +915,22 @@ export default function TransactionTable() {
 
 
                     <td className="hidden md:table-cell px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-widest ${normalizeType(tx.type) === 'CREDIT' ? 'bg-brand-green/10 text-brand-green' : 'bg-brand-red/10 text-brand-red'}`}>
+                      <button
+                        onClick={() => setFilterType(normalizeType(tx.type))}
+                        className={`px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-widest cursor-pointer hover:opacity-80 transition-opacity ${normalizeType(tx.type) === 'CREDIT' ? 'bg-brand-green/10 text-brand-green' : 'bg-brand-red/10 text-brand-red'}`}
+                        title={`Filter by nature: ${normalizeType(tx.type)}`}>
                         {normalizeType(tx.type)}
-                      </span>
+                      </button>
                     </td>
 
-                    <td className="hidden sm:table-cell px-4 py-3 font-semibold text-[#525252] dark:text-[#A0A0A0]">{tx.category}</td>
+                    <td className="hidden sm:table-cell px-4 py-3 font-semibold text-[#525252] dark:text-[#A0A0A0]">
+                      <button
+                        onClick={() => tx.category && setFilterCategory(tx.category)}
+                        className="hover:text-brand-blue dark:hover:text-white hover:underline cursor-pointer transition-colors text-left"
+                        title={`Filter by category: ${tx.category}`}>
+                        {tx.category || '—'}
+                      </button>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="font-semibold text-brand-blue dark:text-[#F7F7F7] max-w-[120px] sm:max-w-[200px] truncate">
                         {tx.party || '—'}
@@ -939,7 +949,12 @@ export default function TransactionTable() {
                     </td>
 
                     <td className="hidden md:table-cell px-4 py-3 font-medium text-[#717171] dark:text-[#A0A0A0]">
-                      {accounts.find(a => a.id === tx.accountId)?.bankName || '—'}
+                      <button
+                        onClick={() => tx.accountId && setFilterAccount(String(tx.accountId))}
+                        className="hover:text-brand-blue dark:hover:text-white hover:underline cursor-pointer transition-colors text-left"
+                        title={`Filter by account: ${accounts.find(a => a.id === tx.accountId)?.bankName}`}>
+                        {accounts.find(a => a.id === tx.accountId)?.bankName || '—'}
+                      </button>
                     </td>
                   </tr>
                 ))}

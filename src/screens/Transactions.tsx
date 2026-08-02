@@ -585,9 +585,12 @@ export default function Transactions() {
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setSelectedTx(tx)}
                   className={`bg-white dark:bg-[#0C0C0F] hover:bg-neutral-50 dark:hover:bg-white/5 border border-neutral-100 dark:border-white/5 p-3 rounded-[20px] shadow-sm flex items-center gap-3 transition-all cursor-pointer active:shadow-inner pointer-events-auto`}>
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg border ${CATEGORY_COLORS[tx.category || 'Other'] || 'bg-neutral-50'} shrink-0`}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); if (tx.category) setCategoryFilter(tx.category); }}
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg border ${CATEGORY_COLORS[tx.category || 'Other'] || 'bg-neutral-50'} shrink-0 hover:scale-105 active:scale-95 transition-all`}
+                    title={`Filter by ${tx.category}`}>
                     {CATEGORY_ICONS[tx.category || 'Other'] || '📝'}
-                  </div>
+                  </button>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-xs font-semibold text-brand-blue dark:text-white truncate leading-tight mb-0.5">
                       {tx.party || tx.category || 'Record'}
@@ -595,7 +598,11 @@ export default function Transactions() {
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-medium text-neutral-400">{format(date, 'hh:mm a')}</span>
                       <div className="w-1 h-1 rounded-full bg-neutral-200 dark:bg-neutral-700" />
-                      <span className="text-[10px] font-medium text-neutral-400 dark:text-neutral-500">{tx.category}</span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); if (tx.category) setCategoryFilter(tx.category); }}
+                        className="text-[10px] font-medium text-neutral-400 dark:text-neutral-500 hover:text-brand-blue dark:hover:text-white hover:underline transition-colors">
+                        {tx.category}
+                      </button>
                     </div>
                   </div>
                   <p className={`text-sm font-bold tracking-tight ${normalizeType(tx.type) === 'DEBIT' ? 'text-rose-500' : normalizeType(tx.type) === 'TRANSFER' ? 'text-cyan-500' : 'text-emerald-500'}`}>
