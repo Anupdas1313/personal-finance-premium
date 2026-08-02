@@ -387,6 +387,120 @@ export default function Transactions() {
           </div>
         </div>
 
+        {/* Revolut / Apple Finance Horizontal Smart Filter Chips Bar */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs font-semibold select-none pt-0.5">
+          <button
+            onClick={() => toggleType('DEBIT')}
+            className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
+              typeFilter.includes('DEBIT')
+                ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
+                : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
+            }`}
+          >
+            <span>💸 Outflow</span>
+            {typeFilter.includes('DEBIT') && <X className="w-3 h-3 ml-0.5 opacity-80" />}
+          </button>
+
+          <button
+            onClick={() => toggleAccountType('CREDIT_CARD')}
+            className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
+              accountTypeFilter.includes('CREDIT_CARD')
+                ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
+                : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
+            }`}
+          >
+            <span>💳 Credit Cards</span>
+            {accountTypeFilter.includes('CREDIT_CARD') && <X className="w-3 h-3 ml-0.5 opacity-80" />}
+          </button>
+
+          <button
+            onClick={() => toggleAccountType('BANK')}
+            className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
+              accountTypeFilter.includes('BANK')
+                ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
+                : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
+            }`}
+          >
+            <span>🏦 Bank Accounts</span>
+            {accountTypeFilter.includes('BANK') && <X className="w-3 h-3 ml-0.5 opacity-80" />}
+          </button>
+
+          <button
+            onClick={() => toggleAccountType('CASH')}
+            className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
+              accountTypeFilter.includes('CASH')
+                ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
+                : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
+            }`}
+          >
+            <span>💵 Cash & Wallets</span>
+            {accountTypeFilter.includes('CASH') && <X className="w-3 h-3 ml-0.5 opacity-80" />}
+          </button>
+
+          <button
+            onClick={() => setGranularity(prev => prev === 'MONTH' ? 'ALL' : 'MONTH')}
+            className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
+              granularity === 'MONTH'
+                ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
+                : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
+            }`}
+          >
+            <span>📅 This Month</span>
+            {granularity === 'MONTH' && <X className="w-3 h-3 ml-0.5 opacity-80" />}
+          </button>
+
+          <button
+            onClick={() => setGranularity(prev => prev === 'LAST_MONTH' ? 'ALL' : 'LAST_MONTH')}
+            className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
+              granularity === 'LAST_MONTH'
+                ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
+                : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
+            }`}
+          >
+            <span>🗓️ Last Month</span>
+            {granularity === 'LAST_MONTH' && <X className="w-3 h-3 ml-0.5 opacity-80" />}
+          </button>
+
+          {appCategories.includes('Food') && (
+            <button
+              onClick={() => toggleCategory('Food')}
+              className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
+                categoryFilter.includes('Food')
+                  ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
+                  : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
+              }`}
+            >
+              <span>🍔 Food & Dining</span>
+              {categoryFilter.includes('Food') && <X className="w-3 h-3 ml-0.5 opacity-80" />}
+            </button>
+          )}
+
+          <button
+            onClick={() => togglePopover('addFilter')}
+            className="px-3 py-1 rounded-xl border border-dashed border-neutral-300 dark:border-white/20 bg-transparent text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/5 flex items-center gap-1 shrink-0 transition-all cursor-pointer font-medium"
+          >
+            <Plus className="w-3 h-3 text-neutral-400" />
+            <span>More</span>
+          </button>
+
+          {(categoryFilter.length > 0 || typeFilter.length > 0 || accountFilter.length > 0 || accountTypeFilter.length > 0 || methodFilter.length > 0 || tagFilter.length > 0 || granularity !== 'ALL') && (
+            <button
+              onClick={() => {
+                setCategoryFilter([]);
+                setTypeFilter([]);
+                setAccountFilter([]);
+                setAccountTypeFilter([]);
+                setMethodFilter([]);
+                setTagFilter([]);
+                setGranularity('ALL');
+              }}
+              className="px-2.5 py-1 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 shrink-0 font-bold uppercase tracking-wider text-[10px] transition-colors ml-1"
+            >
+              Clear All
+            </button>
+          )}
+        </div>
+
         {/* Active Notion-style Filter Badges (Pills) */}
         {(categoryFilter.length > 0 || typeFilter.length > 0 || accountFilter.length > 0 || tagFilter.length > 0 || granularity !== 'ALL') && (
           <div className="flex flex-wrap items-center gap-1.5 pt-1">

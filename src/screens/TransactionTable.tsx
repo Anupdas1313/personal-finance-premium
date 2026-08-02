@@ -698,6 +698,121 @@ export default function TransactionTable() {
             </div>
           </div>
 
+          
+          {/* Revolut / Apple Finance Horizontal Smart Filter Chips Bar */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs font-semibold select-none pt-0.5">
+            <button
+              onClick={() => toggleType('DEBIT')}
+              className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
+                filterType.includes('DEBIT')
+                  ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
+                  : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
+              }`}
+            >
+              <span>💸 Outflow</span>
+              {filterType.includes('DEBIT') && <X className="w-3 h-3 ml-0.5 opacity-80" />}
+            </button>
+
+            <button
+              onClick={() => toggleAccountType('CREDIT_CARD')}
+              className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
+                filterAccountType.includes('CREDIT_CARD')
+                  ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
+                  : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
+              }`}
+            >
+              <span>💳 Credit Cards</span>
+              {filterAccountType.includes('CREDIT_CARD') && <X className="w-3 h-3 ml-0.5 opacity-80" />}
+            </button>
+
+            <button
+              onClick={() => toggleAccountType('BANK')}
+              className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
+                filterAccountType.includes('BANK')
+                  ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
+                  : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
+              }`}
+            >
+              <span>🏦 Bank Accounts</span>
+              {filterAccountType.includes('BANK') && <X className="w-3 h-3 ml-0.5 opacity-80" />}
+            </button>
+
+            <button
+              onClick={() => toggleAccountType('CASH')}
+              className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
+                filterAccountType.includes('CASH')
+                  ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
+                  : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
+              }`}
+            >
+              <span>💵 Cash & Wallets</span>
+              {filterAccountType.includes('CASH') && <X className="w-3 h-3 ml-0.5 opacity-80" />}
+            </button>
+
+            <button
+              onClick={() => handleDatePresetChange(datePreset === 'THIS_MONTH' ? 'ALL_TIME' : 'THIS_MONTH')}
+              className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
+                datePreset === 'THIS_MONTH'
+                  ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
+                  : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
+              }`}
+            >
+              <span>📅 This Month</span>
+              {datePreset === 'THIS_MONTH' && <X className="w-3 h-3 ml-0.5 opacity-80" />}
+            </button>
+
+            <button
+              onClick={() => handleDatePresetChange(datePreset === 'LAST_MONTH' ? 'ALL_TIME' : 'LAST_MONTH')}
+              className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
+                datePreset === 'LAST_MONTH'
+                  ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
+                  : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
+              }`}
+            >
+              <span>🗓️ Last Month</span>
+              {datePreset === 'LAST_MONTH' && <X className="w-3 h-3 ml-0.5 opacity-80" />}
+            </button>
+
+            {appCategories.includes('Food') && (
+              <button
+                onClick={() => toggleCategory('Food')}
+                className={`px-3 py-1 rounded-xl border flex items-center gap-1 shrink-0 transition-all cursor-pointer ${
+                  filterCategory.includes('Food')
+                    ? 'bg-brand-blue text-white border-brand-blue shadow-sm font-bold'
+                    : 'bg-neutral-100/70 dark:bg-white/5 border-neutral-200/50 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-white/10'
+                }`}
+              >
+                <span>🍔 Food & Dining</span>
+                {filterCategory.includes('Food') && <X className="w-3 h-3 ml-0.5 opacity-80" />}
+              </button>
+            )}
+
+            <button
+              onClick={() => togglePopover('addFilter')}
+              className="px-3 py-1 rounded-xl border border-dashed border-neutral-300 dark:border-white/20 bg-transparent text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/5 flex items-center gap-1 shrink-0 transition-all cursor-pointer font-medium"
+            >
+              <Plus className="w-3 h-3 text-neutral-400" />
+              <span>More</span>
+            </button>
+
+            {(filterCategory.length > 0 || filterType.length > 0 || filterAccount.length > 0 || filterAccountType.length > 0 || filterMethod.length > 0 || filterExpenseType.length > 0 || datePreset !== 'ALL_TIME') && (
+              <button
+                onClick={() => {
+                  setFilterCategory([]);
+                  setFilterType([]);
+                  setFilterAccount([]);
+                  setFilterAccountType([]);
+                  setFilterMethod([]);
+                  setFilterExpenseType([]);
+                  handleDatePresetChange('ALL_TIME');
+                }}
+                className="px-2.5 py-1 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 shrink-0 font-bold uppercase tracking-wider text-[10px] transition-colors ml-1"
+              >
+                Clear All
+              </button>
+            )}
+          </div>
+
           {/* Active Filter Pills (Notion Style) */}
           {(filterCategory.length > 0 || filterType.length > 0 || filterAccount.length > 0 || filterExpenseType.length > 0 || datePreset !== 'ALL_TIME') && (
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
