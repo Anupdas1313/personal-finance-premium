@@ -190,7 +190,7 @@ export default function Transactions() {
       return 0;
     });
     return result;
-  }, [currentTxs, sourceTypeFilter, typeFilter, categoryFilter, accountFilter, tagFilter, methodFilter, searchTerm, accounts, searchParams, sortConfig]);
+  }, [currentTxs, accountTypeFilter, typeFilter, categoryFilter, accountFilter, tagFilter, methodFilter, searchTerm, accounts, searchParams, sortConfig]);
 
   const totals = useMemo(() =>
     filteredTxs.reduce((acc, tx) => {
