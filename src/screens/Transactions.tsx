@@ -269,7 +269,61 @@ export default function Transactions() {
             )}
           </div>
 
+          {/* + Filter Add Button */}
+          <div className="relative">
+            <button
+              onClick={() => togglePopover('addFilter')}
+              className="h-8 px-2.5 bg-neutral-100/60 dark:bg-white/5 hover:bg-neutral-200/50 dark:hover:bg-white/10 border border-transparent rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 flex items-center gap-1 transition-all"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Filter</span>
+            </button>
 
+            {/* Add Filter Popover Menu */}
+            <AnimatePresence>
+              {activePopover === 'addFilter' && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 5 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 5 }}
+                    className="absolute right-0 mt-1.5 w-44 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5"
+                  >
+                    <div className="px-2 py-1 text-[9px] font-black uppercase tracking-wider text-neutral-400">Add filter by</div>
+                    {[
+                      { key: 'category', label: 'Category', icon: '🏷️' },
+                      { key: 'type', label: 'Flow (In/Out)', icon: '⇄' },
+                      { key: 'accountType', label: 'Account Type (Bank/Card/Cash)', icon: '💳' },
+                      { key: 'account', label: 'Specific Account', icon: '🏦' },
+                      { key: 'method', label: 'Payment Method (UPI/Card/Cash)', icon: '📲' },
+                      { key: 'tag', label: 'Tag', icon: '🔖' },
+                      { key: 'granularity', label: 'Timeline', icon: '📅' },
+                    ].map(prop => (
+                      <button
+                        key={prop.key}
+                        onClick={() => {
+                          setActivePopover(null);
+                          if (prop.key === 'category' && categoryFilter.length === 0 && appCategories.length > 0) setCategoryFilter([appCategories[0]]);
+                          if (prop.key === 'type' && typeFilter.length === 0) setTypeFilter(['DEBIT']);
+                          if (prop.key === 'accountType' && accountTypeFilter.length === 0) setAccountTypeFilter(['BANK']);
+                          if (prop.key === 'account' && accountFilter.length === 0 && accounts.length > 0) setAccountFilter([accounts[0].id]);
+                          if (prop.key === 'method' && methodFilter.length === 0) setMethodFilter(['UPI']);
+                          if (prop.key === 'tag' && tagFilter.length === 0 && tags.length > 0) setTagFilter([tags[0]]);
+                          if (prop.key === 'granularity' && granularity === 'ALL') setGranularity('MONTH');
+                          setActivePopover(prop.key);
+                        }}
+                        className="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/5 flex items-center gap-2 transition-all"
+                      >
+                        <span className="text-xs">{prop.icon}</span>
+                        <span>{prop.label}</span>
+                      </button>
+                    ))}
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Sort Button */}
           <div className="relative">
@@ -333,14 +387,16 @@ export default function Transactions() {
           </div>
         </div>
 
-        {/* 0-Click Property Filter Chips Bar */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs font-semibold select-none pt-0.5">
+        {/* Active Notion-style Filter Badges (Pills) */}
+        {(categoryFilter.length > 0 || typeFilter.length > 0 || accountFilter.length > 0 || tagFilter.length > 0 || granularity !== 'ALL') && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-1">
             {/* Category Filter Pill */}
-            <div className="relative shrink-0">
+            {categoryFilter.length > 0 && (
+              <div className="relative">
                 <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                   <button onClick={() => togglePopover('category')} className="flex items-center gap-1 hover:opacity-80">
-                    
-                    <span className="font-bold">🏷️ {categoryFilter.length === 0 ? 'Category' : (categoryFilter.length === 1 ? categoryFilter[0] : `${categoryFilter[0]} +${categoryFilter.length - 1}`)}</span>
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Category</span>
+                    <span className="font-bold">{categoryFilter.length === 1 ? categoryFilter[0] : `${categoryFilter[0]} +${categoryFilter.length - 1}`}</span>
                     <ChevronDown className="w-3 h-3 text-neutral-400" />
                   </button>
                   <button onClick={() => setCategoryFilter([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
@@ -376,13 +432,15 @@ export default function Transactions() {
                   )}
                 </AnimatePresence>
               </div>
+            )}
 
             {/* Flow Filter Pill */}
-            <div className="relative shrink-0">
+            {typeFilter.length > 0 && (
+              <div className="relative">
                 <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                   <button onClick={() => togglePopover('type')} className="flex items-center gap-1 hover:opacity-80">
-                    
-                    <span className="font-bold">⇄ {typeFilter.length === 0 ? 'Flow' : (typeFilter.length === 1 ? (typeFilter[0] === 'DEBIT' ? 'Outflow' : typeFilter[0] === 'CREDIT' ? 'Inflow' : 'Transfer') : `${typeFilter.length} selected`)}</span>
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Flow</span>
+                    <span className="font-bold">{typeFilter.length === 1 ? (typeFilter[0] === 'DEBIT' ? 'Outflow' : typeFilter[0] === 'CREDIT' ? 'Inflow' : 'Transfer') : `${typeFilter.length} selected` }</span>
                     <ChevronDown className="w-3 h-3 text-neutral-400" />
                   </button>
                   <button onClick={() => setTypeFilter([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
@@ -422,13 +480,15 @@ export default function Transactions() {
                   )}
                 </AnimatePresence>
               </div>
+            )}
 
             {/* Account Type Filter Pill */}
-            <div className="relative shrink-0">
+            {accountTypeFilter.length > 0 && (
+              <div className="relative">
                 <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                   <button onClick={() => togglePopover('accountType')} className="flex items-center gap-1 hover:opacity-80">
-                    
-                    <span className="font-bold">💳 {accountTypeFilter.length === 0 ? 'Account Type' : (accountTypeFilter.length === 1 ? (accountTypeFilter[0] === 'BANK' ? 'Bank' : accountTypeFilter[0] === 'CREDIT_CARD' ? 'Credit Card' : 'Cash/Wallet') : `${accountTypeFilter.length} selected`)}</span>
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Account Type</span>
+                    <span className="font-bold">{accountTypeFilter.length === 1 ? (accountTypeFilter[0] === 'BANK' ? 'Bank' : accountTypeFilter[0] === 'CREDIT_CARD' ? 'Credit Card' : 'Cash/Wallet') : `${accountTypeFilter.length} selected` }</span>
                     <ChevronDown className="w-3 h-3 text-neutral-400" />
                   </button>
                   <button onClick={() => setAccountTypeFilter([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
@@ -468,12 +528,14 @@ export default function Transactions() {
                   )}
                 </AnimatePresence>
               </div>
+            )}
 
             {/* Payment Method Filter Pill */}
-            <div className="relative shrink-0">
+            {methodFilter.length > 0 && (
+              <div className="relative">
                 <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                   <button onClick={() => togglePopover('method')} className="flex items-center gap-1 hover:opacity-80">
-                    
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Method</span>
                     <span className="font-bold">{methodFilter.length === 1 ? methodFilter[0] : `${methodFilter[0]} +${methodFilter.length - 1}`}</span>
                     <ChevronDown className="w-3 h-3 text-neutral-400" />
                   </button>
@@ -510,12 +572,14 @@ export default function Transactions() {
                   )}
                 </AnimatePresence>
               </div>
+            )}
 
             {/* Grouped Specific Account Filter Pill */}
-            <div className="relative shrink-0">
+            {accountFilter.length > 0 && (
+              <div className="relative">
                 <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                   <button onClick={() => togglePopover('account')} className="flex items-center gap-1 hover:opacity-80">
-                    
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Account</span>
                     <span className="font-bold">{accountFilter.length === 1 ? (accounts.find(a => a.id === accountFilter[0])?.bankName || accountFilter[0]) : `${accounts.find(a => a.id === accountFilter[0])?.bankName || 'Account'} +${accountFilter.length - 1}`}</span>
                     <ChevronDown className="w-3 h-3 text-neutral-400" />
                   </button>
@@ -566,12 +630,14 @@ export default function Transactions() {
                   )}
                 </AnimatePresence>
               </div>
+            )}
 
             {/* Tag Filter Pill */}
-            <div className="relative shrink-0">
+            {tagFilter.length > 0 && (
+              <div className="relative">
                 <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                   <button onClick={() => togglePopover('tag')} className="flex items-center gap-1 hover:opacity-80">
-                    
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Tag</span>
                     <span className="font-bold">{tagFilter.length === 1 ? `#${tagFilter[0]}` : `#${tagFilter[0]} +${tagFilter.length - 1}`}</span>
                     <ChevronDown className="w-3 h-3 text-neutral-400" />
                   </button>
@@ -608,12 +674,14 @@ export default function Transactions() {
                   )}
                 </AnimatePresence>
               </div>
+            )}
 
             {/* Timeline Granularity Pill */}
-            <div className="relative shrink-0">
+            {granularity !== 'ALL' && (
+              <div className="relative">
                 <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                   <button onClick={() => togglePopover('granularity')} className="flex items-center gap-1 hover:opacity-80">
-                    
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Time</span>
                     <span className="font-bold">
                       {granularity === 'CUSTOM'
                         ? `${format(new Date(customRange.start + 'T00:00:00'), 'MMM d')} – ${format(new Date(customRange.end + 'T00:00:00'), 'MMM d')}`
@@ -727,8 +795,9 @@ export default function Transactions() {
                   )}
                 </AnimatePresence>
               </div>
+            )}
 
-            {/* Clear All Chip */}
+            {/* Clear All Text Button */}
             <button
               onClick={() => {
                 setCategoryFilter([]);
@@ -742,7 +811,8 @@ export default function Transactions() {
               Clear All
             </button>
           </div>
-        </div>
+        )}
+      </div>
 
       {/* Transaction list */}
       <div className="space-y-2.5">
