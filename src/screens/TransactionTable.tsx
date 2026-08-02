@@ -899,7 +899,7 @@ export default function TransactionTable() {
                         <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
                           className="absolute left-0 mt-1.5 w-60 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-2.5 z-50 space-y-1">
                           <div className="px-2 py-1 text-[9px] font-black uppercase tracking-wider text-neutral-400">Timeline</div>
-                          {['ALL_TIME', 'TODAY', 'YESTERDAY', 'THIS_WEEK', 'THIS_MONTH', 'CUSTOM'].map(p => (
+                          {['ALL_TIME', 'TODAY', 'YESTERDAY', 'THIS_WEEK', 'THIS_MONTH', 'LAST_MONTH', 'CUSTOM'].map(p => (
                             <button key={p} onClick={() => { handleDatePresetChange(p); if (p !== 'CUSTOM') setActivePopover(null); }}
                               className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${datePreset === p ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
                               <span>{p.replace('_', ' ')}</span>

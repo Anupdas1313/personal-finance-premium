@@ -68,7 +68,7 @@ export default function Transactions() {
   }, [searchParams]);
 
   // ── View ──────────────────────────────────────────────────────
-  const [granularity, setGranularity] = useState<'MONTH' | 'YEAR' | 'ALL' | 'CUSTOM'>(initialGranularity);
+  const [granularity, setGranularity] = useState<'MONTH' | 'LAST_MONTH' | 'YEAR' | 'ALL' | 'CUSTOM'>(initialGranularity);
   const [referenceDate, setReferenceDate] = useState(initialDate);
   const [customRange, setCustomRange] = useState({
     start: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
@@ -116,6 +116,7 @@ export default function Transactions() {
     let start: Date | number = 0;
     let end: Date | number = new Date(8640000000000000);
     if (granularity === 'MONTH') { start = startOfMonth(referenceDate); end = endOfMonth(referenceDate); }
+    else if (granularity === 'LAST_MONTH') { start = startOfMonth(subMonths(referenceDate, 1)); end = endOfMonth(subMonths(referenceDate, 1)); }
     else if (granularity === 'YEAR') { start = startOfYear(referenceDate); end = endOfYear(referenceDate); }
     else if (granularity === 'CUSTOM') { start = startOfDay(new Date(customRange.start + 'T00:00:00')); end = endOfDay(new Date(customRange.end + 'T00:00:00')); }
     return { start, end };
@@ -559,6 +560,8 @@ export default function Transactions() {
                         ? `${format(new Date(customRange.start + 'T00:00:00'), 'MMM d')} – ${format(new Date(customRange.end + 'T00:00:00'), 'MMM d')}`
                         : granularity === 'MONTH'
                         ? format(referenceDate, 'MMM yyyy')
+                        : granularity === 'LAST_MONTH'
+                        ? format(subMonths(referenceDate, 1), 'MMM yyyy')
                         : granularity}
                     </span>
                     <ChevronDown className="w-3 h-3 text-neutral-400" />
@@ -576,6 +579,7 @@ export default function Transactions() {
                         <div className="px-2 py-1 text-[9px] font-black uppercase tracking-wider text-neutral-400">Timeline</div>
                         {[
                           { id: 'MONTH', label: 'This Month' },
+                          { id: 'LAST_MONTH', label: 'Last Month' },
                           { id: 'YEAR', label: 'This Year' },
                           { id: 'ALL', label: 'All Time' },
                           { id: 'CUSTOM', label: 'Custom Range...' }
