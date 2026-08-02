@@ -738,7 +738,15 @@ export default function TransactionTable() {
                               </button>
                             );
                           })}
-                        </motion.div>
+                        
+                        <div className="pt-1.5 mt-1 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between gap-2 px-1">
+                          <button onClick={() => setFilterCategory([])} className="text-[10px] font-bold text-neutral-400 hover:text-rose-500 transition-colors">Reset</button>
+                          <button onClick={() => setActivePopover(null)} className="px-3 py-1 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1">
+                            <span>Apply</span>
+                            <Check className="w-3 h-3" />
+                          </button>
+                        </div>
+</motion.div>
                       </>
                     )}
                   </AnimatePresence>
@@ -834,7 +842,15 @@ export default function TransactionTable() {
                               </button>
                             );
                           })}
-                        </motion.div>
+                        
+                        <div className="pt-1.5 mt-1 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between gap-2 px-1">
+                          <button onClick={() => setFilterAccountType([])} className="text-[10px] font-bold text-neutral-400 hover:text-rose-500 transition-colors">Reset</button>
+                          <button onClick={() => setActivePopover(null)} className="px-3 py-1 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1">
+                            <span>Apply</span>
+                            <Check className="w-3 h-3" />
+                          </button>
+                        </div>
+</motion.div>
                       </>
                     )}
                   </AnimatePresence>
@@ -878,7 +894,15 @@ export default function TransactionTable() {
                               </button>
                             );
                           })}
-                        </motion.div>
+                        
+                        <div className="pt-1.5 mt-1 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between gap-2 px-1">
+                          <button onClick={() => setFilterMethod([])} className="text-[10px] font-bold text-neutral-400 hover:text-rose-500 transition-colors">Reset</button>
+                          <button onClick={() => setActivePopover(null)} className="px-3 py-1 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1">
+                            <span>Apply</span>
+                            <Check className="w-3 h-3" />
+                          </button>
+                        </div>
+</motion.div>
                       </>
                     )}
                   </AnimatePresence>
@@ -936,7 +960,15 @@ export default function TransactionTable() {
                               </div>
                             );
                           })}
-                        </motion.div>
+                        
+                        <div className="pt-1.5 mt-1 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between gap-2 px-1">
+                          <button onClick={() => setFilterAccount([])} className="text-[10px] font-bold text-neutral-400 hover:text-rose-500 transition-colors">Reset</button>
+                          <button onClick={() => setActivePopover(null)} className="px-3 py-1 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1">
+                            <span>Apply</span>
+                            <Check className="w-3 h-3" />
+                          </button>
+                        </div>
+</motion.div>
                       </>
                     )}
                   </AnimatePresence>
@@ -980,7 +1012,15 @@ export default function TransactionTable() {
                               </button>
                             );
                           })}
-                        </motion.div>
+                        
+                        <div className="pt-1.5 mt-1 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between gap-2 px-1">
+                          <button onClick={() => setFilterExpenseType([])} className="text-[10px] font-bold text-neutral-400 hover:text-rose-500 transition-colors">Reset</button>
+                          <button onClick={() => setActivePopover(null)} className="px-3 py-1 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1">
+                            <span>Apply</span>
+                            <Check className="w-3 h-3" />
+                          </button>
+                        </div>
+</motion.div>
                       </>
                     )}
                   </AnimatePresence>

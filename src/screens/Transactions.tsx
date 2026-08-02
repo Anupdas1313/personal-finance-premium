@@ -427,7 +427,15 @@ export default function Transactions() {
                             </button>
                           );
                         })}
-                      </motion.div>
+                      
+                        <div className="pt-1.5 mt-1 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between gap-2 px-1">
+                          <button onClick={() => setCategoryFilter([])} className="text-[10px] font-bold text-neutral-400 hover:text-rose-500 transition-colors">Reset</button>
+                          <button onClick={() => setActivePopover(null)} className="px-3 py-1 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1">
+                            <span>Apply</span>
+                            <Check className="w-3 h-3" />
+                          </button>
+                        </div>
+</motion.div>
                     </>
                   )}
                 </AnimatePresence>
@@ -475,6 +483,13 @@ export default function Transactions() {
                             </button>
                           );
                         })}
+                        <div className="pt-1.5 mt-1 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between gap-2 px-1">
+                          <button onClick={() => setTypeFilter([])} className="text-[10px] font-bold text-neutral-400 hover:text-rose-500 transition-colors">Reset</button>
+                          <button onClick={() => setActivePopover(null)} className="px-3 py-1 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1">
+                            <span>Apply</span>
+                            <Check className="w-3 h-3" />
+                          </button>
+                        </div>
                       </motion.div>
                     </>
                   )}
@@ -523,6 +538,13 @@ export default function Transactions() {
                             </button>
                           );
                         })}
+                        <div className="pt-1.5 mt-1 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between gap-2 px-1">
+                          <button onClick={() => setAccountTypeFilter([])} className="text-[10px] font-bold text-neutral-400 hover:text-rose-500 transition-colors">Reset</button>
+                          <button onClick={() => setActivePopover(null)} className="px-3 py-1 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1">
+                            <span>Apply</span>
+                            <Check className="w-3 h-3" />
+                          </button>
+                        </div>
                       </motion.div>
                     </>
                   )}
@@ -567,6 +589,13 @@ export default function Transactions() {
                             </button>
                           );
                         })}
+                        <div className="pt-1.5 mt-1 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between gap-2 px-1">
+                          <button onClick={() => setMethodFilter([])} className="text-[10px] font-bold text-neutral-400 hover:text-rose-500 transition-colors">Reset</button>
+                          <button onClick={() => setActivePopover(null)} className="px-3 py-1 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1">
+                            <span>Apply</span>
+                            <Check className="w-3 h-3" />
+                          </button>
+                        </div>
                       </motion.div>
                     </>
                   )}
@@ -625,7 +654,15 @@ export default function Transactions() {
                             </div>
                           );
                         })}
-                      </motion.div>
+                      
+                        <div className="pt-1.5 mt-1 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between gap-2 px-1">
+                          <button onClick={() => setAccountFilter([])} className="text-[10px] font-bold text-neutral-400 hover:text-rose-500 transition-colors">Reset</button>
+                          <button onClick={() => setActivePopover(null)} className="px-3 py-1 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1">
+                            <span>Apply</span>
+                            <Check className="w-3 h-3" />
+                          </button>
+                        </div>
+</motion.div>
                     </>
                   )}
                 </AnimatePresence>
@@ -669,7 +706,15 @@ export default function Transactions() {
                             </button>
                           );
                         })}
-                      </motion.div>
+                      
+                        <div className="pt-1.5 mt-1 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between gap-2 px-1">
+                          <button onClick={() => setTagFilter([])} className="text-[10px] font-bold text-neutral-400 hover:text-rose-500 transition-colors">Reset</button>
+                          <button onClick={() => setActivePopover(null)} className="px-3 py-1 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1">
+                            <span>Apply</span>
+                            <Check className="w-3 h-3" />
+                          </button>
+                        </div>
+</motion.div>
                     </>
                   )}
                 </AnimatePresence>
