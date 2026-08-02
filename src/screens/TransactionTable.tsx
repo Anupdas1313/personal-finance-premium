@@ -180,23 +180,30 @@ export default function TransactionTable() {
     }
 
     // 3. Multi-Filters
-    if (filterType !== 'ALL') {
-      result = result.filter(tx => normalizeType(tx.type) === filterType);
+    if (filterType.length > 0) {
+      result = result.filter(tx => filterType.includes(normalizeType(tx.type)));
     }
-    if (filterCategory !== 'ALL') {
-      result = result.filter(tx => tx.category === filterCategory);
+    if (filterCategory.length > 0) {
+      result = result.filter(tx => filterCategory.includes(tx.category || 'Other'));
     }
-    if (filterAccount !== 'ALL') {
-      result = result.filter(tx => String(tx.accountId) === filterAccount);
+    if (filterAccount.length > 0) {
+      result = result.filter(tx => filterAccount.includes(String(tx.accountId)));
     }
-    if (filterPaymentMethod !== 'ALL') {
+    if (filterAccountType.length > 0) {
       result = result.filter(tx => {
-        const resolvedMethod = tx.paymentMethod === 'UPI' ? 'UPI' : tx.paymentMethod === 'Bank' ? 'Bank' : 'Cash';
-        return resolvedMethod === filterPaymentMethod;
+        const acc = accounts.find(a => a.id === Number(tx.accountId));
+        return acc && filterAccountType.includes(acc.type);
       });
     }
-    if (filterExpenseType !== 'ALL') {
-      result = result.filter(tx => (tx.expenseType || '').toLowerCase() === filterExpenseType.toLowerCase());
+    if (filterMethod.length > 0) {
+      result = result.filter(tx => {
+        const pm = (tx.paymentMethod || '').toLowerCase();
+        const upi = ((tx as any).upiApp || '').toLowerCase();
+        return filterMethod.some(m => pm.includes(m.toLowerCase()) || upi.includes(m.toLowerCase()));
+      });
+    }
+    if (filterExpenseType.length > 0) {
+      result = result.filter(tx => filterExpenseType.includes(tx.expenseType || ''));
     }
 
     // 4. Sorting

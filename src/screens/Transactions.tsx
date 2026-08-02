@@ -155,7 +155,6 @@ export default function Transactions() {
       if (categoryFilter.length > 0 && !categoryFilter.includes(tx.category || 'Other')) return false;
       if (accountFilter.length > 0 && !accountFilter.includes(Number(tx.accountId))) return false;
       if (tagFilter.length > 0 && !tagFilter.includes((tx.expenseType || '').toLowerCase())) return false;
-      if (methodFilter !== 'ALL' && tx.paymentMethod !== methodFilter && (tx as any).upiApp !== methodFilter) return false;
       
       const budgetIdParam = searchParams.get('budgetId');
       if (budgetIdParam) {
