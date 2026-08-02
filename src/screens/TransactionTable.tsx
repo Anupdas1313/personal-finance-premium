@@ -4,7 +4,7 @@ import { db, normalizeType } from '../models/db';
 import { useAuth } from '../context/AuthContext';
 import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Download, ZoomIn, ZoomOut, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Calendar, FileText, Share2, ArrowUpRight, ArrowDownLeft, Wallet, Landmark, Filter, CheckSquare, Square, Trash2, Edit3, X, CheckCircle2, ListOrdered, Plus } from 'lucide-react';
+import { ArrowLeft, Download, ZoomIn, ZoomOut, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Calendar, FileText, Share2, ArrowUpRight, ArrowDownLeft, Wallet, Landmark, Filter, CheckSquare, Square, Trash2, Edit3, X, CheckCircle2, ListOrdered, Plus, Check } from 'lucide-react';
 
 import { motion, useSpring, useTransform, AnimatePresence } from 'framer-motion';
 import { useCategories } from '../hooks/useCategories';

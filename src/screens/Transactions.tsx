@@ -6,8 +6,7 @@ import { format, subDays, startOfMonth, endOfMonth, startOfDay, endOfDay, addMon
 import { X, Trash2, Filter, Search, Edit3, Download, FileText, Plus, CheckSquare, Calendar,
   ChevronLeft, ChevronRight, ListOrdered, ArrowDownLeft, ArrowUpRight,
   Layers, Tag as TagIcon, Landmark, Smartphone,
-  BookOpen, CheckCircle2, ChevronDown, Wallet, CreditCard,
-
+  BookOpen, CheckCircle2, ChevronDown, Wallet, CreditCard, Check
 } from 'lucide-react';
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
