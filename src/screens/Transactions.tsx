@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction, normalizeType } from '../models/db';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, addMonths, subMonths, startOfYear, endOfYear, isSameDay } from 'date-fns';
-import { X, Trash2, Filter, Search, Edit3, Download, FileText, Plus,
+import { X, Trash2, Filter, Search, Edit3, Download, FileText, Plus, CheckSquare,
   ChevronLeft, ChevronRight, ListOrdered, ArrowDownLeft, ArrowUpRight,
   Layers, Tag as TagIcon, Landmark, Smartphone,
   BookOpen, CheckCircle2, ChevronDown, Wallet, CreditCard,
@@ -78,16 +78,21 @@ export default function Transactions() {
   // ── Filters ───────────────────────────────────────────────────
   const [searchTerm, setSearchTerm] = useState(initialSearch);
   const initialType = (searchParams.get('type') as any) || 'ALL';
-  const [typeFilter, setTypeFilter] = useState<'ALL' | 'CREDIT' | 'DEBIT' | 'TRANSFER'>(initialType);
+  const [typeFilter, setTypeFilter] = useState<string[]>(initialType !== 'ALL' ? [initialType] : []);
   const [sourceTypeFilter, setSourceTypeFilter] = useState<'ALL' | 'BANK' | 'CREDIT_CARD' | 'CASH'>('ALL');
-  const [categoryFilter, setCategoryFilter] = useState(initialCategory);
+  const [categoryFilter, setCategoryFilter] = useState<string[]>(initialCategory !== 'ALL' ? [initialCategory] : []);
   const initialTag = searchParams.get('tag') || 'ALL';
   const initialAccount = searchParams.has('account') ? Number(searchParams.get('account')) : 'ALL';
   const initialMethod = searchParams.get('method') || 'ALL';
 
-  const [accountFilter, setAccountFilter] = useState<number | 'ALL'>(initialAccount);
-  const [tagFilter, setTagFilter] = useState(initialTag);
+  const [accountFilter, setAccountFilter] = useState<number[]>(initialAccount !== 'ALL' ? [Number(initialAccount)] : []);
+  const [tagFilter, setTagFilter] = useState<string[]>(initialTag !== 'ALL' ? [initialTag] : []);
   const [methodFilter, setMethodFilter] = useState(initialMethod);
+
+  const toggleCategory = (c: string) => setCategoryFilter(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
+  const toggleAccount = (a: number) => setAccountFilter(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
+  const toggleType = (t: string) => setTypeFilter(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
+  const toggleTag = (tg: string) => setTagFilter(prev => prev.includes(tg) ? prev.filter(x => x !== tg) : [...prev, tg]);
   const [activePopover, setActivePopover] = useState<string | null>(null);
   const togglePopover = (popover: string) => setActivePopover(prev => prev === popover ? null : popover);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -129,10 +134,10 @@ export default function Transactions() {
       const txAccount = accounts.find(a => a.id === Number(tx.accountId));
       const txSourceType = txAccount?.type || 'BANK';
       if (sourceTypeFilter !== 'ALL' && txSourceType !== sourceTypeFilter) return false;
-      if (typeFilter !== 'ALL' && tx.type !== typeFilter) return false;
-      if (categoryFilter !== 'ALL' && tx.category !== categoryFilter) return false;
-      if (accountFilter !== 'ALL' && Number(tx.accountId) !== Number(accountFilter)) return false;
-      if (tagFilter !== 'ALL' && (tx.expenseType || '').toLowerCase() !== tagFilter.toLowerCase()) return false;
+      if (typeFilter.length > 0 && !typeFilter.includes(tx.type)) return false;
+      if (categoryFilter.length > 0 && !categoryFilter.includes(tx.category || 'Other')) return false;
+      if (accountFilter.length > 0 && !accountFilter.includes(Number(tx.accountId))) return false;
+      if (tagFilter.length > 0 && !tagFilter.includes((tx.expenseType || '').toLowerCase())) return false;
       if (methodFilter !== 'ALL' && tx.paymentMethod !== methodFilter && (tx as any).upiApp !== methodFilter) return false;
       
       const budgetIdParam = searchParams.get('budgetId');
@@ -279,10 +284,10 @@ export default function Transactions() {
                         key={prop.key}
                         onClick={() => {
                           setActivePopover(null);
-                          if (prop.key === 'category' && categoryFilter === 'ALL') setCategoryFilter(appCategories[0] || 'Food');
-                          if (prop.key === 'type' && typeFilter === 'ALL') setTypeFilter('DEBIT');
-                          if (prop.key === 'account' && accountFilter === 'ALL' && accounts.length > 0) setAccountFilter(accounts[0].id);
-                          if (prop.key === 'tag' && tagFilter === 'ALL' && tags.length > 0) setTagFilter(tags[0]);
+                          if (prop.key === 'category' && categoryFilter.length === 0 && appCategories.length > 0) setCategoryFilter([appCategories[0]]);
+                          if (prop.key === 'type' && typeFilter.length === 0) setTypeFilter(['DEBIT']);
+                          if (prop.key === 'account' && accountFilter.length === 0 && accounts.length > 0) setAccountFilter([accounts[0].id]);
+                          if (prop.key === 'tag' && tagFilter.length === 0 && tags.length > 0) setTagFilter([tags[0]]);
                           if (prop.key === 'granularity' && granularity === 'ALL') setGranularity('MONTH');
                           setActivePopover(prop.key);
                         }}
@@ -361,18 +366,18 @@ export default function Transactions() {
         </div>
 
         {/* Active Notion-style Filter Badges (Pills) */}
-        {(categoryFilter !== 'ALL' || typeFilter !== 'ALL' || accountFilter !== 'ALL' || tagFilter !== 'ALL' || granularity !== 'ALL') && (
+        {(categoryFilter.length > 0 || typeFilter.length > 0 || accountFilter.length > 0 || tagFilter.length > 0 || granularity !== 'ALL') && (
           <div className="flex flex-wrap items-center gap-1.5 pt-1">
             {/* Category Filter Pill */}
-            {categoryFilter !== 'ALL' && (
+            {categoryFilter.length > 0 && (
               <div className="relative">
-                <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-neutral-100 dark:bg-white/10 border border-neutral-200/60 dark:border-white/10 rounded-xl text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                   <button onClick={() => togglePopover('category')} className="flex items-center gap-1 hover:opacity-80">
-                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Category is</span>
-                    <span className="font-bold">{categoryFilter}</span>
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Category</span>
+                    <span className="font-bold">{categoryFilter.length === 1 ? categoryFilter[0] : `${categoryFilter[0]} +${categoryFilter.length - 1}`}</span>
                     <ChevronDown className="w-3 h-3 text-neutral-400" />
                   </button>
-                  <button onClick={() => setCategoryFilter('ALL')} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
+                  <button onClick={() => setCategoryFilter([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
                     <X className="w-3 h-3" />
                   </button>
                 </div>
@@ -381,14 +386,25 @@ export default function Transactions() {
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
                       <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                        className="absolute left-0 mt-1.5 w-48 max-h-56 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
-                        {appCategories.map(c => (
-                          <button key={c} onClick={() => { setCategoryFilter(c); setActivePopover(null); }}
-                            className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${categoryFilter === c ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
-                            <span>{c}</span>
-                            {categoryFilter === c && <CheckCircle2 className="w-3.5 h-3.5 text-brand-blue dark:text-white" />}
-                          </button>
-                        ))}
+                        className="absolute left-0 mt-1.5 w-52 max-h-60 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                        <div className="flex items-center justify-between px-2.5 py-1 border-b border-neutral-100 dark:border-white/5 mb-1">
+                          <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Categories</span>
+                          <button onClick={() => setCategoryFilter([])} className="text-[9px] font-bold text-rose-500 hover:underline">Clear</button>
+                        </div>
+                        {appCategories.map(c => {
+                          const isSelected = categoryFilter.includes(c);
+                          return (
+                            <button key={c} onClick={() => toggleCategory(c)}
+                              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${isSelected ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
+                              <div className="flex items-center gap-2">
+                                <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
+                                  {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
+                                </div>
+                                <span>{c}</span>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </motion.div>
                     </>
                   )}
@@ -397,15 +413,15 @@ export default function Transactions() {
             )}
 
             {/* Flow Filter Pill */}
-            {typeFilter !== 'ALL' && (
+            {typeFilter.length > 0 && (
               <div className="relative">
-                <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-neutral-100 dark:bg-white/10 border border-neutral-200/60 dark:border-white/10 rounded-xl text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                   <button onClick={() => togglePopover('type')} className="flex items-center gap-1 hover:opacity-80">
-                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Flow is</span>
-                    <span className="font-bold">{typeFilter === 'DEBIT' ? 'Outflow' : typeFilter === 'CREDIT' ? 'Inflow' : 'Transfer'}</span>
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Flow</span>
+                    <span className="font-bold">{typeFilter.length === 1 ? (typeFilter[0] === 'DEBIT' ? 'Outflow' : typeFilter[0] === 'CREDIT' ? 'Inflow' : 'Transfer') : `${typeFilter.length} selected` }</span>
                     <ChevronDown className="w-3 h-3 text-neutral-400" />
                   </button>
-                  <button onClick={() => setTypeFilter('ALL')} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
+                  <button onClick={() => setTypeFilter([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
                     <X className="w-3 h-3" />
                   </button>
                 </div>
@@ -414,18 +430,29 @@ export default function Transactions() {
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
                       <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                        className="absolute left-0 mt-1.5 w-44 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                        className="absolute left-0 mt-1.5 w-48 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                        <div className="flex items-center justify-between px-2.5 py-1 border-b border-neutral-100 dark:border-white/5 mb-1">
+                          <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Flow Type</span>
+                          <button onClick={() => setTypeFilter([])} className="text-[9px] font-bold text-rose-500 hover:underline">Clear</button>
+                        </div>
                         {[
                           { label: 'Outflow (Debit)', val: 'DEBIT' },
                           { label: 'Inflow (Credit)', val: 'CREDIT' },
                           { label: 'Inter-Account', val: 'TRANSFER' }
-                        ].map(opt => (
-                          <button key={opt.val} onClick={() => { setTypeFilter(opt.val as any); setActivePopover(null); }}
-                            className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${typeFilter === opt.val ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
-                            <span>{opt.label}</span>
-                            {typeFilter === opt.val && <CheckCircle2 className="w-3.5 h-3.5 text-brand-blue dark:text-white" />}
-                          </button>
-                        ))}
+                        ].map(opt => {
+                          const isSelected = typeFilter.includes(opt.val);
+                          return (
+                            <button key={opt.val} onClick={() => toggleType(opt.val)}
+                              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${isSelected ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
+                              <div className="flex items-center gap-2">
+                                <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
+                                  {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
+                                </div>
+                                <span>{opt.label}</span>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </motion.div>
                     </>
                   )}
@@ -434,15 +461,15 @@ export default function Transactions() {
             )}
 
             {/* Account Filter Pill */}
-            {accountFilter !== 'ALL' && (
+            {accountFilter.length > 0 && (
               <div className="relative">
-                <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-neutral-100 dark:bg-white/10 border border-neutral-200/60 dark:border-white/10 rounded-xl text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                   <button onClick={() => togglePopover('account')} className="flex items-center gap-1 hover:opacity-80">
-                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Account is</span>
-                    <span className="font-bold">{accounts.find(a => a.id === Number(accountFilter))?.bankName || accountFilter}</span>
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Account</span>
+                    <span className="font-bold">{accountFilter.length === 1 ? (accounts.find(a => a.id === accountFilter[0])?.bankName || accountFilter[0]) : `${accounts.find(a => a.id === accountFilter[0])?.bankName || 'Account'} +${accountFilter.length - 1}`}</span>
                     <ChevronDown className="w-3 h-3 text-neutral-400" />
                   </button>
-                  <button onClick={() => setAccountFilter('ALL')} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
+                  <button onClick={() => setAccountFilter([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
                     <X className="w-3 h-3" />
                   </button>
                 </div>
@@ -451,14 +478,25 @@ export default function Transactions() {
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
                       <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                        className="absolute left-0 mt-1.5 w-52 max-h-56 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
-                        {accounts.map(acc => (
-                          <button key={acc.id} onClick={() => { setAccountFilter(acc.id); setActivePopover(null); }}
-                            className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${accountFilter === acc.id ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
-                            <span className="truncate">{acc.bankName}</span>
-                            {accountFilter === acc.id && <CheckCircle2 className="w-3.5 h-3.5 text-brand-blue dark:text-white" />}
-                          </button>
-                        ))}
+                        className="absolute left-0 mt-1.5 w-56 max-h-60 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                        <div className="flex items-center justify-between px-2.5 py-1 border-b border-neutral-100 dark:border-white/5 mb-1">
+                          <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Accounts</span>
+                          <button onClick={() => setAccountFilter([])} className="text-[9px] font-bold text-rose-500 hover:underline">Clear</button>
+                        </div>
+                        {accounts.map(acc => {
+                          const isSelected = accountFilter.includes(acc.id);
+                          return (
+                            <button key={acc.id} onClick={() => toggleAccount(acc.id)}
+                              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${isSelected ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
+                              <div className="flex items-center gap-2 truncate">
+                                <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center shrink-0 ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
+                                  {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
+                                </div>
+                                <span className="truncate">{acc.bankName}</span>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </motion.div>
                     </>
                   )}
@@ -467,15 +505,15 @@ export default function Transactions() {
             )}
 
             {/* Tag Filter Pill */}
-            {tagFilter !== 'ALL' && (
+            {tagFilter.length > 0 && (
               <div className="relative">
-                <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-neutral-100 dark:bg-white/10 border border-neutral-200/60 dark:border-white/10 rounded-xl text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                   <button onClick={() => togglePopover('tag')} className="flex items-center gap-1 hover:opacity-80">
-                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Tag is</span>
-                    <span className="font-bold">#{tagFilter}</span>
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Tag</span>
+                    <span className="font-bold">{tagFilter.length === 1 ? `#${tagFilter[0]}` : `#${tagFilter[0]} +${tagFilter.length - 1}`}</span>
                     <ChevronDown className="w-3 h-3 text-neutral-400" />
                   </button>
-                  <button onClick={() => setTagFilter('ALL')} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
+                  <button onClick={() => setTagFilter([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
                     <X className="w-3 h-3" />
                   </button>
                 </div>
@@ -484,14 +522,25 @@ export default function Transactions() {
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
                       <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                        className="absolute left-0 mt-1.5 w-48 max-h-56 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
-                        {tags.map(t => (
-                          <button key={t} onClick={() => { setTagFilter(t); setActivePopover(null); }}
-                            className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${tagFilter === t ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
-                            <span>#{t}</span>
-                            {tagFilter === t && <CheckCircle2 className="w-3.5 h-3.5 text-brand-blue dark:text-white" />}
-                          </button>
-                        ))}
+                        className="absolute left-0 mt-1.5 w-52 max-h-60 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                        <div className="flex items-center justify-between px-2.5 py-1 border-b border-neutral-100 dark:border-white/5 mb-1">
+                          <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Tags</span>
+                          <button onClick={() => setTagFilter([])} className="text-[9px] font-bold text-rose-500 hover:underline">Clear</button>
+                        </div>
+                        {tags.map(t => {
+                          const isSelected = tagFilter.includes(t);
+                          return (
+                            <button key={t} onClick={() => toggleTag(t)}
+                              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${isSelected ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
+                              <div className="flex items-center gap-2">
+                                <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
+                                  {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
+                                </div>
+                                <span>#{t}</span>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </motion.div>
                     </>
                   )}
@@ -502,9 +551,9 @@ export default function Transactions() {
             {/* Timeline Granularity Pill */}
             {granularity !== 'ALL' && (
               <div className="relative">
-                <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-neutral-100 dark:bg-white/10 border border-neutral-200/60 dark:border-white/10 rounded-xl text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                   <button onClick={() => togglePopover('granularity')} className="flex items-center gap-1 hover:opacity-80">
-                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Time is</span>
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Time</span>
                     <span className="font-bold">{granularity}</span>
                     <ChevronDown className="w-3 h-3 text-neutral-400" />
                   </button>
@@ -535,10 +584,10 @@ export default function Transactions() {
             {/* Clear All Text Button */}
             <button
               onClick={() => {
-                setCategoryFilter('ALL');
-                setTypeFilter('ALL');
-                setAccountFilter('ALL');
-                setTagFilter('ALL');
+                setCategoryFilter([]);
+                setTypeFilter([]);
+                setAccountFilter([]);
+                setTagFilter([]);
                 setGranularity('ALL');
               }}
               className="text-[10px] font-bold text-rose-500 hover:text-rose-600 hover:underline uppercase tracking-wider ml-1"

@@ -45,11 +45,16 @@ export default function TransactionTable() {
   
   const [zoom, setZoom] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState('ALL');
-  const [filterCategory, setFilterCategory] = useState('ALL');
-  const [filterAccount, setFilterAccount] = useState('ALL');
+  const [filterType, setFilterType] = useState<string[]>([]);
+  const [filterCategory, setFilterCategory] = useState<string[]>([]);
+  const [filterAccount, setFilterAccount] = useState<string[]>([]);
   const [filterPaymentMethod, setFilterPaymentMethod] = useState('ALL');
-  const [filterExpenseType, setFilterExpenseType] = useState('ALL');
+  const [filterExpenseType, setFilterExpenseType] = useState<string[]>([]);
+
+  const toggleCategory = (c: string) => setFilterCategory(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
+  const toggleAccount = (a: string) => setFilterAccount(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
+  const toggleType = (t: string) => setFilterType(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
+  const toggleTag = (tg: string) => setFilterExpenseType(prev => prev.includes(tg) ? prev.filter(x => x !== tg) : [...prev, tg]);
   const [datePreset, setDatePreset] = useState('CUSTOM');
   
   const [startDate, setStartDate] = useState(startParam ? format(new Date(startParam + 'T00:00:00'), 'yyyy-MM-dd') : '');
@@ -688,18 +693,18 @@ export default function TransactionTable() {
           </div>
 
           {/* Active Filter Pills (Notion Style) */}
-          {(filterCategory !== 'ALL' || filterType !== 'ALL' || filterAccount !== 'ALL' || filterExpenseType !== 'ALL' || datePreset !== 'ALL_TIME') && (
+          {(filterCategory.length > 0 || filterType.length > 0 || filterAccount.length > 0 || filterExpenseType.length > 0 || datePreset !== 'ALL_TIME') && (
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
               {/* Category Pill */}
-              {filterCategory !== 'ALL' && (
+              {filterCategory.length > 0 && (
                 <div className="relative">
-                  <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-neutral-100 dark:bg-white/10 border border-neutral-200/60 dark:border-white/10 rounded-xl text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                  <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                     <button onClick={() => togglePopover('category')} className="flex items-center gap-1 hover:opacity-80">
-                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Category is</span>
-                      <span className="font-bold">{filterCategory}</span>
+                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Category</span>
+                      <span className="font-bold">{filterCategory.length === 1 ? filterCategory[0] : `${filterCategory[0]} +${filterCategory.length - 1}`}</span>
                       <ChevronDown className="w-3 h-3 text-neutral-400" />
                     </button>
-                    <button onClick={() => setFilterCategory('ALL')} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
+                    <button onClick={() => setFilterCategory([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
                       <X className="w-3 h-3" />
                     </button>
                   </div>
@@ -708,14 +713,25 @@ export default function TransactionTable() {
                       <>
                         <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
                         <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                          className="absolute left-0 mt-1.5 w-48 max-h-56 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
-                          {appCategories.map(c => (
-                            <button key={c} onClick={() => { setFilterCategory(c); setActivePopover(null); }}
-                              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${filterCategory === c ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
-                              <span>{c}</span>
-                              {filterCategory === c && <CheckCircle2 className="w-3.5 h-3.5 text-brand-blue dark:text-white" />}
-                            </button>
-                          ))}
+                          className="absolute left-0 mt-1.5 w-52 max-h-60 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                          <div className="flex items-center justify-between px-2.5 py-1 border-b border-neutral-100 dark:border-white/5 mb-1">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Categories</span>
+                            <button onClick={() => setFilterCategory([])} className="text-[9px] font-bold text-rose-500 hover:underline">Clear</button>
+                          </div>
+                          {appCategories.map(c => {
+                            const isSelected = filterCategory.includes(c);
+                            return (
+                              <button key={c} onClick={() => toggleCategory(c)}
+                                className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${isSelected ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
+                                    {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
+                                  </div>
+                                  <span>{c}</span>
+                                </div>
+                              </button>
+                            );
+                          })}
                         </motion.div>
                       </>
                     )}
@@ -724,15 +740,15 @@ export default function TransactionTable() {
               )}
 
               {/* Nature / Flow Pill */}
-              {filterType !== 'ALL' && (
+              {filterType.length > 0 && (
                 <div className="relative">
-                  <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-neutral-100 dark:bg-white/10 border border-neutral-200/60 dark:border-white/10 rounded-xl text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                  <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                     <button onClick={() => togglePopover('nature')} className="flex items-center gap-1 hover:opacity-80">
-                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Nature is</span>
-                      <span className="font-bold">{filterType === 'DEBIT' ? 'Outflow' : filterType === 'CREDIT' ? 'Inflow' : 'Transfer'}</span>
+                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Nature</span>
+                      <span className="font-bold">{filterType.length === 1 ? (filterType[0] === 'DEBIT' ? 'Outflow' : filterType[0] === 'CREDIT' ? 'Inflow' : 'Transfer') : `${filterType.length} selected` }</span>
                       <ChevronDown className="w-3 h-3 text-neutral-400" />
                     </button>
-                    <button onClick={() => setFilterType('ALL')} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
+                    <button onClick={() => setFilterType([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
                       <X className="w-3 h-3" />
                     </button>
                   </div>
@@ -741,18 +757,29 @@ export default function TransactionTable() {
                       <>
                         <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
                         <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                          className="absolute left-0 mt-1.5 w-44 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                          className="absolute left-0 mt-1.5 w-48 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                          <div className="flex items-center justify-between px-2.5 py-1 border-b border-neutral-100 dark:border-white/5 mb-1">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Flow Type</span>
+                            <button onClick={() => setFilterType([])} className="text-[9px] font-bold text-rose-500 hover:underline">Clear</button>
+                          </div>
                           {[
                             { label: 'Outflow (Debit)', val: 'DEBIT' },
                             { label: 'Inflow (Credit)', val: 'CREDIT' },
                             { label: 'Inter-Account', val: 'TRANSFER' }
-                          ].map(opt => (
-                            <button key={opt.val} onClick={() => { setFilterType(opt.val); setActivePopover(null); }}
-                              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${filterType === opt.val ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
-                              <span>{opt.label}</span>
-                              {filterType === opt.val && <CheckCircle2 className="w-3.5 h-3.5 text-brand-blue dark:text-white" />}
-                            </button>
-                          ))}
+                          ].map(opt => {
+                            const isSelected = filterType.includes(opt.val);
+                            return (
+                              <button key={opt.val} onClick={() => toggleType(opt.val)}
+                                className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${isSelected ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
+                                    {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
+                                  </div>
+                                  <span>{opt.label}</span>
+                                </div>
+                              </button>
+                            );
+                          })}
                         </motion.div>
                       </>
                     )}
@@ -761,15 +788,15 @@ export default function TransactionTable() {
               )}
 
               {/* Account Pill */}
-              {filterAccount !== 'ALL' && (
+              {filterAccount.length > 0 && (
                 <div className="relative">
-                  <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-neutral-100 dark:bg-white/10 border border-neutral-200/60 dark:border-white/10 rounded-xl text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                  <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                     <button onClick={() => togglePopover('account')} className="flex items-center gap-1 hover:opacity-80">
-                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Account is</span>
-                      <span className="font-bold">{accounts.find(a => String(a.id) === filterAccount)?.bankName || filterAccount}</span>
+                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Account</span>
+                      <span className="font-bold">{filterAccount.length === 1 ? (accounts.find(a => String(a.id) === filterAccount[0])?.bankName || filterAccount[0]) : `${accounts.find(a => String(a.id) === filterAccount[0])?.bankName || 'Account'} +${filterAccount.length - 1}`}</span>
                       <ChevronDown className="w-3 h-3 text-neutral-400" />
                     </button>
-                    <button onClick={() => setFilterAccount('ALL')} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
+                    <button onClick={() => setFilterAccount([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
                       <X className="w-3 h-3" />
                     </button>
                   </div>
@@ -778,14 +805,25 @@ export default function TransactionTable() {
                       <>
                         <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
                         <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                          className="absolute left-0 mt-1.5 w-52 max-h-56 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
-                          {accounts.map(acc => (
-                            <button key={acc.id} onClick={() => { setFilterAccount(String(acc.id)); setActivePopover(null); }}
-                              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${filterAccount === String(acc.id) ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
-                              <span className="truncate">{acc.bankName}</span>
-                              {filterAccount === String(acc.id) && <CheckCircle2 className="w-3.5 h-3.5 text-brand-blue dark:text-white" />}
-                            </button>
-                          ))}
+                          className="absolute left-0 mt-1.5 w-56 max-h-60 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                          <div className="flex items-center justify-between px-2.5 py-1 border-b border-neutral-100 dark:border-white/5 mb-1">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Accounts</span>
+                            <button onClick={() => setFilterAccount([])} className="text-[9px] font-bold text-rose-500 hover:underline">Clear</button>
+                          </div>
+                          {accounts.map(acc => {
+                            const isSelected = filterAccount.includes(String(acc.id));
+                            return (
+                              <button key={acc.id} onClick={() => toggleAccount(String(acc.id))}
+                                className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${isSelected ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
+                                <div className="flex items-center gap-2 truncate">
+                                  <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center shrink-0 ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
+                                    {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
+                                  </div>
+                                  <span className="truncate">{acc.bankName}</span>
+                                </div>
+                              </button>
+                            );
+                          })}
                         </motion.div>
                       </>
                     )}
@@ -794,15 +832,15 @@ export default function TransactionTable() {
               )}
 
               {/* Tag Pill */}
-              {filterExpenseType !== 'ALL' && (
+              {filterExpenseType.length > 0 && (
                 <div className="relative">
-                  <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-neutral-100 dark:bg-white/10 border border-neutral-200/60 dark:border-white/10 rounded-xl text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                  <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                     <button onClick={() => togglePopover('tag')} className="flex items-center gap-1 hover:opacity-80">
-                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Tag is</span>
-                      <span className="font-bold">#{filterExpenseType}</span>
+                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Tag</span>
+                      <span className="font-bold">{filterExpenseType.length === 1 ? `#${filterExpenseType[0]}` : `#${filterExpenseType[0]} +${filterExpenseType.length - 1}`}</span>
                       <ChevronDown className="w-3 h-3 text-neutral-400" />
                     </button>
-                    <button onClick={() => setFilterExpenseType('ALL')} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
+                    <button onClick={() => setFilterExpenseType([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
                       <X className="w-3 h-3" />
                     </button>
                   </div>
@@ -811,14 +849,25 @@ export default function TransactionTable() {
                       <>
                         <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
                         <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                          className="absolute left-0 mt-1.5 w-48 max-h-56 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
-                          {tags.map(t => (
-                            <button key={t} onClick={() => { setFilterExpenseType(t); setActivePopover(null); }}
-                              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${filterExpenseType === t ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
-                              <span>#{t}</span>
-                              {filterExpenseType === t && <CheckCircle2 className="w-3.5 h-3.5 text-brand-blue dark:text-white" />}
-                            </button>
-                          ))}
+                          className="absolute left-0 mt-1.5 w-52 max-h-60 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                          <div className="flex items-center justify-between px-2.5 py-1 border-b border-neutral-100 dark:border-white/5 mb-1">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Tags</span>
+                            <button onClick={() => setFilterExpenseType([])} className="text-[9px] font-bold text-rose-500 hover:underline">Clear</button>
+                          </div>
+                          {tags.map(t => {
+                            const isSelected = filterExpenseType.includes(t);
+                            return (
+                              <button key={t} onClick={() => toggleTag(t)}
+                                className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${isSelected ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
+                                    {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
+                                  </div>
+                                  <span>#{t}</span>
+                                </div>
+                              </button>
+                            );
+                          })}
                         </motion.div>
                       </>
                     )}
@@ -829,9 +878,9 @@ export default function TransactionTable() {
               {/* Timeline Pill */}
               {datePreset !== 'ALL_TIME' && (
                 <div className="relative">
-                  <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-neutral-100 dark:bg-white/10 border border-neutral-200/60 dark:border-white/10 rounded-xl text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                  <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
                     <button onClick={() => togglePopover('timeline')} className="flex items-center gap-1 hover:opacity-80">
-                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Time is</span>
+                      <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Time</span>
                       <span className="font-bold">{datePreset.replace('_', ' ')}</span>
                       <ChevronDown className="w-3 h-3 text-neutral-400" />
                     </button>
@@ -862,10 +911,10 @@ export default function TransactionTable() {
               {/* Clear All Text Button */}
               <button
                 onClick={() => {
-                  setFilterCategory('ALL');
-                  setFilterType('ALL');
-                  setFilterAccount('ALL');
-                  setFilterExpenseType('ALL');
+                  setFilterCategory([]);
+                  setFilterType([]);
+                  setFilterAccount([]);
+                  setFilterExpenseType([]);
                   handleDatePresetChange('ALL_TIME');
                 }}
                 className="text-[10px] font-bold text-rose-500 hover:text-rose-600 hover:underline uppercase tracking-wider ml-1"
@@ -916,7 +965,7 @@ export default function TransactionTable() {
 
                     <td className="hidden md:table-cell px-4 py-3">
                       <button
-                        onClick={() => setFilterType(normalizeType(tx.type))}
+                        onClick={() => toggleType(normalizeType(tx.type))}
                         className={`px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-widest cursor-pointer hover:opacity-80 transition-opacity ${normalizeType(tx.type) === 'CREDIT' ? 'bg-brand-green/10 text-brand-green' : 'bg-brand-red/10 text-brand-red'}`}
                         title={`Filter by nature: ${normalizeType(tx.type)}`}>
                         {normalizeType(tx.type)}
@@ -925,7 +974,7 @@ export default function TransactionTable() {
 
                     <td className="hidden sm:table-cell px-4 py-3 font-semibold text-[#525252] dark:text-[#A0A0A0]">
                       <button
-                        onClick={() => tx.category && setFilterCategory(tx.category)}
+                        onClick={() => tx.category && toggleCategory(tx.category)}
                         className="hover:text-brand-blue dark:hover:text-white hover:underline cursor-pointer transition-colors text-left"
                         title={`Filter by category: ${tx.category}`}>
                         {tx.category || '—'}
@@ -950,7 +999,7 @@ export default function TransactionTable() {
 
                     <td className="hidden md:table-cell px-4 py-3 font-medium text-[#717171] dark:text-[#A0A0A0]">
                       <button
-                        onClick={() => tx.accountId && setFilterAccount(String(tx.accountId))}
+                        onClick={() => tx.accountId && toggleAccount(String(tx.accountId))}
                         className="hover:text-brand-blue dark:hover:text-white hover:underline cursor-pointer transition-colors text-left"
                         title={`Filter by account: ${accounts.find(a => a.id === tx.accountId)?.bankName}`}>
                         {accounts.find(a => a.id === tx.accountId)?.bankName || '—'}
