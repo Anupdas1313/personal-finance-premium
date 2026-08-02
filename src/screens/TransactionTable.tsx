@@ -908,59 +908,68 @@ export default function TransactionTable() {
                           ))}
 
                           {datePreset === 'CUSTOM' && (
-                            <div className="pt-2 mt-1 border-t border-neutral-100 dark:border-white/5 space-y-2">
+                            <div className="pt-2.5 mt-1 border-t border-neutral-100 dark:border-white/10 space-y-2.5">
+                              <div className="flex items-center justify-between px-1">
+                                <span className="text-[9px] font-extrabold uppercase tracking-widest text-brand-blue dark:text-brand-cyan flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" /> Custom Date Range
+                                </span>
+                              </div>
+
                               <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                  <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest block mb-1">From</span>
+                                <div className="bg-neutral-50 dark:bg-white/5 border border-neutral-200/80 dark:border-white/10 p-2 rounded-xl transition-all focus-within:border-brand-blue dark:focus-within:border-brand-cyan">
+                                  <span className="text-[8px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest block mb-1">Start Date</span>
                                   <input
                                     type="date"
                                     value={startDate}
                                     onChange={e => setStartDate(e.target.value)}
-                                    className="w-full px-2 py-1 bg-neutral-50 dark:bg-black/20 border border-neutral-200 dark:border-neutral-700 rounded-lg text-[10px] font-semibold text-neutral-800 dark:text-white"
+                                    className="w-full bg-transparent text-[11px] font-semibold text-neutral-800 dark:text-white focus:outline-none cursor-pointer"
                                   />
                                 </div>
-                                <div>
-                                  <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest block mb-1">To</span>
+                                <div className="bg-neutral-50 dark:bg-white/5 border border-neutral-200/80 dark:border-white/10 p-2 rounded-xl transition-all focus-within:border-brand-blue dark:focus-within:border-brand-cyan">
+                                  <span className="text-[8px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest block mb-1">End Date</span>
                                   <input
                                     type="date"
                                     value={endDate}
                                     onChange={e => setEndDate(e.target.value)}
-                                    className="w-full px-2 py-1 bg-neutral-50 dark:bg-black/20 border border-neutral-200 dark:border-neutral-700 rounded-lg text-[10px] font-semibold text-neutral-800 dark:text-white"
+                                    className="w-full bg-transparent text-[11px] font-semibold text-neutral-800 dark:text-white focus:outline-none cursor-pointer"
                                   />
                                 </div>
                               </div>
-
-                              <div className="flex flex-wrap gap-1 pt-1">
-                                <button
-                                  onClick={() => {
-                                    setStartDate(format(subDays(new Date(), 7), 'yyyy-MM-dd'));
-                                    setEndDate(format(new Date(), 'yyyy-MM-dd'));
-                                  }}
-                                  className="px-2 py-0.5 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-md text-[9px] font-semibold text-neutral-600 dark:text-neutral-300">
-                                  Last 7d
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setStartDate(format(subDays(new Date(), 30), 'yyyy-MM-dd'));
-                                    setEndDate(format(new Date(), 'yyyy-MM-dd'));
-                                  }}
-                                  className="px-2 py-0.5 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-md text-[9px] font-semibold text-neutral-600 dark:text-neutral-300">
-                                  Last 30d
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setStartDate(format(startOfYear(new Date()), 'yyyy-MM-dd'));
-                                    setEndDate(format(new Date(), 'yyyy-MM-dd'));
-                                  }}
-                                  className="px-2 py-0.5 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-md text-[9px] font-semibold text-neutral-600 dark:text-neutral-300">
-                                  YTD
-                                </button>
+                              
+                              <div className="space-y-1">
+                                <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest px-1">Quick Presets</span>
+                                <div className="grid grid-cols-3 gap-1">
+                                  <button
+                                    onClick={() => {
+                                      setStartDate(format(subDays(new Date(), 7), 'yyyy-MM-dd'));
+                                      setEndDate(format(new Date(), 'yyyy-MM-dd'));
+                                    }}
+                                    className="py-1 px-1.5 bg-neutral-100/80 dark:bg-white/5 hover:bg-brand-blue/10 hover:text-brand-blue dark:hover:text-brand-cyan rounded-lg text-[10px] font-bold text-neutral-600 dark:text-neutral-300 transition-all text-center">
+                                    Last 7d
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setStartDate(format(subDays(new Date(), 30), 'yyyy-MM-dd'));
+                                      setEndDate(format(new Date(), 'yyyy-MM-dd'));
+                                    }}
+                                    className="py-1 px-1.5 bg-neutral-100/80 dark:bg-white/5 hover:bg-brand-blue/10 hover:text-brand-blue dark:hover:text-brand-cyan rounded-lg text-[10px] font-bold text-neutral-600 dark:text-neutral-300 transition-all text-center">
+                                    Last 30d
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setStartDate(format(startOfYear(new Date()), 'yyyy-MM-dd'));
+                                      setEndDate(format(new Date(), 'yyyy-MM-dd'));
+                                    }}
+                                    className="py-1 px-1.5 bg-neutral-100/80 dark:bg-white/5 hover:bg-brand-blue/10 hover:text-brand-blue dark:hover:text-brand-cyan rounded-lg text-[10px] font-bold text-neutral-600 dark:text-neutral-300 transition-all text-center">
+                                    This Year
+                                  </button>
+                                </div>
                               </div>
 
                               <button
                                 onClick={() => setActivePopover(null)}
-                                className="w-full py-1.5 bg-brand-blue text-white rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all">
-                                Apply Range
+                                className="w-full py-2 bg-gradient-to-r from-brand-blue to-indigo-600 dark:from-brand-blue dark:to-cyan-600 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-blue/20 hover:opacity-95 active:scale-98 transition-all flex items-center justify-center gap-1.5">
+                                <span>Apply Custom Range</span>
                               </button>
                             </div>
                           )}
