@@ -412,9 +412,14 @@ function SummaryContent() {
                 <div
                   key={d.name}
                   onClick={() => setSelectedDetail({ type: 'tags', name: d.name })}
-                  className="flex items-center justify-between p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
+                  className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
                 >
-                  <p className="text-xs font-bold text-brand-blue dark:text-white truncate flex-1 min-w-0">{d.name}</p>
+                  <p className="text-xs font-bold text-brand-blue dark:text-white truncate min-w-[80px]">{d.name}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="w-full bg-neutral-200/60 dark:bg-white/5 rounded-full h-1 overflow-hidden">
+                      <div className="h-1 rounded-full bg-brand-blue dark:bg-white/70 transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%` }} />
+                    </div>
+                  </div>
                   <div className="text-right shrink-0">
                     <p className="text-xs font-black text-brand-blue dark:text-white">{fmt(d.value)}</p>
                     <p className="text-[9px] font-bold text-neutral-400">{Math.round(pct)}%</p>
@@ -439,7 +444,12 @@ function SummaryContent() {
                   <div className="p-1.5 bg-white dark:bg-[#1A1A1A] rounded-lg border border-neutral-100 dark:border-white/5 shrink-0">
                     <Wallet className="w-3.5 h-3.5 text-neutral-500" />
                   </div>
-                  <p className="text-xs font-bold text-brand-blue dark:text-white truncate flex-1 min-w-0">{d.name}</p>
+                  <p className="text-xs font-bold text-brand-blue dark:text-white truncate min-w-[80px]">{d.name}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="w-full bg-neutral-200/60 dark:bg-white/5 rounded-full h-1 overflow-hidden">
+                      <div className="h-1 rounded-full bg-brand-blue dark:bg-white/70 transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%` }} />
+                    </div>
+                  </div>
                   <div className="text-right shrink-0">
                     <p className="text-xs font-black text-brand-blue dark:text-white">{fmt(d.value)}</p>
                     <p className="text-[9px] font-bold text-neutral-400">{Math.round(pct)}%</p>
@@ -465,7 +475,12 @@ function SummaryContent() {
                   <div className="p-1.5 rounded-lg shrink-0" style={{ backgroundColor: `${color}15` }}>
                     <CreditCard className="w-3.5 h-3.5" style={{ color }} />
                   </div>
-                  <p className="text-xs font-bold text-brand-blue dark:text-white truncate flex-1 min-w-0">{d.name}</p>
+                  <p className="text-xs font-bold text-brand-blue dark:text-white truncate min-w-[80px]">{d.name}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="w-full bg-neutral-200/60 dark:bg-white/5 rounded-full h-1 overflow-hidden">
+                      <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }} />
+                    </div>
+                  </div>
                   <div className="text-right shrink-0">
                     <p className="text-xs font-black text-brand-blue dark:text-white">{fmt(d.value)}</p>
                     <p className="text-[9px] font-bold text-neutral-400">{Math.round(pct)}%</p>
@@ -501,7 +516,12 @@ function SummaryContent() {
                   >
                     {initials}
                   </div>
-                  <p className="text-xs font-bold text-brand-blue dark:text-white truncate flex-1 min-w-0">{d.name}</p>
+                  <p className="text-xs font-bold text-brand-blue dark:text-white truncate min-w-[80px]">{d.name}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="w-full bg-neutral-200/60 dark:bg-white/5 rounded-full h-1 overflow-hidden">
+                      <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: avatarColor }} />
+                    </div>
+                  </div>
                   <div className="text-right shrink-0">
                     <p className="text-xs font-black text-brand-blue dark:text-white">{fmt(d.value)}</p>
                     <p className="text-[9px] font-bold text-neutral-400">{Math.round(pct)}%</p>
