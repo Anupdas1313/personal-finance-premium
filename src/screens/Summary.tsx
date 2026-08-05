@@ -406,59 +406,40 @@ function SummaryContent() {
       case 'tags':
         return tagData.length > 0 ? (
           <div className="space-y-2">
-              {tagData.map((d, i) => {
-                const pct = totalActiveAmount > 0 ? (d.value / totalActiveAmount) * 100 : 0;
-                const color = TAG_COLORS[i % TAG_COLORS.length];
-                return (
-                  <div
-                    key={d.name}
-                    onClick={() => setSelectedDetail({ type: 'tags', name: d.name })}
-                    className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
-                  >
-                    <div className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                    <span
-                      className="text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0"
-                      style={{ backgroundColor: `${color}15`, color }}
-                    >
-                      #{d.name}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="w-full bg-neutral-100 dark:bg-white/5 rounded-full h-1 overflow-hidden">
-                        <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }} />
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs font-black text-brand-blue dark:text-white">{fmt(d.value)}</p>
-                      <p className="text-[9px] font-bold text-neutral-400">{Math.round(pct)}%</p>
-                    </div>
+            {tagData.map((d, i) => {
+              const pct = totalActiveAmount > 0 ? (d.value / totalActiveAmount) * 100 : 0;
+              return (
+                <div
+                  key={d.name}
+                  onClick={() => setSelectedDetail({ type: 'tags', name: d.name })}
+                  className="flex items-center justify-between p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
+                >
+                  <p className="text-xs font-bold text-brand-blue dark:text-white truncate flex-1 min-w-0">{d.name}</p>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-black text-brand-blue dark:text-white">{fmt(d.value)}</p>
+                    <p className="text-[9px] font-bold text-neutral-400">{Math.round(pct)}%</p>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
+          </div>
         ) : <EmptyState icon={<Tag className="w-6 h-6 text-neutral-400" />} msg={flowType === 'DEBIT' ? "No tags used this month" : flowType === 'CREDIT' ? "No tags used for income this month" : "No tags used for transfers this month"} />;
 
       case 'accounts':
         return accData.length > 0 ? (
           <div className="space-y-2">
-            {accData.map((d, i) => {
+            {accData.map((d) => {
               const pct = totalActiveAmount > 0 ? (d.value / totalActiveAmount) * 100 : 0;
-              const color = CAT_COLORS[(i + 1) % CAT_COLORS.length];
               return (
                 <div
                   key={d.name}
                   onClick={() => setSelectedDetail({ type: 'accounts', name: d.name })}
                   className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
                 >
-                  <div className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: color }} />
                   <div className="p-1.5 bg-white dark:bg-[#1A1A1A] rounded-lg border border-neutral-100 dark:border-white/5 shrink-0">
                     <Wallet className="w-3.5 h-3.5 text-neutral-500" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-brand-blue dark:text-white truncate">{d.name}</p>
-                    <div className="w-full bg-neutral-100 dark:bg-white/5 rounded-full h-1 mt-1 overflow-hidden">
-                      <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }} />
-                    </div>
-                  </div>
+                  <p className="text-xs font-bold text-brand-blue dark:text-white truncate flex-1 min-w-0">{d.name}</p>
                   <div className="text-right shrink-0">
                     <p className="text-xs font-black text-brand-blue dark:text-white">{fmt(d.value)}</p>
                     <p className="text-[9px] font-bold text-neutral-400">{Math.round(pct)}%</p>
@@ -481,16 +462,10 @@ function SummaryContent() {
                   onClick={() => setSelectedDetail({ type: 'methods', name: d.name })}
                   className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
                 >
-                  <div className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: color }} />
                   <div className="p-1.5 rounded-lg shrink-0" style={{ backgroundColor: `${color}15` }}>
                     <CreditCard className="w-3.5 h-3.5" style={{ color }} />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-brand-blue dark:text-white truncate">{d.name}</p>
-                    <div className="w-full bg-neutral-100 dark:bg-white/5 rounded-full h-1 mt-1 overflow-hidden">
-                      <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }} />
-                    </div>
-                  </div>
+                  <p className="text-xs font-bold text-brand-blue dark:text-white truncate flex-1 min-w-0">{d.name}</p>
                   <div className="text-right shrink-0">
                     <p className="text-xs font-black text-brand-blue dark:text-white">{fmt(d.value)}</p>
                     <p className="text-[9px] font-bold text-neutral-400">{Math.round(pct)}%</p>
@@ -526,12 +501,7 @@ function SummaryContent() {
                   >
                     {initials}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-brand-blue dark:text-white truncate">{d.name}</p>
-                    <div className="w-full bg-neutral-100 dark:bg-white/5 rounded-full h-1 mt-1 overflow-hidden">
-                      <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: avatarColor }} />
-                    </div>
-                  </div>
+                  <p className="text-xs font-bold text-brand-blue dark:text-white truncate flex-1 min-w-0">{d.name}</p>
                   <div className="text-right shrink-0">
                     <p className="text-xs font-black text-brand-blue dark:text-white">{fmt(d.value)}</p>
                     <p className="text-[9px] font-bold text-neutral-400">{Math.round(pct)}%</p>
