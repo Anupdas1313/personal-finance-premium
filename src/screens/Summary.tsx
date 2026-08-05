@@ -735,54 +735,41 @@ function SummaryContent() {
         </div>
       </div>
 
-      {/* ── SLEEK HERO CASHFLOW CARD ── */}
-      <div className="bg-gradient-to-br from-brand-blue to-slate-900 text-white rounded-[28px] p-6 shadow-xl relative overflow-hidden space-y-6">
-        {/* Subtle background decorative shapes */}
-        <div className="absolute -right-10 -bottom-10 w-44 h-44 rounded-full bg-white/5 blur-2xl pointer-events-none" />
-        <div className="absolute right-1/3 -top-10 w-32 h-32 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
-
-        {/* Top: Net Cashflow Hero */}
-        <div className="flex items-start justify-between relative z-10">
-          <div>
-            <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest block mb-1">Net Cashflow</span>
-            <h2 className="text-3xl font-black tracking-tight text-white">
-              {savings >= 0 ? `+${fmt(savings)}` : `-${fmt(Math.abs(savings))}`}
-            </h2>
-          </div>
-          <div className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[10px] font-bold text-white uppercase tracking-wider">
-            {savingsRate}% Saved
-          </div>
-        </div>
-
-        {/* Middle: Income & Spent Pills */}
-        <div className="grid grid-cols-2 gap-3 relative z-10">
-          <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-emerald-400/20 text-emerald-300 flex items-center justify-center shrink-0">
-              <ArrowDownLeft className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-[9px] font-medium text-white/60 uppercase tracking-wider block">Income</span>
-              <p className="text-sm font-black text-white truncate">{fmt(totalIncome)}</p>
-            </div>
+      {/* ── CLEAN WHITE HERO CASHFLOW CARD ── */}
+      <div className="bg-white dark:bg-[#121217] rounded-3xl p-5 shadow-sm border border-neutral-100 dark:border-white/5 space-y-4">
+        {/* Income, Spent, Saved Stat Row */}
+        <div className="grid grid-cols-3 gap-2 text-center items-center py-2 bg-neutral-50/70 dark:bg-white/[0.02] rounded-2xl border border-neutral-100 dark:border-white/5 p-3">
+          {/* Income (Top / First) */}
+          <div className="flex flex-col items-center">
+            <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
+              <ArrowDownLeft className="w-3 h-3 text-emerald-500" /> Income
+            </span>
+            <p className="text-emerald-600 dark:text-emerald-400 font-black text-sm tracking-tight">{fmt(totalIncome)}</p>
           </div>
 
-          <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-rose-400/20 text-rose-300 flex items-center justify-center shrink-0">
-              <ArrowUpRight className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-[9px] font-medium text-white/60 uppercase tracking-wider block">Spent</span>
-              <p className="text-sm font-black text-white truncate">{fmt(totalExpense)}</p>
-            </div>
+          {/* Spent (Middle / Second) */}
+          <div className="flex flex-col items-center border-x border-neutral-200/60 dark:border-white/10 px-1">
+            <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
+              <ArrowUpRight className="w-3 h-3 text-rose-500" /> Spent
+            </span>
+            <p className="text-rose-600 dark:text-rose-400 font-black text-sm tracking-tight">{fmt(totalExpense)}</p>
+          </div>
+
+          {/* Saved (Third / End) */}
+          <div className="flex flex-col items-center">
+            <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider mb-1">Saved</span>
+            <p className={cn("font-black text-sm tracking-tight", savings >= 0 ? "text-brand-blue dark:text-[#F7F7F7]" : "text-rose-500")}>
+              {savings >= 0 ? fmt(savings) : `-${fmt(Math.abs(savings))}`}
+            </p>
           </div>
         </div>
 
-        {/* Bottom: Mode Selector Switcher */}
-        <div className="p-1 rounded-2xl bg-black/20 backdrop-blur-md border border-white/10 grid grid-cols-3 gap-1 relative z-10">
+        {/* Mode Selector Switcher */}
+        <div className="p-1 rounded-2xl bg-neutral-100/80 dark:bg-white/5 grid grid-cols-3 gap-1">
           {[
-            { key: 'DEBIT', label: 'Expenses' },
-            { key: 'CREDIT', label: 'Income' },
-            { key: 'TRANSFER', label: 'Transfers' },
+            { key: 'DEBIT', label: 'Expenses', activeText: 'text-rose-600 dark:text-rose-400' },
+            { key: 'CREDIT', label: 'Income', activeText: 'text-emerald-600 dark:text-emerald-400' },
+            { key: 'TRANSFER', label: 'Transfers', activeText: 'text-cyan-600 dark:text-cyan-400' },
           ].map(item => {
             const isActive = flowType === item.key;
             return (
@@ -791,13 +778,13 @@ function SummaryContent() {
                 onClick={() => setFlowType(item.key as any)}
                 className={cn(
                   "py-2 px-2 text-[10px] font-bold rounded-xl transition-all relative text-center uppercase tracking-wider",
-                  isActive ? "text-slate-900" : "text-white/70 hover:text-white"
+                  isActive ? item.activeText : "text-neutral-400 hover:text-neutral-600 dark:hover:text-white"
                 )}
               >
                 {isActive && (
                   <motion.div
-                    layoutId="heroModeActiveBg"
-                    className="absolute inset-0 bg-white rounded-xl shadow-md"
+                    layoutId="whiteHeroModeActiveBg"
+                    className="absolute inset-0 bg-white dark:bg-[#1E1E24] rounded-xl shadow-sm border border-black/5 dark:border-white/10"
                     transition={{ type: "spring", stiffness: 450, damping: 30 }}
                   />
                 )}
