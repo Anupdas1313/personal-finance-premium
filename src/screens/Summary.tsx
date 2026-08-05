@@ -682,6 +682,27 @@ function SummaryContent() {
     }
   };
 
+  const handleFlowTypeChange = useCallback((newFlow: 'DEBIT' | 'CREDIT' | 'TRANSFER') => {
+    setFlowType(newFlow);
+    if (newFlow === 'TRANSFER' && (activeTab === 'tags' || activeTab === 'daily')) {
+      setActiveTab('accounts');
+    }
+  }, [activeTab]);
+
+  const availableTabs = useMemo(() => {
+    const allTabs = [
+      { key: 'tags', label: 'Tags', icon: <Tag className="w-3.5 h-3.5" />, count: tagData.length },
+      { key: 'daily', label: 'Daily Pace', icon: <Zap className="w-3.5 h-3.5" />, count: dailySpendData.length },
+      { key: 'accounts', label: 'Accounts', icon: <Layers className="w-3.5 h-3.5" />, count: accData.length },
+      { key: 'methods', label: 'Methods', icon: <CreditCard className="w-3.5 h-3.5" />, count: payMethodData.length },
+      { key: 'payees', label: 'Payees', icon: <Store className="w-3.5 h-3.5" />, count: partyData.length },
+    ];
+    if (flowType === 'TRANSFER') {
+      return allTabs.filter(t => t.key !== 'tags' && t.key !== 'daily');
+    }
+    return allTabs;
+  }, [flowType, tagData.length, dailySpendData.length, accData.length, payMethodData.length, partyData.length]);
+
   return (
     <div
       ref={containerRef}
@@ -707,30 +728,30 @@ function SummaryContent() {
       {/* ── HEADER BAR ── */}
       <div className="flex items-center justify-between gap-3 px-1">
         <div>
-          <h1 className="text-2xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tight leading-none">
+          <h1 className="text-xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tight leading-none">
             Summary
           </h1>
-          <p className="text-[11px] font-medium text-neutral-400 mt-1">Overview & Analytics</p>
+          <p className="text-[10px] font-medium text-neutral-400 mt-1">Financial breakdown & analytics</p>
         </div>
 
-        <div className="flex items-center gap-1 bg-neutral-100 dark:bg-white/5 p-1 rounded-2xl border border-neutral-200/50 dark:border-white/5">
+        <div className="flex items-center gap-1.5 bg-neutral-100/80 dark:bg-white/5 p-1 rounded-full border border-neutral-200/50 dark:border-white/5">
           <button
             onClick={() => setCurrentMonth(m => subMonths(m, 1))}
-            className="p-1.5 rounded-xl text-neutral-500 hover:text-brand-blue dark:text-neutral-400 dark:hover:text-white hover:bg-white dark:hover:bg-white/10 transition-all"
+            className="p-1 rounded-full text-neutral-500 hover:text-brand-blue dark:text-neutral-400 dark:hover:text-white hover:bg-white dark:hover:bg-white/10 transition-all"
             aria-label="Previous month"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3.5 h-3.5" />
           </button>
-          <span className="font-bold text-brand-blue dark:text-[#F7F7F7] px-2 text-[11px] uppercase tracking-wider min-w-[85px] text-center">
+          <span className="font-bold text-brand-blue dark:text-[#F7F7F7] px-2 text-[10px] uppercase tracking-wider min-w-[80px] text-center">
             {format(currentMonth, 'MMM yyyy')}
           </span>
           <button
             onClick={() => setCurrentMonth(m => { const next = new Date(m.getFullYear(), m.getMonth() + 1, 1); return next > new Date() ? m : next; })}
             disabled={isCurrentMonth}
-            className="p-1.5 rounded-xl text-neutral-500 hover:text-brand-blue dark:text-neutral-400 dark:hover:text-white hover:bg-white dark:hover:bg-white/10 transition-all disabled:opacity-20"
+            className="p-1 rounded-full text-neutral-500 hover:text-brand-blue dark:text-neutral-400 dark:hover:text-white hover:bg-white dark:hover:bg-white/10 transition-all disabled:opacity-20"
             aria-label="Next month"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
@@ -741,7 +762,7 @@ function SummaryContent() {
         <div className="grid grid-cols-3 gap-2 text-center items-center py-1">
           {/* Income */}
           <button 
-            onClick={() => setFlowType('CREDIT')}
+            onClick={() => handleFlowTypeChange('CREDIT')}
             className="flex flex-col items-center cursor-pointer group"
           >
             <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider mb-0.5 group-hover:text-emerald-500 transition-colors">
@@ -752,7 +773,7 @@ function SummaryContent() {
 
           {/* Spent */}
           <button 
-            onClick={() => setFlowType('DEBIT')}
+            onClick={() => handleFlowTypeChange('DEBIT')}
             className="flex flex-col items-center cursor-pointer group"
           >
             <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider mb-0.5 group-hover:text-rose-500 transition-colors">
@@ -783,7 +804,7 @@ function SummaryContent() {
             return (
               <button
                 key={item.key}
-                onClick={() => setFlowType(item.key as any)}
+                onClick={() => handleFlowTypeChange(item.key as any)}
                 className={cn(
                   "py-2 px-2 text-[10px] font-bold rounded-xl transition-all relative text-center uppercase tracking-wider",
                   isActive ? item.activeText : "text-neutral-400 hover:text-neutral-600 dark:hover:text-white"
@@ -806,13 +827,7 @@ function SummaryContent() {
       {/* ── SEGMENTED ANALYTICS TABS ── */}
       <div className="space-y-3">
         <div className="flex gap-1.5 overflow-x-auto scrollbar-hide no-scrollbar p-1 bg-neutral-100/70 dark:bg-white/5 rounded-2xl border border-neutral-200/40 dark:border-white/5">
-          {[
-            { key: 'tags', label: 'Tags', icon: <Tag className="w-3.5 h-3.5" />, count: tagData.length },
-            { key: 'daily', label: 'Daily Pace', icon: <Zap className="w-3.5 h-3.5" />, count: dailySpendData.length },
-            { key: 'accounts', label: 'Accounts', icon: <Layers className="w-3.5 h-3.5" />, count: accData.length },
-            { key: 'methods', label: 'Methods', icon: <CreditCard className="w-3.5 h-3.5" />, count: payMethodData.length },
-            { key: 'payees', label: 'Payees', icon: <Store className="w-3.5 h-3.5" />, count: partyData.length },
-          ].map(tab => {
+          {availableTabs.map(tab => {
             const isActive = activeTab === tab.key;
             return (
               <button
