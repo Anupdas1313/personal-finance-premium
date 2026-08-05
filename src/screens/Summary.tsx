@@ -737,30 +737,62 @@ function SummaryContent() {
 
       {/* ── CLEAN WHITE HERO CASHFLOW CARD ── */}
       <div className="bg-white dark:bg-[#121217] rounded-3xl p-5 shadow-sm border border-neutral-100 dark:border-white/5 space-y-4">
-        {/* Income, Spent, Saved Stat Row */}
-        <div className="grid grid-cols-3 gap-2 text-center items-center py-2 bg-neutral-50/70 dark:bg-white/[0.02] rounded-2xl border border-neutral-100 dark:border-white/5 p-3">
-          {/* Income (Top / First) */}
-          <div className="flex flex-col items-center">
+        {/* Income, Spent, Saved Stat Row (Interactive UX) */}
+        <div className="grid grid-cols-3 gap-2 text-center items-center py-2 bg-neutral-50/80 dark:bg-white/[0.02] rounded-2xl border border-neutral-100 dark:border-white/5 p-3">
+          {/* Income (Clickable UX filter) */}
+          <button 
+            onClick={() => setFlowType('CREDIT')}
+            className={cn(
+              "flex flex-col items-center p-1.5 rounded-xl transition-all",
+              flowType === 'CREDIT' ? "bg-emerald-500/10 border border-emerald-500/20 shadow-sm" : "hover:bg-neutral-100/50 dark:hover:bg-white/5"
+            )}
+          >
             <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
               <ArrowDownLeft className="w-3 h-3 text-emerald-500" /> Income
             </span>
             <p className="text-emerald-600 dark:text-emerald-400 font-black text-sm tracking-tight">{fmt(totalIncome)}</p>
-          </div>
+          </button>
 
-          {/* Spent (Middle / Second) */}
-          <div className="flex flex-col items-center border-x border-neutral-200/60 dark:border-white/10 px-1">
+          {/* Spent (Clickable UX filter) */}
+          <button 
+            onClick={() => setFlowType('DEBIT')}
+            className={cn(
+              "flex flex-col items-center border-x border-neutral-200/60 dark:border-white/10 p-1.5 rounded-xl transition-all",
+              flowType === 'DEBIT' ? "bg-rose-500/10 border border-rose-500/20 shadow-sm" : "hover:bg-neutral-100/50 dark:hover:bg-white/5"
+            )}
+          >
             <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
               <ArrowUpRight className="w-3 h-3 text-rose-500" /> Spent
             </span>
             <p className="text-rose-600 dark:text-rose-400 font-black text-sm tracking-tight">{fmt(totalExpense)}</p>
-          </div>
+          </button>
 
-          {/* Saved (Third / End) */}
-          <div className="flex flex-col items-center">
+          {/* Saved */}
+          <div className="flex flex-col items-center p-1.5">
             <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider mb-1">Saved</span>
             <p className={cn("font-black text-sm tracking-tight", savings >= 0 ? "text-brand-blue dark:text-[#F7F7F7]" : "text-rose-500")}>
               {savings >= 0 ? fmt(savings) : `-${fmt(Math.abs(savings))}`}
             </p>
+          </div>
+        </div>
+
+        {/* Visual Cashflow Ratio Bar */}
+        <div className="space-y-1 px-1">
+          <div className="flex justify-between items-center text-[9px] font-semibold text-neutral-400">
+            <span>Cashflow Balance</span>
+            <span className={savings >= 0 ? "text-emerald-500" : "text-rose-500"}>
+              {savingsRate}% Saved
+            </span>
+          </div>
+          <div className="w-full h-1.5 rounded-full bg-neutral-100 dark:bg-white/5 overflow-hidden flex">
+            <div 
+              className="h-full bg-emerald-500 transition-all duration-500 rounded-l-full" 
+              style={{ width: `${totalIncome > 0 ? Math.min(Math.max((totalIncome / (totalIncome + totalExpense)) * 100, 0), 100) : 50}%` }}
+            />
+            <div 
+              className="h-full bg-rose-500 transition-all duration-500 rounded-r-full" 
+              style={{ width: `${totalIncome + totalExpense > 0 ? Math.min(Math.max((totalExpense / (totalIncome + totalExpense)) * 100, 0), 100) : 50}%` }}
+            />
           </div>
         </div>
 
@@ -799,11 +831,11 @@ function SummaryContent() {
       <div className="space-y-3">
         <div className="flex gap-1.5 overflow-x-auto scrollbar-hide no-scrollbar p-1 bg-neutral-100/70 dark:bg-white/5 rounded-2xl border border-neutral-200/40 dark:border-white/5">
           {[
-            { key: 'tags', label: 'Tags', icon: <Tag className="w-3.5 h-3.5" /> },
-            { key: 'daily', label: 'Daily Pace', icon: <Zap className="w-3.5 h-3.5" /> },
-            { key: 'accounts', label: 'Accounts', icon: <Layers className="w-3.5 h-3.5" /> },
-            { key: 'methods', label: 'Methods', icon: <CreditCard className="w-3.5 h-3.5" /> },
-            { key: 'payees', label: 'Payees', icon: <Store className="w-3.5 h-3.5" /> },
+            { key: 'tags', label: 'Tags', icon: <Tag className="w-3.5 h-3.5" />, count: tagData.length },
+            { key: 'daily', label: 'Daily Pace', icon: <Zap className="w-3.5 h-3.5" />, count: dailySpendData.length },
+            { key: 'accounts', label: 'Accounts', icon: <Layers className="w-3.5 h-3.5" />, count: accData.length },
+            { key: 'methods', label: 'Methods', icon: <CreditCard className="w-3.5 h-3.5" />, count: payMethodData.length },
+            { key: 'payees', label: 'Payees', icon: <Store className="w-3.5 h-3.5" />, count: partyData.length },
           ].map(tab => {
             const isActive = activeTab === tab.key;
             return (
@@ -824,9 +856,17 @@ function SummaryContent() {
                     transition={{ type: "spring", stiffness: 450, damping: 30 }}
                   />
                 )}
-                <span className="relative z-10 flex items-center gap-1.5">
+                <span className="relative z-10 flex items-center gap-1">
                   {tab.icon}
                   {tab.label}
+                  {tab.count > 0 && (
+                    <span className={cn(
+                      "px-1 py-0.2 text-[8px] rounded-md font-extrabold ml-0.5",
+                      isActive ? "bg-brand-blue/10 dark:bg-white/10 text-brand-blue dark:text-white" : "bg-neutral-200/50 dark:bg-white/10 text-neutral-400"
+                    )}>
+                      {tab.count}
+                    </span>
+                  )}
                 </span>
               </button>
             );
