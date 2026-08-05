@@ -760,40 +760,7 @@ function SummaryContent() {
           flowType === 'DEBIT' ? "bg-rose-500" : flowType === 'CREDIT' ? "bg-emerald-500" : "bg-cyan-500"
         )} />
 
-        {/* Mode Selector Toggle */}
-        <div className="flex items-center justify-between gap-2 border-b border-neutral-100 dark:border-white/5 pb-4 relative z-10">
-          <div className="p-1 rounded-2xl bg-neutral-100/80 dark:bg-white/5 flex gap-1 flex-1">
-            {[
-              { key: 'DEBIT', label: 'Expenses', activeColor: 'text-rose-600 dark:text-rose-400', badgeBg: 'bg-rose-500' },
-              { key: 'CREDIT', label: 'Income', activeColor: 'text-emerald-600 dark:text-emerald-400', badgeBg: 'bg-emerald-500' },
-              { key: 'TRANSFER', label: 'Transfers', activeColor: 'text-cyan-600 dark:text-cyan-400', badgeBg: 'bg-cyan-500' },
-            ].map(item => {
-              const isActive = flowType === item.key;
-              return (
-                <button
-                  key={item.key}
-                  onClick={() => setFlowType(item.key as any)}
-                  className={cn(
-                    "flex-1 py-2 px-2 text-[10px] font-bold rounded-xl transition-all relative text-center flex items-center justify-center gap-1.5",
-                    isActive ? item.activeColor : "text-neutral-400 hover:text-neutral-600 dark:hover:text-white"
-                  )}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="interactiveModeBg"
-                      className="absolute inset-0 bg-white dark:bg-[#1E1E24] rounded-xl shadow-sm border border-black/5 dark:border-white/10"
-                      transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                    />
-                  )}
-                  <div className={cn("w-1.5 h-1.5 rounded-full relative z-10 transition-colors", isActive ? item.badgeBg : "bg-neutral-300 dark:bg-neutral-600")} />
-                  <span className="relative z-10 uppercase tracking-wider">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Central Visual Ring & Key Metrics */}
+        {/* Central Visual Ring & Key Metrics (Income & Spent on Top) */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center relative z-10 pt-1">
           {/* Ring Visual Gauge */}
           <div className="md:col-span-5 flex justify-center items-center relative">
@@ -852,6 +819,39 @@ function SummaryContent() {
               </div>
               <p className="text-sm font-black text-rose-600 dark:text-rose-400">{fmt(totalExpense)}</p>
             </div>
+          </div>
+        </div>
+
+        {/* Mode Selector Toggle (Placed at Bottom of Card) */}
+        <div className="flex items-center justify-between gap-2 border-t border-neutral-100 dark:border-white/5 pt-4 relative z-10">
+          <div className="p-1 rounded-2xl bg-neutral-100/80 dark:bg-white/5 flex gap-1 flex-1">
+            {[
+              { key: 'DEBIT', label: 'Expenses', activeColor: 'text-rose-600 dark:text-rose-400', badgeBg: 'bg-rose-500' },
+              { key: 'CREDIT', label: 'Income', activeColor: 'text-emerald-600 dark:text-emerald-400', badgeBg: 'bg-emerald-500' },
+              { key: 'TRANSFER', label: 'Transfers', activeColor: 'text-cyan-600 dark:text-cyan-400', badgeBg: 'bg-cyan-500' },
+            ].map(item => {
+              const isActive = flowType === item.key;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => setFlowType(item.key as any)}
+                  className={cn(
+                    "flex-1 py-2 px-2 text-[10px] font-bold rounded-xl transition-all relative text-center flex items-center justify-center gap-1.5",
+                    isActive ? item.activeColor : "text-neutral-400 hover:text-neutral-600 dark:hover:text-white"
+                  )}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="interactiveModeBg"
+                      className="absolute inset-0 bg-white dark:bg-[#1E1E24] rounded-xl shadow-sm border border-black/5 dark:border-white/10"
+                      transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                    />
+                  )}
+                  <div className={cn("w-1.5 h-1.5 rounded-full relative z-10 transition-colors", isActive ? item.badgeBg : "bg-neutral-300 dark:bg-neutral-600")} />
+                  <span className="relative z-10 uppercase tracking-wider">{item.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
