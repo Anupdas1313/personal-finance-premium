@@ -750,60 +750,55 @@ function SummaryContent() {
         </div>
       </div>
 
-      {/* ── HERO CASHFLOW CARD ── */}
-      <div className="bg-white dark:bg-[#121217] rounded-3xl p-5 shadow-sm border border-neutral-100 dark:border-white/5 space-y-5">
-        {/* Top: Income & Spent breakdown */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Income block */}
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/10">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-              <ArrowDownLeft className="w-4 h-4" />
+      {/* ── MINIMALIST HERO CARD ── */}
+      <div className="bg-white dark:bg-[#121217] rounded-3xl p-5 shadow-sm border border-neutral-100 dark:border-white/5 space-y-4">
+        {/* Top: Net Savings Header */}
+        <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-white/5">
+          <div>
+            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">Net Savings</span>
+            <p className={cn("text-xl font-black tracking-tight mt-0.5", savings >= 0 ? "text-brand-blue dark:text-[#F7F7F7]" : "text-rose-500")}>
+              {savings >= 0 ? fmt(savings) : `-${fmt(Math.abs(savings))}`}
+            </p>
+          </div>
+          <span className={cn(
+            "px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase",
+            savings >= 0 
+              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" 
+              : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+          )}>
+            {savingsRate}% Saved
+          </span>
+        </div>
+
+        {/* Side-by-side Income & Expense */}
+        <div className="grid grid-cols-2 gap-3 pt-1">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+              <ArrowDownLeft className="w-3.5 h-3.5" />
             </div>
             <div className="min-w-0">
-              <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-400 uppercase tracking-wider block mb-0.5">Income</span>
-              <p className="text-base font-black text-emerald-600 dark:text-emerald-400 tracking-tight truncate">{fmt(totalIncome)}</p>
+              <span className="text-[9px] font-medium text-neutral-400 uppercase tracking-wider block">Income</span>
+              <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 truncate">{fmt(totalIncome)}</p>
             </div>
           </div>
 
-          {/* Spent block */}
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/10">
-            <div className="w-9 h-9 rounded-xl bg-rose-500/10 dark:bg-rose-500/20 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
-              <ArrowUpRight className="w-4 h-4" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+              <ArrowUpRight className="w-3.5 h-3.5" />
             </div>
             <div className="min-w-0">
-              <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-400 uppercase tracking-wider block mb-0.5">Spent</span>
-              <p className="text-base font-black text-rose-600 dark:text-rose-400 tracking-tight truncate">{fmt(totalExpense)}</p>
+              <span className="text-[9px] font-medium text-neutral-400 uppercase tracking-wider block">Spent</span>
+              <p className="text-xs font-bold text-rose-600 dark:text-rose-400 truncate">{fmt(totalExpense)}</p>
             </div>
           </div>
         </div>
 
-        {/* Middle: Net Savings indicator bar */}
-        <div className="space-y-1.5">
-          <div className="flex justify-between items-center text-[10px]">
-            <span className="font-semibold text-neutral-400">Monthly Net Savings</span>
-            <span className={cn("font-bold", savings >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500")}>
-              {savings >= 0 ? `+${fmt(savings)} (${savingsRate}%)` : `-${fmt(Math.abs(savings))}`}
-            </span>
-          </div>
-          {/* Progress visual bar */}
-          <div className="w-full h-2 rounded-full bg-neutral-100 dark:bg-white/5 overflow-hidden flex">
-            <div 
-              className="h-full bg-emerald-500 transition-all duration-500 rounded-l-full" 
-              style={{ width: `${totalIncome > 0 ? Math.min(Math.max((totalIncome / (totalIncome + totalExpense)) * 100, 0), 100) : 50}%` }}
-            />
-            <div 
-              className="h-full bg-rose-500 transition-all duration-500 rounded-r-full" 
-              style={{ width: `${totalIncome + totalExpense > 0 ? Math.min(Math.max((totalExpense / (totalIncome + totalExpense)) * 100, 0), 100) : 50}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Bottom: Integrated Flow Type Switcher (Segmented Control) */}
-        <div className="p-1 rounded-2xl bg-neutral-100 dark:bg-white/5 grid grid-cols-3 gap-1">
+        {/* Integrated Flow Type Switcher */}
+        <div className="p-1 rounded-xl bg-neutral-100 dark:bg-white/5 grid grid-cols-3 gap-1 pt-1">
           {[
-            { key: 'DEBIT', label: 'Expenses', activeBg: 'bg-white dark:bg-[#1E1E24]', activeText: 'text-rose-600 dark:text-rose-400' },
-            { key: 'CREDIT', label: 'Income', activeBg: 'bg-white dark:bg-[#1E1E24]', activeText: 'text-emerald-600 dark:text-emerald-400' },
-            { key: 'TRANSFER', label: 'Transfers', activeBg: 'bg-white dark:bg-[#1E1E24]', activeText: 'text-cyan-600 dark:text-cyan-400' },
+            { key: 'DEBIT', label: 'Expenses' },
+            { key: 'CREDIT', label: 'Income' },
+            { key: 'TRANSFER', label: 'Transfers' },
           ].map(item => {
             const isActive = flowType === item.key;
             return (
@@ -811,52 +806,49 @@ function SummaryContent() {
                 key={item.key}
                 onClick={() => setFlowType(item.key as any)}
                 className={cn(
-                  "py-2 px-2 text-[11px] font-bold rounded-xl transition-all relative text-center",
-                  isActive ? item.activeText : "text-neutral-400 hover:text-neutral-600 dark:hover:text-white"
+                  "py-1.5 px-2 text-[10px] font-bold rounded-lg transition-all relative text-center",
+                  isActive ? "text-brand-blue dark:text-white" : "text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
                 )}
               >
                 {isActive && (
                   <motion.div
-                    layoutId="segmentedFlowBg"
-                    className={cn("absolute inset-0 rounded-xl shadow-sm border border-black/5 dark:border-white/10", item.activeBg)}
+                    layoutId="flowTypePillBg"
+                    className="absolute inset-0 bg-white dark:bg-[#1E1E24] rounded-lg shadow-sm border border-black/5 dark:border-white/10"
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   />
                 )}
-                <span className="relative z-10">{item.label}</span>
+                <span className="relative z-10 uppercase tracking-wider">{item.label}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* ── INSIGHTS SECTION & SUB-TABS ── */}
-      <div className="bg-white dark:bg-[#121217] rounded-3xl p-5 shadow-sm border border-neutral-100 dark:border-white/5 space-y-4">
-        {/* Navigation Tabs */}
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide no-scrollbar pb-2 border-b border-neutral-100 dark:border-white/5">
-          {TABS.map(tab => {
-            const isActive = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={cn(
-                  'flex items-center gap-2 px-3.5 py-2 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all shrink-0',
-                  isActive
-                    ? 'bg-brand-blue dark:bg-white text-white dark:text-brand-blue shadow-sm'
-                    : 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-white/5'
-                )}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+      {/* ── SINGLE CLEAN TAB BAR UNDERNEATH ── */}
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide no-scrollbar px-0.5">
+        {TABS.map(tab => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                'flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[10px] font-bold whitespace-nowrap transition-all shrink-0 border',
+                isActive
+                  ? 'bg-brand-blue dark:bg-white text-white dark:text-brand-blue border-brand-blue dark:border-white shadow-sm'
+                  : 'bg-white dark:bg-[#121217] text-neutral-500 dark:text-neutral-400 border-neutral-100 dark:border-white/5 hover:border-neutral-200 dark:hover:border-white/10'
+              )}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
 
-        {/* Active Tab View */}
-        <div>
-          {renderTabContent()}
-        </div>
+      {/* ── TAB CONTENT CARD ── */}
+      <div className="bg-white dark:bg-[#121217] rounded-3xl p-5 shadow-sm border border-neutral-100 dark:border-white/5">
+        {renderTabContent()}
       </div>
 
       {/* ── DETAIL DRAWER MODAL OVERLAY ── */}
