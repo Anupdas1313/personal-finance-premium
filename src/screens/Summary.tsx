@@ -728,8 +728,8 @@ function SummaryContent() {
 
       {/* ── CLEAN WHITE HERO CASHFLOW CARD ── */}
       <div className="bg-white dark:bg-[#121217] rounded-3xl p-5 shadow-sm border border-neutral-100 dark:border-white/5 space-y-4">
-        {/* Income, Spent, Saved Plain Text Stat Row */}
-        <div className="grid grid-cols-3 gap-2 text-center items-center py-1">
+        {/* Income and Spent 2-Column Stat Row */}
+        <div className="grid grid-cols-2 gap-4 text-center items-center py-1">
           {/* Income */}
           <button 
             onClick={() => handleFlowTypeChange('CREDIT')}
@@ -738,29 +738,19 @@ function SummaryContent() {
             <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider mb-0.5 group-hover:text-emerald-500 transition-colors">
               Income
             </span>
-            <p className="text-emerald-600 dark:text-emerald-400 font-bold text-xs tracking-tight">{fmt(totalIncome)}</p>
+            <p className="text-emerald-600 dark:text-emerald-400 font-black text-sm tracking-tight">{fmt(totalIncome)}</p>
           </button>
 
           {/* Spent */}
           <button 
             onClick={() => handleFlowTypeChange('DEBIT')}
-            className="flex flex-col items-center cursor-pointer group"
+            className="flex flex-col items-center cursor-pointer group border-l border-neutral-100 dark:border-white/5"
           >
             <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider mb-0.5 group-hover:text-rose-500 transition-colors">
               Spent
             </span>
-            <p className="text-rose-600 dark:text-rose-400 font-bold text-xs tracking-tight">{fmt(totalExpense)}</p>
+            <p className="text-rose-600 dark:text-rose-400 font-black text-sm tracking-tight">{fmt(totalExpense)}</p>
           </button>
-
-          {/* Saved */}
-          <div className="flex flex-col items-center">
-            <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider mb-0.5">
-              Saved
-            </span>
-            <p className={cn("font-bold text-xs tracking-tight", savings >= 0 ? "text-brand-blue dark:text-[#F7F7F7]" : "text-rose-500")}>
-              {savings >= 0 ? fmt(savings) : `-${fmt(Math.abs(savings))}`}
-            </p>
-          </div>
         </div>
 
         {/* Mode Selector Switcher */}
