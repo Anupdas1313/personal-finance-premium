@@ -737,62 +737,38 @@ function SummaryContent() {
 
       {/* ── CLEAN WHITE HERO CASHFLOW CARD ── */}
       <div className="bg-white dark:bg-[#121217] rounded-3xl p-5 shadow-sm border border-neutral-100 dark:border-white/5 space-y-4">
-        {/* Income, Spent, Saved Stat Row (Interactive UX) */}
-        <div className="grid grid-cols-3 gap-2 text-center items-center py-2 bg-neutral-50/80 dark:bg-white/[0.02] rounded-2xl border border-neutral-100 dark:border-white/5 p-3">
-          {/* Income (Clickable UX filter) */}
+        {/* Income, Spent, Saved Plain Text Stat Row */}
+        <div className="grid grid-cols-3 gap-2 text-center items-center py-1">
+          {/* Income */}
           <button 
             onClick={() => setFlowType('CREDIT')}
-            className={cn(
-              "flex flex-col items-center p-1.5 rounded-xl transition-all",
-              flowType === 'CREDIT' ? "bg-emerald-500/10 border border-emerald-500/20 shadow-sm" : "hover:bg-neutral-100/50 dark:hover:bg-white/5"
-            )}
+            className="flex flex-col items-center cursor-pointer group"
           >
-            <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
-              <ArrowDownLeft className="w-3 h-3 text-emerald-500" /> Income
+            <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider mb-0.5 group-hover:text-emerald-500 transition-colors">
+              Income
             </span>
-            <p className="text-emerald-600 dark:text-emerald-400 font-black text-sm tracking-tight">{fmt(totalIncome)}</p>
+            <p className="text-emerald-600 dark:text-emerald-400 font-bold text-xs tracking-tight">{fmt(totalIncome)}</p>
           </button>
 
-          {/* Spent (Clickable UX filter) */}
+          {/* Spent */}
           <button 
             onClick={() => setFlowType('DEBIT')}
-            className={cn(
-              "flex flex-col items-center border-x border-neutral-200/60 dark:border-white/10 p-1.5 rounded-xl transition-all",
-              flowType === 'DEBIT' ? "bg-rose-500/10 border border-rose-500/20 shadow-sm" : "hover:bg-neutral-100/50 dark:hover:bg-white/5"
-            )}
+            className="flex flex-col items-center cursor-pointer group"
           >
-            <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
-              <ArrowUpRight className="w-3 h-3 text-rose-500" /> Spent
+            <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider mb-0.5 group-hover:text-rose-500 transition-colors">
+              Spent
             </span>
-            <p className="text-rose-600 dark:text-rose-400 font-black text-sm tracking-tight">{fmt(totalExpense)}</p>
+            <p className="text-rose-600 dark:text-rose-400 font-bold text-xs tracking-tight">{fmt(totalExpense)}</p>
           </button>
 
           {/* Saved */}
-          <div className="flex flex-col items-center p-1.5">
-            <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider mb-1">Saved</span>
-            <p className={cn("font-black text-sm tracking-tight", savings >= 0 ? "text-brand-blue dark:text-[#F7F7F7]" : "text-rose-500")}>
+          <div className="flex flex-col items-center">
+            <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider mb-0.5">
+              Saved
+            </span>
+            <p className={cn("font-bold text-xs tracking-tight", savings >= 0 ? "text-brand-blue dark:text-[#F7F7F7]" : "text-rose-500")}>
               {savings >= 0 ? fmt(savings) : `-${fmt(Math.abs(savings))}`}
             </p>
-          </div>
-        </div>
-
-        {/* Visual Cashflow Ratio Bar */}
-        <div className="space-y-1 px-1">
-          <div className="flex justify-between items-center text-[9px] font-semibold text-neutral-400">
-            <span>Cashflow Balance</span>
-            <span className={savings >= 0 ? "text-emerald-500" : "text-rose-500"}>
-              {savingsRate}% Saved
-            </span>
-          </div>
-          <div className="w-full h-1.5 rounded-full bg-neutral-100 dark:bg-white/5 overflow-hidden flex">
-            <div 
-              className="h-full bg-emerald-500 transition-all duration-500 rounded-l-full" 
-              style={{ width: `${totalIncome > 0 ? Math.min(Math.max((totalIncome / (totalIncome + totalExpense)) * 100, 0), 100) : 50}%` }}
-            />
-            <div 
-              className="h-full bg-rose-500 transition-all duration-500 rounded-r-full" 
-              style={{ width: `${totalIncome + totalExpense > 0 ? Math.min(Math.max((totalExpense / (totalIncome + totalExpense)) * 100, 0), 100) : 50}%` }}
-            />
           </div>
         </div>
 
