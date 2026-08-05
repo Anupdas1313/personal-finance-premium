@@ -496,30 +496,24 @@ function SummaryContent() {
           <div className="space-y-2">
             {partyData.map((d, i) => {
               const pct = totalActiveAmount > 0 ? (d.value / totalActiveAmount) * 100 : 0;
-              const initials = d.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-              const avatarColors = ['#00A86B', '#1A237E', '#E53935', '#6366F1', '#F59E0B', '#EC4899', '#14B8A6', '#D4AF37'];
-              const avatarColor = avatarColors[i % avatarColors.length];
               return (
                 <div
                   key={d.name}
                   onClick={() => setSelectedDetail({ type: 'payees', name: d.name })}
                   className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
                 >
-                  {/* Rank */}
+                  {/* Rank Badge */}
                   <span className="w-5 h-5 rounded-full bg-neutral-100 dark:bg-white/10 text-neutral-400 text-[10px] font-bold flex items-center justify-center shrink-0">
                     {i + 1}
                   </span>
-                  {/* Avatar initials */}
-                  <div
-                    className="w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black text-white shrink-0"
-                    style={{ backgroundColor: avatarColor }}
-                  >
-                    {initials}
+                  {/* Consistent Icon Badge */}
+                  <div className="p-1.5 bg-white dark:bg-[#1A1A1A] rounded-lg border border-neutral-100 dark:border-white/5 shrink-0">
+                    <Store className="w-3.5 h-3.5 text-neutral-500" />
                   </div>
                   <p className="text-xs font-bold text-brand-blue dark:text-white truncate min-w-[80px]">{d.name}</p>
                   <div className="flex-1 min-w-0">
                     <div className="w-full bg-neutral-200/60 dark:bg-white/5 rounded-full h-1 overflow-hidden">
-                      <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: avatarColor }} />
+                      <div className="h-1 rounded-full bg-brand-blue dark:bg-white/70 transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%` }} />
                     </div>
                   </div>
                   <div className="text-right shrink-0">
