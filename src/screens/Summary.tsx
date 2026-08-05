@@ -435,7 +435,6 @@ function SummaryContent() {
                 );
               })}
             </div>
-          </div>
         ) : <EmptyState icon={<Tag className="w-6 h-6 text-neutral-400" />} msg={flowType === 'DEBIT' ? "No tags used this month" : flowType === 'CREDIT' ? "No tags used for income this month" : "No tags used for transfers this month"} />;
 
       case 'accounts':
