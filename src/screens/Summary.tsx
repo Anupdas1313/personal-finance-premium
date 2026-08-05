@@ -744,45 +744,50 @@ function SummaryContent() {
         </div>
       </div>
 
-      {/* ── UNIFIED CONTROL CENTER (Hero Stats + Flow Selector) ── */}
-      <div className="bg-white dark:bg-[#111111] rounded-[24px] shadow-sm border border-neutral-100 dark:border-white/5 relative overflow-hidden flex flex-col">
-        {/* Top: Stats */}
-        <div className="p-6 flex flex-col items-center relative overflow-hidden">
-          {/* Subtle background glow */}
-          <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/[0.03] to-transparent dark:from-white/[0.03] pointer-events-none" />
-          
-          <div className="text-center mb-5 relative z-10">
-            <p className="text-neutral-400 text-[10px] font-bold uppercase tracking-widest mb-1.5">Total Saved</p>
-            <h2 className={cn('font-black text-4xl tracking-tighter', savings >= 0 ? 'text-brand-blue dark:text-[#F7F7F7]' : 'text-rose-500')}>
+      {/* ── BENTO GRID CONTROL CENTER ── */}
+      <div className="grid grid-cols-2 gap-2">
+        {/* Total Saved Widget */}
+        <div className="bg-white dark:bg-[#111111] rounded-[20px] p-4 shadow-sm border border-neutral-100 dark:border-white/5 flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/[0.02] to-transparent pointer-events-none" />
+          <p className="text-neutral-400 text-[9px] font-bold uppercase tracking-widest mb-3 relative z-10">Total Saved</p>
+          <div className="relative z-10 mt-auto">
+            <h2 className={cn('font-black text-2xl tracking-tight', savings >= 0 ? 'text-brand-blue dark:text-[#F7F7F7]' : 'text-rose-500')}>
               {savings >= 0 ? fmt(savings) : `-${fmt(Math.abs(savings))}`}
             </h2>
           </div>
-
-          <div className="flex w-full justify-around relative z-10 pt-4 border-t border-neutral-100 dark:border-white/5">
-            <div className="text-center flex-1">
-              <p className="text-neutral-400 text-[9px] font-medium mb-1">Income</p>
-              <p className="text-emerald-500 dark:text-emerald-400 font-bold text-lg tracking-tight">{fmt(totalIncome)}</p>
-            </div>
-            <div className="w-[1px] bg-neutral-100 dark:bg-white/5"></div>
-            <div className="text-center flex-1">
-              <p className="text-neutral-400 text-[9px] font-medium mb-1">Spent</p>
-              <p className="text-rose-500 dark:text-rose-400 font-bold text-lg tracking-tight">{fmt(totalExpense)}</p>
-            </div>
-          </div>
         </div>
 
-        {/* Bottom: Flow Selector (Segmented Control inside the card) */}
-        <div className="bg-neutral-50/80 dark:bg-white/[0.02] p-1.5 flex gap-1 border-t border-neutral-100 dark:border-white/5">
+        {/* Income / Spent Widgets */}
+        <div className="flex flex-col gap-2">
+          <div className="bg-white dark:bg-[#111111] rounded-[16px] p-3 shadow-sm border border-neutral-100 dark:border-white/5 flex flex-col justify-center relative overflow-hidden flex-1">
+             <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/[0.03] to-transparent pointer-events-none" />
+             <div className="flex justify-between items-center relative z-10 w-full">
+               <p className="text-neutral-400 text-[9px] font-bold uppercase tracking-widest">Income</p>
+               <p className="text-emerald-500 dark:text-emerald-400 font-bold text-sm tracking-tight">{fmt(totalIncome)}</p>
+             </div>
+          </div>
+          <div className="bg-white dark:bg-[#111111] rounded-[16px] p-3 shadow-sm border border-neutral-100 dark:border-white/5 flex flex-col justify-center relative overflow-hidden flex-1">
+             <div className="absolute inset-0 bg-gradient-to-r from-rose-500/[0.03] to-transparent pointer-events-none" />
+             <div className="flex justify-between items-center relative z-10 w-full">
+               <p className="text-neutral-400 text-[9px] font-bold uppercase tracking-widest">Spent</p>
+               <p className="text-rose-500 dark:text-rose-400 font-bold text-sm tracking-tight">{fmt(totalExpense)}</p>
+             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── STANDALONE FLOW SELECTOR ── */}
+      <div className="bg-white dark:bg-[#111111] p-1 rounded-[16px] flex gap-1 border border-neutral-100 dark:border-white/5 shadow-sm mt-3">
           {[
-            { key: 'DEBIT', label: 'Expenses', activeColor: 'bg-white dark:bg-[#1A1A1A] shadow-sm text-brand-blue dark:text-[#F7F7F7]', textColor: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white' },
-            { key: 'CREDIT', label: 'Income', activeColor: 'bg-white dark:bg-[#1A1A1A] shadow-sm text-brand-blue dark:text-[#F7F7F7]', textColor: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white' },
-            { key: 'TRANSFER', label: 'Transfers', activeColor: 'bg-white dark:bg-[#1A1A1A] shadow-sm text-brand-blue dark:text-[#F7F7F7]', textColor: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white' },
+            { key: 'DEBIT', label: 'Expenses', activeColor: 'text-brand-blue dark:text-[#F7F7F7]', textColor: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white' },
+            { key: 'CREDIT', label: 'Income', activeColor: 'text-brand-blue dark:text-[#F7F7F7]', textColor: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white' },
+            { key: 'TRANSFER', label: 'Transfers', activeColor: 'text-brand-blue dark:text-[#F7F7F7]', textColor: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white' },
           ].map(item => (
             <button
               key={item.key}
               onClick={() => setFlowType(item.key as any)}
               className={cn(
-                "flex-1 py-2.5 text-[10px] font-bold rounded-[14px] transition-all tracking-wider uppercase text-center relative",
+                "flex-1 py-2 text-[10px] font-bold rounded-[12px] transition-all tracking-wider uppercase text-center relative",
                 flowType === item.key
                   ? item.activeColor
                   : item.textColor
@@ -790,11 +795,10 @@ function SummaryContent() {
             >
               <span className="relative z-10">{item.label}</span>
               {flowType === item.key && (
-                <motion.div layoutId="flowIndicator" className="absolute inset-0 bg-white dark:bg-white/10 rounded-[14px] shadow-sm border border-black/[0.04] dark:border-white/10" />
+                <motion.div layoutId="flowIndicator" className="absolute inset-0 bg-neutral-100 dark:bg-white/10 rounded-[12px] shadow-sm border border-black/[0.04] dark:border-white/10" />
               )}
             </button>
           ))}
-        </div>
       </div>
 
       {/* ── INTEGRATED TAB AREA ── */}
