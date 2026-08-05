@@ -119,7 +119,6 @@ const Portal: React.FC<{ children: ReactNode }> = ({ children }) =>
 // ── Tab definitions ─────────────────────────────────────────────────────────
 const TABS = [
   { key: 'tags', label: 'Tags', icon: <Tag className="w-3.5 h-3.5" /> },
-  { key: 'daily', label: 'Daily Avg', icon: <Zap className="w-3.5 h-3.5" /> },
   { key: 'accounts', label: 'Accounts', icon: <Layers className="w-3.5 h-3.5" /> },
   { key: 'methods', label: 'Methods', icon: <CreditCard className="w-3.5 h-3.5" /> },
   { key: 'payees', label: 'Payees', icon: <Store className="w-3.5 h-3.5" /> },
@@ -525,150 +524,12 @@ function SummaryContent() {
             })}
           </div>
         ) : <EmptyState icon={<Store className="w-6 h-6 text-neutral-400" />} msg={flowType === 'DEBIT' ? "No payee data this month" : flowType === 'CREDIT' ? "No payer data this month" : "No transfer party data this month"} />;
-
-      case 'daily':
-        const maxDaily = dailySpendData.reduce((m, d) => Math.max(m, d.value), 0);
-        const maxDow = dayOfWeekData.reduce((m, d) => Math.max(m, d.total), 0);
-
-        // Theme colors config based on flowType:
-        const themeColors = {
-          DEBIT: {
-            bg: 'from-rose-500/10 via-rose-500/5 to-transparent',
-            border: 'border-rose-500/20',
-            text: 'text-rose-600 dark:text-rose-400',
-            icon: 'text-rose-500',
-            bar: 'bg-rose-500 hover:bg-rose-400',
-          },
-          CREDIT: {
-            bg: 'from-emerald-500/10 via-emerald-500/5 to-transparent',
-            border: 'border-emerald-500/20',
-            text: 'text-emerald-600 dark:text-emerald-400',
-            icon: 'text-emerald-500',
-            bar: 'bg-emerald-500 hover:bg-emerald-400',
-          },
-          TRANSFER: {
-            bg: 'from-cyan-500/10 via-cyan-500/5 to-transparent',
-            border: 'border-cyan-500/20',
-            text: 'text-cyan-600 dark:text-cyan-400',
-            icon: 'text-cyan-500',
-            bar: 'bg-cyan-500 hover:bg-cyan-400',
-          }
-        }[flowType];
-
-        return dailySpendData.length > 0 ? (
-          <div className="space-y-4">
-            {/* 1. Daily Avg KPI Stats Grid */}
-            <div className="grid grid-cols-2 gap-2.5">
-              <div className={cn("p-3 bg-gradient-to-br rounded-2xl border", themeColors.bg, themeColors.border)}>
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Zap className={cn("w-3.5 h-3.5", themeColors.icon)} />
-                  <span className={cn("text-[10px] font-medium", themeColors.text)}>
-                    {flowType === 'DEBIT' ? 'Daily Avg Spent' : flowType === 'CREDIT' ? 'Daily Avg Received' : 'Daily Avg Transferred'}
-                  </span>
-                </div>
-                <p className="text-base font-bold text-brand-blue dark:text-white tracking-tight">{fmt(Math.round(avgDailyActive))}</p>
-                <p className="text-[9px] font-medium text-neutral-400 mt-0.5">{dailySpendData.length} active {flowType === 'DEBIT' ? 'spend' : flowType === 'CREDIT' ? 'income' : 'transfer'} days</p>
-              </div>
-
-              <div className={cn("p-3 bg-gradient-to-br rounded-2xl border", themeColors.bg, themeColors.border)}>
-                <div className="flex items-center gap-1.5 mb-1">
-                  <TrendingUp className={cn("w-3.5 h-3.5", themeColors.icon)} />
-                  <span className={cn("text-[10px] font-medium", themeColors.text)}>
-                    {flowType === 'DEBIT' ? 'Single Peak Spend' : flowType === 'CREDIT' ? 'Single Peak Income' : 'Single Peak Transfer'}
-                  </span>
-                </div>
-                <p className="text-base font-bold text-brand-blue dark:text-white tracking-tight">{fmt(peakDay.value)}</p>
-                <p className="text-[9px] font-medium text-neutral-400 truncate mt-0.5">{peakDay.name}</p>
-              </div>
-            </div>
-
-            {/* 2. Day-of-Week Distribution (Mon-Sun Bar Chart) */}
-            <div className="p-3.5 bg-neutral-50 dark:bg-white/[0.02] rounded-2xl border border-neutral-100 dark:border-white/5 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Weekly {flowType === 'DEBIT' ? 'Spend' : flowType === 'CREDIT' ? 'Income' : 'Transfer'} Pattern
-                </span>
-                <span className="text-[9px] font-medium text-neutral-400">By Day of Week</span>
-              </div>
-              <div className="grid grid-cols-7 gap-1 pt-2 items-end h-24">
-                {dayOfWeekData.map(d => {
-                  const heightPct = maxDow > 0 ? (d.total / maxDow) * 100 : 0;
-                  return (
-                    <div key={d.day} className="flex flex-col items-center gap-1 h-full justify-end group">
-                      <span className="text-[8px] font-bold text-neutral-400 group-hover:text-brand-blue dark:group-hover:text-white transition-colors">
-                        {d.total > 0 ? fmt(d.total) : '0'}
-                      </span>
-                      <div className="w-full bg-neutral-200/50 dark:bg-white/5 rounded-t-lg flex-1 flex items-end overflow-hidden">
-                        <div
-                          className={cn("w-full rounded-t-lg transition-all duration-500", themeColors.bar)}
-                          style={{ height: `${Math.max(heightPct, 6)}%` }}
-                        />
-                      </div>
-                      <span className="text-[9px] font-semibold text-neutral-500 dark:text-neutral-400">{d.day}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 3. Daily Breakdown Timeline */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between px-1">
-                <span className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Daily Activity Timeline
-                </span>
-                <span className="text-[9px] font-medium text-neutral-400">{dailySpendData.length} recorded days</span>
-              </div>
-
-              {dailySpendData.map((d) => {
-                const barPct = maxDaily > 0 ? (d.value / maxDaily) * 100 : 0;
-                const catIcon = CATEGORY_ICONS[d.topCategory] || '📦';
-                const catPct = d.value > 0 ? Math.round((d.topCategoryAmt / d.value) * 100) : 0;
-                return (
-                  <div
-                    key={d.dateKey}
-                    onClick={() => setSelectedDetail({ type: 'daily', name: d.dateKey })}
-                    className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-100 dark:hover:bg-white/[0.04] transition-colors"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-white/5 border border-neutral-100 dark:border-white/5 flex flex-col items-center justify-center shrink-0">
-                      <span className="text-[9px] font-bold text-neutral-400 leading-none">{d.name.split(',')[0]}</span>
-                      <span className="text-[10px] font-bold text-brand-blue dark:text-white leading-none mt-0.5">{d.name.split(',')[1]?.trim().split(' ')[0]}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-center mb-1">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <p className="text-xs font-semibold text-brand-blue dark:text-white truncate">{d.name}</p>
-                          {/* Daily Dominant Category Pill */}
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white dark:bg-white/5 border border-neutral-200/60 dark:border-white/10 text-[9px] font-medium text-neutral-600 dark:text-neutral-300 shrink-0">
-                            <span>{catIcon}</span>
-                            <span className="truncate max-w-[80px]">{d.topCategory}</span>
-                            <span className="text-[8px] text-neutral-400 font-normal">({catPct}%)</span>
-                          </span>
-                        </div>
-                        <span className="text-[9px] font-medium text-neutral-400 shrink-0 ml-2">{d.count} {d.count === 1 ? 'tx' : 'txs'}</span>
-                      </div>
-                      <div className="w-full bg-neutral-100 dark:bg-white/5 rounded-full h-1.5 overflow-hidden">
-                        <div className={cn("h-1.5 rounded-full transition-all duration-500", flowType === 'CREDIT' ? 'bg-emerald-500' : flowType === 'TRANSFER' ? 'bg-cyan-500' : 'bg-rose-500')} style={{ width: `${Math.min(barPct, 100)}%` }} />
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className={cn(
-                        "text-xs font-bold",
-                        flowType === 'CREDIT' ? 'text-emerald-500' : flowType === 'TRANSFER' ? 'text-cyan-500' : 'text-rose-500'
-                      )}>{fmt(d.value)}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ) : <EmptyState icon={<Zap className="w-6 h-6 text-neutral-400" />} msg={flowType === 'DEBIT' ? "No daily spending data this month" : flowType === 'CREDIT' ? "No daily income data this month" : "No daily transfer data this month"} />;
     }
   };
 
   const handleFlowTypeChange = useCallback((newFlow: 'DEBIT' | 'CREDIT' | 'TRANSFER') => {
     setFlowType(newFlow);
-    if (newFlow === 'TRANSFER' && (activeTab === 'tags' || activeTab === 'daily')) {
+    if (newFlow === 'TRANSFER' && activeTab === 'tags') {
       setActiveTab('accounts');
     }
   }, [activeTab]);
@@ -676,16 +537,15 @@ function SummaryContent() {
   const availableTabs = useMemo(() => {
     const allTabs = [
       { key: 'tags', label: 'Tags', icon: <Tag className="w-3.5 h-3.5" />, count: tagData.length },
-      { key: 'daily', label: 'Daily Pace', icon: <Zap className="w-3.5 h-3.5" />, count: dailySpendData.length },
       { key: 'accounts', label: 'Accounts', icon: <Layers className="w-3.5 h-3.5" />, count: accData.length },
       { key: 'methods', label: 'Methods', icon: <CreditCard className="w-3.5 h-3.5" />, count: payMethodData.length },
       { key: 'payees', label: 'Payees', icon: <Store className="w-3.5 h-3.5" />, count: partyData.length },
     ];
     if (flowType === 'TRANSFER') {
-      return allTabs.filter(t => t.key !== 'tags' && t.key !== 'daily');
+      return allTabs.filter(t => t.key !== 'tags');
     }
     return allTabs;
-  }, [flowType, tagData.length, dailySpendData.length, accData.length, payMethodData.length, partyData.length]);
+  }, [flowType, tagData.length, accData.length, payMethodData.length, partyData.length]);
 
   return (
     <div
