@@ -719,101 +719,144 @@ function SummaryContent() {
         </div>
       </div>
 
-      {/* ── COMPACT HEADER + MONTH NAVIGATOR ── */}
+      {/* ── HEADER + MONTH NAVIGATOR ── */}
       <div className="flex items-center justify-between gap-3 px-1">
-        <h1 className="text-xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter leading-none">
-          Summary
-        </h1>
-        <div className="flex items-center gap-2 bg-white dark:bg-[#111111] px-3 py-1.5 rounded-full shadow-sm border border-neutral-100 dark:border-white/5">
+        <div>
+          <h1 className="text-xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tight leading-none">
+            Summary
+          </h1>
+          <p className="text-[10px] font-medium text-neutral-400 mt-1">Financial breakdown & analytics</p>
+        </div>
+
+        <div className="flex items-center gap-1.5 bg-neutral-100/80 dark:bg-white/5 p-1 rounded-full border border-neutral-200/50 dark:border-white/5">
           <button
             onClick={() => setCurrentMonth(m => subMonths(m, 1))}
-            className="text-neutral-400 hover:text-neutral-600 dark:hover:text-white transition-colors"
+            className="p-1 rounded-full text-neutral-500 hover:text-brand-blue dark:text-neutral-400 dark:hover:text-white hover:bg-white dark:hover:bg-white/10 transition-all"
+            aria-label="Previous month"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3.5 h-3.5" />
           </button>
-          <span className="font-bold text-brand-blue dark:text-[#F7F7F7] min-w-[90px] text-center text-[10px] uppercase tracking-widest">
+          <span className="font-bold text-brand-blue dark:text-[#F7F7F7] px-2 text-[10px] uppercase tracking-wider min-w-[80px] text-center">
             {format(currentMonth, 'MMM yyyy')}
           </span>
           <button
             onClick={() => setCurrentMonth(m => { const next = new Date(m.getFullYear(), m.getMonth() + 1, 1); return next > new Date() ? m : next; })}
             disabled={isCurrentMonth}
-            className="text-neutral-400 hover:text-neutral-600 dark:hover:text-white transition-colors disabled:opacity-30"
+            className="p-1 rounded-full text-neutral-500 hover:text-brand-blue dark:text-neutral-400 dark:hover:text-white hover:bg-white dark:hover:bg-white/10 transition-all disabled:opacity-20"
+            aria-label="Next month"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
-      {/* ── COMPACT STATS ROW ── */}
-      <div className="flex items-center gap-3 px-1">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-[10px] font-medium text-neutral-400">In</span>
-            <span className="text-sm font-bold text-brand-blue dark:text-[#F7F7F7] tracking-tight">{fmt(totalIncome)}</span>
+      {/* ── HERO CASHFLOW CARD ── */}
+      <div className="bg-white dark:bg-[#121217] rounded-3xl p-5 shadow-sm border border-neutral-100 dark:border-white/5 space-y-5">
+        {/* Top: Income & Spent breakdown */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Income block */}
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/10">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+              <ArrowDownLeft className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-400 uppercase tracking-wider block mb-0.5">Income</span>
+              <p className="text-base font-black text-emerald-600 dark:text-emerald-400 tracking-tight truncate">{fmt(totalIncome)}</p>
+            </div>
           </div>
-          <span className="text-neutral-200 dark:text-white/10">·</span>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-rose-500" />
-            <span className="text-[10px] font-medium text-neutral-400">Out</span>
-            <span className="text-sm font-bold text-brand-blue dark:text-[#F7F7F7] tracking-tight">{fmt(totalExpense)}</span>
+
+          {/* Spent block */}
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/10">
+            <div className="w-9 h-9 rounded-xl bg-rose-500/10 dark:bg-rose-500/20 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+              <ArrowUpRight className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-400 uppercase tracking-wider block mb-0.5">Spent</span>
+              <p className="text-base font-black text-rose-600 dark:text-rose-400 tracking-tight truncate">{fmt(totalExpense)}</p>
+            </div>
           </div>
-          <span className="text-neutral-200 dark:text-white/10">·</span>
-          <div className="flex items-center gap-1.5">
-            <div className={cn("w-2 h-2 rounded-full", savings >= 0 ? "bg-brand-blue dark:bg-brand-cyan" : "bg-rose-500")} />
-            <span className="text-[10px] font-medium text-neutral-400">Net</span>
-            <span className={cn("text-sm font-bold tracking-tight", savings >= 0 ? "text-brand-blue dark:text-[#F7F7F7]" : "text-rose-500")}>
-              {savings >= 0 ? fmt(savings) : `-${fmt(Math.abs(savings))}`}
+        </div>
+
+        {/* Middle: Net Savings indicator bar */}
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-center text-[10px]">
+            <span className="font-semibold text-neutral-400">Monthly Net Savings</span>
+            <span className={cn("font-bold", savings >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500")}>
+              {savings >= 0 ? `+${fmt(savings)} (${savingsRate}%)` : `-${fmt(Math.abs(savings))}`}
             </span>
           </div>
+          {/* Progress visual bar */}
+          <div className="w-full h-2 rounded-full bg-neutral-100 dark:bg-white/5 overflow-hidden flex">
+            <div 
+              className="h-full bg-emerald-500 transition-all duration-500 rounded-l-full" 
+              style={{ width: `${totalIncome > 0 ? Math.min(Math.max((totalIncome / (totalIncome + totalExpense)) * 100, 0), 100) : 50}%` }}
+            />
+            <div 
+              className="h-full bg-rose-500 transition-all duration-500 rounded-r-full" 
+              style={{ width: `${totalIncome + totalExpense > 0 ? Math.min(Math.max((totalExpense / (totalIncome + totalExpense)) * 100, 0), 100) : 50}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Bottom: Integrated Flow Type Switcher (Segmented Control) */}
+        <div className="p-1 rounded-2xl bg-neutral-100 dark:bg-white/5 grid grid-cols-3 gap-1">
+          {[
+            { key: 'DEBIT', label: 'Expenses', activeBg: 'bg-white dark:bg-[#1E1E24]', activeText: 'text-rose-600 dark:text-rose-400' },
+            { key: 'CREDIT', label: 'Income', activeBg: 'bg-white dark:bg-[#1E1E24]', activeText: 'text-emerald-600 dark:text-emerald-400' },
+            { key: 'TRANSFER', label: 'Transfers', activeBg: 'bg-white dark:bg-[#1E1E24]', activeText: 'text-cyan-600 dark:text-cyan-400' },
+          ].map(item => {
+            const isActive = flowType === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => setFlowType(item.key as any)}
+                className={cn(
+                  "py-2 px-2 text-[11px] font-bold rounded-xl transition-all relative text-center",
+                  isActive ? item.activeText : "text-neutral-400 hover:text-neutral-600 dark:hover:text-white"
+                )}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="segmentedFlowBg"
+                    className={cn("absolute inset-0 rounded-xl shadow-sm border border-black/5 dark:border-white/10", item.activeBg)}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10">{item.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* ── FLOW TYPE SELECTOR ── */}
-      <div className="flex gap-1 px-1">
-        {[
-          { key: 'DEBIT', label: 'Expenses', dotColor: 'bg-rose-500' },
-          { key: 'CREDIT', label: 'Income', dotColor: 'bg-emerald-500' },
-          { key: 'TRANSFER', label: 'Transfers', dotColor: 'bg-cyan-500' },
-        ].map(item => (
-          <button
-            key={item.key}
-            onClick={() => setFlowType(item.key as any)}
-            className={cn(
-              "flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[10px] font-bold transition-all border",
-              flowType === item.key
-                ? "bg-brand-blue dark:bg-white text-white dark:text-brand-blue border-brand-blue dark:border-white shadow-sm"
-                : "bg-white dark:bg-[#111111] text-neutral-500 dark:text-neutral-400 border-neutral-100 dark:border-white/5 hover:border-neutral-200 dark:hover:border-white/10"
-            )}
-          >
-            <div className={cn("w-1.5 h-1.5 rounded-full", flowType === item.key ? "bg-white dark:bg-brand-blue" : item.dotColor)} />
-            {item.label}
-          </button>
-        ))}
-      </div>
+      {/* ── INSIGHTS SECTION & SUB-TABS ── */}
+      <div className="bg-white dark:bg-[#121217] rounded-3xl p-5 shadow-sm border border-neutral-100 dark:border-white/5 space-y-4">
+        {/* Navigation Tabs */}
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide no-scrollbar pb-2 border-b border-neutral-100 dark:border-white/5">
+          {TABS.map(tab => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={cn(
+                  'flex items-center gap-2 px-3.5 py-2 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all shrink-0',
+                  isActive
+                    ? 'bg-brand-blue dark:bg-white text-white dark:text-brand-blue shadow-sm'
+                    : 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-white/5'
+                )}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
 
-      {/* ── TAB BAR ── */}
-      <div className="flex gap-1 overflow-x-auto scrollbar-hide no-scrollbar px-1">
-        {TABS.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[10px] font-bold whitespace-nowrap transition-all border shrink-0',
-              activeTab === tab.key
-                ? 'bg-neutral-900 dark:bg-white/10 text-white dark:text-white border-neutral-900 dark:border-white/10'
-                : 'bg-transparent text-neutral-400 border-transparent hover:text-neutral-600 dark:hover:text-neutral-300'
-            )}
-          >
-            {tab.icon}
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* ── TAB CONTENT ── */}
-      <div className="px-1">
-        {renderTabContent()}
+        {/* Active Tab View */}
+        <div>
+          {renderTabContent()}
+        </div>
       </div>
 
       {/* ── DETAIL DRAWER MODAL OVERLAY ── */}
