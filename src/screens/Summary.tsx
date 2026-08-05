@@ -719,135 +719,190 @@ function SummaryContent() {
         </div>
       </div>
 
-      {/* ── HEADER + MONTH NAVIGATOR ── */}
+      {/* ── HEADER BAR ── */}
       <div className="flex items-center justify-between gap-3 px-1">
         <div>
-          <h1 className="text-xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tight leading-none">
-            Summary
+          <h1 className="text-xl font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tight leading-none flex items-center gap-2">
+            <span>Summary</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-brand-blue/10 text-brand-blue dark:bg-white/10 dark:text-white uppercase tracking-wider">
+              {format(currentMonth, 'MMMM')}
+            </span>
           </h1>
-          <p className="text-[10px] font-medium text-neutral-400 mt-1">Financial breakdown & analytics</p>
         </div>
 
-        <div className="flex items-center gap-1.5 bg-neutral-100/80 dark:bg-white/5 p-1 rounded-full border border-neutral-200/50 dark:border-white/5">
+        <div className="flex items-center gap-1.5 bg-white dark:bg-[#121217] p-1 rounded-2xl border border-neutral-100 dark:border-white/5 shadow-sm">
           <button
             onClick={() => setCurrentMonth(m => subMonths(m, 1))}
-            className="p-1 rounded-full text-neutral-500 hover:text-brand-blue dark:text-neutral-400 dark:hover:text-white hover:bg-white dark:hover:bg-white/10 transition-all"
+            className="p-1.5 rounded-xl text-neutral-400 hover:text-brand-blue dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-white/5 transition-all"
             aria-label="Previous month"
           >
-            <ChevronLeft className="w-3.5 h-3.5" />
+            <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="font-bold text-brand-blue dark:text-[#F7F7F7] px-2 text-[10px] uppercase tracking-wider min-w-[80px] text-center">
+          <span className="font-bold text-brand-blue dark:text-[#F7F7F7] px-1 text-[11px] uppercase tracking-wider min-w-[75px] text-center">
             {format(currentMonth, 'MMM yyyy')}
           </span>
           <button
             onClick={() => setCurrentMonth(m => { const next = new Date(m.getFullYear(), m.getMonth() + 1, 1); return next > new Date() ? m : next; })}
             disabled={isCurrentMonth}
-            className="p-1 rounded-full text-neutral-500 hover:text-brand-blue dark:text-neutral-400 dark:hover:text-white hover:bg-white dark:hover:bg-white/10 transition-all disabled:opacity-20"
+            className="p-1.5 rounded-xl text-neutral-400 hover:text-brand-blue dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-white/5 transition-all disabled:opacity-20"
             aria-label="Next month"
           >
-            <ChevronRight className="w-3.5 h-3.5" />
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* ── MINIMALIST HERO CARD ── */}
-      <div className="bg-white dark:bg-[#121217] rounded-3xl p-5 shadow-sm border border-neutral-100 dark:border-white/5 space-y-4">
-        {/* Top: Net Savings Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-white/5">
-          <div>
-            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">Net Savings</span>
-            <p className={cn("text-xl font-black tracking-tight mt-0.5", savings >= 0 ? "text-brand-blue dark:text-[#F7F7F7]" : "text-rose-500")}>
-              {savings >= 0 ? fmt(savings) : `-${fmt(Math.abs(savings))}`}
-            </p>
+      {/* ── INTERACTIVE CASHFLOW HERO CARD ── */}
+      <div className="bg-white dark:bg-[#121217] rounded-3xl p-5 shadow-md shadow-brand-blue/[0.03] border border-neutral-100 dark:border-white/5 space-y-5 relative overflow-hidden">
+        {/* Subtle Ambient Glow Background */}
+        <div className={cn(
+          "absolute -right-20 -top-20 w-56 h-56 rounded-full blur-3xl pointer-events-none transition-colors duration-500 opacity-20 dark:opacity-15",
+          flowType === 'DEBIT' ? "bg-rose-500" : flowType === 'CREDIT' ? "bg-emerald-500" : "bg-cyan-500"
+        )} />
+
+        {/* Mode Selector Toggle */}
+        <div className="flex items-center justify-between gap-2 border-b border-neutral-100 dark:border-white/5 pb-4 relative z-10">
+          <div className="p-1 rounded-2xl bg-neutral-100/80 dark:bg-white/5 flex gap-1 flex-1">
+            {[
+              { key: 'DEBIT', label: 'Expenses', activeColor: 'text-rose-600 dark:text-rose-400', badgeBg: 'bg-rose-500' },
+              { key: 'CREDIT', label: 'Income', activeColor: 'text-emerald-600 dark:text-emerald-400', badgeBg: 'bg-emerald-500' },
+              { key: 'TRANSFER', label: 'Transfers', activeColor: 'text-cyan-600 dark:text-cyan-400', badgeBg: 'bg-cyan-500' },
+            ].map(item => {
+              const isActive = flowType === item.key;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => setFlowType(item.key as any)}
+                  className={cn(
+                    "flex-1 py-2 px-2 text-[10px] font-bold rounded-xl transition-all relative text-center flex items-center justify-center gap-1.5",
+                    isActive ? item.activeColor : "text-neutral-400 hover:text-neutral-600 dark:hover:text-white"
+                  )}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="interactiveModeBg"
+                      className="absolute inset-0 bg-white dark:bg-[#1E1E24] rounded-xl shadow-sm border border-black/5 dark:border-white/10"
+                      transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                    />
+                  )}
+                  <div className={cn("w-1.5 h-1.5 rounded-full relative z-10 transition-colors", isActive ? item.badgeBg : "bg-neutral-300 dark:bg-neutral-600")} />
+                  <span className="relative z-10 uppercase tracking-wider">{item.label}</span>
+                </button>
+              );
+            })}
           </div>
-          <span className={cn(
-            "px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase",
-            savings >= 0 
-              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" 
-              : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
-          )}>
-            {savingsRate}% Saved
+        </div>
+
+        {/* Central Visual Ring & Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center relative z-10 pt-1">
+          {/* Ring Visual Gauge */}
+          <div className="md:col-span-5 flex justify-center items-center relative">
+            <svg width="140" height="140" viewBox="0 0 140 140" className="transform -rotate-90">
+              {/* Background Track */}
+              <circle cx="70" cy="70" r="54" stroke="currentColor" strokeWidth="10" className="text-neutral-100 dark:text-white/5 fill-none" />
+              {/* Income Arc */}
+              <circle
+                cx="70" cy="70" r="54"
+                stroke="#10B981" strokeWidth="10" strokeLinecap="round" className="fill-none transition-all duration-700"
+                strokeDasharray={`${(totalIncome / Math.max(totalIncome + totalExpense, 1)) * 339} 339`}
+              />
+              {/* Spent Arc */}
+              <circle
+                cx="70" cy="70" r="54"
+                stroke="#F43F5E" strokeWidth="10" strokeLinecap="round" className="fill-none transition-all duration-700"
+                strokeDasharray={`${(totalExpense / Math.max(totalIncome + totalExpense, 1)) * 339} 339`}
+                strokeDashoffset={`-${(totalIncome / Math.max(totalIncome + totalExpense, 1)) * 339}`}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+              <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest">Net Cashflow</span>
+              <span className={cn("text-base font-black tracking-tight mt-0.5", savings >= 0 ? "text-emerald-500" : "text-rose-500")}>
+                {savings >= 0 ? `+${fmt(savings)}` : `-${fmt(Math.abs(savings))}`}
+              </span>
+              <span className="text-[9px] font-semibold text-neutral-400 mt-0.5">{savingsRate}% saved</span>
+            </div>
+          </div>
+
+          {/* Quick Metrics Breakdown Cards */}
+          <div className="md:col-span-7 space-y-2.5">
+            {/* Income card */}
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                  <ArrowDownLeft className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Total Income</span>
+                  <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">{income.length} transactions</span>
+                </div>
+              </div>
+              <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">{fmt(totalIncome)}</p>
+            </div>
+
+            {/* Spent card */}
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
+                  <ArrowUpRight className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Total Expenses</span>
+                  <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">{expenses.length} transactions</span>
+                </div>
+              </div>
+              <p className="text-sm font-black text-rose-600 dark:text-rose-400">{fmt(totalExpense)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── METRIC CHIP NAVIGATION ── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Breakdown & Insights</span>
+          <span className="text-[10px] font-medium text-neutral-400">
+            Viewing {flowType === 'DEBIT' ? 'Expense' : flowType === 'CREDIT' ? 'Income' : 'Transfer'} data
           </span>
         </div>
 
-        {/* Side-by-side Income & Expense */}
-        <div className="grid grid-cols-2 gap-3 pt-1">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-              <ArrowDownLeft className="w-3.5 h-3.5" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-[9px] font-medium text-neutral-400 uppercase tracking-wider block">Income</span>
-              <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 truncate">{fmt(totalIncome)}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-[9px] font-medium text-neutral-400 uppercase tracking-wider block">Spent</span>
-              <p className="text-xs font-bold text-rose-600 dark:text-rose-400 truncate">{fmt(totalExpense)}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Integrated Flow Type Switcher */}
-        <div className="p-1 rounded-xl bg-neutral-100 dark:bg-white/5 grid grid-cols-3 gap-1 pt-1">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide no-scrollbar pb-1">
           {[
-            { key: 'DEBIT', label: 'Expenses' },
-            { key: 'CREDIT', label: 'Income' },
-            { key: 'TRANSFER', label: 'Transfers' },
-          ].map(item => {
-            const isActive = flowType === item.key;
+            { key: 'tags', label: 'Tags', icon: <Tag className="w-3.5 h-3.5" />, count: tagData.length },
+            { key: 'daily', label: 'Daily Pace', icon: <Zap className="w-3.5 h-3.5" />, count: dailySpendData.length },
+            { key: 'accounts', label: 'Accounts', icon: <Layers className="w-3.5 h-3.5" />, count: accData.length },
+            { key: 'methods', label: 'Payment Methods', icon: <CreditCard className="w-3.5 h-3.5" />, count: payMethodData.length },
+            { key: 'payees', label: 'Payees / Parties', icon: <Store className="w-3.5 h-3.5" />, count: partyData.length },
+          ].map(tab => {
+            const isActive = activeTab === tab.key;
             return (
               <button
-                key={item.key}
-                onClick={() => setFlowType(item.key as any)}
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as any)}
                 className={cn(
-                  "py-1.5 px-2 text-[10px] font-bold rounded-lg transition-all relative text-center",
-                  isActive ? "text-brand-blue dark:text-white" : "text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+                  'flex items-center gap-2 px-3.5 py-2.5 rounded-2xl text-[10px] font-bold whitespace-nowrap transition-all border shrink-0',
+                  isActive
+                    ? 'bg-brand-blue dark:bg-white text-white dark:text-brand-blue border-brand-blue dark:border-white shadow-md shadow-brand-blue/10'
+                    : 'bg-white dark:bg-[#121217] text-neutral-500 dark:text-neutral-400 border-neutral-100 dark:border-white/5 hover:bg-neutral-50 dark:hover:bg-white/5'
                 )}
               >
-                {isActive && (
-                  <motion.div
-                    layoutId="flowTypePillBg"
-                    className="absolute inset-0 bg-white dark:bg-[#1E1E24] rounded-lg shadow-sm border border-black/5 dark:border-white/10"
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                  />
+                {tab.icon}
+                <span>{tab.label}</span>
+                {tab.count > 0 && (
+                  <span className={cn(
+                    "px-1.5 py-0.5 rounded-full text-[8px] font-bold",
+                    isActive ? "bg-white/20 dark:bg-black/10 text-white dark:text-brand-blue" : "bg-neutral-100 dark:bg-white/10 text-neutral-500 dark:text-neutral-400"
+                  )}>
+                    {tab.count}
+                  </span>
                 )}
-                <span className="relative z-10 uppercase tracking-wider">{item.label}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* ── SINGLE CLEAN TAB BAR UNDERNEATH ── */}
-      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide no-scrollbar px-0.5">
-        {TABS.map(tab => {
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                'flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[10px] font-bold whitespace-nowrap transition-all shrink-0 border',
-                isActive
-                  ? 'bg-brand-blue dark:bg-white text-white dark:text-brand-blue border-brand-blue dark:border-white shadow-sm'
-                  : 'bg-white dark:bg-[#121217] text-neutral-500 dark:text-neutral-400 border-neutral-100 dark:border-white/5 hover:border-neutral-200 dark:hover:border-white/10'
-              )}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── TAB CONTENT CARD ── */}
-      <div className="bg-white dark:bg-[#121217] rounded-3xl p-5 shadow-sm border border-neutral-100 dark:border-white/5">
+      {/* ── RICH ANALYTICS DISPLAY CARD ── */}
+      <div className="bg-white dark:bg-[#121217] rounded-3xl p-5 shadow-md shadow-brand-blue/[0.02] border border-neutral-100 dark:border-white/5">
         {renderTabContent()}
       </div>
 
