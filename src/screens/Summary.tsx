@@ -744,73 +744,89 @@ function SummaryContent() {
         </div>
       </div>
 
-      {/* ── HERO STATS CARD (Compact & Sleek) ── */}
-      <div className="bg-white dark:bg-[#111111] rounded-[20px] p-2.5 shadow-sm border border-neutral-100 dark:border-white/5 relative overflow-hidden">
-        <div className="grid grid-cols-3 gap-2 text-center items-center">
-          {/* Income */}
-          <div>
-            <p className="text-neutral-400 text-[9px] font-medium mb-0.5">Income</p>
-            <p className="text-emerald-600 dark:text-emerald-400 font-bold text-xs tracking-tight">{fmt(totalIncome)}</p>
-          </div>
-          {/* Spent */}
-          <div className="border-x border-neutral-100 dark:border-white/5 px-1">
-            <p className="text-neutral-400 text-[9px] font-medium mb-0.5">Spent</p>
-            <p className="text-rose-600 dark:text-rose-400 font-bold text-xs tracking-tight">{fmt(totalExpense)}</p>
-          </div>
-          {/* Saved */}
-          <div>
-            <p className="text-neutral-400 text-[9px] font-medium mb-0.5">Saved</p>
-            <p className={cn('font-bold text-xs tracking-tight', savings >= 0 ? 'text-brand-blue dark:text-brand-cyan' : 'text-rose-500')}>
+      {/* ── UNIFIED CONTROL CENTER (Hero Stats + Flow Selector) ── */}
+      <div className="bg-white dark:bg-[#111111] rounded-[24px] shadow-sm border border-neutral-100 dark:border-white/5 relative overflow-hidden flex flex-col">
+        {/* Top: Stats */}
+        <div className="p-6 flex flex-col items-center relative overflow-hidden">
+          {/* Subtle background glow */}
+          <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/[0.03] to-transparent dark:from-white/[0.03] pointer-events-none" />
+          
+          <div className="text-center mb-5 relative z-10">
+            <p className="text-neutral-400 text-[10px] font-bold uppercase tracking-widest mb-1.5">Total Saved</p>
+            <h2 className={cn('font-black text-4xl tracking-tighter', savings >= 0 ? 'text-brand-blue dark:text-[#F7F7F7]' : 'text-rose-500')}>
               {savings >= 0 ? fmt(savings) : `-${fmt(Math.abs(savings))}`}
-            </p>
+            </h2>
           </div>
-      </div>
-    </div>
 
-      {/* ── FLOW TYPE SELECTOR (Expenses / Income / Transfers) ── */}
-      <div className="bg-white dark:bg-[#111111] p-1 rounded-2xl flex gap-1 border border-neutral-100 dark:border-white/5 shadow-sm">
-        {[
-          { key: 'DEBIT', label: 'Expenses', activeColor: 'bg-rose-500 text-white dark:bg-rose-600', textColor: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white' },
-          { key: 'CREDIT', label: 'Income', activeColor: 'bg-emerald-500 text-white dark:bg-emerald-600', textColor: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white' },
-          { key: 'TRANSFER', label: 'Transfers', activeColor: 'bg-cyan-500 text-white dark:bg-cyan-600', textColor: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white' },
-        ].map(item => (
-          <button
-            key={item.key}
-            onClick={() => setFlowType(item.key as any)}
-            className={cn(
-              "flex-1 py-2 text-[10px] font-bold rounded-xl transition-all tracking-wider uppercase text-center",
-              flowType === item.key
-                ? item.activeColor
-                : item.textColor
-            )}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+          <div className="flex w-full justify-around relative z-10 pt-4 border-t border-neutral-100 dark:border-white/5">
+            <div className="text-center flex-1">
+              <p className="text-neutral-400 text-[9px] font-medium mb-1">Income</p>
+              <p className="text-emerald-500 dark:text-emerald-400 font-bold text-lg tracking-tight">{fmt(totalIncome)}</p>
+            </div>
+            <div className="w-[1px] bg-neutral-100 dark:bg-white/5"></div>
+            <div className="text-center flex-1">
+              <p className="text-neutral-400 text-[9px] font-medium mb-1">Spent</p>
+              <p className="text-rose-500 dark:text-rose-400 font-bold text-lg tracking-tight">{fmt(totalExpense)}</p>
+            </div>
+          </div>
+        </div>
 
-      {/* ── TAB BAR ── */}
-      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide no-scrollbar pb-1 -mx-1 px-1">
-        {TABS.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[10px] font-bold whitespace-nowrap transition-all border shrink-0',
-              activeTab === tab.key
-                ? 'bg-brand-blue dark:bg-white text-white dark:text-brand-blue border-brand-blue dark:border-white shadow-sm'
-                : 'bg-white dark:bg-[#111111] text-neutral-500 dark:text-neutral-400 border-neutral-100 dark:border-white/5 hover:bg-neutral-50 dark:hover:bg-white/[0.04]'
-            )}
-          >
-            {tab.icon}
-            {tab.label}
-          </button>
-        ))}
+        {/* Bottom: Flow Selector (Segmented Control inside the card) */}
+        <div className="bg-neutral-50/80 dark:bg-white/[0.02] p-1.5 flex gap-1 border-t border-neutral-100 dark:border-white/5">
+          {[
+            { key: 'DEBIT', label: 'Expenses', activeColor: 'bg-white dark:bg-[#1A1A1A] shadow-sm text-brand-blue dark:text-[#F7F7F7]', textColor: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white' },
+            { key: 'CREDIT', label: 'Income', activeColor: 'bg-white dark:bg-[#1A1A1A] shadow-sm text-brand-blue dark:text-[#F7F7F7]', textColor: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white' },
+            { key: 'TRANSFER', label: 'Transfers', activeColor: 'bg-white dark:bg-[#1A1A1A] shadow-sm text-brand-blue dark:text-[#F7F7F7]', textColor: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white' },
+          ].map(item => (
+            <button
+              key={item.key}
+              onClick={() => setFlowType(item.key as any)}
+              className={cn(
+                "flex-1 py-2.5 text-[10px] font-bold rounded-[14px] transition-all tracking-wider uppercase text-center relative",
+                flowType === item.key
+                  ? item.activeColor
+                  : item.textColor
+              )}
+            >
+              <span className="relative z-10">{item.label}</span>
+              {flowType === item.key && (
+                <motion.div layoutId="flowIndicator" className="absolute inset-0 bg-white dark:bg-white/10 rounded-[14px] shadow-sm border border-black/[0.04] dark:border-white/10" />
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* ── TAB CONTENT ── */}
-      <div className="bg-white dark:bg-[#111111] p-4 rounded-[24px] border border-neutral-100 dark:border-white/5 shadow-sm">
-        {renderTabContent()}
+      {/* ── INTEGRATED TAB AREA ── */}
+      <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-white/5 shadow-xl shadow-brand-blue/[0.02] flex flex-col overflow-hidden">
+        {/* Tab Bar attached to the top of content */}
+        <div className="flex overflow-x-auto scrollbar-hide no-scrollbar border-b border-neutral-100 dark:border-white/5 px-2 bg-neutral-50/30 dark:bg-white/[0.01]">
+          {TABS.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                'flex flex-col items-center gap-1.5 px-4 pt-3.5 pb-3 text-[10px] font-bold whitespace-nowrap transition-all shrink-0 relative',
+                activeTab === tab.key
+                  ? 'text-brand-blue dark:text-white'
+                  : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'
+              )}
+            >
+              <div className="flex items-center gap-1.5 relative z-10">
+                {tab.icon}
+                {tab.label}
+              </div>
+              {activeTab === tab.key && (
+                <motion.div layoutId="activeTabIndicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-blue dark:bg-white rounded-t-full" />
+              )}
+            </button>
+          ))}
+        </div>
+        
+        {/* Tab Content */}
+        <div className="p-5 md:p-6">
+          {renderTabContent()}
+        </div>
       </div>
 
       {/* ── DETAIL DRAWER MODAL OVERLAY ── */}
