@@ -744,93 +744,76 @@ function SummaryContent() {
         </div>
       </div>
 
-      {/* ── BENTO GRID CONTROL CENTER ── */}
-      <div className="grid grid-cols-2 gap-2">
-        {/* Total Saved Widget */}
-        <div className="bg-white dark:bg-[#111111] rounded-[20px] p-4 shadow-sm border border-neutral-100 dark:border-white/5 flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/[0.02] to-transparent pointer-events-none" />
-          <p className="text-neutral-400 text-[9px] font-bold uppercase tracking-widest mb-3 relative z-10">Total Saved</p>
-          <div className="relative z-10 mt-auto">
-            <h2 className={cn('font-black text-2xl tracking-tight', savings >= 0 ? 'text-brand-blue dark:text-[#F7F7F7]' : 'text-rose-500')}>
+      {/* ── COMPACT STATS ROW ── */}
+      <div className="flex items-center gap-3 px-1">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-[10px] font-medium text-neutral-400">In</span>
+            <span className="text-sm font-bold text-brand-blue dark:text-[#F7F7F7] tracking-tight">{fmt(totalIncome)}</span>
+          </div>
+          <span className="text-neutral-200 dark:text-white/10">·</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-rose-500" />
+            <span className="text-[10px] font-medium text-neutral-400">Out</span>
+            <span className="text-sm font-bold text-brand-blue dark:text-[#F7F7F7] tracking-tight">{fmt(totalExpense)}</span>
+          </div>
+          <span className="text-neutral-200 dark:text-white/10">·</span>
+          <div className="flex items-center gap-1.5">
+            <div className={cn("w-2 h-2 rounded-full", savings >= 0 ? "bg-brand-blue dark:bg-brand-cyan" : "bg-rose-500")} />
+            <span className="text-[10px] font-medium text-neutral-400">Net</span>
+            <span className={cn("text-sm font-bold tracking-tight", savings >= 0 ? "text-brand-blue dark:text-[#F7F7F7]" : "text-rose-500")}>
               {savings >= 0 ? fmt(savings) : `-${fmt(Math.abs(savings))}`}
-            </h2>
-          </div>
-        </div>
-
-        {/* Income / Spent Widgets */}
-        <div className="flex flex-col gap-2">
-          <div className="bg-white dark:bg-[#111111] rounded-[16px] p-3 shadow-sm border border-neutral-100 dark:border-white/5 flex flex-col justify-center relative overflow-hidden flex-1">
-             <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/[0.03] to-transparent pointer-events-none" />
-             <div className="flex justify-between items-center relative z-10 w-full">
-               <p className="text-neutral-400 text-[9px] font-bold uppercase tracking-widest">Income</p>
-               <p className="text-emerald-500 dark:text-emerald-400 font-bold text-sm tracking-tight">{fmt(totalIncome)}</p>
-             </div>
-          </div>
-          <div className="bg-white dark:bg-[#111111] rounded-[16px] p-3 shadow-sm border border-neutral-100 dark:border-white/5 flex flex-col justify-center relative overflow-hidden flex-1">
-             <div className="absolute inset-0 bg-gradient-to-r from-rose-500/[0.03] to-transparent pointer-events-none" />
-             <div className="flex justify-between items-center relative z-10 w-full">
-               <p className="text-neutral-400 text-[9px] font-bold uppercase tracking-widest">Spent</p>
-               <p className="text-rose-500 dark:text-rose-400 font-bold text-sm tracking-tight">{fmt(totalExpense)}</p>
-             </div>
+            </span>
           </div>
         </div>
       </div>
 
-      {/* ── STANDALONE FLOW SELECTOR ── */}
-      <div className="bg-white dark:bg-[#111111] p-1 rounded-[16px] flex gap-1 border border-neutral-100 dark:border-white/5 shadow-sm mt-3">
-          {[
-            { key: 'DEBIT', label: 'Expenses', activeColor: 'text-brand-blue dark:text-[#F7F7F7]', textColor: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white' },
-            { key: 'CREDIT', label: 'Income', activeColor: 'text-brand-blue dark:text-[#F7F7F7]', textColor: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white' },
-            { key: 'TRANSFER', label: 'Transfers', activeColor: 'text-brand-blue dark:text-[#F7F7F7]', textColor: 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white' },
-          ].map(item => (
-            <button
-              key={item.key}
-              onClick={() => setFlowType(item.key as any)}
-              className={cn(
-                "flex-1 py-2 text-[10px] font-bold rounded-[12px] transition-all tracking-wider uppercase text-center relative",
-                flowType === item.key
-                  ? item.activeColor
-                  : item.textColor
-              )}
-            >
-              <span className="relative z-10">{item.label}</span>
-              {flowType === item.key && (
-                <motion.div layoutId="flowIndicator" className="absolute inset-0 bg-neutral-100 dark:bg-white/10 rounded-[12px] shadow-sm border border-black/[0.04] dark:border-white/10" />
-              )}
-            </button>
-          ))}
+      {/* ── FLOW TYPE SELECTOR ── */}
+      <div className="flex gap-1 px-1">
+        {[
+          { key: 'DEBIT', label: 'Expenses', dotColor: 'bg-rose-500' },
+          { key: 'CREDIT', label: 'Income', dotColor: 'bg-emerald-500' },
+          { key: 'TRANSFER', label: 'Transfers', dotColor: 'bg-cyan-500' },
+        ].map(item => (
+          <button
+            key={item.key}
+            onClick={() => setFlowType(item.key as any)}
+            className={cn(
+              "flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[10px] font-bold transition-all border",
+              flowType === item.key
+                ? "bg-brand-blue dark:bg-white text-white dark:text-brand-blue border-brand-blue dark:border-white shadow-sm"
+                : "bg-white dark:bg-[#111111] text-neutral-500 dark:text-neutral-400 border-neutral-100 dark:border-white/5 hover:border-neutral-200 dark:hover:border-white/10"
+            )}
+          >
+            <div className={cn("w-1.5 h-1.5 rounded-full", flowType === item.key ? "bg-white dark:bg-brand-blue" : item.dotColor)} />
+            {item.label}
+          </button>
+        ))}
       </div>
 
-      {/* ── INTEGRATED TAB AREA ── */}
-      <div className="bg-white dark:bg-[#111111] rounded-[24px] border border-neutral-100 dark:border-white/5 shadow-xl shadow-brand-blue/[0.02] flex flex-col overflow-hidden">
-        {/* Tab Bar attached to the top of content */}
-        <div className="flex overflow-x-auto scrollbar-hide no-scrollbar border-b border-neutral-100 dark:border-white/5 px-2 bg-neutral-50/30 dark:bg-white/[0.01]">
-          {TABS.map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                'flex flex-col items-center gap-1.5 px-4 pt-3.5 pb-3 text-[10px] font-bold whitespace-nowrap transition-all shrink-0 relative',
-                activeTab === tab.key
-                  ? 'text-brand-blue dark:text-white'
-                  : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'
-              )}
-            >
-              <div className="flex items-center gap-1.5 relative z-10">
-                {tab.icon}
-                {tab.label}
-              </div>
-              {activeTab === tab.key && (
-                <motion.div layoutId="activeTabIndicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-blue dark:bg-white rounded-t-full" />
-              )}
-            </button>
-          ))}
-        </div>
-        
-        {/* Tab Content */}
-        <div className="p-5 md:p-6">
-          {renderTabContent()}
-        </div>
+      {/* ── TAB BAR ── */}
+      <div className="flex gap-1 overflow-x-auto scrollbar-hide no-scrollbar px-1">
+        {TABS.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={cn(
+              'flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[10px] font-bold whitespace-nowrap transition-all border shrink-0',
+              activeTab === tab.key
+                ? 'bg-neutral-900 dark:bg-white/10 text-white dark:text-white border-neutral-900 dark:border-white/10'
+                : 'bg-transparent text-neutral-400 border-transparent hover:text-neutral-600 dark:hover:text-neutral-300'
+            )}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── TAB CONTENT ── */}
+      <div className="px-1">
+        {renderTabContent()}
       </div>
 
       {/* ── DETAIL DRAWER MODAL OVERLAY ── */}
