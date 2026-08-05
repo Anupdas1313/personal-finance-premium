@@ -405,21 +405,7 @@ function SummaryContent() {
     switch (activeTab) {
       case 'tags':
         return tagData.length > 0 ? (
-          <div className="space-y-4">
-            {/* Donut centered above list */}
-            <div className="flex justify-center">
-              <div className="relative">
-                <MiniDonut data={tagData} colors={TAG_COLORS} size={120} />
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest">
-                    {flowType === 'DEBIT' ? 'Spent' : flowType === 'CREDIT' ? 'Received' : 'Transferred'}
-                  </span>
-                  <span className="text-sm font-heading font-black text-brand-blue dark:text-[#F7F7F7] tracking-tighter">{fmt(totalActiveAmount)}</span>
-                </div>
-              </div>
-            </div>
-            {/* Tag rows */}
-            <div className="space-y-2">
+          <div className="space-y-2">
               {tagData.map((d, i) => {
                 const pct = totalActiveAmount > 0 ? (d.value / totalActiveAmount) * 100 : 0;
                 const color = TAG_COLORS[i % TAG_COLORS.length];
@@ -760,64 +746,51 @@ function SummaryContent() {
           flowType === 'DEBIT' ? "bg-rose-500" : flowType === 'CREDIT' ? "bg-emerald-500" : "bg-cyan-500"
         )} />
 
-        {/* Central Visual Ring & Key Metrics (Income & Spent on Top) */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center relative z-10 pt-1">
-          {/* Ring Visual Gauge */}
-          <div className="md:col-span-5 flex justify-center items-center relative">
-            <svg width="140" height="140" viewBox="0 0 140 140" className="transform -rotate-90">
-              {/* Background Track */}
-              <circle cx="70" cy="70" r="54" stroke="currentColor" strokeWidth="10" className="text-neutral-100 dark:text-white/5 fill-none" />
-              {/* Income Arc */}
-              <circle
-                cx="70" cy="70" r="54"
-                stroke="#10B981" strokeWidth="10" strokeLinecap="round" className="fill-none transition-all duration-700"
-                strokeDasharray={`${(totalIncome / Math.max(totalIncome + totalExpense, 1)) * 339} 339`}
-              />
-              {/* Spent Arc */}
-              <circle
-                cx="70" cy="70" r="54"
-                stroke="#F43F5E" strokeWidth="10" strokeLinecap="round" className="fill-none transition-all duration-700"
-                strokeDasharray={`${(totalExpense / Math.max(totalIncome + totalExpense, 1)) * 339} 339`}
-                strokeDashoffset={`-${(totalIncome / Math.max(totalIncome + totalExpense, 1)) * 339}`}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-              <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest">Net Cashflow</span>
-              <span className={cn("text-base font-black tracking-tight mt-0.5", savings >= 0 ? "text-emerald-500" : "text-rose-500")}>
+        {/* Key Metrics Breakdown (Income, Spent, Net Cashflow) */}
+        <div className="space-y-3 relative z-10 pt-1">
+          {/* Net Cashflow banner */}
+          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5">
+            <div>
+              <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Net Cashflow</span>
+              <p className={cn("text-base font-black tracking-tight mt-0.5", savings >= 0 ? "text-emerald-500" : "text-rose-500")}>
                 {savings >= 0 ? `+${fmt(savings)}` : `-${fmt(Math.abs(savings))}`}
-              </span>
-              <span className="text-[9px] font-semibold text-neutral-400 mt-0.5">{savingsRate}% saved</span>
+              </p>
             </div>
+            <span className={cn(
+              "px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase",
+              savings >= 0 
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" 
+                : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+            )}>
+              {savingsRate}% Saved
+            </span>
           </div>
 
-          {/* Quick Metrics Breakdown Cards */}
-          <div className="md:col-span-7 space-y-2.5">
+          <div className="grid grid-cols-2 gap-2.5">
             {/* Income card */}
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/10">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
                   <ArrowDownLeft className="w-4 h-4" />
                 </div>
-                <div>
-                  <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Total Income</span>
-                  <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">{income.length} transactions</span>
+                <div className="min-w-0">
+                  <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Income</span>
+                  <p className="text-sm font-black text-emerald-600 dark:text-emerald-400 truncate">{fmt(totalIncome)}</p>
                 </div>
               </div>
-              <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">{fmt(totalIncome)}</p>
             </div>
 
             {/* Spent card */}
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/10">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0">
                   <ArrowUpRight className="w-4 h-4" />
                 </div>
-                <div>
-                  <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Total Expenses</span>
-                  <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">{expenses.length} transactions</span>
+                <div className="min-w-0">
+                  <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">Spent</span>
+                  <p className="text-sm font-black text-rose-600 dark:text-rose-400 truncate">{fmt(totalExpense)}</p>
                 </div>
               </div>
-              <p className="text-sm font-black text-rose-600 dark:text-rose-400">{fmt(totalExpense)}</p>
             </div>
           </div>
         </div>
