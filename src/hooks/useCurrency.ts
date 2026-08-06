@@ -1,12 +1,12 @@
 import { db } from '../models/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 
-export function useCurrency() {
+export function useCurrency(): string {
   const currencySetting = useLiveQuery(
     () => db.userSettings.where('key').equals('currency').first()
   );
 
-  return currencySetting?.value || '$';
+  return (typeof currencySetting?.value === 'string' ? currencySetting.value : '$');
 }
 
 export function useCurrencyFormatter() {
