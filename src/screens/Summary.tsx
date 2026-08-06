@@ -819,9 +819,20 @@ function SummaryContent() {
                             <p className="text-xs font-semibold text-brand-blue dark:text-white truncate">
                               {tx.party || tx.note || tx.category}
                             </p>
-                            <p className="text-[9px] font-medium text-neutral-400">
-                              {format(new Date(tx.dateTime), 'dd MMM yyyy, hh:mm a')}
-                            </p>
+                             <div className="flex items-center gap-1.5 text-[9px] font-medium text-neutral-400">
+                               {(() => {
+                                 const displayRemark = tx.party && tx.note && tx.note !== '-' && tx.note !== tx.party ? tx.note : '';
+                                 const displayMethod = (tx as any).upiApp || tx.paymentMethod || '';
+                                 return (
+                                   <>
+                                     {displayRemark && <span className="truncate max-w-[120px]">{displayRemark}</span>}
+                                     {displayRemark && displayMethod && <div className="w-1 h-1 rounded-full bg-neutral-200 dark:bg-neutral-700 shrink-0" />}
+                                     {displayMethod && <span className="shrink-0">{displayMethod}</span>}
+                                     {!displayRemark && !displayMethod && <span>—</span>}
+                                   </>
+                                 );
+                               })()}
+                             </div>
                           </div>
                         </div>
                         <p className={cn(

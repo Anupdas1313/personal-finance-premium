@@ -901,17 +901,28 @@ export default function Transactions() {
                   </button>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-xs font-semibold text-brand-blue dark:text-white truncate leading-tight mb-0.5">
-                      {tx.party || tx.category || 'Record'}
+                      {tx.party || tx.note || tx.category || 'Record'}
                     </h4>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-medium text-neutral-400">{format(date, 'hh:mm a')}</span>
-                      <div className="w-1 h-1 rounded-full bg-neutral-200 dark:bg-neutral-700" />
-                      <button
-                        onClick={(e) => { e.stopPropagation(); if (tx.category) setCategoryFilter(tx.category); }}
-                        className="text-[10px] font-medium text-neutral-400 dark:text-neutral-500 hover:text-brand-blue dark:hover:text-white hover:underline transition-colors">
-                        {tx.category}
-                      </button>
-                    </div>
+                    {(() => {
+                      const displayRemark = tx.party && tx.note && tx.note !== '-' && tx.note !== tx.party ? tx.note : '';
+                      const displayMethod = (tx as any).upiApp || tx.paymentMethod || accountsMap[String(tx.accountId)]?.bankName || '';
+                      return (
+                        <div className="flex items-center gap-1.5 text-[10px] font-medium text-neutral-400 dark:text-neutral-500">
+                          {displayRemark && (
+                            <span className="truncate max-w-[140px] sm:max-w-[200px]">{displayRemark}</span>
+                          )}
+                          {displayRemark && displayMethod && (
+                            <div className="w-1 h-1 rounded-full bg-neutral-200 dark:bg-neutral-700 shrink-0" />
+                          )}
+                          {displayMethod && (
+                            <span className="shrink-0">{displayMethod}</span>
+                          )}
+                          {!displayRemark && !displayMethod && (
+                            <span>—</span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                   <p className={`text-sm font-bold tracking-tight ${normalizeType(tx.type) === 'DEBIT' ? 'text-rose-500' : normalizeType(tx.type) === 'TRANSFER' ? 'text-cyan-500' : 'text-emerald-500'}`}>
                     {normalizeType(tx.type) === 'DEBIT' ? '−' : normalizeType(tx.type) === 'TRANSFER' ? '⇄' : '+'}{currency}{Number(tx.amount).toLocaleString()}
