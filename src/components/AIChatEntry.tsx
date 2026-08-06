@@ -745,7 +745,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     else if (!tx.party && tx.party !== '-') {
       setStage('ASK_PAYEE');
       const prompt = tx.type === 'CREDIT' ? "Who paid you? (or source of income)" : tx.type === 'TRANSFER' ? "Who did you send this to?" : "Who did you pay? (or where did you spend?)";
-      addAIMessage(prompt, ['Skip']);
+      addAIMessage(prompt);
     }
     else if (!tx.category && tx.type !== 'TRANSFER') {
       setStage('ASK_CATEGORY'); addAIMessage("Pick a category:", appCategories);
@@ -786,7 +786,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     } else if (!tx.expenseType && tx.type !== 'TRANSFER') {
       setStage('ASK_TAG'); addAIMessage("Tag this as:", tags);
     } else if (!tx.note && tx.note !== '-') {
-      setStage('ASK_NOTE'); addAIMessage("Add a short remark (Optional):", ['Skip']);
+      setStage('ASK_NOTE'); addAIMessage("Add a short remark (Optional):");
     } else if (tx.type === 'DEBIT' && tx.linkedBudgetId === undefined) {
       setStage('ASK_BUDGET');
       const categoryBud = envelopeBudgets.find(b => b.category.toLowerCase() === tx.category.toLowerCase());
@@ -1105,7 +1105,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     if (field === 'bank') { updated.selectedAccountId = ''; setStage('ASK_BANK'); addAIMessage("Correct Account:", getGroupedAccountOptions(updated)); }
     if (field === 'category') { updated.category = ''; setStage('ASK_CATEGORY'); addAIMessage("Correct Category:", appCategories); }
     if (field === 'tag') { updated.expenseType = ''; setStage('ASK_TAG'); addAIMessage("Correct Tag:", tags); }
-    if (field === 'payee') { updated.party = ''; setStage('ASK_PAYEE'); addAIMessage(updated.type === 'CREDIT' ? "Who paid you? (or source of income)" : updated.type === 'TRANSFER' ? "Who did you send this to?" : "Who did you pay? (or where did you spend?)", ['Skip']); }
+    if (field === 'payee') { updated.party = ''; setStage('ASK_PAYEE'); addAIMessage(updated.type === 'CREDIT' ? "Who paid you? (or source of income)" : updated.type === 'TRANSFER' ? "Who did you send this to?" : "Who did you pay? (or where did you spend?)"); }
     if (field === 'remark') { updated.note = ''; setStage('ASK_NOTE'); addAIMessage("Correct Remark:"); }
     if (field === 'date') { updated._dateConfirmed = false; setStage('ASK_DATE'); addAIMessage("When did this happen?", ['Today', 'Yesterday', '2 days ago', '3 days ago']); }
     if (field === 'budget') {
@@ -1169,7 +1169,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
   const confidenceColor = pendingTx._confidence >= 80 ? 'text-brand-green' : pendingTx._confidence >= 50 ? 'text-yellow-500' : 'text-brand-red';
 
   return (
-    <div className="flex flex-col h-full bg-[#F9FBFF] dark:bg-[#0A0A0A] relative">
+    <div className="flex flex-col h-full bg-white dark:bg-[#0A0A0A] relative">
 
 
       {/* Recent shortcuts — shown only in IDLE stage */}
@@ -1197,20 +1197,18 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-64">
         {messages.map((msg, i) => (
           <div key={i} className={`flex flex-col ${msg.role === 'ai' ? 'items-start' : 'items-end'} gap-2 animate-in slide-in-from-bottom-2 duration-300`}>
-            <div className={`max-w-[88%] px-4 py-3 rounded-2xl text-[12px] font-medium shadow-sm flex items-start gap-2.5 ${
+            <div className={`max-w-[85%] px-4 py-3 text-[13px] font-medium leading-relaxed ${
               msg.role === 'ai'
-                ? 'bg-white dark:bg-[#111111] text-neutral-800 dark:text-neutral-200 border border-brand-blue/5 dark:border-white/5'
-                : 'bg-brand-green text-white'}`}>
-              {msg.role === 'ai' && <Bot className="w-3.5 h-3.5 mt-0.5 shrink-0 text-brand-green" />}
-              <span className="leading-relaxed whitespace-pre-line">{msg.content}</span>
+                ? 'bg-[#F5F6F8] dark:bg-[#1A1A1A] text-gray-800 dark:text-gray-200 rounded-2xl rounded-tl-sm'
+                : 'bg-[#EDF2FA] dark:bg-[#1E293B] text-gray-800 dark:text-gray-200 rounded-2xl rounded-tr-sm'}`}>
+              <span className="whitespace-pre-line">{msg.content}</span>
             </div>
             {msg.options && msg.options.length > 0 && (
-              <div className="grid grid-cols-2 gap-1.5 w-full max-w-[88%]">
+              <div className="flex flex-wrap gap-2 w-full max-w-[95%]">
                 {msg.options.map((opt: string) => (
                   <button key={opt} onClick={() => handleSend(opt)}
-                    className="px-3 py-2 bg-white dark:bg-[#111111] border border-brand-blue/5 dark:border-white/5 rounded-xl text-[10px] font-black uppercase text-brand-green hover:bg-brand-green/5 transition-all shadow-sm active:scale-95 flex items-center justify-between group">
-                    <span className="truncate">{opt}</span>
-                    <ChevronRight className="w-3 h-3 opacity-30 group-hover:opacity-100 shrink-0" />
+                    className="px-4 py-2 bg-white dark:bg-[#111111] border border-gray-200 dark:border-white/10 rounded-full text-[12px] font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-all active:scale-95 text-center">
+                    {opt}
                   </button>
                 ))}
               </div>
@@ -1219,7 +1217,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         ))}
         {isTyping && (
           <div className="flex justify-start">
-            <div className="bg-white dark:bg-[#111111] px-4 py-2.5 rounded-2xl flex items-center gap-1 border border-brand-blue/5 dark:border-white/5">
+            <div className="bg-[#F5F6F8] dark:bg-[#1A1A1A] px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-1">
               <span className="w-1.5 h-1.5 bg-brand-green rounded-full animate-bounce" />
               <span className="w-1.5 h-1.5 bg-brand-green rounded-full animate-bounce [animation-delay:-0.15s]" />
               <span className="w-1.5 h-1.5 bg-brand-green rounded-full animate-bounce [animation-delay:-0.3s]" />
@@ -1230,7 +1228,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       </div>
 
       {/* Bottom Panel */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-[#F7F7F7] via-[#F7F7F7]/95 dark:from-[#0A0A0A] dark:via-[#0A0A0A]/95 space-y-2 z-10">
+      <div className="absolute bottom-0 left-0 right-0 p-3 bg-white/95 dark:bg-[#0A0A0A]/95 space-y-2 z-10">
 
         {/* Preview Card */}
         {stage === 'PREVIEW' && (
@@ -1345,17 +1343,17 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         )}
 
         {/* Input Bar */}
-        <div className="flex items-center gap-1.5 bg-[#F9FBFF] dark:bg-[#111111] p-1.5 rounded-2xl border border-brand-blue/5 dark:border-white/5 shadow-xl">
+        <div className="flex items-center gap-1.5 bg-white dark:bg-[#111111] p-1 rounded-full border border-gray-200 dark:border-white/10 shadow-sm">
           <input
             type="text"
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSend()}
-            placeholder="Expense, question, or 'same'..."
-            className="flex-1 bg-transparent px-3 py-2 text-[12px] font-bold outline-none dark:text-white placeholder:text-neutral-400"
+            placeholder="Type here..."
+            className="flex-1 bg-transparent px-4 py-2 text-[13px] font-medium outline-none dark:text-white placeholder:text-gray-400"
           />
-          {input && <button onClick={() => setInput('')} className="text-neutral-300 hover:text-neutral-500"><X className="w-4 h-4" /></button>}
-          <button onClick={() => handleSend()} className="w-10 h-10 bg-brand-green text-white rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition-transform flex-shrink-0">
+          {input && <button onClick={() => setInput('')} className="text-gray-300 hover:text-gray-500"><X className="w-4 h-4" /></button>}
+          <button onClick={() => handleSend()} className="w-10 h-10 bg-[#91B0F8] text-white rounded-full flex items-center justify-center active:scale-90 transition-transform flex-shrink-0 mr-1">
             <Send className="w-4 h-4" />
           </button>
         </div>
