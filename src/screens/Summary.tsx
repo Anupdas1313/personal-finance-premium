@@ -10,6 +10,7 @@ import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, PieChart as PieIco
 import { CATEGORY_ICONS } from '../constants';
 import { useCurrency } from '../hooks/useCurrency';
 import { cn } from '../logic/utils';
+import { buildPayeeCanonicalMap, getCanonicalPayee } from '../logic/payeeUtils';
 
 // ── Color palette ─────────────────────────────────────────────────────────────
 const CAT_COLORS = [
@@ -300,6 +301,8 @@ function SummaryContent() {
         'Sun': { total: 0, count: 0 },
       };
 
+      const payeeCanonicalMap = buildPayeeCanonicalMap(activeTransactions);
+
       for (const tx of activeTransactions) {
         const amt = safeNum(tx.amount);
         const cat = tx.category || 'Other';
@@ -307,7 +310,10 @@ function SummaryContent() {
         if (tx.expenseType) byTag[tx.expenseType] = (byTag[tx.expenseType] || 0) + amt;
         const accName = accounts.find(a => a.id === tx.accountId)?.bankName || 'Unknown';
         byAccount[accName] = (byAccount[accName] || 0) + amt;
-        if (tx.party && typeof tx.party === 'string') { const p = tx.party.trim(); if (p) byParty[p] = (byParty[p] || 0) + amt; }
+        if (tx.party && typeof tx.party === 'string') {
+          const p = getCanonicalPayee(tx.party, payeeCanonicalMap);
+          if (p) byParty[p] = (byParty[p] || 0) + amt;
+        }
         if (tx.paymentMethod) byPayMethod[tx.paymentMethod] = (byPayMethod[tx.paymentMethod] || 0) + amt;
 
         // Daily breakdown
@@ -716,7 +722,11 @@ function SummaryContent() {
               return acc?.bankName === selectedDetail.name;
             }
             if (selectedDetail.type === 'methods') return (tx as any).paymentMethod === selectedDetail.name;
-            if (selectedDetail.type === 'payees') return tx.party && tx.party.trim() === selectedDetail.name;
+            if (selectedDetail.type === 'payees') {
+              if (!tx.party) return false;
+              const canonicalP = getCanonicalPayee(tx.party, buildPayeeCanonicalMap(activeTransactions));
+              return canonicalP === selectedDetail.name;
+            }
             if (selectedDetail.type === 'daily') return format(new Date(tx.dateTime), 'yyyy-MM-dd') === selectedDetail.name;
             return false;
           });

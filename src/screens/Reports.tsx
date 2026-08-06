@@ -20,6 +20,7 @@ import {
   XAxis, YAxis, CartesianGrid, BarChart, Bar
 } from 'recharts';
 import { cn, roundCurrency } from '../logic/utils';
+import { buildPayeeCanonicalMap, getCanonicalPayee } from '../logic/payeeUtils';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CHART_COLORS = ['#00A86B', '#1A237E', '#D4AF37', '#82EEFD', '#E53935', '#3B3B98', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
@@ -306,8 +307,14 @@ export default function Reports() {
   }, [filteredTransactions]);
 
   const uniquePayees = useMemo(() => {
+    const map = buildPayeeCanonicalMap(allTransactions);
     const set = new Set<string>();
-    allTransactions.forEach(t => { if (t.party) set.add(t.party); });
+    allTransactions.forEach(t => {
+      if (t.party) {
+        const canonical = getCanonicalPayee(t.party, map);
+        if (canonical) set.add(canonical);
+      }
+    });
     return Array.from(set).sort();
   }, [allTransactions]);
 
