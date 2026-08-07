@@ -276,16 +276,17 @@ export default function Dashboard() {
   const activeMonthBudgets = useLiveQuery(() => db.budgets.where('month').equals(currentMonthStr).toArray(), [currentMonthStr, user?.uid]) || [];
   const [selectedBudgetId, setSelectedBudgetId] = useState<number | 'auto'>('auto');
 
-  useEffect(() => {
+  const handleCategorySelect = (cat: string) => {
+    setCategory(cat);
     if (activeMonthBudgets.length > 0) {
-      const matchingBudget = activeMonthBudgets.find(b => b.category === category);
+      const matchingBudget = activeMonthBudgets.find(b => b.category === cat);
       if (matchingBudget) {
         setSelectedBudgetId(matchingBudget.id!);
       } else {
         setSelectedBudgetId('auto');
       }
     }
-  }, [category, activeMonthBudgets]);
+  };
 
   const selectedBudget = activeMonthBudgets.find(b => b.id === selectedBudgetId);
   const selectedBudgetSpent = useLiveQuery(async () => {
@@ -1167,7 +1168,7 @@ export default function Dashboard() {
                         return (
                           <button
                             key={cat}
-                            onClick={() => setCategory(cat)}
+                            onClick={() => handleCategorySelect(cat)}
                             className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-2xl border transition-all active:scale-95 ${
                               isSelected
                                 ? 'bg-brand-green border-brand-green text-white dark:text-brand-blue shadow-md scale-105'
