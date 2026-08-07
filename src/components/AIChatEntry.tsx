@@ -1063,8 +1063,11 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       if (t === 'none' || t === 'skip') {
         updated.linkedBudgetId = null;
       } else {
-        const cleanName = userMsg.replace(/^(🏦|💵|💳|📦|🍕|🍔|🍜|🥘|☕|🍩|🍱|🍛|🥗|🍺|🧁|🚗|🛵|🚌|🚕|🛺|✈️|🚂|🏨|🗺️|🛒|🥦|🥛|🛍️|👗|sneaker|👟|💄|💊|🏥|🏋️|🩺|📺|💡|🔌|📚|🎓|📖|🎬|🎮|🎵|🎭|🏠|🏡|💰|📈|💹|🙏|⛪|🕌|🛕)\s*/, '').trim();
-        const selectedBud = envelopeBudgets.find(b => b.category.toLowerCase() === cleanName.toLowerCase());
+        const selectedBud = envelopeBudgets.find(b => {
+          const opt = `${CATEGORY_ICONS[b.category] || '📦'} ${b.category}`.toLowerCase();
+          return userMsg.toLowerCase() === opt || userMsg.toLowerCase() === b.category.toLowerCase();
+        }) || envelopeBudgets.find(b => userMsg.toLowerCase().includes(b.category.toLowerCase()));
+        
         if (selectedBud) {
           updated.linkedBudgetId = selectedBud.id;
         } else {
