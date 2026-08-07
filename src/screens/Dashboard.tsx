@@ -4,7 +4,7 @@ import { ArrowUpRight, ArrowDownRight, Wallet, Plus, X, AlertCircle, CheckCircle
 
 import { format, startOfMonth, endOfMonth, startOfYear, isToday, isYesterday, startOfDay } from 'date-fns';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCategories } from '../hooks/useCategories';
@@ -196,6 +196,7 @@ export default function Dashboard() {
           setPaymentMethod(tx.paymentMethod as any || 'UPI');
           setUpiApp((tx as any).upiApp || 'GPay');
           setExpenseType(tx.expenseType || '');
+          isBudgetManuallySet.current = true; // lock: don't let auto-match overwrite this
           setSelectedBudgetId(tx.linkedBudgetId || 'auto');
           setEntryMode('MANUAL');
           setEditingTransactionId(Number(editId));
@@ -275,18 +276,27 @@ export default function Dashboard() {
   const currentMonthStr = format(new Date(transactionDate), 'yyyy-MM');
   const activeMonthBudgets = useLiveQuery(() => db.budgets.where('month').equals(currentMonthStr).toArray(), [currentMonthStr, user?.uid]) || [];
   const [selectedBudgetId, setSelectedBudgetId] = useState<number | 'auto'>('auto');
+  // Track whether the user has explicitly chosen a budget (or we loaded one from an edit)
+  const isBudgetManuallySet = useRef(false);
 
   const handleCategorySelect = (cat: string) => {
     setCategory(cat);
+    // When user picks a category, auto-match the budget but mark it as not locked
+    isBudgetManuallySet.current = false;
     if (activeMonthBudgets.length > 0) {
       const matchingBudget = activeMonthBudgets.find(b => b.category === cat);
-      if (matchingBudget) {
-        setSelectedBudgetId(matchingBudget.id!);
-      } else {
-        setSelectedBudgetId('auto');
-      }
+      setSelectedBudgetId(matchingBudget ? matchingBudget.id! : 'auto');
     }
   };
+
+  // Auto-match budget when budgets load async (for new transactions only, never overwrite a manual pick)
+  useEffect(() => {
+    if (isBudgetManuallySet.current) return; // user made an explicit choice — don't overwrite
+    if (activeMonthBudgets.length > 0) {
+      const matchingBudget = activeMonthBudgets.find(b => b.category === category);
+      setSelectedBudgetId(matchingBudget ? matchingBudget.id! : 'auto');
+    }
+  }, [activeMonthBudgets]); // only re-run when budgets finish loading, not on every category change
 
   const selectedBudget = activeMonthBudgets.find(b => b.id === selectedBudgetId);
   const selectedBudgetSpent = useLiveQuery(async () => {
@@ -499,6 +509,7 @@ export default function Dashboard() {
         setExpenseType(tags[0] || '');
         setEditingTransactionId(null);
         setSelectedBudgetId('auto');
+        isBudgetManuallySet.current = false;
       }, 800);
     } catch (error) {
       setIsSaving(false);
@@ -1247,7 +1258,7 @@ export default function Dashboard() {
                       <span className="text-[10px] font-extrabold text-[#888] dark:text-neutral-500 uppercase tracking-widest px-1">Draw From Budget</span>
                       <select 
                         value={selectedBudgetId} 
-                        onChange={(e) => setSelectedBudgetId(e.target.value === 'auto' ? 'auto' : Number(e.target.value))}
+                        onChange={(e) => { isBudgetManuallySet.current = true; setSelectedBudgetId(e.target.value === 'auto' ? 'auto' : Number(e.target.value)); }}
                         className="bg-neutral-50 dark:bg-white/5 text-[10px] font-bold text-brand-green dark:text-brand-green outline-none border border-neutral-100 dark:border-white/5 px-2.5 py-1.5 rounded-xl cursor-pointer"
                       >
                         <option value="auto">Auto-match by Category</option>
