@@ -149,7 +149,11 @@ export function useBudgets(monthStr: string, currentMonth: Date): UseBudgetsRetu
       
       if (isCustom) {
         const target = b.category.toLowerCase();
-        totalPastSpent = pastTxsForCat.filter(tx => tx.category.toLowerCase() === target || (tx.expenseType && tx.expenseType.toLowerCase() === target)).reduce((s, tx) => s + Number(tx.amount), 0);
+        totalPastSpent = pastTxsForCat.filter(tx => 
+          (tx.linkedBudgetId && tx.linkedBudgetId === b.id) ||
+          tx.category.toLowerCase() === target || 
+          (tx.expenseType && tx.expenseType.toLowerCase() === target)
+        ).reduce((s, tx) => s + Number(tx.amount), 0);
       } else {
         totalPastSpent = pastTxsForCat.filter(tx => {
           if (tx.linkedBudgetId) {
@@ -204,6 +208,7 @@ export function useBudgets(monthStr: string, currentMonth: Date): UseBudgetsRetu
       return roundCurrency(monthTxs
         .filter(tx => tx.type === 'DEBIT' && tx.category !== 'Transfer')
         .filter(tx =>
+          (tx.linkedBudgetId && tx.linkedBudgetId === budget.id) ||
           tx.category.toLowerCase() === target ||
           (tx.expenseType && tx.expenseType.toLowerCase() === target)
         )
