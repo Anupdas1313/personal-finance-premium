@@ -285,6 +285,70 @@ const resolveBank = (snippet: string, accounts: any[]) => {
   return null; // Removed fuzzy matching to prevent accidental wrong account guesses
 };
 
+// ─── Group Bill Splitter Helper ──────────────────────────────────────────
+const parseGroupSplit = (text: string) => {
+  const splitMatch = text.match(/\bsplit\s+(?:between|with|among|(\d+)\s+ways?\s+with)\s+([A-Za-z0-9\s,&]+)/i);
+  if (!splitMatch) return null;
+
+  const rawNames = splitMatch[2]
+    .replace(/\b(?:and|&)\b/gi, ',')
+    .split(',')
+    .map(n => n.trim())
+    .filter(n => n.length > 0 && !['me', 'myself', 'i', 'for', 'via', 'using', 'from', 'today', 'yesterday', 'paid', 'spent'].includes(n.toLowerCase()));
+
+  if (rawNames.length === 0) return null;
+
+  const friendNames = rawNames.map(n => n.charAt(0).toUpperCase() + n.slice(1));
+  let totalPeople = friendNames.length + 1; // friends + user
+
+  if (splitMatch[1]) {
+    const specifiedWays = parseInt(splitMatch[1]);
+    if (specifiedWays > 1) totalPeople = specifiedWays;
+  }
+
+  return {
+    friendNames,
+    totalPeople
+  };
+};
+
+// ─── Itemized Expense Logging Helper ─────────────────────────────────────
+const parseItemizedExpense = (text: string) => {
+  const items = text.split(/\s*,\s*|\s+and\s+/i);
+  if (items.length < 2) return null;
+
+  const itemDetails: { name: string; cost: number }[] = [];
+
+  for (const item of items) {
+    const match = item.match(/^\s*([A-Za-z\s]+?)\s*[:=]?\s*(?:[$₹€£]|rs\.?)?\s*(\d+(?:\.\d+)?)\s*$/i) ||
+                  item.match(/^\s*(?:[$₹€£]|rs\.?)?\s*(\d+(?:\.\d+)?)\s*([A-Za-z\s]+?)\s*$/i);
+    if (match) {
+      const name = isNaN(parseFloat(match[1])) ? match[1].trim() : match[2].trim();
+      const cost = isNaN(parseFloat(match[1])) ? parseFloat(match[2]) : parseFloat(match[1]);
+
+      const ignoreWords = ['paid', 'spent', 'bought', 'total', 'via', 'gpay', 'upi', 'cash', 'today', 'yesterday', 'split'];
+      if (name.length > 0 && !ignoreWords.includes(name.toLowerCase()) && cost > 0) {
+        itemDetails.push({
+          name: name.charAt(0).toUpperCase() + name.slice(1),
+          cost
+        });
+      }
+    }
+  }
+
+  if (itemDetails.length < 2) return null;
+
+  const totalAmount = itemDetails.reduce((sum, item) => sum + item.cost, 0);
+  const formattedItems = itemDetails.map(i => `${i.name}: ₹${i.cost}`).join(', ');
+  const itemNote = `Itemized: ${formattedItems}`;
+
+  return {
+    itemDetails,
+    totalAmount,
+    itemNote
+  };
+};
+
 // ─── Universal Parser ────────────────────────────────────────────────────
 const parseUniversal = (text: string, accounts: any[], appCategories: string[]) => {
   const t = text.toLowerCase();
@@ -410,31 +474,82 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
         }
       }
     }
-  }
-
   // ── Note / Remark extraction ──────────────────────────────────────────
   let parsedNote = '';
-  // Match: "for X", "towards X", "as X", "being X", "remark: X", "note: X"
   const forMatch = text.match(/\b(?:for|towards|as|being|remark[:\s]+|note[:\s]+)\s+(.+?)(?:\s+(?:via|using|from|to|today|yesterday|on\s+\d|\d+\s*(?:days?|weeks?))\b|$)/i);
   if (forMatch) {
     const noteCandidate = forMatch[1].trim();
-    // Don't capture if it's just a person's name that was already captured as payee
     const isJustPayee = parsedPayee && noteCandidate.toLowerCase() === parsedPayee.toLowerCase();
     if (!isJustPayee) parsedNote = noteCandidate;
+  }
+
+  // ── Itemized Expense Check ────────────────────────────────────────────
+  const itemizedInfo = parseItemizedExpense(text);
+  let finalAmount = amount;
+  let finalNote = parsedNote;
+
+  if (itemizedInfo) {
+    finalAmount = String(itemizedInfo.totalAmount);
+    finalNote = itemizedInfo.itemNote;
+    if (!category) {
+      const allItemText = itemizedInfo.itemDetails.map(i => i.name.toLowerCase()).join(' ');
+      if (allItemText.match(/\b(milk|eggs|bread|groceries|vegetables|sabzi|fruits|paneer|cheese|butter|atta|ration)\b/)) {
+        category = 'Groceries';
+      } else if (allItemText.match(/\b(lunch|dinner|pizza|burger|chai|coffee|snacks|food|restaurant)\b/)) {
+        category = 'Food';
+      }
+    }
+  }
+
+  // ── Group Bill Splitter Check ─────────────────────────────────────────
+  const groupSplitInfo = parseGroupSplit(text);
+  let groupSplitDetails: any = null;
+  if (groupSplitInfo && finalAmount) {
+    const origTotal = parseFloat(finalAmount);
+    const perPersonShare = Math.round((origTotal / groupSplitInfo.totalPeople) * 100) / 100;
+    finalAmount = String(perPersonShare);
+    const friendsStr = groupSplitInfo.friendNames.join(' & ');
+    finalNote = `Total bill ₹${origTotal} split ${groupSplitInfo.totalPeople} ways (₹${perPersonShare}/each with ${friendsStr})${finalNote ? ' · ' + finalNote : ''}`;
+    if (!parsedPayee) {
+      parsedPayee = `Group Split (${friendsStr})`;
+    }
+    groupSplitDetails = {
+      origTotal,
+      perPersonShare,
+      friendNames: groupSplitInfo.friendNames,
+      totalPeople: groupSplitInfo.totalPeople
+    };
   }
 
   const { date, confirmed: dateConfirmed } = parseDate(text);
 
   // Compute confidence score (0–100)
   let confidence = 0;
-  if (amount) confidence += 25;
+  if (finalAmount) confidence += 25;
   if (type) confidence += typeExplicit ? 15 : 8; // explicit keyword = full score, inferred = partial
   if (accountId) confidence += 20;
   if (paymentMethod) confidence += 10;
   if (category) confidence += 20;
-  if (parsedNote || parsedPayee) confidence += 10;
+  if (finalNote || parsedPayee) confidence += 10;
 
-  return { amount, type, accountId, autoPaymentMethod, upiApp, paymentMethod, category, tag, parsedPayee, parsedNote, date, dateConfirmed, isPredicted, confidence };
+  return { 
+    amount: finalAmount, 
+    type, 
+    accountId, 
+    autoPaymentMethod, 
+    upiApp, 
+    paymentMethod, 
+    category, 
+    tag, 
+    parsedPayee, 
+    parsedNote: finalNote, 
+    date, 
+    dateConfirmed, 
+    isPredicted, 
+    confidence,
+    groupSplitInfo: groupSplitDetails,
+    itemizedInfo
+  };
 };
 
 // ─── Personal Learning Hook ───────────────────────────────────────────────
@@ -901,15 +1016,23 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       // Payee memory auto-fill logic removed to prevent aggressive guessing
 
       // ── Show a smart summary of what was auto-detected ──────────────────
-      const detectedParts: string[] = [];
-      if (parsed.amount) detectedParts.push(`💰 ${currency}${parsed.amount}`);
-      if (parsed.type) detectedParts.push(parsed.type === 'DEBIT' ? '▼ Expense' : parsed.type === 'CREDIT' ? '▲ Income' : '⇄ Transfer');
-      if (parsed.parsedPayee) detectedParts.push(`👤 ${parsed.parsedPayee}`);
-      if (parsed.category) detectedParts.push(`📂 ${parsed.category}`);
-      if (parsed.parsedNote) detectedParts.push(`📝 ${parsed.parsedNote}`);
-      if (parsed.paymentMethod) detectedParts.push(`💳 ${parsed.upiApp || parsed.paymentMethod}`);
-      if (detectedParts.length > 1) {
-        addAIMessage(`Got it! I've auto-filled:\n${detectedParts.join('  ·  ')}`);
+      if (parsed.groupSplitInfo) {
+        const g = parsed.groupSplitInfo;
+        addAIMessage(`👥 Group Split Detected!\nTotal Bill: ${currency}${g.origTotal} (Split ${g.totalPeople} ways)\nYour Share: ${currency}${g.perPersonShare} logged as expense.\n${g.friendNames.join(' & ')} owe ${currency}${g.perPersonShare} each.`);
+      } else if (parsed.itemizedInfo) {
+        const itemsList = parsed.itemizedInfo.itemDetails.map((i: any) => `• ${i.name}: ${currency}${i.cost}`).join('\n');
+        addAIMessage(`🛒 Itemized Breakdown Detected!\nTotal Sum: ${currency}${parsed.itemizedInfo.totalAmount}\n${itemsList}`);
+      } else {
+        const detectedParts: string[] = [];
+        if (parsed.amount) detectedParts.push(`💰 ${currency}${parsed.amount}`);
+        if (parsed.type) detectedParts.push(parsed.type === 'DEBIT' ? '▼ Expense' : parsed.type === 'CREDIT' ? '▲ Income' : '⇄ Transfer');
+        if (parsed.parsedPayee) detectedParts.push(`👤 ${parsed.parsedPayee}`);
+        if (parsed.category) detectedParts.push(`📂 ${parsed.category}`);
+        if (parsed.parsedNote) detectedParts.push(`📝 ${parsed.parsedNote}`);
+        if (parsed.paymentMethod) detectedParts.push(`💳 ${parsed.upiApp || parsed.paymentMethod}`);
+        if (detectedParts.length > 1) {
+          addAIMessage(`Got it! I've auto-filled:\n${detectedParts.join('  ·  ')}`);
+        }
       }
 
       setPendingTx(updated);
