@@ -1041,13 +1041,8 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         setStage('ASK_UPI_APP'); addAIMessage("Which UPI app?", [smartDefaults.upiApp, ...filtered]);
       } else { setStage('ASK_UPI_APP'); addAIMessage("Which UPI app?", upiApps); }
     } else if (!tx.expenseType && tx.expenseType !== '-' && tx.type !== 'TRANSFER') {
-      // Auto-skip tag for high-confidence auto-parsed entries—default 'Personal'
-      if (tx.note && tx.note !== '-' && tx._confidence >= 40) {
-        tx.expenseType = 'Personal';
-        checkNextStep(tx);
-      } else {
-        setStage('ASK_TAG'); addAIMessage("Tag this as:", ['Skip', ...tags]);
-      }
+      // Always ask for tag — user must confirm classification
+      setStage('ASK_TAG'); addAIMessage("Tag this as:", ['Skip', ...tags]);
     } else if (!tx.note && tx.note !== '-') {
       // Auto-skip note if we already have payee + category (high-confidence parse)
       if (tx._confidence >= 40 && tx.party && tx.category) {
