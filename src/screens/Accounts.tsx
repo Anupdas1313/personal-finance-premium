@@ -764,13 +764,22 @@ export default function Accounts() {
                                       <span className={cn("text-[10px] font-black text-rose-500 transition-all duration-300", shouldBlur && "blur-[4px] select-none")}>{formatAmount(info?.outflow || 0)}</span>
                                     </div>
                                   </div>
-                                  <button 
-                                    onClick={e => { e.stopPropagation(); setSelectedAccountId(account.id!); }} 
-                                    className="w-9 h-9 rounded-2xl bg-brand-green dark:bg-brand-green/20 text-white dark:text-brand-green flex items-center justify-center transition-all hover:brightness-105"
-                                    title="Statement History"
-                                  >
-                                    <History className="w-4 h-4" />
-                                  </button>
+                                  <div className="flex items-center gap-2">
+                                    <button 
+                                      onClick={e => { e.stopPropagation(); navigate(`/?add=true&accountId=${account.id}`); }} 
+                                      className="w-9 h-9 rounded-2xl bg-brand-blue dark:bg-white/10 text-white flex items-center justify-center transition-all hover:brightness-105 active:scale-95 border border-transparent dark:border-white/5"
+                                      title="Add Transaction"
+                                    >
+                                      <Plus className="w-4 h-4" />
+                                    </button>
+                                    <button 
+                                      onClick={e => { e.stopPropagation(); setSelectedAccountId(account.id!); }} 
+                                      className="w-9 h-9 rounded-2xl bg-brand-green dark:bg-brand-green/20 text-white dark:text-brand-green flex items-center justify-center transition-all hover:brightness-105 active:scale-95"
+                                      title="Statement History"
+                                    >
+                                      <History className="w-4 h-4" />
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -1081,6 +1090,13 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <button 
+              onClick={() => navigate(`/?add=true&accountId=${accountId}`)} 
+              className="w-7 h-7 rounded-full bg-brand-green text-white flex items-center justify-center hover:bg-brand-green/90 active:scale-95 transition-all"
+              title="Add Transaction"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
             <button onClick={() => setShowFilterMenu(!showFilterMenu)} className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${showFilterMenu ? 'bg-brand-blue text-white' : 'bg-neutral-200 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] hover:bg-neutral-300'}`}>
               <Filter className="w-3.5 h-3.5" />
             </button>
