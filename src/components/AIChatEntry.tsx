@@ -666,13 +666,16 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
   const amount = parseAmount(text);
 
   let type = '';
+  let typeExplicit = false; // tracks whether type came from a keyword or was defaulted
   // Hinglish-aware type detection
-  if (t.match(/\b(received|got|salary|income|credit|added|deposit|inflow|credited|mila|aaya|jama|milgaya|mil gaya|aaye|recieved)\b/)) type = 'CREDIT';
-  else if (t.match(/\b(transfer(?:red)?\s+(?:to|from|\d)|moved?\s+(?:to|from|\d)|shifted\s+(?:to|from|\d)|bheja|transfer\s*kiya|bhej\s*diya)\b/)) type = 'TRANSFER';
-  else if (t.match(/\b(paid|spent|bought|expense|debit|gave|withdrawn?|purchased?|kharcha|diya|de diya|kharch|nikala|nikaal|udhar\s+diya|liya|mangaya|order|pay\s*kiya|spend\s*kiya|kharida|khareeda)\b/)) type = 'DEBIT';
-  else if (t.match(/\bsent?\s+(?:[$₹€£]|rs|\d|money|amount|paisa|paise|rupaiye)/)) type = 'TRANSFER';
+  if (t.match(/\b(received|got|salary|income|credit|added|deposit|inflow|credited|mila|aaya|jama|milgaya|mil gaya|aaye|recieved)\b/)) { type = 'CREDIT'; typeExplicit = true; }
+  else if (t.match(/\b(transfer(?:red)?\s+(?:to|from|\d)|moved?\s+(?:to|from|\d)|shifted\s+(?:to|from|\d)|bheja|transfer\s*kiya|bhej\s*diya)\b/)) { type = 'TRANSFER'; typeExplicit = true; }
+  else if (t.match(/\b(paid|spent|bought|expense|debit|gave|withdrawn?|purchased?|kharcha|diya|de diya|kharch|nikala|nikaal|udhar\s+diya|liya|mangaya|order|pay\s*kiya|spend\s*kiya|kharida|khareeda)\b/)) { type = 'DEBIT'; typeExplicit = true; }
+  else if (t.match(/\bsent?\s+(?:[$₹€£]|rs|\d|money|amount|paisa|paise|rupaiye)/)) { type = 'TRANSFER'; typeExplicit = true; }
   // Hinglish refund/return
-  else if (t.match(/\b(refund|wapas\s+(?:mila|aaya)|return|cashback)\b/)) type = 'CREDIT';
+  else if (t.match(/\b(refund|wapas\s+(?:mila|aaya)|return|cashback)\b/)) { type = 'CREDIT'; typeExplicit = true; }
+  // ── Default: if amount present but no explicit type keyword, assume expense (most common)
+  if (!type && amount) { type = 'DEBIT'; typeExplicit = false; }
 
   const acc = resolveBank(t, accounts);
   let accountId = acc?.id || '';
@@ -758,6 +761,34 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
         }
       }
     }
+
+    // ── Merchant-as-payee: if merchant matched but no payee extracted yet, use merchant name
+    if (!parsedPayee && isPredicted) {
+      const merchantKeys = Object.keys(MERCHANT_KNOWLEDGE);
+      for (const merchant of merchantKeys) {
+        if (t.includes(merchant) && merchant.length >= 3) {
+          // Preserve original casing from user input
+          const idx = t.indexOf(merchant);
+          const rawName = text.substring(idx, idx + merchant.length);
+          parsedPayee = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+          break;
+        }
+      }
+    }
+
+    // ── Word-before-amount payee: "Zomato 350", "Hrisav 200 for milk"
+    if (!parsedPayee) {
+      const beforeAmtMatch = text.match(/^\s*([A-Za-z][A-Za-z0-9]{2,25})\s+\d/i);
+      if (beforeAmtMatch) {
+        const candidate = beforeAmtMatch[1].trim().toLowerCase();
+        const verbSkip = ['paid','sent','spent','gave','bought','got','received','transferred','moved','withdrawn','purchased','ordered','debited','credited','deposited'];
+        const wordSkip = ['and','for','to','from','via','using','in','on','the','a','an','my','this','that','some','few','all','just','only'];
+        if (![...verbSkip, ...wordSkip].includes(candidate) && !appCategories.map(c => c.toLowerCase()).includes(candidate)) {
+          parsedPayee = beforeAmtMatch[1].trim();
+          parsedPayee = parsedPayee.charAt(0).toUpperCase() + parsedPayee.slice(1);
+        }
+      }
+    }
   }
 
   // ── Note / Remark extraction ──────────────────────────────────────────
@@ -776,7 +807,7 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
   // Compute confidence score (0–100)
   let confidence = 0;
   if (amount) confidence += 25;
-  if (type) confidence += 15;
+  if (type) confidence += typeExplicit ? 15 : 8; // explicit keyword = full score, inferred = partial
   if (accountId) confidence += 20;
   if (paymentMethod) confidence += 10;
   if (category) confidence += 20;
