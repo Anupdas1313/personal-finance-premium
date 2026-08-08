@@ -15,6 +15,7 @@ const Ledger = lazy(() => import('./screens/Ledger'));
 const PartyLedger = lazy(() => import('./screens/PartyLedger'));
 const Reports = lazy(() => import('./screens/Reports'));
 const Profile = lazy(() => import('./screens/Profile'));
+const AddMoney = lazy(() => import('./screens/AddMoney'));
 
 const Auth = lazy(() => import('./screens/Auth'));
 const Welcome = lazy(() => import('./screens/Welcome'));
@@ -179,6 +180,7 @@ function AppRoutes() {
         {/* Shared Routes */}
         <Route path="transactions" element={<Transactions />} />
         <Route path="accounts" element={<Accounts />} />
+        <Route path="add-money" element={<AddMoney />} />
         <Route path="transfer" element={<Transfer />} />
         <Route path="transfer/logs" element={<TransferLogs />} />
         <Route path="summary" element={<Summary />} />
