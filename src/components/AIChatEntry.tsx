@@ -282,11 +282,7 @@ const resolveBank = (snippet: string, accounts: any[]) => {
       if (s.includes(nick) && name.includes(main)) return acc;
     }
   }
-  // Fuzzy match bank names
-  const bankNames = accounts.map(a => a.bankName.toLowerCase());
-  const fuzzy = fuzzyMatch(s, bankNames);
-  if (fuzzy) return accounts.find(a => a.bankName.toLowerCase() === fuzzy) || null;
-  return null;
+  return null; // Removed fuzzy matching to prevent accidental wrong account guesses
 };
 
 // ─── Universal Parser ────────────────────────────────────────────────────
@@ -331,7 +327,7 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
     else if (upiApp) paymentMethod = 'UPI';
   }
 
-  // Merchant matching with fuzzy
+  // Merchant and explicit category matching
   let category = emojiCategory, tag = emojiTag, isPredicted = false;
   if (!category) {
     for (const cat of appCategories) { if (t.includes(cat.toLowerCase())) { category = cat; break; } }
@@ -339,12 +335,9 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
   if (!category) {
     const merchantKeys = Object.keys(MERCHANT_KNOWLEDGE);
     for (const merchant of merchantKeys) {
-      if (t.includes(merchant)) { category = MERCHANT_KNOWLEDGE[merchant].category; tag = tag || MERCHANT_KNOWLEDGE[merchant].tag; isPredicted = true; break; }
+      if (t.includes(merchant)) { category = MERCHANT_KNOWLEDGE[merchant].category; isPredicted = true; break; }
     }
-    if (!category) {
-      const fuzzyMerchant = fuzzyMatch(t, merchantKeys);
-      if (fuzzyMerchant) { category = MERCHANT_KNOWLEDGE[fuzzyMerchant].category; tag = tag || MERCHANT_KNOWLEDGE[fuzzyMerchant].tag; isPredicted = true; }
-    }
+    // Removed fuzzy merchant matching to prevent aggressive guessing
   }
 
   // Hinglish category keywords
@@ -360,17 +353,10 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
       kapde: 'Shopping', kapda: 'Shopping', joota: 'Shopping', joote: 'Shopping', shopping: 'Shopping', mall: 'Shopping', shirt: 'Shopping', pant: 'Shopping', shoe: 'Shopping', shoes: 'Shopping', dress: 'Shopping', snkr: 'Shopping', sneakers: 'Shopping',
     };
     for (const [hindi, cat] of Object.entries(hindiCategories)) {
-      if (t.includes(hindi)) { category = cat; tag = tag || 'Personal'; break; }
+      if (t.includes(hindi)) { category = cat; break; }
     }
   }
-
-  // Time-of-day category suggestion (only if still no category)
-  if (!category && amount) {
-    const hour = new Date().getHours();
-    if (hour >= 6 && hour <= 10) category = 'Food'; // Morning = breakfast/coffee
-    else if (hour >= 11 && hour <= 14) category = 'Food'; // Lunch time
-    else if (hour >= 19 && hour <= 22) category = 'Food'; // Dinner time
-  }
+  // Removed time-of-day category suggestion and tag defaulting to avoid guessing.
 
   // ── Payee extraction ──────────────────────────────────────────────────
   let parsedPayee = '';
@@ -912,18 +898,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       // Set linkedBudgetId only for DEBIT (undefined = will ask, null = skip)
       updated.linkedBudgetId = (parsed.type === 'DEBIT' || updated.type === 'DEBIT') ? undefined : null;
 
-      // ── Recall from payeeMemory if we identified a payee ─────────────────
-      if (parsed.parsedPayee) {
-        const memKey = parsed.parsedPayee.toLowerCase().trim();
-        const mem = payeeMemory[memKey];
-        if (mem) {
-          if (!updated.category && mem.category) updated.category = mem.category;
-          if (!updated.selectedAccountId && mem.accountId) updated.selectedAccountId = mem.accountId;
-          if (!updated.paymentMethod && mem.paymentMethod) updated.paymentMethod = mem.paymentMethod;
-          if (!updated.upiApp && mem.upiApp) updated.upiApp = mem.upiApp;
-          updated._confidence = Math.min(100, (updated._confidence || 0) + 15);
-        }
-      }
+      // Payee memory auto-fill logic removed to prevent aggressive guessing
 
       // ── Show a smart summary of what was auto-detected ──────────────────
       const detectedParts: string[] = [];
