@@ -146,26 +146,33 @@ export default function Accounts() {
       const parsedStartingBalance = parseFloat(startingBalance.toString().replace(/,/g, '')) || 0;
       const finalStartingBalance = accountType === 'CREDIT_CARD' ? -Math.abs(parsedStartingBalance) : parsedStartingBalance;
 
+      const payload = {
+        bankName,
+        accountLast4,
+        startingBalance: finalStartingBalance,
+        startingBalanceDate: new Date(startingBalanceDate),
+        type: accountType,
+        ...creditCardFields
+      };
+
       if (editingAccountId) {
-        await db.accounts.update(editingAccountId, {
-          bankName,
-          accountLast4,
-          startingBalance: finalStartingBalance,
-          startingBalanceDate: new Date(startingBalanceDate),
-          type: accountType,
-          ...creditCardFields
+        // Map undefined to null to clear optional fields in DB
+        const updatePayload = { ...payload };
+        Object.keys(updatePayload).forEach(key => {
+          if ((updatePayload as any)[key] === undefined) {
+            (updatePayload as any)[key] = null;
+          }
         });
+        await db.accounts.update(editingAccountId, updatePayload);
       } else {
         const maxOrder = accounts.reduce((max, a) => Math.max(max, a.sortOrder || 0), 0);
-        await db.accounts.add({
-          bankName,
-          accountLast4,
-          startingBalance: finalStartingBalance,
-          startingBalanceDate: new Date(startingBalanceDate),
-          type: accountType,
-          sortOrder: maxOrder + 1,
-          ...creditCardFields
+        const addPayload = { ...payload, sortOrder: maxOrder + 1 };
+        Object.keys(addPayload).forEach(key => {
+          if ((addPayload as any)[key] === undefined) {
+            delete (addPayload as any)[key];
+          }
         });
+        await db.accounts.add(addPayload as any);
       }
 
       setShowSuccess(true);

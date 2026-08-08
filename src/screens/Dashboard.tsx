@@ -266,8 +266,25 @@ export default function Dashboard() {
   const [editingTransactionId, setEditingTransactionId] = useState<number | null>(null);
 
   useEffect(() => {
-    // Only reset date for NEW transactions, not when editing existing ones
-    if (isAddingManual && !editingTransactionId) {
+    if (!isAddingManual) {
+      // Clear and reset form fields when manual editor is closed
+      setAmount('');
+      setType('DEBIT');
+      setNote('');
+      setPartyName('');
+      setCategory('Other');
+      setTransactionDate(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+      setIsDateModified(false);
+      setPaymentMethod('UPI');
+      setUpiApp('GPay');
+      setExpenseType('');
+      setEditingTransactionId(null);
+      setSelectedBudgetId('auto');
+      isBudgetManuallySet.current = false;
+      setSelectedAccountId('');
+      setToAccountId('');
+    } else if (!editingTransactionId) {
+      // Only reset date for NEW transactions, not when editing existing ones
       setTransactionDate(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
       setIsDateModified(false);
     }
@@ -409,39 +426,46 @@ export default function Dashboard() {
           expenseType: currentExpenseType
         };
 
-        Object.keys(debitPayload).forEach(k => (debitPayload as any)[k] === undefined && delete (debitPayload as any)[k]);
-        Object.keys(creditPayload).forEach(k => (creditPayload as any)[k] === undefined && delete (creditPayload as any)[k]);
-
         if (editingTransactionId) {
           const existing = await db.transactions.get(editingTransactionId);
           if (existing) {
+            const updateDebit = { ...debitPayload };
+            const updateCredit = { ...creditPayload };
+            Object.keys(updateDebit).forEach(k => { if ((updateDebit as any)[k] === undefined) (updateDebit as any)[k] = null; });
+            Object.keys(updateCredit).forEach(k => { if ((updateCredit as any)[k] === undefined) (updateCredit as any)[k] = null; });
+
             if (existing.linkedTransactionId) {
               // Existing linked transfer, update both
               await db.transactions.update(editingTransactionId, {
-                ...debitPayload,
+                ...updateDebit,
                 linkedTransactionId: existing.linkedTransactionId
               });
               await db.transactions.update(existing.linkedTransactionId, {
-                ...creditPayload,
+                ...updateCredit,
                 linkedTransactionId: editingTransactionId
               });
             } else {
               // Legacy transfer, create a counterpart and link it
               const counterpartId = await db.transactions.add({
-                ...creditPayload,
+                ...updateCredit,
                 linkedTransactionId: editingTransactionId
               });
               await db.transactions.update(editingTransactionId, {
-                ...debitPayload,
+                ...updateDebit,
                 linkedTransactionId: counterpartId
               });
             }
           }
         } else {
           // New transfer: Add Debit side first, get ID, add Credit side, update Debit side.
-          const debitId = await db.transactions.add(debitPayload);
+          const addDebit = { ...debitPayload };
+          const addCredit = { ...creditPayload };
+          Object.keys(addDebit).forEach(k => { if ((addDebit as any)[k] === undefined) delete (addDebit as any)[k]; });
+          Object.keys(addCredit).forEach(k => { if ((addCredit as any)[k] === undefined) delete (addCredit as any)[k]; });
+
+          const debitId = await db.transactions.add(addDebit);
           const creditId = await db.transactions.add({
-            ...creditPayload,
+            ...addCredit,
             linkedTransactionId: debitId
           });
           await db.transactions.update(debitId, {
@@ -478,17 +502,24 @@ export default function Dashboard() {
           linkedTransactionId: undefined // ensure link is cleared
         };
 
-        // Remove undefined properties to prevent Dexie/Firestore errors
-        Object.keys(txPayload).forEach(key => {
-          if ((txPayload as any)[key] === undefined) {
-            delete (txPayload as any)[key];
-          }
-        });
-
         if (editingTransactionId) {
-          await db.transactions.update(editingTransactionId, txPayload);
+          // Map undefined properties to null so they are cleared in the database
+          const updatePayload = { ...txPayload };
+          Object.keys(updatePayload).forEach(key => {
+            if ((updatePayload as any)[key] === undefined) {
+              (updatePayload as any)[key] = null;
+            }
+          });
+          await db.transactions.update(editingTransactionId, updatePayload);
         } else {
-          await db.transactions.add(txPayload as any);
+          // Delete undefined properties for inserts
+          const addPayload = { ...txPayload };
+          Object.keys(addPayload).forEach(key => {
+            if ((addPayload as any)[key] === undefined) {
+              delete (addPayload as any)[key];
+            }
+          });
+          await db.transactions.add(addPayload as any);
         }
       }
       
