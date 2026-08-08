@@ -1482,7 +1482,8 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSend()}
               placeholder={getPlaceholder()}
-              className="flex-1 bg-transparent py-3 text-[13px] font-medium outline-none text-neutral-800 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600"
+              style={{ outline: 'none' }}
+              className="flex-1 bg-transparent py-3 text-[13px] font-medium outline-none focus:outline-none focus:ring-0 focus-visible:outline-none text-neutral-800 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600"
             />
 
             {/* Clear */}
