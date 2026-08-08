@@ -474,6 +474,8 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
         }
       }
     }
+  }
+
   // ── Note / Remark extraction ──────────────────────────────────────────
   let parsedNote = '';
   const forMatch = text.match(/\b(?:for|towards|as|being|remark[:\s]+|note[:\s]+)\s+(.+?)(?:\s+(?:via|using|from|to|today|yesterday|on\s+\d|\d+\s*(?:days?|weeks?))\b|$)/i);
