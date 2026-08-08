@@ -1196,29 +1196,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
   return (
     <div className="flex flex-col h-full bg-white dark:bg-[#0A0A0A] relative">
 
-      {/* ── Quick Repeat Strip ────────────────────────────────────────── */}
-      {stage === 'IDLE' && recentTx.length > 0 && (
-        <div className="px-3 pt-3 pb-1 shrink-0">
-          <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-            <Clock className="w-3 h-3" /> Quick Repeat
-          </p>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-            {recentTx.slice(0, 4).map((tx, i) => (
-              <button
-                key={i}
-                onClick={() => repeatLastTx(tx)}
-                className="flex-shrink-0 group relative bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/8 rounded-2xl px-3 py-2.5 text-left hover:border-brand-green/40 hover:shadow-md hover:shadow-brand-green/10 active:scale-95 transition-all shadow-sm overflow-hidden"
-              >
-                {/* Subtle shimmer overlay on hover */}
-                <div className="absolute inset-0 bg-gradient-to-r from-brand-green/0 via-brand-green/5 to-brand-green/0 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
-                <div className="text-[11px] font-black text-brand-green">{currency}{tx.amount}</div>
-                <div className="text-[9px] text-neutral-400 truncate max-w-[80px] mt-0.5">{tx.party || tx.note || tx.category}</div>
-                <div className="text-[7px] text-neutral-300 dark:text-neutral-600 mt-0.5 uppercase tracking-widest font-bold">↩ Repeat</div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+
 
       {/* ── Chat Messages ─────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-3 pt-2 pb-64 space-y-3 no-scrollbar">
