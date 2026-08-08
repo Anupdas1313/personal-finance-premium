@@ -734,25 +734,42 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
     else if (hour >= 19 && hour <= 22) category = 'Food'; // Dinner time
   }
 
+  // ── Payee extraction ──────────────────────────────────────────────────
   let parsedPayee = '';
-  const payeeMatch = text.match(/\b(?:to|paid\s+to|at|@|from|received\s+from|on)\s+([A-Za-z][A-Za-z0-9\s]{0,20}?)(?:\s+(?:via|using|on|for|from|today|yesterday|\d)|$)/i);
-  if (payeeMatch && type !== 'TRANSFER') parsedPayee = payeeMatch[1].trim();
+  if (type !== 'TRANSFER') {
+    // Pattern 1: "paid|sent|gave X to NAME" — number between verb and "to"
+    const paidToMatch = text.match(/\b(?:paid|sent|gave|pay|transfer|give)\s+[\d.,k\s]+to\s+([A-Za-z][A-Za-z0-9\s]{0,30}?)(?:\s+(?:via|using|on|for|from|towards|today|yesterday|\d)|$)/i);
+    if (paidToMatch) parsedPayee = paidToMatch[1].trim();
 
-  // Aggressive payee fallback
-  if (!parsedPayee && type !== 'TRANSFER') {
-     const simpleMatch = text.match(/(?:[$₹€£]|rs)?\s*\d+(?:\.\d+)?(?:k)?\s+([A-Za-z]+)/i);
-     if (simpleMatch) {
-       const candidate = simpleMatch[1].trim().toLowerCase();
-       const skipWords = ['and', 'for', 'to', 'from', 'via', 'using', 'in', 'on', 'spent', 'paid', 'credit', 'debit', 'cash', 'upi', 'gpay', 'today', 'yesterday'];
-       if (!skipWords.includes(candidate) && !appCategories.map(c => c.toLowerCase()).includes(candidate)) {
-         parsedPayee = simpleMatch[1].trim();
-       }
-     }
+    // Pattern 2: direct "to NAME" / "paid to NAME" / "at NAME" / "from NAME" / "received from NAME"
+    if (!parsedPayee) {
+      const payeeMatch = text.match(/\b(?:paid\s+to|received\s+from|sent\s+to|to|at|@|from)\s+([A-Za-z][A-Za-z0-9\s]{0,30}?)(?:\s+(?:via|using|on|for|from|towards|today|yesterday|\d)|$)/i);
+      if (payeeMatch) parsedPayee = payeeMatch[1].trim();
+    }
+
+    // Fallback: word after amount that's not a skip-word or known category
+    if (!parsedPayee) {
+      const simpleMatch = text.match(/(?:[$₹€£]|rs)?\s*\d+(?:[.,]\d+)?(?:k)?\s+([A-Za-z][A-Za-z0-9]*)/i);
+      if (simpleMatch) {
+        const candidate = simpleMatch[1].trim().toLowerCase();
+        const skipWords = ['and','for','to','from','via','using','in','on','spent','paid','credit','debit','cash','upi','gpay','phonepe','paytm','today','yesterday','towards','as','being','the'];
+        if (!skipWords.includes(candidate) && !appCategories.map(c => c.toLowerCase()).includes(candidate) && !Object.keys(MERCHANT_KNOWLEDGE).includes(candidate)) {
+          parsedPayee = simpleMatch[1].trim();
+        }
+      }
+    }
   }
 
+  // ── Note / Remark extraction ──────────────────────────────────────────
   let parsedNote = '';
-  const forMatch = text.match(/\b(?:for|remark[:\s]+|note[:\s]+)(.+?)(?:\s+(?:via|using|from|to|today|yesterday|on \d|\d+\s*(?:days|week))\b|$)/i);
-  if (forMatch) parsedNote = forMatch[1].trim();
+  // Match: "for X", "towards X", "as X", "being X", "remark: X", "note: X"
+  const forMatch = text.match(/\b(?:for|towards|as|being|remark[:\s]+|note[:\s]+)\s+(.+?)(?:\s+(?:via|using|from|to|today|yesterday|on\s+\d|\d+\s*(?:days?|weeks?))\b|$)/i);
+  if (forMatch) {
+    const noteCandidate = forMatch[1].trim();
+    // Don't capture if it's just a person's name that was already captured as payee
+    const isJustPayee = parsedPayee && noteCandidate.toLowerCase() === parsedPayee.toLowerCase();
+    if (!isJustPayee) parsedNote = noteCandidate;
+  }
 
   const { date, confirmed: dateConfirmed } = parseDate(text);
 
@@ -993,9 +1010,21 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         setStage('ASK_UPI_APP'); addAIMessage("Which UPI app?", [smartDefaults.upiApp, ...filtered]);
       } else { setStage('ASK_UPI_APP'); addAIMessage("Which UPI app?", upiApps); }
     } else if (!tx.expenseType && tx.expenseType !== '-' && tx.type !== 'TRANSFER') {
-      setStage('ASK_TAG'); addAIMessage("Tag this as:", ['Skip', ...tags]);
+      // Auto-skip tag for high-confidence auto-parsed entries—default 'Personal'
+      if (tx.note && tx.note !== '-' && tx._confidence >= 40) {
+        tx.expenseType = 'Personal';
+        checkNextStep(tx);
+      } else {
+        setStage('ASK_TAG'); addAIMessage("Tag this as:", ['Skip', ...tags]);
+      }
     } else if (!tx.note && tx.note !== '-') {
-      setStage('ASK_NOTE'); addAIMessage("Add a short remark (Optional):", ['Skip']);
+      // Auto-skip note if we already have payee + category (high-confidence parse)
+      if (tx._confidence >= 40 && tx.party && tx.category) {
+        tx.note = '-';
+        checkNextStep(tx);
+      } else {
+        setStage('ASK_NOTE'); addAIMessage("Add a short remark (Optional):", ['Skip']);
+      }
     } else if (tx.type === 'DEBIT' && tx.linkedBudgetId === undefined) {
       setStage('ASK_BUDGET');
       const categoryBud = envelopeBudgets.find(b => b.category.toLowerCase() === tx.category.toLowerCase());
@@ -1008,7 +1037,14 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       ];
       addAIMessage("Select a budget envelope for this transaction:", options);
     } else if (!tx._dateConfirmed) {
-      setStage('ASK_DATE'); addAIMessage("When did this happen?", ['Today', 'Yesterday', '2 days ago', '3 days ago', '📅 Custom Date']);
+      // Auto-confirm today for high-confidence complete entries
+      if (tx._confidence >= 50 && tx.amount && tx.type && tx.category) {
+        tx._dateConfirmed = true;
+        tx.transactionDate = format(new Date(), "yyyy-MM-dd'T'HH:mm");
+        checkNextStep(tx);
+      } else {
+        setStage('ASK_DATE'); addAIMessage("When did this happen?", ['Today', 'Yesterday', '2 days ago', '3 days ago', '📅 Custom Date']);
+      }
     } else {
       setStage('PREVIEW');
       addAIMessage(`✅ Entry ready!\nReview below and tap Save.`);
@@ -1193,10 +1229,53 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     }
 
     if (stage === 'IDLE' && !t.match(/^(edit|change|update)/)) {
-      const amt = parseAmount(userMsg);
-      if (amt && !isNaN(parseFloat(amt))) {
-        updated.amount = parseFloat(amt);
+      // ── Smart full-sentence parsing ──────────────────────────────────────
+      // Run parseUniversal to extract ALL fields from the sentence at once
+      const parsed = parseUniversal(userMsg, accounts, appCategories);
+
+      // Apply every field that was confidently extracted
+      if (parsed.amount && !isNaN(parseFloat(parsed.amount))) updated.amount = parseFloat(parsed.amount);
+      if (parsed.type) updated.type = parsed.type;
+      if (parsed.accountId) updated.selectedAccountId = parsed.accountId;
+      if (parsed.autoPaymentMethod) updated.paymentMethod = parsed.autoPaymentMethod;
+      else if (parsed.paymentMethod) updated.paymentMethod = parsed.paymentMethod;
+      if (parsed.upiApp) updated.upiApp = parsed.upiApp;
+      if (parsed.category) updated.category = parsed.category;
+      if (parsed.tag) updated.expenseType = parsed.tag;
+      if (parsed.parsedPayee) updated.party = parsed.parsedPayee;
+      if (parsed.parsedNote) updated.note = parsed.parsedNote;
+      updated.transactionDate = parsed.date || updated.transactionDate;
+      updated._dateConfirmed = parsed.dateConfirmed || updated._dateConfirmed;
+      updated._isPredicted = parsed.isPredicted;
+      updated._confidence = parsed.confidence;
+      // Set linkedBudgetId only for DEBIT (undefined = will ask, null = skip)
+      updated.linkedBudgetId = (parsed.type === 'DEBIT' || updated.type === 'DEBIT') ? undefined : null;
+
+      // ── Recall from payeeMemory if we identified a payee ─────────────────
+      if (parsed.parsedPayee) {
+        const memKey = parsed.parsedPayee.toLowerCase().trim();
+        const mem = payeeMemory[memKey];
+        if (mem) {
+          if (!updated.category && mem.category) updated.category = mem.category;
+          if (!updated.selectedAccountId && mem.accountId) updated.selectedAccountId = mem.accountId;
+          if (!updated.paymentMethod && mem.paymentMethod) updated.paymentMethod = mem.paymentMethod;
+          if (!updated.upiApp && mem.upiApp) updated.upiApp = mem.upiApp;
+          updated._confidence = Math.min(100, (updated._confidence || 0) + 15);
+        }
       }
+
+      // ── Show a smart summary of what was auto-detected ──────────────────
+      const detectedParts: string[] = [];
+      if (parsed.amount) detectedParts.push(`💰 ${currency}${parsed.amount}`);
+      if (parsed.type) detectedParts.push(parsed.type === 'DEBIT' ? '▼ Expense' : parsed.type === 'CREDIT' ? '▲ Income' : '⇄ Transfer');
+      if (parsed.parsedPayee) detectedParts.push(`👤 ${parsed.parsedPayee}`);
+      if (parsed.category) detectedParts.push(`📂 ${parsed.category}`);
+      if (parsed.parsedNote) detectedParts.push(`📝 ${parsed.parsedNote}`);
+      if (parsed.paymentMethod) detectedParts.push(`💳 ${parsed.upiApp || parsed.paymentMethod}`);
+      if (detectedParts.length > 1) {
+        addAIMessage(`Got it! I've auto-filled:\n${detectedParts.join('  ·  ')}`);
+      }
+
       setPendingTx(updated);
       checkNextStep(updated);
     } else if (stage === 'ASK_AMOUNT') {
