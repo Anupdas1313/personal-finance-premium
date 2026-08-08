@@ -385,6 +385,12 @@ const parseDate = (text: string): { date: string; confirmed: boolean } => {
       return { date: format(d, "yyyy-MM-dd'T'HH:mm"), confirmed: true };
     }
   }
+  // ISO date: YYYY-MM-DD
+  const isoDate = text.match(/\b(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\b/);
+  if (isoDate) {
+    const d = new Date(parseInt(isoDate[1]), parseInt(isoDate[2]) - 1, parseInt(isoDate[3]));
+    if (d <= now) return { date: format(d, "yyyy-MM-dd'T'HH:mm"), confirmed: true };
+  }
   // Full date: DD/MM/YYYY or DD-MM-YYYY
   const fullDate = text.match(/\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/);
   if (fullDate) {
@@ -799,7 +805,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       ];
       addAIMessage("Select a budget envelope for this transaction:", options);
     } else if (!tx._dateConfirmed) {
-      setStage('ASK_DATE'); addAIMessage("When did this happen?", ['Today', 'Yesterday', '2 days ago', '3 days ago']);
+      setStage('ASK_DATE'); addAIMessage("When did this happen?", ['Today', 'Yesterday', '2 days ago', '3 days ago', '📅 Custom Date']);
     } else {
       setStage('PREVIEW');
       const conf = tx._confidence;
@@ -1110,7 +1116,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     if (field === 'tag') { updated.expenseType = ''; setStage('ASK_TAG'); addAIMessage("Correct Tag:", tags); }
     if (field === 'payee') { updated.party = ''; setStage('ASK_PAYEE'); addAIMessage(updated.type === 'CREDIT' ? "Who paid you? (or source of income)" : updated.type === 'TRANSFER' ? "Who did you send this to?" : "Who did you pay? (or where did you spend?)"); }
     if (field === 'remark') { updated.note = ''; setStage('ASK_NOTE'); addAIMessage("Correct Remark:"); }
-    if (field === 'date') { updated._dateConfirmed = false; setStage('ASK_DATE'); addAIMessage("When did this happen?", ['Today', 'Yesterday', '2 days ago', '3 days ago']); }
+    if (field === 'date') { updated._dateConfirmed = false; setStage('ASK_DATE'); addAIMessage("When did this happen?", ['Today', 'Yesterday', '2 days ago', '3 days ago', '📅 Custom Date']); }
     if (field === 'budget') {
       updated.linkedBudgetId = undefined;
       setStage('ASK_BUDGET');
@@ -1270,9 +1276,32 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
                 <div className="flex flex-wrap gap-1.5">
                   {msg.options.map((opt: string) => {
                     const style = getOptionStyle(opt);
+                    if (opt === '📅 Custom Date') {
+                      return (
+                        <div key={opt} className="relative">
+                          <button
+                            type="button"
+                            className={`px-3.5 py-2 ${style.bg} border ${style.border} rounded-xl text-[12px] font-semibold ${style.text} active:scale-95 transition-all hover:shadow-sm flex items-center gap-1.5`}
+                          >
+                            {opt}
+                          </button>
+                          <input 
+                            type="date"
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                            max={format(new Date(), 'yyyy-MM-dd')}
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                handleSend(e.target.value);
+                              }
+                            }}
+                          />
+                        </div>
+                      );
+                    }
                     return (
                       <button
                         key={opt}
+                        type="button"
                         onClick={() => handleSend(opt)}
                         className={`px-3.5 py-2 ${style.bg} border ${style.border} rounded-xl text-[12px] font-semibold ${style.text} active:scale-95 transition-all hover:shadow-sm flex items-center gap-1.5`}
                       >
