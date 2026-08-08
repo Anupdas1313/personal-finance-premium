@@ -286,6 +286,141 @@ const BANK_NICKNAMES: Record<string, string> = {
   'post office': 'post office', fino: 'fino',
 };
 
+// ─── Transaction Phrase Dictionary (for input prediction) ────────────────
+const TRANSACTION_PHRASES: string[] = [
+  // ── Expense / Debit ─────────────────────────────────────────────────────
+  'paid to ',
+  'paid for ',
+  'paid at ',
+  'payment to ',
+  'payment for ',
+  'spent on ',
+  'spent at ',
+  'bought from ',
+  'bought at ',
+  'purchased from ',
+  'purchase at ',
+  'order from ',
+  'ordered from ',
+  'expense for ',
+  'expense at ',
+  'bill paid to ',
+  'bill payment for ',
+  'recharge for ',
+  'subscription for ',
+  'fee paid to ',
+  'fees for ',
+  'charges for ',
+  'deducted for ',
+  'debited for ',
+  'withdrew from ',
+  'withdrawal from ',
+  'cash withdrawn from ',
+  // ── Income / Credit ──────────────────────────────────────────────────────
+  'received from ',
+  'received salary from ',
+  'salary received from ',
+  'salary from ',
+  'income from ',
+  'credited from ',
+  'credited by ',
+  'got from ',
+  'got paid from ',
+  'payment received from ',
+  'refund from ',
+  'cashback from ',
+  'interest from ',
+  'dividend from ',
+  'freelance income from ',
+  'bonus from ',
+  'incentive from ',
+  'reimbursement from ',
+  'deposited to ',
+  'added to ',
+  // ── Transfer ─────────────────────────────────────────────────────────────
+  'transferred to ',
+  'transfer to ',
+  'sent to ',
+  'sent money to ',
+  'moved to ',
+  'moved from ',
+  'transferred from ',
+  'transfer from ',
+  // ── Payment Method ────────────────────────────────────────────────────────
+  'via gpay',
+  'via phonepe',
+  'via paytm',
+  'via upi',
+  'via cash',
+  'via credit card',
+  'via debit card',
+  'via net banking',
+  'using gpay',
+  'using phonepe',
+  'using paytm',
+  'using upi',
+  'using cash',
+  'using credit card',
+  'using debit card',
+  'using net banking',
+  'by gpay',
+  'by phonepe',
+  'by paytm',
+  'by upi',
+  'by cash',
+  'by credit card',
+  'by debit card',
+  'from hdfc',
+  'from icici',
+  'from sbi',
+  'from kotak',
+  'from axis',
+  // ── Date / Time ──────────────────────────────────────────────────────────
+  'today',
+  'yesterday',
+  'last monday',
+  'last tuesday',
+  'last wednesday',
+  'last thursday',
+  'last friday',
+  'last saturday',
+  'last sunday',
+  'last week',
+  'last month',
+  '2 days ago',
+  '3 days ago',
+  '1 week ago',
+  'this week',
+  'this month',
+  // ── Popular full sentence patterns ────────────────────────────────────────
+  'paid 500 to zomato via gpay today',
+  'spent 200 on petrol today',
+  'paid rent 12000 hdfc today',
+  'received salary 50000 from hdfc today',
+  'transferred 5000 to savings today',
+  'bought groceries 1500 blinkit today',
+  'paid electricity bill 2000 today',
+  'subscription netflix 649 credit card today',
+  'paid emi 8000 axis today',
+  'recharge 239 jio phonepe today',
+  'uber 250 today',
+  'swiggy 350 gpay yesterday',
+  'medicine 500 apollo pharmacy today',
+  'gym fees 2000 cash today',
+  'school fees 5000 today',
+  // ── Hindi / Hinglish patterns ─────────────────────────────────────────────
+  'diya ',
+  'mila ',
+  'aaya ',
+  'bheja ',
+  'kharcha ',
+  'nikala ',
+  'de diya ',
+  'le liya ',
+  'pay kiya ',
+  'transfer kiya ',
+];
+
 // ─── Fuzzy Match (Levenshtein distance) ─────────────────────────────────
 const levenshtein = (a: string, b: string): number => {
   const m = a.length, n = b.length;
@@ -706,6 +841,9 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
   const [autocomplete, setAutocomplete] = useState<any[]>([]);
   const [lastSaved, setLastSaved] = useState<any>(null);
   const [isAutoFillEnabled, setIsAutoFillEnabled] = useState(true);
+  // ── Prediction state ───────────────────────────────────────────────────
+  const [inlinePrediction, setInlinePrediction] = useState(''); // ghost text suffix
+  const [phraseSuggestions, setPhraseSuggestions] = useState<string[]>([]); // chips above input
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -719,15 +857,73 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     }
   }, [isTyping, stage]);
 
-  // Load autocomplete suggestions from past transactions
+  // ── Prediction engine: runs on every input change ──────────────────────
   useEffect(() => {
-    if (input.trim().length < 2) { setAutocomplete([]); return; }
     const q = input.toLowerCase();
-    db.transactions.filter(tx =>
-      (tx.note && tx.note.toLowerCase().includes(q)) ||
-      (tx.party && tx.party.toLowerCase().includes(q))
-    ).limit(3).toArray().then(setAutocomplete);
-  }, [input]);
+
+    // Past-transaction autocomplete (only in IDLE stage)
+    if (q.trim().length >= 2 && stage === 'IDLE') {
+      db.transactions.filter(tx =>
+        (tx.note && tx.note.toLowerCase().includes(q)) ||
+        (tx.party && tx.party.toLowerCase().includes(q))
+      ).limit(3).toArray().then(setAutocomplete);
+    } else {
+      setAutocomplete([]);
+    }
+
+    // Inline ghost prediction: find the best matching phrase that starts with the current input
+    if (q.trim().length >= 2 && stage === 'IDLE') {
+      const lq = q.trim();
+      // Find phrase that starts with what user typed
+      const exact = TRANSACTION_PHRASES.find(p => p.toLowerCase().startsWith(lq) && p.toLowerCase() !== lq);
+      if (exact) {
+        // Ghost text is the remaining suffix after what user typed
+        setInlinePrediction(exact.slice(lq.length));
+      } else {
+        // Partial word match: check if last word in input matches start of a phrase word
+        const words = lq.split(/\s+/);
+        const lastWord = words[words.length - 1];
+        if (lastWord.length >= 2) {
+          const phraseMatch = TRANSACTION_PHRASES.find(p => {
+            const pl = p.toLowerCase();
+            // The phrase must contain the full prefix typed so far
+            return pl.includes(lq) && pl.startsWith(words.slice(0, -1).join(' ') + (words.length > 1 ? ' ' : '')) && !pl.startsWith(lq);
+          });
+          if (phraseMatch) {
+            const pl = phraseMatch.toLowerCase();
+            const idx = pl.indexOf(lq);
+            setInlinePrediction(idx === 0 ? phraseMatch.slice(lq.length) : '');
+          } else {
+            setInlinePrediction('');
+          }
+        } else {
+          setInlinePrediction('');
+        }
+      }
+    } else {
+      setInlinePrediction('');
+    }
+
+    // Phrase suggestion chips: show top matching phrases as clickable chips
+    if (stage === 'IDLE') {
+      if (q.trim().length === 0) {
+        // Default suggestions when idle
+        setPhraseSuggestions(['paid to ', 'received from ', 'transferred to ', 'spent on ', 'sent to ']);
+      } else {
+        const lq = q.trim();
+        const matches = TRANSACTION_PHRASES
+          .filter(p => {
+            const pl = p.toLowerCase();
+            // Match phrases that start with the input OR contain the input as a substring
+            return (pl.startsWith(lq) || pl.includes(lq)) && pl !== lq;
+          })
+          .slice(0, 5);
+        setPhraseSuggestions(matches);
+      }
+    } else {
+      setPhraseSuggestions([]);
+    }
+  }, [input, stage]);
 
   const addAIMessage = (content: string, options: string[] = []) => {
     setIsTyping(true);
@@ -1433,8 +1629,8 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
           </div>
         )}
 
-        {/* ── Hint Chips (IDLE only, no autocomplete) ───────────────── */}
-        {stage === 'IDLE' && autocomplete.length === 0 && input.length === 0 && (
+        {/* ── Hint Chips (IDLE only, no autocomplete, no phrase suggestions showing) ───── */}
+        {stage === 'IDLE' && autocomplete.length === 0 && phraseSuggestions.length === 0 && input.length === 0 && (
           <div className="flex gap-2 overflow-x-auto no-scrollbar px-3 pt-2">
             {HINT_CHIPS.map(chip => (
               <button
@@ -1448,26 +1644,82 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
           </div>
         )}
 
+        {/* ── Phrase Suggestion Chips (above input, only in IDLE + have input / default when blank) ── */}
+        {stage === 'IDLE' && autocomplete.length === 0 && phraseSuggestions.length > 0 && (
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar px-3 pt-2 pb-0.5">
+            {phraseSuggestions.map((phrase, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => {
+                  setInput(phrase);
+                  setInlinePrediction('');
+                  inputRef.current?.focus();
+                }}
+                className="flex-shrink-0 flex items-center gap-1 bg-brand-green/8 dark:bg-brand-green/10 border border-brand-green/20 hover:border-brand-green/50 hover:bg-brand-green/15 rounded-full px-3 py-1.5 text-[11px] font-semibold text-brand-green dark:text-emerald-400 transition-all active:scale-95 whitespace-nowrap"
+              >
+                <ChevronRight className="w-3 h-3 opacity-60" />
+                {phrase.trim()}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* ── Input Bar ────────────────────────────────────────────────── */}
         <div className="p-3">
-          <div className="flex items-center gap-2 bg-white dark:bg-[#111111] rounded-2xl border transition-all duration-200 px-2 py-0.5 border-neutral-200 dark:border-white/10 focus-within:border-neutral-300 dark:focus-within:border-white/20 focus-within:shadow-sm">
+          {/* Ghost text container: layered input + prediction overlay */}
+          <div className="relative flex items-center gap-2 bg-white dark:bg-[#111111] rounded-2xl border transition-all duration-200 px-2 py-0.5 border-neutral-200 dark:border-white/10 focus-within:border-brand-green/40 dark:focus-within:border-brand-green/30 focus-within:shadow-sm focus-within:shadow-brand-green/5">
+
+            {/* Ghost prediction overlay (sits behind the real input, aligned visually) */}
+            {inlinePrediction && stage === 'IDLE' && (
+              <div
+                aria-hidden="true"
+                className="absolute left-2 right-14 top-0 bottom-0 flex items-center pointer-events-none overflow-hidden"
+              >
+                <span className="text-[13px] font-medium whitespace-pre text-transparent">{input}</span>
+                <span className="text-[13px] font-medium text-neutral-300 dark:text-neutral-600 whitespace-pre">{inlinePrediction}</span>
+              </div>
+            )}
 
             {/* Text Input */}
             <input
               ref={inputRef}
               type="text"
               value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSend()}
+              onChange={e => { setInput(e.target.value); }}
+              onKeyDown={e => {
+                // Tab or ArrowRight at end of input → accept inline prediction
+                if ((e.key === 'Tab' || e.key === 'ArrowRight') && inlinePrediction && stage === 'IDLE') {
+                  e.preventDefault();
+                  setInput(prev => prev + inlinePrediction);
+                  setInlinePrediction('');
+                  return;
+                }
+                if (e.key === 'Escape') { setInlinePrediction(''); return; }
+                if (e.key === 'Enter') handleSend();
+              }}
               placeholder={getPlaceholder()}
-              style={{ outline: 'none' }}
+              style={{ outline: 'none', background: 'transparent', position: 'relative', zIndex: 1 }}
               className="flex-1 bg-transparent py-3 text-[13px] font-medium outline-none focus:outline-none focus:ring-0 focus-visible:outline-none text-neutral-800 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600"
             />
 
-            {/* Clear */}
-            {input && (
+            {/* Tab-to-accept hint badge */}
+            {inlinePrediction && stage === 'IDLE' && (
               <button
-                onClick={() => setInput('')}
+                type="button"
+                tabIndex={-1}
+                onClick={() => { setInput(prev => prev + inlinePrediction); setInlinePrediction(''); inputRef.current?.focus(); }}
+                className="flex-shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-white/8 border border-neutral-200 dark:border-white/10 text-[9px] font-black uppercase tracking-widest text-neutral-400 hover:text-brand-green hover:border-brand-green/30 transition-all"
+                title="Accept suggestion (Tab or →)"
+              >
+                Tab ↹
+              </button>
+            )}
+
+            {/* Clear */}
+            {input && !inlinePrediction && (
+              <button
+                onClick={() => { setInput(''); setInlinePrediction(''); }}
                 className="w-5 h-5 rounded-full bg-neutral-200 dark:bg-white/15 text-neutral-500 dark:text-neutral-400 flex items-center justify-center hover:bg-neutral-300 dark:hover:bg-white/25 transition-colors"
               >
                 <X className="w-3 h-3" />
@@ -1489,6 +1741,15 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
                 : <Send className="w-4 h-4" />}
             </button>
           </div>
+
+          {/* Prediction footer hint */}
+          {inlinePrediction && stage === 'IDLE' && (
+            <div className="flex items-center gap-1.5 mt-1.5 px-1">
+              <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Prediction:</span>
+              <span className="text-[10px] font-semibold text-brand-green/70 truncate">{input}{inlinePrediction}</span>
+              <span className="text-[9px] text-neutral-300 dark:text-neutral-600 ml-auto">Tab to accept</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
