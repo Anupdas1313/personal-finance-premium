@@ -1472,7 +1472,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
         {/* ── Input Bar ────────────────────────────────────────────────── */}
         <div className="p-3">
-          <div className="flex items-center gap-2 bg-white dark:bg-[#111111] rounded-2xl border-2 transition-all duration-200 px-1 border-neutral-150 dark:border-white/10 focus-within:border-brand-green focus-within:shadow-lg focus-within:shadow-brand-green/15">
+          <div className="flex items-center gap-2 bg-white dark:bg-[#111111] rounded-2xl border transition-all duration-200 px-2 py-0.5 border-neutral-200 dark:border-white/10 focus-within:border-neutral-300 dark:focus-within:border-white/20 focus-within:shadow-sm">
 
             {/* Text Input */}
             <input
