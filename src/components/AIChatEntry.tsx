@@ -1202,17 +1202,8 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     { label: '🚗 50 uber', value: '50 uber today' },
   ];
 
-  // ── Option card icon helpers ─────────────────────────────────────────────
   const getOptionStyle = (opt: string): { bg: string; text: string; border: string } => {
-    const o = opt.toLowerCase();
-    if (o.includes('upi') || o.includes('📱')) return { bg: 'bg-violet-50 dark:bg-violet-900/20', text: 'text-violet-600 dark:text-violet-300', border: 'border-violet-200 dark:border-violet-700/40' };
-    if (o.includes('credit') || o.includes('💳')) return { bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-600 dark:text-blue-300', border: 'border-blue-200 dark:border-blue-700/40' };
-    if (o.includes('cash') || o.includes('💵')) return { bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-600 dark:text-green-300', border: 'border-green-200 dark:border-green-700/40' };
-    if (o.includes('bank') || o.includes('🏦')) return { bg: 'bg-orange-50 dark:bg-orange-900/20', text: 'text-orange-600 dark:text-orange-300', border: 'border-orange-200 dark:border-orange-700/40' };
-    if (o.includes('expense') || o.includes('💸')) return { bg: 'bg-rose-50 dark:bg-rose-900/20', text: 'text-rose-600 dark:text-rose-300', border: 'border-rose-200 dark:border-rose-700/40' };
-    if (o.includes('income') || o.includes('💰')) return { bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-600 dark:text-emerald-300', border: 'border-emerald-200 dark:border-emerald-700/40' };
-    if (o.includes('transfer') || o.includes('🔄')) return { bg: 'bg-cyan-50 dark:bg-cyan-900/20', text: 'text-cyan-600 dark:text-cyan-300', border: 'border-cyan-200 dark:border-cyan-700/40' };
-    return { bg: 'bg-neutral-50 dark:bg-white/5', text: 'text-neutral-700 dark:text-neutral-200', border: 'border-neutral-200 dark:border-white/10' };
+    return { bg: 'bg-neutral-50 dark:bg-white/5', text: 'text-neutral-700 dark:text-neutral-200', border: 'border-neutral-200/80 dark:border-white/10' };
   };
 
   return (
