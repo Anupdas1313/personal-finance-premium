@@ -896,54 +896,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       }
     }
 
-    // Chat-based Undo / Delete
-    if (stage === 'IDLE' || stage === 'PREVIEW') {
-      const deleteMatch = t.match(/^(?:undo|delete|remove)\s*(.*)$/i);
-      if (deleteMatch) {
-        const target = deleteMatch[1].trim();
-        setIsTyping(true);
-        setTimeout(async () => {
-          if (!target || target === 'last' || target === 'that' || target === 'it' || target === 'transaction') {
-            const last = await db.transactions.orderBy('dateTime').reverse().first();
-            if (last && last.id) {
-              if (last.linkedTransactionId) {
-                await db.transactions.delete(last.linkedTransactionId);
-              }
-              await db.transactions.delete(last.id);
-              setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted your last transaction (${currency}${last.amount} for ${last.party || last.category || 'unknown'}).` }]);
-              handleReset();
-            } else {
-              setMessages(prev => [...prev, { role: 'ai', content: `Hmm, I couldn't find any recent transaction to delete.` }]);
-            }
-          } else {
-            const recentMatches = await db.transactions
-              .filter(tx => 
-                (tx.party?.toLowerCase().includes(target) || false) || 
-                (tx.category?.toLowerCase().includes(target) || false) ||
-                (tx.note?.toLowerCase().includes(target) || false)
-              )
-              .toArray();
-            
-            if (recentMatches.length > 0) {
-              recentMatches.sort((a,b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
-              const match = recentMatches[0];
-              if (match.id) {
-                if (match.linkedTransactionId) {
-                  await db.transactions.delete(match.linkedTransactionId);
-                }
-                await db.transactions.delete(match.id);
-                setMessages(prev => [...prev, { role: 'ai', content: `🗑️ Deleted recent transaction matching "${target}" (${currency}${match.amount} for ${match.party || match.category}).` }]);
-                handleReset();
-              }
-            } else {
-              setMessages(prev => [...prev, { role: 'ai', content: `I couldn't find any recent transactions matching "${target}" to delete.` }]);
-            }
-          }
-          setIsTyping(false);
-        }, 600);
-        return;
-      }
-    }
+
 
     // "same" / "repeat" → copy last transaction
     if (t.match(/^(same|repeat|again|same as last)$/i)) {
@@ -1593,3 +1546,5 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     </div>
   );
 };
+
+export default AIChatEntry;
