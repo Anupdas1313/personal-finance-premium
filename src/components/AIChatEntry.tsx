@@ -697,7 +697,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
   const envelopeBudgets = React.useMemo(() => dbBudgets.filter(b => b.type !== 'CUSTOM'), [dbBudgets]);
 
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'ai', content: "Hi! 👋 Describe your expense naturally — I'll fill everything in.\n\nTry: *\"paid 500 to Zomato via GPay from HDFC yesterday for dinner\"*\nOr say *\"same\"* to repeat your last entry." }
+    { role: 'ai', content: "Hi! 👋 Let's record a new transaction.\n\nSay *\"same\"* to repeat your last entry, or simply enter the amount to begin." }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -708,9 +708,16 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
   const [isAutoFillEnabled, setIsAutoFillEnabled] = useState(true);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { recentTx, smartDefaults, payeeMemory } = usePersonalLearning();
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isTyping]);
+  
+  useEffect(() => {
+    if (!isTyping) {
+      inputRef.current?.focus();
+    }
+  }, [isTyping, stage]);
 
   // Load autocomplete suggestions from past transactions
   useEffect(() => {
@@ -727,7 +734,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     setTimeout(() => {
       setMessages(prev => [...prev, { role: 'ai', content, options }]);
       setIsTyping(false);
-    }, 350);
+    }, 50);
   };
 
   const getGroupedAccountOptions = (tx: any) => {
@@ -751,7 +758,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     else if (!tx.party && tx.party !== '-') {
       setStage('ASK_PAYEE');
       const prompt = tx.type === 'CREDIT' ? "Who paid you? (or source of income)" : tx.type === 'TRANSFER' ? "Who did you send this to?" : "Who did you pay? (or where did you spend?)";
-      addAIMessage(prompt);
+      addAIMessage(prompt, ['Skip']);
     }
     else if (!tx.category && tx.type !== 'TRANSFER') {
       setStage('ASK_CATEGORY'); addAIMessage("Pick a category:", appCategories);
@@ -789,29 +796,26 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         const filtered = upiApps.filter(a => a !== smartDefaults.upiApp);
         setStage('ASK_UPI_APP'); addAIMessage("Which UPI app?", [smartDefaults.upiApp, ...filtered]);
       } else { setStage('ASK_UPI_APP'); addAIMessage("Which UPI app?", upiApps); }
-    } else if (!tx.expenseType && tx.type !== 'TRANSFER') {
-      setStage('ASK_TAG'); addAIMessage("Tag this as:", tags);
+    } else if (!tx.expenseType && tx.expenseType !== '-' && tx.type !== 'TRANSFER') {
+      setStage('ASK_TAG'); addAIMessage("Tag this as:", ['Skip', ...tags]);
     } else if (!tx.note && tx.note !== '-') {
-      setStage('ASK_NOTE'); addAIMessage("Add a short remark (Optional):");
+      setStage('ASK_NOTE'); addAIMessage("Add a short remark (Optional):", ['Skip']);
     } else if (tx.type === 'DEBIT' && tx.linkedBudgetId === undefined) {
       setStage('ASK_BUDGET');
       const categoryBud = envelopeBudgets.find(b => b.category.toLowerCase() === tx.category.toLowerCase());
       const options = [
+        'Skip',
         ...(categoryBud ? [`${CATEGORY_ICONS[categoryBud.category] || '📦'} ${categoryBud.category}`] : []),
         ...envelopeBudgets
           .filter(b => b.category.toLowerCase() !== tx.category.toLowerCase())
-          .map(b => `${CATEGORY_ICONS[b.category] || '📦'} ${b.category}`),
-        'None'
+          .map(b => `${CATEGORY_ICONS[b.category] || '📦'} ${b.category}`)
       ];
       addAIMessage("Select a budget envelope for this transaction:", options);
     } else if (!tx._dateConfirmed) {
       setStage('ASK_DATE'); addAIMessage("When did this happen?", ['Today', 'Yesterday', '2 days ago', '3 days ago', '📅 Custom Date']);
     } else {
       setStage('PREVIEW');
-      const conf = tx._confidence;
-      const confLabel = conf >= 80 ? '🟢 High' : conf >= 50 ? '🟡 Medium' : '🔴 Low';
-      const warningNote = conf < 50 ? '\n⚠️ Low confidence — please double-check all fields before saving!' : '';
-      addAIMessage(`✅ Entry ready! Confidence: ${confLabel} (${conf}%)\n${tx._isPredicted ? '🤖 Smart-filled from your history' : ''}${warningNote}\nReview below and tap Save.`);
+      addAIMessage(`✅ Entry ready!\nReview below and tap Save.`);
     }
   };
 
@@ -977,8 +981,12 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         addAIMessage(`📋 Found ${parts.length} transactions! Processing one by one...`);
         setMultiQueue(parts.slice(1));
         // Process first one
-        const p = parseUniversal(parts[0], accounts, appCategories);
-        applyParsed(p, updated);
+        const amt = parseAmount(parts[0]);
+        if (amt && !isNaN(parseFloat(amt))) {
+          updated.amount = parseFloat(amt);
+        }
+        setPendingTx(updated);
+        checkNextStep(updated);
         return;
       }
     }
@@ -989,19 +997,12 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     }
 
     if (stage === 'IDLE' && !t.match(/^(edit|change|update)/)) {
-      const p = parseUniversal(userMsg, accounts, appCategories);
-
-      // DO NOT auto-fill accountId/paymentMethod/upiApp from smart defaults.
-      // Instead, let checkNextStep ASK the user (with smart defaults shown as first option).
-      // Only apply payee memory for CATEGORY (not bank/method) — since category is safe to predict.
-      if (isAutoFillEnabled && p.parsedPayee) {
-        const mem = payeeMemory[p.parsedPayee.toLowerCase()];
-        if (mem) {
-          if (!p.category) { p.category = mem.category; p.isPredicted = true; }
-        }
+      const amt = parseAmount(userMsg);
+      if (amt && !isNaN(parseFloat(amt))) {
+        updated.amount = parseFloat(amt);
       }
-
-      applyParsed(p, updated);
+      setPendingTx(updated);
+      checkNextStep(updated);
     } else if (stage === 'ASK_AMOUNT') {
       const amt = parseAmount(userMsg);
       if (amt && !isNaN(parseFloat(amt))) { updated.amount = parseFloat(amt); setPendingTx(updated); checkNextStep(updated); }
@@ -1016,22 +1017,6 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
         updated.party = '-';
       } else {
         updated.party = userMsg;
-        // SMART AUTO-FILL: Check payee memory immediately
-        if (isAutoFillEnabled) {
-          const mem = payeeMemory[updated.party.toLowerCase()];
-          if (mem) {
-            if (!updated.category) { updated.category = mem.category; updated._isPredicted = true; }
-          } else {
-             // Also try merchant KB
-             const merchantKeys = Object.keys(MERCHANT_KNOWLEDGE);
-             const fuzzyMerchant = fuzzyMatch(updated.party, merchantKeys);
-             if (fuzzyMerchant) {
-               updated.category = MERCHANT_KNOWLEDGE[fuzzyMerchant].category;
-               updated.expenseType = updated.expenseType || MERCHANT_KNOWLEDGE[fuzzyMerchant].tag;
-               updated._isPredicted = true;
-             }
-          }
-        }
       }
       setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_BANK') {
@@ -1056,7 +1041,9 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       if (cat) { updated.category = cat; setPendingTx(updated); checkNextStep(updated); }
       else addAIMessage("Please pick from the options:", appCategories);
     } else if (stage === 'ASK_TAG') {
-      updated.expenseType = userMsg; setPendingTx(updated); checkNextStep(updated);
+      if (t.match(/^(skip|no|na|-)$/i)) updated.expenseType = '-';
+      else updated.expenseType = userMsg;
+      setPendingTx(updated); checkNextStep(updated);
     } else if (stage === 'ASK_NOTE') {
       if (!userMsg.trim() || userMsg.match(/^(skip|no|na|-)$/i)) updated.note = '-';
       else updated.note = userMsg; 
@@ -1144,6 +1131,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     const finalTx = { ...tx };
     if (finalTx.party === '-') finalTx.party = '';
     if (finalTx.note === '-') finalTx.note = '';
+    if (finalTx.expenseType === '-') finalTx.expenseType = '';
     if (finalTx.linkedBudgetId === null) {
       delete finalTx.linkedBudgetId;
     }
@@ -1195,11 +1183,10 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
   // ── Hint chips for IDLE state ────────────────────────────────────────────
   const HINT_CHIPS = [
-    { label: '🍕 paid 200 Zomato', value: 'paid 200 Zomato today' },
+    { label: '💸 200', value: '200' },
     { label: '♻️ same', value: 'same' },
     { label: '🗑️ delete last', value: 'delete last' },
-    { label: '💰 got salary', value: 'received salary today' },
-    { label: '🚗 50 uber', value: '50 uber today' },
+    { label: '💵 1500', value: '1500' },
   ];
 
   const getOptionStyle = (opt: string): { bg: string; text: string; border: string } => {
@@ -1386,7 +1373,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
                   { label: 'Account', value: accounts.find(a => a.id === pendingTx.selectedAccountId)?.bankName || '—', field: 'bank', icon: '🏦' },
                   { label: 'Method', value: pendingTx.upiApp ? `${pendingTx.upiApp} · UPI` : pendingTx.paymentMethod || '—', field: null, icon: '💳' },
                   { label: 'Payee / From', value: pendingTx.party && pendingTx.party !== '-' ? pendingTx.party : '—', field: 'payee', icon: '👤' },
-                  { label: 'Tag', value: pendingTx.expenseType ? `#${pendingTx.expenseType}` : '—', field: 'tag', icon: '#️⃣' },
+                  { label: 'Tag', value: pendingTx.expenseType && pendingTx.expenseType !== '-' ? `#${pendingTx.expenseType}` : '—', field: 'tag', icon: '#️⃣' },
                   { label: 'Remark', value: pendingTx.note && pendingTx.note !== '-' ? pendingTx.note : '—', field: 'remark', icon: '📝' },
                   ...(pendingTx.type === 'DEBIT' && envelopeBudgets.length > 0 ? [{
                     label: 'Envelope',
@@ -1489,6 +1476,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
             {/* Text Input */}
             <input
+              ref={inputRef}
               type="text"
               value={input}
               onChange={e => setInput(e.target.value)}
