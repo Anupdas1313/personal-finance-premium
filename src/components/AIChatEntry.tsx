@@ -3,7 +3,7 @@ import {
   Send, Bot, CheckCircle2, Sparkles, Landmark, Lightbulb,
   ChevronRight, Hash, AppWindow, Pencil, Mic, MicOff, X,
   RotateCcw, Clock, Zap, TrendingUp, Camera, Image as ImageIcon, User,
-  Target
+  Target, MessageCircle, Wand2, AlertCircle
 } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { format, subDays, subWeeks, subMonths } from 'date-fns';
@@ -1169,16 +1169,82 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
     setMessages(prev => [...prev, { role: 'ai', content: `♻️ Loaded: {currency}${tx.amount} — ${tx.note || tx.category}\nReview and save!` }]);
   };
 
-  const confidenceColor = pendingTx._confidence >= 80 ? 'text-brand-green' : pendingTx._confidence >= 50 ? 'text-yellow-500' : 'text-brand-red';
+  const confidenceColor = pendingTx._confidence >= 80 ? '#00A86B' : pendingTx._confidence >= 50 ? '#EAB308' : '#E53935';
+
+  // ── Voice Input ─────────────────────────────────────────────────────────
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const toggleVoice = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) { alert('Voice input is not supported in this browser. Try Chrome.'); return; }
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+    const rec = new SpeechRecognition();
+    rec.lang = 'en-IN';
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.onresult = (e: any) => {
+      const transcript = e.results[0][0].transcript;
+      setInput(transcript);
+      setIsListening(false);
+    };
+    rec.onerror = () => setIsListening(false);
+    rec.onend = () => setIsListening(false);
+    recognitionRef.current = rec;
+    rec.start();
+    setIsListening(true);
+  }, [isListening]);
+
+  // ── Dynamic placeholder based on stage ──────────────────────────────────
+  const getPlaceholder = () => {
+    if (isListening) return 'Listening...';
+    switch (stage) {
+      case 'ASK_AMOUNT': return 'e.g. 500, 2k, 1.5 lakh...';
+      case 'ASK_DATE': return 'e.g. today, yesterday, 3 days ago...';
+      case 'ASK_NOTE': return 'Add a short remark or type skip...';
+      case 'ASK_PAYEE': return 'e.g. Zomato, Rahul, Amazon...';
+      case 'ASK_CATEGORY': return 'Type a category...';
+      case 'ASK_BANK': return 'Pick your account...';
+      case 'ASK_PAYMENT_METHOD': return 'UPI, Cash, Card...';
+      case 'ASK_UPI_APP': return 'GPay, PhonePe, Paytm...';
+      case 'PREVIEW': return 'Say "change amount to 300" or tap Save...';
+      default: return 'e.g. paid 500 to Zomato via GPay today...';
+    }
+  };
+
+  // ── Hint chips for IDLE state ────────────────────────────────────────────
+  const HINT_CHIPS = [
+    { label: '🍕 paid 200 Zomato', value: 'paid 200 Zomato today' },
+    { label: '♻️ same', value: 'same' },
+    { label: '🗑️ delete last', value: 'delete last' },
+    { label: '💰 got salary', value: 'received salary today' },
+    { label: '🚗 50 uber', value: '50 uber today' },
+  ];
+
+  // ── Option card icon helpers ─────────────────────────────────────────────
+  const getOptionStyle = (opt: string): { bg: string; text: string; border: string } => {
+    const o = opt.toLowerCase();
+    if (o.includes('upi') || o.includes('📱')) return { bg: 'bg-violet-50 dark:bg-violet-900/20', text: 'text-violet-600 dark:text-violet-300', border: 'border-violet-200 dark:border-violet-700/40' };
+    if (o.includes('credit') || o.includes('💳')) return { bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-600 dark:text-blue-300', border: 'border-blue-200 dark:border-blue-700/40' };
+    if (o.includes('cash') || o.includes('💵')) return { bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-600 dark:text-green-300', border: 'border-green-200 dark:border-green-700/40' };
+    if (o.includes('bank') || o.includes('🏦')) return { bg: 'bg-orange-50 dark:bg-orange-900/20', text: 'text-orange-600 dark:text-orange-300', border: 'border-orange-200 dark:border-orange-700/40' };
+    if (o.includes('expense') || o.includes('💸')) return { bg: 'bg-rose-50 dark:bg-rose-900/20', text: 'text-rose-600 dark:text-rose-300', border: 'border-rose-200 dark:border-rose-700/40' };
+    if (o.includes('income') || o.includes('💰')) return { bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-600 dark:text-emerald-300', border: 'border-emerald-200 dark:border-emerald-700/40' };
+    if (o.includes('transfer') || o.includes('🔄')) return { bg: 'bg-cyan-50 dark:bg-cyan-900/20', text: 'text-cyan-600 dark:text-cyan-300', border: 'border-cyan-200 dark:border-cyan-700/40' };
+    return { bg: 'bg-neutral-50 dark:bg-white/5', text: 'text-neutral-700 dark:text-neutral-200', border: 'border-neutral-200 dark:border-white/10' };
+  };
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-[#0A0A0A] relative">
 
-
-      {/* Recent shortcuts — shown only in IDLE stage */}
+      {/* ── Quick Repeat Strip ────────────────────────────────────────── */}
       {stage === 'IDLE' && recentTx.length > 0 && (
         <div className="px-3 pt-3 pb-1 shrink-0">
-          <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+          <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
             <Clock className="w-3 h-3" /> Quick Repeat
           </p>
           <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
@@ -1186,158 +1252,224 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
               <button
                 key={i}
                 onClick={() => repeatLastTx(tx)}
-                className="flex-shrink-0 bg-white dark:bg-[#111111] border border-brand-blue/5 dark:border-white/5 rounded-2xl px-3 py-2 text-left hover:border-brand-green/30 active:scale-95 transition-all shadow-sm"
+                className="flex-shrink-0 group relative bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/8 rounded-2xl px-3 py-2.5 text-left hover:border-brand-green/40 hover:shadow-md hover:shadow-brand-green/10 active:scale-95 transition-all shadow-sm overflow-hidden"
               >
-                <div className="text-[10px] font-black text-brand-green">{currency}{tx.amount}</div>
-                <div className="text-[8px] text-neutral-400 truncate max-w-[70px]">{tx.note || tx.category}</div>
+                {/* Subtle shimmer overlay on hover */}
+                <div className="absolute inset-0 bg-gradient-to-r from-brand-green/0 via-brand-green/5 to-brand-green/0 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+                <div className="text-[11px] font-black text-brand-green">{currency}{tx.amount}</div>
+                <div className="text-[9px] text-neutral-400 truncate max-w-[80px] mt-0.5">{tx.party || tx.note || tx.category}</div>
+                <div className="text-[7px] text-neutral-300 dark:text-neutral-600 mt-0.5 uppercase tracking-widest font-bold">↩ Repeat</div>
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-64">
+      {/* ── Chat Messages ─────────────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto px-3 pt-2 pb-64 space-y-3 no-scrollbar">
         {messages.map((msg, i) => (
-          <div key={i} className={`flex flex-col ${msg.role === 'ai' ? 'items-start' : 'items-end'} gap-2 animate-in slide-in-from-bottom-2 duration-300`}>
-            <div className={`max-w-[85%] px-4 py-3 text-[13px] font-medium leading-relaxed ${
-              msg.role === 'ai'
-                ? 'bg-[#F5F6F8] dark:bg-[#1A1A1A] text-gray-800 dark:text-gray-200 rounded-2xl rounded-tl-sm'
-                : 'bg-[#EDF2FA] dark:bg-[#1E293B] text-gray-800 dark:text-gray-200 rounded-2xl rounded-tr-sm'}`}>
-              <span className="whitespace-pre-line">{msg.content}</span>
-            </div>
-            {msg.options && msg.options.length > 0 && (
-              <div className="flex flex-wrap gap-2 w-full max-w-[95%]">
-                {msg.options.map((opt: string) => (
-                  <button key={opt} onClick={() => handleSend(opt)}
-                    className="px-4 py-2 bg-white dark:bg-[#111111] border border-gray-200 dark:border-white/10 rounded-full text-[12px] font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-all active:scale-95 text-center">
-                    {opt}
-                  </button>
-                ))}
+          <div key={i} className={`flex gap-2 ${ msg.role === 'ai' ? 'items-end justify-start' : 'items-end justify-end flex-row-reverse' } animate-in slide-in-from-bottom-2 fade-in duration-300`}>
+
+            {/* AI Avatar */}
+            {msg.role === 'ai' && (
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-brand-green to-emerald-400 flex items-center justify-center shrink-0 shadow-md shadow-brand-green/20 mb-0.5">
+                <Wand2 className="w-3.5 h-3.5 text-white" />
               </div>
             )}
+
+            {/* User Avatar */}
+            {msg.role === 'user' && (
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shrink-0 mb-0.5">
+                <User className="w-3.5 h-3.5 text-white" />
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2 max-w-[82%]">
+              {/* Bubble */}
+              <div className={`px-4 py-3 text-[13px] font-medium leading-relaxed ${
+                msg.role === 'ai'
+                  ? 'bg-gradient-to-br from-[#F0FFF8] to-[#F5F7FA] dark:from-[#0D1F16] dark:to-[#151515] text-gray-800 dark:text-gray-100 rounded-2xl rounded-bl-sm border border-brand-green/10 dark:border-brand-green/15 shadow-sm'
+                  : 'bg-gradient-to-br from-brand-green to-emerald-500 text-white rounded-2xl rounded-br-sm shadow-md shadow-brand-green/20'
+              }`}>
+                <span className="whitespace-pre-line">{msg.content}</span>
+              </div>
+
+              {/* Option Cards */}
+              {msg.options && msg.options.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {msg.options.map((opt: string) => {
+                    const style = getOptionStyle(opt);
+                    return (
+                      <button
+                        key={opt}
+                        onClick={() => handleSend(opt)}
+                        className={`px-3.5 py-2 ${style.bg} border ${style.border} rounded-xl text-[12px] font-semibold ${style.text} active:scale-95 transition-all hover:shadow-sm flex items-center gap-1.5`}
+                      >
+                        {opt}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         ))}
+
+        {/* ── Premium Typing Indicator ─────────────────────────────── */}
         {isTyping && (
-          <div className="flex justify-start">
-            <div className="bg-[#F5F6F8] dark:bg-[#1A1A1A] px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-brand-green rounded-full animate-bounce" />
-              <span className="w-1.5 h-1.5 bg-brand-green rounded-full animate-bounce [animation-delay:-0.15s]" />
-              <span className="w-1.5 h-1.5 bg-brand-green rounded-full animate-bounce [animation-delay:-0.3s]" />
+          <div className="flex gap-2 items-end justify-start animate-in fade-in duration-200">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-brand-green to-emerald-400 flex items-center justify-center shrink-0 shadow-md shadow-brand-green/20">
+              <Wand2 className="w-3.5 h-3.5 text-white" />
+            </div>
+            <div className="bg-gradient-to-br from-[#F0FFF8] to-[#F5F7FA] dark:from-[#0D1F16] dark:to-[#151515] border border-brand-green/10 dark:border-brand-green/15 px-4 py-3 rounded-2xl rounded-bl-sm flex items-center gap-1.5 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-brand-green animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-2 h-2 rounded-full bg-brand-green animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-2 h-2 rounded-full bg-brand-green animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
           </div>
         )}
         <div ref={chatEndRef} />
       </div>
 
-      {/* Bottom Panel */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 bg-white/95 dark:bg-[#0A0A0A]/95 space-y-2 z-10">
+      {/* ── Bottom Panel ──────────────────────────────────────────────── */}
+      <div className="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-[#0A0A0A]/97 backdrop-blur-sm border-t border-neutral-100 dark:border-white/5 z-10">
 
-        {/* Preview Card */}
+        {/* ── Preview Card ────────────────────────────────────────────── */}
         {stage === 'PREVIEW' && (
-          <div className="mx-0.5 p-4 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/5 rounded-3xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 relative overflow-hidden flex flex-col gap-3">
-            {/* Header info */}
-            <div className="flex items-center justify-between px-0.5">
-              <span className="text-[9px] font-extrabold uppercase tracking-widest text-neutral-400 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-brand-green" /> Digital Receipt
-                {pendingTx._confidence > 0 && (
-                  <span className={`text-[8px] font-black ${confidenceColor}`}>{pendingTx._confidence}% confident</span>
-                )}
-              </span>
-              <button onClick={handleReset} className="text-[8px] font-black text-brand-green bg-brand-green/5 px-2 py-1 rounded-lg uppercase tracking-widest flex items-center gap-1 hover:bg-brand-green/10 transition-colors">
-                <RotateCcw className="w-2.5 h-2.5" /> Reset
-              </button>
-            </div>
+          <div className="mx-3 mt-3 bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/8 rounded-3xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-400 overflow-hidden">
 
-            {/* Dash receipt divider */}
-            <div className="border-t border-dashed border-neutral-200 dark:border-neutral-800 w-full my-0.5" />
+            {/* Confidence bar at top */}
+            {pendingTx._confidence > 0 && (
+              <div className="h-1 w-full bg-neutral-100 dark:bg-white/5">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${pendingTx._confidence}%`, backgroundColor: confidenceColor }}
+                />
+              </div>
+            )}
 
-            {/* Receipt Body */}
-            <div className="flex items-center justify-between py-1 px-1">
-              {/* Left: Amount & Type */}
-              <div className="flex flex-col cursor-pointer group relative" onClick={() => handleEdit('amount')}>
-                <span className="text-[18px] font-black text-brand-green dark:text-white flex items-center gap-1">
-                  {currency}{pendingTx.amount}
-                  <Pencil className="w-2.5 h-2.5 text-neutral-300 group-hover:text-brand-green opacity-0 group-hover:opacity-100 transition-all shrink-0" />
+            <div className="p-4 flex flex-col gap-3">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-extrabold uppercase tracking-widest text-neutral-400 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" style={{ color: confidenceColor }} />
+                  Ready to Save
+                  {pendingTx._confidence > 0 && (
+                    <span className="font-black text-[8px]" style={{ color: confidenceColor }}>{pendingTx._confidence}% match</span>
+                  )}
                 </span>
-                <span className={`text-[7px] font-extrabold uppercase tracking-widest ${pendingTx.type === 'CREDIT' ? 'text-brand-green' : pendingTx.type === 'TRANSFER' ? 'text-cyan-500' : 'text-rose-500'}`}>
-                  {pendingTx.type === 'CREDIT' ? 'Inflow' : pendingTx.type === 'TRANSFER' ? 'Transfer' : 'Outflow'}
-                </span>
+                <button onClick={handleReset} className="text-[8px] font-black text-neutral-400 hover:text-brand-green bg-neutral-100 dark:bg-white/8 hover:bg-brand-green/10 px-2.5 py-1.5 rounded-lg uppercase tracking-widest flex items-center gap-1 transition-all">
+                  <RotateCcw className="w-2.5 h-2.5" /> Reset
+                </button>
               </div>
 
-              {/* Right: Category Icon & Name */}
-              <div className="flex items-center gap-2 cursor-pointer group relative text-right" onClick={() => handleEdit('category')}>
-                <div className="flex flex-col items-end">
-                  <span className="text-[8px] font-extrabold text-neutral-400 uppercase tracking-widest leading-none">Category</span>
-                  <span className="text-[10px] font-bold text-neutral-800 dark:text-neutral-200 mt-0.5 truncate max-w-[80px]">{pendingTx.category || '—'}</span>
-                </div>
-                <div className="text-xl w-7 h-7 rounded-lg bg-neutral-50 dark:bg-white/5 flex items-center justify-center border border-neutral-100 dark:border-white/5 shrink-0">
-                  {CATEGORY_ICONS[pendingTx.category] || '📦'}
-                </div>
-                <Pencil className="w-2.5 h-2.5 text-neutral-300 group-hover:text-brand-green absolute -left-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all" />
-              </div>
-            </div>
-
-            {/* Dash receipt divider */}
-            <div className="border-t border-dashed border-neutral-200 dark:border-neutral-800 w-full my-0.5" />
-
-            {/* Rows list */}
-            <div className="space-y-1 px-0.5">
-              {[
-                { label: 'Account', value: accounts.find(a => a.id === pendingTx.selectedAccountId)?.bankName || '—', field: 'bank' },
-                { label: 'Method', value: pendingTx.upiApp || pendingTx.paymentMethod || '—', field: null },
-                { label: 'Payee / Src', value: pendingTx.party || '—', field: 'payee' },
-                { label: 'Tag', value: pendingTx.expenseType ? `#${pendingTx.expenseType}` : '—', field: 'tag' },
-                { label: 'Remarks', value: pendingTx.note || '—', field: 'remark' },
-                ...(pendingTx.type === 'DEBIT' ? [{
-                  label: 'Envelope',
-                  value: pendingTx.linkedBudgetId 
-                    ? envelopeBudgets.find(b => b.id === pendingTx.linkedBudgetId)?.category || '—'
-                    : 'None',
-                  field: 'budget'
-                }] : []),
-              ].map(({ label, value, field }) => (
-                <div key={label} onClick={() => field && handleEdit(field)}
-                  className={`flex items-center justify-between py-1 px-1.5 rounded-lg transition-colors group ${field ? 'cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5' : ''}`}>
-                  <span className="text-[8px] font-extrabold text-neutral-400 uppercase tracking-widest">{label}</span>
-                  <div className="flex items-center gap-1.5 truncate max-w-[70%]">
-                    <span className="text-[10px] font-bold text-neutral-800 dark:text-neutral-300 truncate">{value}</span>
-                    {field && <Pencil className="w-2.5 h-2.5 text-neutral-300 group-hover:text-brand-green opacity-0 group-hover:opacity-100 transition-all shrink-0" />}
+              {/* Amount + Type + Category row */}
+              <div className="flex items-stretch gap-3">
+                {/* Amount */}
+                <button onClick={() => handleEdit('amount')} className="flex-1 group bg-neutral-50 dark:bg-white/5 hover:bg-brand-green/5 border border-neutral-100 dark:border-white/8 hover:border-brand-green/30 rounded-2xl p-3 text-left transition-all">
+                  <div className="text-[8px] font-black uppercase tracking-widest text-neutral-400 mb-1 flex items-center justify-between">
+                    Amount <Pencil className="w-2.5 h-2.5 text-brand-green opacity-60" />
                   </div>
-                </div>
-              ))}
-            </div>
+                  <div className="text-[20px] font-black text-neutral-900 dark:text-white leading-none">{currency}{pendingTx.amount}</div>
+                  <div className={`text-[8px] font-extrabold uppercase tracking-widest mt-1 ${ pendingTx.type === 'CREDIT' ? 'text-brand-green' : pendingTx.type === 'TRANSFER' ? 'text-cyan-500' : 'text-rose-500' }`}>
+                    {pendingTx.type === 'CREDIT' ? '▲ Inflow' : pendingTx.type === 'TRANSFER' ? '⇄ Transfer' : '▼ Outflow'}
+                  </div>
+                </button>
 
-            {/* Date Pill & Auto-filled notification */}
-            <div className="flex items-center justify-between px-1 mt-0.5">
-              <button onClick={() => handleEdit('date')} className="text-[9px] font-extrabold uppercase tracking-wider text-neutral-400 flex items-center gap-1 hover:text-brand-green transition-colors">
-                📅 {pendingTx.transactionDate ? format(new Date(pendingTx.transactionDate), 'dd MMM yyyy') : 'Set date'}
-                <Pencil className="w-2.5 h-2.5 text-neutral-300 hover:text-brand-green" />
+                {/* Category */}
+                <button onClick={() => handleEdit('category')} className="group bg-neutral-50 dark:bg-white/5 hover:bg-brand-green/5 border border-neutral-100 dark:border-white/8 hover:border-brand-green/30 rounded-2xl p-3 text-left transition-all w-28 flex flex-col justify-between">
+                  <div className="text-[8px] font-black uppercase tracking-widest text-neutral-400 flex items-center justify-between">
+                    Category <Pencil className="w-2.5 h-2.5 text-brand-green opacity-60" />
+                  </div>
+                  <div className="text-3xl mt-1">{CATEGORY_ICONS[pendingTx.category] || '📦'}</div>
+                  <div className="text-[10px] font-bold text-neutral-700 dark:text-neutral-200 truncate mt-1">{pendingTx.category || '—'}</div>
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-dashed border-neutral-150 dark:border-white/8" />
+
+              {/* Detail rows — always show edit icon */}
+              <div className="space-y-0.5">
+                {[
+                  { label: 'Account', value: accounts.find(a => a.id === pendingTx.selectedAccountId)?.bankName || '—', field: 'bank', icon: '🏦' },
+                  { label: 'Method', value: pendingTx.upiApp ? `${pendingTx.upiApp} · UPI` : pendingTx.paymentMethod || '—', field: null, icon: '💳' },
+                  { label: 'Payee / From', value: pendingTx.party && pendingTx.party !== '-' ? pendingTx.party : '—', field: 'payee', icon: '👤' },
+                  { label: 'Tag', value: pendingTx.expenseType ? `#${pendingTx.expenseType}` : '—', field: 'tag', icon: '#️⃣' },
+                  { label: 'Remark', value: pendingTx.note && pendingTx.note !== '-' ? pendingTx.note : '—', field: 'remark', icon: '📝' },
+                  ...(pendingTx.type === 'DEBIT' && envelopeBudgets.length > 0 ? [{
+                    label: 'Envelope',
+                    value: pendingTx.linkedBudgetId
+                      ? envelopeBudgets.find(b => b.id === pendingTx.linkedBudgetId)?.category || '—'
+                      : 'None',
+                    field: 'budget',
+                    icon: '🎯'
+                  }] : []),
+                ].map(({ label, value, field, icon }) => (
+                  <div
+                    key={label}
+                    onClick={() => field && handleEdit(field)}
+                    className={`flex items-center justify-between py-1.5 px-2 rounded-xl transition-colors ${ field ? 'cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 active:bg-brand-green/5' : '' }`}
+                  >
+                    <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <span className="text-[10px]">{icon}</span>{label}
+                    </span>
+                    <div className="flex items-center gap-1.5 max-w-[58%]">
+                      <span className="text-[11px] font-bold text-neutral-700 dark:text-neutral-200 truncate">{value}</span>
+                      {field && <Pencil className="w-2.5 h-2.5 text-brand-green/60 shrink-0" />}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Date + Auto-fill badge */}
+              <div className="flex items-center justify-between px-1">
+                <button
+                  onClick={() => handleEdit('date')}
+                  className="flex items-center gap-1.5 text-[9px] font-bold text-neutral-500 hover:text-brand-green transition-colors bg-neutral-50 dark:bg-white/5 hover:bg-brand-green/5 border border-neutral-100 dark:border-white/8 hover:border-brand-green/30 px-2.5 py-1.5 rounded-full"
+                >
+                  📅 {pendingTx.transactionDate ? format(new Date(pendingTx.transactionDate), 'dd MMM yyyy') : 'Set date'}
+                  <Pencil className="w-2.5 h-2.5" />
+                </button>
+                {pendingTx._isPredicted && (
+                  <span className="text-[8px] font-extrabold uppercase tracking-widest text-brand-green flex items-center gap-1">
+                    <Wand2 className="w-2.5 h-2.5" /> Smart filled
+                  </span>
+                )}
+              </div>
+
+              {/* Save Button */}
+              <button
+                onClick={() => handleSaveAndNext(pendingTx)}
+                disabled={isSaving || showSuccess}
+                className={`w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
+                  showSuccess
+                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                    : 'bg-brand-green text-white shadow-lg shadow-brand-green/25 hover:shadow-brand-green/40 hover:brightness-105'
+                } disabled:opacity-70`}
+              >
+                {isSaving
+                  ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /><span>Saving...</span></>
+                  : showSuccess
+                    ? <><CheckCircle2 className="w-5 h-5" /><span>Saved! {multiQueue.length > 0 ? `(${multiQueue.length} more...)` : '🎉'}</span></>
+                    : <><CheckCircle2 className="w-4 h-4" /><span>Save Entry</span></>}
               </button>
-              {pendingTx._isPredicted && (
-                <span className="text-[8px] font-extrabold uppercase tracking-widest text-brand-green flex items-center gap-1"><TrendingUp className="w-2.5 h-2.5" /> Auto-filled</span>
-              )}
             </div>
-
-            <button onClick={() => handleSaveAndNext(pendingTx)} disabled={isSaving || showSuccess}
-              className={`w-full py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all ${
-                showSuccess ? 'bg-emerald-500 text-white' : 'bg-brand-green text-white shadow-brand-green/30 dark:shadow-brand-green/20'} disabled:opacity-70`}>
-              {isSaving ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /><span>Saving...</span></>
-                : showSuccess ? <><CheckCircle2 className="w-5 h-5" /><span>Saved! {multiQueue.length > 0 ? `(${multiQueue.length} more...)` : ''}</span></>
-                  : <><CheckCircle2 className="w-4 h-4" /><span>Save Entry</span></>}
-            </button>
           </div>
         )}
 
-        {/* Autocomplete suggestions */}
+        {/* ── Autocomplete Suggestions ──────────────────────────────── */}
         {autocomplete.length > 0 && stage === 'IDLE' && (
-          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar px-3 pt-2">
             {autocomplete.map((tx, i) => (
-              <button key={i} onClick={() => handleSend(`${tx.amount} ${tx.party || tx.note || tx.category} today`)}
-                className="flex-shrink-0 bg-white dark:bg-[#111111] border border-brand-green/20 rounded-xl px-3 py-1.5 text-left active:scale-95 transition-all shadow-sm flex items-center gap-2">
+              <button
+                key={i}
+                onClick={() => handleSend(`${tx.amount} ${tx.party || tx.note || tx.category} today`)}
+                className="flex-shrink-0 bg-white dark:bg-[#111111] border border-brand-green/20 rounded-xl px-3 py-2 text-left active:scale-95 transition-all shadow-sm flex items-center gap-2"
+              >
                 <Zap className="w-3 h-3 text-brand-green" />
                 <div>
-                  <div className="text-[9px] font-black text-brand-green">{currency}{tx.amount}</div>
+                  <div className="text-[10px] font-black text-brand-green">{currency}{tx.amount}</div>
                   <div className="text-[8px] text-neutral-400 truncate max-w-[80px]">{tx.note || tx.category}</div>
                 </div>
               </button>
@@ -1345,20 +1477,76 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
           </div>
         )}
 
-        {/* Input Bar */}
-        <div className="flex items-center gap-1.5 bg-white dark:bg-[#111111] p-1 rounded-full border border-gray-200 dark:border-white/10 shadow-sm">
-          <input
-            type="text"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSend()}
-            placeholder="Type here..."
-            className="flex-1 bg-transparent px-4 py-2 text-[13px] font-medium outline-none dark:text-white placeholder:text-gray-400"
-          />
-          {input && <button onClick={() => setInput('')} className="text-gray-300 hover:text-gray-500"><X className="w-4 h-4" /></button>}
-          <button onClick={() => handleSend()} className="w-10 h-10 bg-[#91B0F8] text-white rounded-full flex items-center justify-center active:scale-90 transition-transform flex-shrink-0 mr-1">
-            <Send className="w-4 h-4" />
-          </button>
+        {/* ── Hint Chips (IDLE only, no autocomplete) ───────────────── */}
+        {stage === 'IDLE' && autocomplete.length === 0 && input.length === 0 && (
+          <div className="flex gap-2 overflow-x-auto no-scrollbar px-3 pt-2">
+            {HINT_CHIPS.map(chip => (
+              <button
+                key={chip.value}
+                onClick={() => setInput(chip.value)}
+                className="flex-shrink-0 bg-neutral-50 dark:bg-white/5 border border-neutral-100 dark:border-white/8 hover:border-brand-green/30 rounded-full px-3 py-1.5 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 hover:text-brand-green transition-all whitespace-nowrap"
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ── Input Bar ────────────────────────────────────────────────── */}
+        <div className="p-3">
+          <div className={`flex items-center gap-2 bg-white dark:bg-[#111111] rounded-2xl border-2 transition-all duration-200 px-1 ${
+            isListening
+              ? 'border-red-400 shadow-lg shadow-red-400/20'
+              : 'border-neutral-150 dark:border-white/10 focus-within:border-brand-green focus-within:shadow-lg focus-within:shadow-brand-green/15'
+          }`}>
+
+            {/* Mic Button */}
+            <button
+              onClick={toggleVoice}
+              className={`w-9 h-9 ml-1 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+                isListening
+                  ? 'bg-red-500 text-white shadow-md shadow-red-500/40 animate-pulse'
+                  : 'bg-neutral-100 dark:bg-white/8 text-neutral-400 hover:bg-brand-green/10 hover:text-brand-green'
+              }`}
+            >
+              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            </button>
+
+            {/* Text Input */}
+            <input
+              type="text"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSend()}
+              placeholder={getPlaceholder()}
+              className="flex-1 bg-transparent py-3 text-[13px] font-medium outline-none text-neutral-800 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600"
+            />
+
+            {/* Clear */}
+            {input && (
+              <button
+                onClick={() => setInput('')}
+                className="w-5 h-5 rounded-full bg-neutral-200 dark:bg-white/15 text-neutral-500 dark:text-neutral-400 flex items-center justify-center hover:bg-neutral-300 dark:hover:bg-white/25 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+
+            {/* Send Button */}
+            <button
+              onClick={() => handleSend()}
+              disabled={!input.trim() && !isListening}
+              className={`w-10 h-10 mr-1 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+                input.trim()
+                  ? 'bg-brand-green text-white shadow-md shadow-brand-green/30 active:scale-90'
+                  : 'bg-neutral-100 dark:bg-white/8 text-neutral-400'
+              }`}
+            >
+              {isTyping
+                ? <div className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                : <Send className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
       </div>
     </div>
