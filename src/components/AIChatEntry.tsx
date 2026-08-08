@@ -1171,37 +1171,8 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
   const confidenceColor = pendingTx._confidence >= 80 ? '#00A86B' : pendingTx._confidence >= 50 ? '#EAB308' : '#E53935';
 
-  // ── Voice Input ─────────────────────────────────────────────────────────
-  const [isListening, setIsListening] = useState(false);
-  const recognitionRef = useRef<any>(null);
-
-  const toggleVoice = useCallback(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) { alert('Voice input is not supported in this browser. Try Chrome.'); return; }
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-      return;
-    }
-    const rec = new SpeechRecognition();
-    rec.lang = 'en-IN';
-    rec.continuous = false;
-    rec.interimResults = false;
-    rec.onresult = (e: any) => {
-      const transcript = e.results[0][0].transcript;
-      setInput(transcript);
-      setIsListening(false);
-    };
-    rec.onerror = () => setIsListening(false);
-    rec.onend = () => setIsListening(false);
-    recognitionRef.current = rec;
-    rec.start();
-    setIsListening(true);
-  }, [isListening]);
-
   // ── Dynamic placeholder based on stage ──────────────────────────────────
   const getPlaceholder = () => {
-    if (isListening) return 'Listening...';
     switch (stage) {
       case 'ASK_AMOUNT': return 'e.g. 500, 2k, 1.5 lakh...';
       case 'ASK_DATE': return 'e.g. today, yesterday, 3 days ago...';
@@ -1494,23 +1465,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
         {/* ── Input Bar ────────────────────────────────────────────────── */}
         <div className="p-3">
-          <div className={`flex items-center gap-2 bg-white dark:bg-[#111111] rounded-2xl border-2 transition-all duration-200 px-1 ${
-            isListening
-              ? 'border-red-400 shadow-lg shadow-red-400/20'
-              : 'border-neutral-150 dark:border-white/10 focus-within:border-brand-green focus-within:shadow-lg focus-within:shadow-brand-green/15'
-          }`}>
-
-            {/* Mic Button */}
-            <button
-              onClick={toggleVoice}
-              className={`w-9 h-9 ml-1 rounded-xl flex items-center justify-center shrink-0 transition-all ${
-                isListening
-                  ? 'bg-red-500 text-white shadow-md shadow-red-500/40 animate-pulse'
-                  : 'bg-neutral-100 dark:bg-white/8 text-neutral-400 hover:bg-brand-green/10 hover:text-brand-green'
-              }`}
-            >
-              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-            </button>
+          <div className="flex items-center gap-2 bg-white dark:bg-[#111111] rounded-2xl border-2 transition-all duration-200 px-1 border-neutral-150 dark:border-white/10 focus-within:border-brand-green focus-within:shadow-lg focus-within:shadow-brand-green/15">
 
             {/* Text Input */}
             <input
@@ -1535,7 +1490,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
             {/* Send Button */}
             <button
               onClick={() => handleSend()}
-              disabled={!input.trim() && !isListening}
+              disabled={!input.trim()}
               className={`w-10 h-10 mr-1 rounded-xl flex items-center justify-center shrink-0 transition-all ${
                 input.trim()
                   ? 'bg-brand-green text-white shadow-md shadow-brand-green/30 active:scale-90'
