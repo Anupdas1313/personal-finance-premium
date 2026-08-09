@@ -478,7 +478,7 @@ const parseUniversal = (text: string, accounts: any[], appCategories: string[]) 
 
   // ── Note / Remark extraction ──────────────────────────────────────────
   let parsedNote = '';
-  const forMatch = text.match(/\b(?:for|towards|as|being|remark[:\s]+|note[:\s]+)\s+(.+?)(?:\s+(?:via|using|from|to|today|yesterday|on\s+\d|\d+\s*(?:days?|weeks?))\b|$)/i);
+  const forMatch = text.match(/\b(?:for|towards|as|being|remark[:\s]*|note[:\s]*|details[:\s]*|desc[:\s]*|description[:\s]*|reason[:\s]*)\s+(.+?)(?:\s+(?:via|using|from|to|today|yesterday|on\s+\d|\d+\s*(?:days?|weeks?))\b|$)/i);
   if (forMatch) {
     const noteCandidate = forMatch[1].trim();
     const isJustPayee = parsedPayee && noteCandidate.toLowerCase() === parsedPayee.toLowerCase();
@@ -782,13 +782,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       // Always ask for tag — user must confirm classification
       setStage('ASK_TAG'); addAIMessage("Tag this as:", ['Skip', ...tags]);
     } else if (!tx.note && tx.note !== '-') {
-      // Auto-skip note if we already have payee + category (high-confidence parse)
-      if (tx._confidence >= 40 && tx.party && tx.category) {
-        tx.note = '-';
-        checkNextStep(tx);
-      } else {
-        setStage('ASK_NOTE'); addAIMessage("Add a short remark (Optional):", ['Skip']);
-      }
+      setStage('ASK_NOTE'); addAIMessage("Add a short remark (Optional):", ['Skip']);
     } else if (tx.type === 'DEBIT' && tx.linkedBudgetId === undefined) {
       setStage('ASK_BUDGET');
       const categoryBud = envelopeBudgets.find(b => b.category.toLowerCase() === tx.category.toLowerCase());
