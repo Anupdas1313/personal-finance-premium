@@ -637,11 +637,6 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isTyping]);
   
-  useEffect(() => {
-    if (!isTyping) {
-      inputRef.current?.focus();
-    }
-  }, [isTyping, stage]);
 
   // ── Prediction engine: runs on every input change ──────────────────────
   useEffect(() => {
