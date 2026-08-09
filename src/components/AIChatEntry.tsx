@@ -790,14 +790,7 @@ export const AIChatEntry: React.FC<AIChatEntryProps> = ({ onSave, accounts, tags
       ];
       addAIMessage("Select a budget envelope for this transaction:", options);
     } else if (!tx._dateConfirmed) {
-      // Auto-confirm today for high-confidence complete entries
-      if (tx._confidence >= 50 && tx.amount && tx.type && tx.category) {
-        tx._dateConfirmed = true;
-        tx.transactionDate = format(new Date(), "yyyy-MM-dd'T'HH:mm");
-        checkNextStep(tx);
-      } else {
-        setStage('ASK_DATE'); addAIMessage("When did this happen?", ['Today', 'Yesterday', '2 days ago', '3 days ago', '📅 Custom Date']);
-      }
+      setStage('ASK_DATE'); addAIMessage("When did this happen?", ['Today', 'Yesterday', '2 days ago', '3 days ago', '📅 Custom Date']);
     } else {
       setStage('PREVIEW');
       addAIMessage(`✅ Entry ready!\nReview below and tap Save.`);
