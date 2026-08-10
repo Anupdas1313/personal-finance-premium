@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction, normalizeType } from '../models/db';
-import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark, Download, FileText, CheckCircle2, History, Calendar, ChevronDown, ChevronLeft, ChevronRight, Printer, MoreHorizontal, Scissors, Filter, Search, ArrowUpDown, ArrowRightLeft, X, Hash } from 'lucide-react';
+import { Plus, Trash2, Pencil, ArrowDownLeft, ArrowUpRight, Wallet, CreditCard, Landmark, Download, FileText, CheckCircle2, History, Calendar, ChevronDown, ChevronLeft, ChevronRight, Printer, MoreHorizontal, Scissors, Filter, Search, ArrowUpDown, ArrowRightLeft, X, Hash, Share2 } from 'lucide-react';
 import { BankLogo } from '../components/BankLogo';
 import { INDIAN_BANKS, getBankByPattern } from '../components/BankLogosData';
 import { format, startOfDay, parseISO, endOfMonth, startOfMonth, subMonths, endOfDay, startOfWeek, endOfWeek, startOfYear, endOfYear, addMonths, subWeeks, addWeeks, subDays, addDays, subYears, addYears } from 'date-fns';
@@ -80,6 +80,125 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
     else if (type === 'DEBIT') totalOutflow += amount;
   });
 
+  const handleDownloadCSV = () => {
+    const headers = ['Date'];
+    if (showAccountCol) headers.push('Account');
+    if (showCategoryCol) headers.push('Category');
+    if (showTagCol) headers.push('Tag');
+    if (showRemarksCol) headers.push('Remarks');
+    if (showPaymentMethodCol) headers.push('Payment Method');
+    headers.push('Outflow', 'Inflow');
+
+    const rows = statementTxs.map(tx => {
+      const type = normalizeType(tx.type);
+      const amount = Number(tx.amount) || 0;
+      const row = [format(new Date(tx.dateTime), 'yyyy-MM-dd HH:mm')];
+      if (showAccountCol) row.push(`"${getAccountName(tx.accountId).replace(/"/g, '""')}"`);
+      if (showCategoryCol) row.push(`"${(tx.category || '').replace(/"/g, '""')}"`);
+      if (showTagCol) row.push(`"${(tx.expenseType || '').replace(/"/g, '""')}"`);
+      if (showRemarksCol) row.push(`"${(tx.note || tx.type || '').replace(/"/g, '""')}"`);
+      if (showPaymentMethodCol) row.push(`"${(tx.paymentMethod || '').replace(/"/g, '""')}"`);
+      row.push(type === 'DEBIT' ? String(amount) : '');
+      row.push(type === 'CREDIT' ? String(amount) : '');
+      return row;
+    });
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `Account_Statement_${format(referenceDate, 'MMM_yyyy')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const generatePDFDoc = async () => {
+    const { jsPDF } = await import('jspdf');
+    const autoTable = (await import('jspdf-autotable')).default;
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Account Statement', 14, 20);
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100);
+    doc.text(`Consolidated view for all accounts | Period: ${format(referenceDate, 'MMMM yyyy')}`, 14, 26);
+    
+    // Summary
+    doc.setFontSize(10);
+    doc.setTextColor(0);
+    doc.text(`Total Inflow: +${currency}${totalInflow.toLocaleString('en-IN')}`, 14, 35);
+    doc.text(`Total Outflow: -${currency}${totalOutflow.toLocaleString('en-IN')}`, 90, 35);
+    doc.text(`Net Flow: ${totalInflow >= totalOutflow ? '+' : '-'}${currency}${Math.abs(totalInflow - totalOutflow).toLocaleString('en-IN')}`, 160, 35);
+    
+    // Table Headers
+    const headers = ['Date'];
+    if (showAccountCol) headers.push('Account');
+    if (showCategoryCol) headers.push('Category');
+    if (showTagCol) headers.push('Tag');
+    if (showRemarksCol) headers.push('Remarks');
+    if (showPaymentMethodCol) headers.push('Method');
+    headers.push('Outflow', 'Inflow');
+    
+    // Table Rows
+    const rows = statementTxs.map(tx => {
+      const type = normalizeType(tx.type);
+      const amount = Number(tx.amount) || 0;
+      const row = [format(new Date(tx.dateTime), 'dd MMM yy')];
+      if (showAccountCol) row.push(getAccountName(tx.accountId));
+      if (showCategoryCol) row.push(tx.category || '-');
+      if (showTagCol) row.push(tx.expenseType || '-');
+      if (showRemarksCol) row.push(tx.note || tx.type || '-');
+      if (showPaymentMethodCol) row.push(tx.paymentMethod || '-');
+      row.push(type === 'DEBIT' ? `${amount.toLocaleString('en-IN')}` : '-');
+      row.push(type === 'CREDIT' ? `${amount.toLocaleString('en-IN')}` : '-');
+      return row;
+    });
+
+    autoTable(doc, {
+      startY: 42,
+      head: [headers],
+      body: rows,
+      theme: 'striped',
+      headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: 'bold' },
+      styles: { fontSize: 8, cellPadding: 3 }
+    });
+    
+    return doc;
+  };
+
+  const handleDownloadPDF = async () => {
+    const doc = await generatePDFDoc();
+    doc.save(`Account_Statement_${format(referenceDate, 'MMM_yyyy')}.pdf`);
+  };
+
+  const handleSharePDF = async () => {
+    const doc = await generatePDFDoc();
+    const pdfBlob = doc.output('blob');
+    const filename = `Account_Statement_${format(referenceDate, 'MMM_yyyy')}.pdf`;
+    const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: `Account Statement - ${format(referenceDate, 'MMMM yyyy')}`,
+          text: `Here is the consolidated account statement for ${format(referenceDate, 'MMMM yyyy')}.`
+        });
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          handleDownloadPDF();
+        }
+      }
+    } else {
+      handleDownloadPDF();
+    }
+  };
+
   const initialScale = window.innerWidth / 800;
 
   return createPortal(
@@ -97,7 +216,36 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
         </div>
         
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Share PDF Button */}
+          <button 
+            onClick={handleSharePDF} 
+            title="Share PDF"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-50 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors"
+          >
+            <Share2 className="w-4 h-4" />
+          </button>
+
+          {/* Export CSV Button */}
+          <button 
+            onClick={handleDownloadCSV} 
+            title="Download CSV"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-neutral-50 dark:bg-white/5 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors text-xs font-semibold"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">CSV</span>
+          </button>
+
+          {/* Export PDF Button */}
+          <button 
+            onClick={handleDownloadPDF} 
+            title="Download PDF"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-brand-blue text-white hover:bg-blue-700 transition-colors text-xs font-semibold shadow-sm"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">PDF</span>
+          </button>
+
           {/* Filter Toggle */}
           <button onClick={() => setIsFilterPanelOpen(true)} className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${isFilterPanelOpen ? 'bg-brand-blue text-white' : 'bg-neutral-50 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10'}`}>
             <Filter className="w-4 h-4" />
