@@ -86,8 +86,8 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
             <X className="w-4 h-4" />
           </button>
           <div>
-            <h2 className="font-heading font-black text-brand-blue dark:text-white uppercase tracking-wider text-sm leading-none">Accounts Report</h2>
-            <p className="text-[8px] font-bold text-neutral-400 tracking-widest uppercase mt-0.5">Consolidated</p>
+            <h2 className="font-heading font-bold text-brand-blue dark:text-white text-sm leading-none">Account Statement</h2>
+            <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Consolidated report</p>
           </div>
         </div>
         
@@ -102,7 +102,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
             <button onClick={() => setReferenceDate(subMonths(referenceDate, 1))} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white dark:hover:bg-[#222] shadow-sm text-neutral-600 dark:text-neutral-300 transition-colors">
               <ChevronLeft className="w-3 h-3" />
             </button>
-            <span className="text-[10px] font-black uppercase tracking-wider px-1 text-brand-blue dark:text-white min-w-[75px] text-center">
+            <span className="text-[11px] font-semibold px-1 text-brand-blue dark:text-white min-w-[75px] text-center">
               {format(referenceDate, 'MMM yyyy')}
             </span>
             <button onClick={() => setReferenceDate(addMonths(referenceDate, 1))} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white dark:hover:bg-[#222] shadow-sm text-neutral-600 dark:text-neutral-300 transition-colors">
@@ -120,14 +120,14 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
             <div className="bg-white text-black w-[800px] min-h-[1131px] p-8 pb-24 shadow-xl m-0 relative print:m-0 print:shadow-none" style={{ fontFamily: '"Inter", "Satoshi", sans-serif' }}>
               
               {/* Doc Header */}
-              <div className="flex justify-between items-start border-b-2 border-black pb-3 mb-5">
+              <div className="flex justify-between items-start border-b border-neutral-300 pb-3 mb-5">
                 <div>
-                  <h1 className="text-2xl font-black uppercase tracking-tighter mb-1 text-black">Consolidated Report</h1>
-                  <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest">Statement of Accounts</p>
+                  <h1 className="text-xl font-heading font-bold text-neutral-900 mb-0.5">Account Statement</h1>
+                  <p className="text-xs text-neutral-500 font-medium">Consolidated view for all accounts</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-0.5">Period</p>
-                  <p className="text-sm font-black uppercase">{format(referenceDate, 'MMMM yyyy')}</p>
+                  <p className="text-xs font-medium text-neutral-400 mb-0.5">Period</p>
+                  <p className="text-sm font-bold text-neutral-900">{format(referenceDate, 'MMMM yyyy')}</p>
                 </div>
               </div>
               
