@@ -122,24 +122,76 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
     const { jsPDF } = await import('jspdf');
     const autoTable = (await import('jspdf-autotable')).default;
     const doc = new jsPDF();
-    
-    // Header
-    doc.setFontSize(18);
+    const pageWidth = doc.internal.pageSize.width || 210;
+    const pageHeight = doc.internal.pageSize.height || 297;
+
+    const periodText = periodMode === 'MONTH' 
+      ? format(dateRange.start, 'MMMM yyyy') 
+      : `${format(dateRange.start, 'dd MMM yyyy')} - ${format(dateRange.end, 'dd MMM yyyy')}`;
+
+    // Header Background Accent Bar
+    doc.setFillColor(15, 23, 42); // Deep Navy
+    doc.rect(0, 0, pageWidth, 12, 'F');
+
+    // App/Company Header Text
     doc.setFont('helvetica', 'bold');
-    doc.text('Account Statement', 14, 20);
-    
+    doc.setFontSize(18);
+    doc.setTextColor(15, 23, 42);
+    doc.text('ACCOUNT STATEMENT', 14, 25);
+
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100);
-    doc.text(`Consolidated view for all accounts | Period: ${periodMode === 'MONTH' ? format(dateRange.start, 'MMMM yyyy') : `${format(dateRange.start, 'dd MMM yyyy')} - ${format(dateRange.end, 'dd MMM yyyy')}`}`, 14, 26);
-    
-    // Summary
-    doc.setFontSize(10);
-    doc.setTextColor(0);
-    doc.text(`Total Inflow: +${currency}${totalInflow.toLocaleString('en-IN')}`, 14, 35);
-    doc.text(`Total Outflow: -${currency}${totalOutflow.toLocaleString('en-IN')}`, 90, 35);
-    doc.text(`Net Flow: ${totalInflow >= totalOutflow ? '+' : '-'}${currency}${Math.abs(totalInflow - totalOutflow).toLocaleString('en-IN')}`, 160, 35);
-    
+    doc.setTextColor(100, 116, 139);
+    doc.text('Consolidated Multi-Account Financial Report', 14, 31);
+
+    // Right Side Metadata
+    doc.setFontSize(8);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Statement Period: ${periodText}`, pageWidth - 14, 25, { align: 'right' });
+    doc.text(`Generated On: ${format(new Date(), 'dd MMM yyyy, HH:mm')}`, pageWidth - 14, 31, { align: 'right' });
+
+    // Decorative Line
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.5);
+    doc.line(14, 35, pageWidth - 14, 35);
+
+    // Summary Metric Cards Box (3 columns)
+    const boxY = 40;
+    const boxHeight = 18;
+    const margin = 14;
+    const totalW = pageWidth - margin * 2;
+    const cardW = (totalW - 12) / 3;
+
+    // Card 1: Total Inflow
+    doc.setFillColor(240, 253, 244); // light green
+    doc.roundedRect(margin, boxY, cardW, boxHeight, 2, 2, 'F');
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(22, 101, 52);
+    doc.text('TOTAL INFLOW', margin + 6, boxY + 6);
+    doc.setFontSize(11);
+    doc.text(`+${currency}${totalInflow.toLocaleString('en-IN')}`, margin + 6, boxY + 14);
+
+    // Card 2: Total Outflow
+    doc.setFillColor(254, 242, 242); // light red
+    doc.roundedRect(margin + cardW + 6, boxY, cardW, boxHeight, 2, 2, 'F');
+    doc.setFontSize(7);
+    doc.setTextColor(153, 27, 27);
+    doc.text('TOTAL OUTFLOW', margin + cardW + 6 + 6, boxY + 6);
+    doc.setFontSize(11);
+    doc.text(`-${currency}${totalOutflow.toLocaleString('en-IN')}`, margin + cardW + 6 + 6, boxY + 14);
+
+    // Card 3: Net Movement
+    const netFlow = totalInflow - totalOutflow;
+    doc.setFillColor(241, 245, 249); // light slate
+    doc.roundedRect(margin + (cardW + 6) * 2, boxY, cardW, boxHeight, 2, 2, 'F');
+    doc.setFontSize(7);
+    doc.setTextColor(51, 65, 85);
+    doc.text('NET MOVEMENT', margin + (cardW + 6) * 2 + 6, boxY + 6);
+    doc.setFontSize(11);
+    doc.setTextColor(netFlow >= 0 ? 22 : 153, netFlow >= 0 ? 101 : 27, netFlow >= 0 ? 52 : 27);
+    doc.text(`${netFlow >= 0 ? '+' : '-'}${currency}${Math.abs(netFlow).toLocaleString('en-IN')}`, margin + (cardW + 6) * 2 + 6, boxY + 14);
+
     // Table Headers
     const headers = ['Date'];
     if (showAccountCol) headers.push('Account');
@@ -148,8 +200,21 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
     if (showRemarksCol) headers.push('Remarks');
     if (showPaymentMethodCol) headers.push('Method');
     headers.push('Outflow', 'Inflow');
-    
-    // Table Rows
+
+    // Column Styles mapping
+    const colStyles: any = {};
+    let colIdx = 0;
+    headers.forEach((h) => {
+      if (h === 'Outflow') {
+        colStyles[colIdx] = { halign: 'right', textColor: [220, 38, 38] };
+      } else if (h === 'Inflow') {
+        colStyles[colIdx] = { halign: 'right', textColor: [22, 163, 74] };
+      } else if (h === 'Date') {
+        colStyles[colIdx] = { cellWidth: 24 };
+      }
+      colIdx++;
+    });
+
     const rows = statementTxs.map(tx => {
       const type = normalizeType(tx.type);
       const amount = Number(tx.amount) || 0;
@@ -159,18 +224,43 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
       if (showTagCol) row.push(tx.expenseType || '-');
       if (showRemarksCol) row.push(tx.note || tx.type || '-');
       if (showPaymentMethodCol) row.push(tx.paymentMethod || '-');
-      row.push(type === 'DEBIT' ? `${amount.toLocaleString('en-IN')}` : '-');
-      row.push(type === 'CREDIT' ? `${amount.toLocaleString('en-IN')}` : '-');
+      row.push(type === 'DEBIT' ? `${currency}${amount.toLocaleString('en-IN')}` : '-');
+      row.push(type === 'CREDIT' ? `${currency}${amount.toLocaleString('en-IN')}` : '-');
       return row;
     });
 
     autoTable(doc, {
-      startY: 42,
+      startY: 65,
       head: [headers],
       body: rows,
       theme: 'striped',
-      headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: 'bold' },
-      styles: { fontSize: 8, cellPadding: 3 }
+      headStyles: {
+        fillColor: [30, 41, 59],
+        textColor: 255,
+        fontStyle: 'bold',
+        fontSize: 8,
+        cellPadding: 4
+      },
+      styles: {
+        fontSize: 7.5,
+        cellPadding: 3.5,
+        overflow: 'linebreak',
+        textColor: [30, 41, 59]
+      },
+      columnStyles: colStyles,
+      alternateRowStyles: {
+        fillColor: [248, 250, 252]
+      },
+      didDrawPage: (data) => {
+        const str = `Page ${data.pageNumber} of ${doc.getNumberOfPages()}`;
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(148, 163, 184);
+        doc.setDrawColor(226, 232, 240);
+        doc.line(14, pageHeight - 12, pageWidth - 14, pageHeight - 12);
+        doc.text('Computer generated consolidated statement. No signature required.', 14, pageHeight - 6);
+        doc.text(str, pageWidth - 14, pageHeight - 6, { align: 'right' });
+      }
     });
     
     return doc;
@@ -1617,26 +1707,142 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     const { jsPDF } = await import('jspdf');
     const autoTable = (await import('jspdf-autotable')).default;
     const doc = new jsPDF();
-    doc.setFontSize(20);
-    doc.text('Account Statement', 14, 22);
+    const pageWidth = doc.internal.pageSize.width || 210;
+    const pageHeight = doc.internal.pageSize.height || 297;
+
+    let periodStr = 'All Time';
+    if (granularity === 'MONTH') periodStr = format(referenceDate, 'MMMM yyyy');
+    else if (granularity === 'YEAR') periodStr = format(referenceDate, 'yyyy');
+    else if (granularity === 'WEEK') periodStr = `Week of ${format(startOfWeek(referenceDate, { weekStartsOn: 1 }), 'dd MMM yyyy')}`;
+    else if (granularity === 'DAY') periodStr = format(referenceDate, 'dd MMM yyyy');
+    else if (granularity === 'CUSTOM') periodStr = `${format(new Date(customRange.start), 'dd MMM yyyy')} - ${format(new Date(customRange.end), 'dd MMM yyyy')}`;
+
+    // Header Accent Bar
+    doc.setFillColor(15, 23, 42); // Deep Navy
+    doc.rect(0, 0, pageWidth, 12, 'F');
+
+    // Title
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(15, 23, 42);
+    doc.text('ACCOUNT STATEMENT', 14, 25);
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(37, 99, 235); // Brand Blue
+    doc.text(`${account.bankName} ${account.type === 'CASH' ? '(CASH)' : `(•••• ${account.accountLast4})`}`, 14, 31);
+
+    // Right Side Metadata
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Period: ${periodStr}`, pageWidth - 14, 25, { align: 'right' });
+    doc.text(`Generated On: ${format(new Date(), 'dd MMM yyyy, HH:mm')}`, pageWidth - 14, 31, { align: 'right' });
+
+    // Line Divider
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.5);
+    doc.line(14, 35, pageWidth - 14, 35);
+
+    // Financial Summary Cards (4 Cards)
+    const boxY = 40;
+    const boxHeight = 18;
+    const margin = 14;
+    const totalW = pageWidth - margin * 2;
+    const cardW = (totalW - 18) / 4;
+
+    // Box 1: Opening Balance
+    doc.setFillColor(241, 245, 249);
+    doc.roundedRect(margin, boxY, cardW, boxHeight, 2, 2, 'F');
+    doc.setFontSize(6.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(71, 85, 105);
+    doc.text('OPENING BALANCE', margin + 4, boxY + 6);
     doc.setFontSize(10);
-    doc.text(`Bank: ${account.bankName}`, 14, 30);
-    doc.text(`Account: **** ${account.accountLast4}`, 14, 35);
-    doc.text(`Closing Balance: ${currency} ${currentViewStateBalance.toLocaleString()}`, 14, 45);
-    autoTable(doc, {
-      startY: 55,
-      head: [['Date', 'Particulars', 'Debit (Dr)', 'Credit (Cr)', 'Balance']],
-      body: statementData.map(tx => [
+    doc.text(`${currency}${openingBalanceForView.toLocaleString('en-IN')}`, margin + 4, boxY + 14);
+
+    // Box 2: Total Credits (Inflow)
+    doc.setFillColor(240, 253, 244);
+    doc.roundedRect(margin + cardW + 6, boxY, cardW, boxHeight, 2, 2, 'F');
+    doc.setFontSize(6.5);
+    doc.setTextColor(22, 101, 52);
+    doc.text('TOTAL INFLOW (+)', margin + cardW + 10, boxY + 6);
+    doc.setFontSize(10);
+    doc.text(`+${currency}${totalCredit.toLocaleString('en-IN')}`, margin + cardW + 10, boxY + 14);
+
+    // Box 3: Total Debits (Outflow)
+    doc.setFillColor(254, 242, 242);
+    doc.roundedRect(margin + (cardW + 6) * 2, boxY, cardW, boxHeight, 2, 2, 'F');
+    doc.setFontSize(6.5);
+    doc.setTextColor(153, 27, 27);
+    doc.text('TOTAL OUTFLOW (-)', margin + (cardW + 6) * 2 + 10, boxY + 6);
+    doc.setFontSize(10);
+    doc.text(`-${currency}${totalDebit.toLocaleString('en-IN')}`, margin + (cardW + 6) * 2 + 10, boxY + 14);
+
+    // Box 4: Closing Balance
+    doc.setFillColor(238, 242, 255);
+    doc.roundedRect(margin + (cardW + 6) * 3, boxY, cardW, boxHeight, 2, 2, 'F');
+    doc.setFontSize(6.5);
+    doc.setTextColor(49, 46, 129);
+    doc.text('CLOSING BALANCE', margin + (cardW + 6) * 3 + 10, boxY + 6);
+    doc.setFontSize(10);
+    doc.text(`${currency}${currentViewStateBalance.toLocaleString('en-IN')}`, margin + (cardW + 6) * 3 + 10, boxY + 14);
+
+    // Table Data
+    const headers = ['Date', 'Particulars / Note', 'Category', 'Debit (Dr)', 'Credit (Cr)', 'Balance'];
+    const rows = statementData.map(tx => {
+      const type = normalizeType(tx.type);
+      const amount = Number(tx.amount) || 0;
+      return [
         format(new Date(tx.dateTime), 'dd MMM yyyy'),
-        (tx.note || tx.category || '').toUpperCase(),
-        normalizeType(tx.type) === 'DEBIT' ? `${currency} ${tx.amount.toLocaleString()}` : '-',
-        normalizeType(tx.type) === 'CREDIT' ? `${currency} ${tx.amount.toLocaleString()}` : '-',
-        `${currency} ${tx.runningBalance.toLocaleString()}`
-      ]),
-      theme: 'grid',
-      headStyles: { fillColor: [26, 35, 126] }
+        (tx.note || tx.type || '-').toUpperCase(),
+        tx.category || '-',
+        type === 'DEBIT' ? `${currency}${amount.toLocaleString('en-IN')}` : '-',
+        type === 'CREDIT' ? `${currency}${amount.toLocaleString('en-IN')}` : '-',
+        `${currency}${tx.runningBalance.toLocaleString('en-IN')}`
+      ];
     });
-    doc.save(`${account.bankName}_Statement_${format(new Date(), 'dd_MMM_yyyy')}.pdf`);
+
+    autoTable(doc, {
+      startY: 65,
+      head: [headers],
+      body: rows,
+      theme: 'striped',
+      headStyles: {
+        fillColor: [30, 41, 59],
+        textColor: 255,
+        fontStyle: 'bold',
+        fontSize: 8,
+        cellPadding: 4
+      },
+      styles: {
+        fontSize: 7.5,
+        cellPadding: 3.5,
+        overflow: 'linebreak',
+        textColor: [30, 41, 59]
+      },
+      columnStyles: {
+        0: { cellWidth: 24 },
+        3: { halign: 'right', textColor: [220, 38, 38] },
+        4: { halign: 'right', textColor: [22, 163, 74] },
+        5: { halign: 'right', fontStyle: 'bold' }
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252]
+      },
+      didDrawPage: (data) => {
+        const str = `Page ${data.pageNumber} of ${doc.getNumberOfPages()}`;
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(148, 163, 184);
+        doc.setDrawColor(226, 232, 240);
+        doc.line(14, pageHeight - 12, pageWidth - 14, pageHeight - 12);
+        doc.text('Computer generated official bank account statement. No signature required.', 14, pageHeight - 6);
+        doc.text(str, pageWidth - 14, pageHeight - 6, { align: 'right' });
+      }
+    });
+
+    doc.save(`${account.bankName}_Statement_${periodStr.replace(/ /g, '_')}.pdf`);
     setShowExportMenu(false);
   };
 
