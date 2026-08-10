@@ -85,22 +85,22 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
         <TransformWrapper initialScale={initialScale} minScale={initialScale} maxScale={3} limitToBounds={true}>
           <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }}>
             {/* The Document */}
-            <div className="bg-white text-black w-[800px] min-h-[1131px] p-12 shadow-xl m-0 relative print:m-0 print:shadow-none" style={{ fontFamily: '"Inter", "Satoshi", sans-serif' }}>
+            <div className="bg-white text-black w-[800px] min-h-[1131px] p-8 shadow-xl m-0 relative print:m-0 print:shadow-none" style={{ fontFamily: '"Inter", "Satoshi", sans-serif' }}>
               
               {/* Doc Header */}
-              <div className="flex justify-between items-start border-b-2 border-black pb-6 mb-8">
+              <div className="flex justify-between items-start border-b-2 border-black pb-3 mb-5">
                 <div>
-                  <h1 className="text-4xl font-black uppercase tracking-tighter mb-2 text-black">Consolidated Report</h1>
-                  <p className="text-sm font-bold text-neutral-500 uppercase tracking-widest">Statement of Accounts</p>
+                  <h1 className="text-2xl font-black uppercase tracking-tighter mb-1 text-black">Consolidated Report</h1>
+                  <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest">Statement of Accounts</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-1">Period</p>
-                  <p className="text-lg font-black uppercase">{format(referenceDate, 'MMMM yyyy')}</p>
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-0.5">Period</p>
+                  <p className="text-sm font-black uppercase">{format(referenceDate, 'MMMM yyyy')}</p>
                 </div>
               </div>
               
               {/* Summary Metrics */}
-              <div className="flex gap-12 mb-10">
+              <div className="flex gap-12 mb-6">
                 <div>
                   <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Total Inflow</p>
                   <p className="text-xl font-black text-emerald-600">{currency}{totalInflow.toLocaleString('en-IN')}</p>
