@@ -447,20 +447,23 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400">Period</h4>
                           <div className="flex bg-neutral-100 dark:bg-white/5 p-0.5 rounded-lg">
-                            <button onClick={() => setPeriodMode('MONTH')} className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-colors ${periodMode === 'MONTH' ? 'bg-white dark:bg-[#333] text-brand-blue dark:text-white shadow-sm' : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'}`}>Month</button>
+                            <button onClick={() => {
+                              setPeriodMode('MONTH');
+                              setDateRange(prev => ({ start: startOfMonth(prev.start), end: endOfMonth(prev.start) }));
+                            }} className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-colors ${periodMode === 'MONTH' ? 'bg-white dark:bg-[#333] text-brand-blue dark:text-white shadow-sm' : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'}`}>Month</button>
                             <button onClick={() => setPeriodMode('CUSTOM')} className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-colors ${periodMode === 'CUSTOM' ? 'bg-white dark:bg-[#333] text-brand-blue dark:text-white shadow-sm' : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'}`}>Custom</button>
                           </div>
                         </div>
                         <div className="w-full sm:w-64">
                           {periodMode === 'MONTH' ? (
                             <div className="flex items-center justify-between bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl p-1 w-full">
-                              <button onClick={() => setDateRange(prev => ({ start: subMonths(prev.start, 1), end: endOfMonth(subMonths(prev.start, 1)) }))} className="p-2 hover:bg-white dark:hover:bg-[#222] rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-white/10">
+                              <button onClick={() => setDateRange(prev => ({ start: startOfMonth(subMonths(prev.start, 1)), end: endOfMonth(subMonths(prev.start, 1)) }))} className="p-2 hover:bg-white dark:hover:bg-[#222] rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-white/10">
                                 <ChevronLeft className="w-4 h-4 text-neutral-500" />
                               </button>
                               <div className="flex-1 text-center font-heading font-black text-brand-blue dark:text-white uppercase tracking-widest text-[11px]">
                                 {format(dateRange.start, 'MMMM yyyy')}
                               </div>
-                              <button onClick={() => setDateRange(prev => ({ start: addMonths(prev.start, 1), end: endOfMonth(addMonths(prev.start, 1)) }))} className="p-2 hover:bg-white dark:hover:bg-[#222] rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-white/10">
+                              <button onClick={() => setDateRange(prev => ({ start: startOfMonth(addMonths(prev.start, 1)), end: endOfMonth(addMonths(prev.start, 1)) }))} className="p-2 hover:bg-white dark:hover:bg-[#222] rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-white/10">
                                 <ChevronRight className="w-4 h-4 text-neutral-500" />
                               </button>
                             </div>
