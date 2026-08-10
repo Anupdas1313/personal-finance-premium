@@ -349,6 +349,8 @@ export default function Reports() {
     if (payeeSearch) doc.text(`Payee Filter: "${payeeSearch}"`, 14, y + 10);
     y += payeeSearch ? 18 : 13;
 
+    const pdfCurr = (!currency || currency === '₹' || /[^\x00-\x7F]/.test(currency)) ? 'Rs. ' : `${currency} `;
+
     doc.setFontSize(9);
     doc.setTextColor(0);
     const boxW = (pageW - 42) / 3;
@@ -357,7 +359,7 @@ export default function Reports() {
     doc.setTextColor(5, 150, 105);
     doc.text('TOTAL INCOME', 18, y + 6);
     doc.setFontSize(11);
-    doc.text(`${currency} ${totals.income.toLocaleString()}`, 18, y + 14);
+    doc.text(`${pdfCurr}${totals.income.toLocaleString()}`, 18, y + 14);
 
     doc.setFillColor(254, 242, 242);
     doc.roundedRect(14 + boxW + 7, y, boxW, 18, 2, 2, 'F');
@@ -365,7 +367,7 @@ export default function Reports() {
     doc.setFontSize(9);
     doc.text('TOTAL EXPENSE', 14 + boxW + 11, y + 6);
     doc.setFontSize(11);
-    doc.text(`${currency} ${totals.expense.toLocaleString()}`, 14 + boxW + 11, y + 14);
+    doc.text(`${pdfCurr}${totals.expense.toLocaleString()}`, 14 + boxW + 11, y + 14);
 
     doc.setFillColor(238, 242, 255);
     doc.roundedRect(14 + (boxW + 7) * 2, y, boxW, 18, 2, 2, 'F');
@@ -373,7 +375,7 @@ export default function Reports() {
     doc.setFontSize(9);
     doc.text('NET CASH FLOW', 14 + (boxW + 7) * 2 + 4, y + 6);
     doc.setFontSize(11);
-    doc.text(`${currency} ${(totals.income - totals.expense).toLocaleString()}`, 14 + (boxW + 7) * 2 + 4, y + 14);
+    doc.text(`${pdfCurr}${(totals.income - totals.expense).toLocaleString()}`, 14 + (boxW + 7) * 2 + 4, y + 14);
     y += 26;
 
     if (categoryData.length > 0) {
@@ -392,7 +394,7 @@ export default function Reports() {
         doc.setFontSize(7);
         doc.setTextColor(80);
         doc.text(`${cat.name}`, Math.max(barW, 2) + 18, y + 4);
-        doc.text(`${currency} ${cat.value.toLocaleString()} (${((cat.value / totals.expense) * 100).toFixed(0)}%)`, pageW - 14, y + 4, { align: 'right' });
+        doc.text(`${pdfCurr}${cat.value.toLocaleString()} (${((cat.value / totals.expense) * 100).toFixed(0)}%)`, pageW - 14, y + 4, { align: 'right' });
         y += 8;
       });
       y += 4;
@@ -409,9 +411,9 @@ export default function Reports() {
         (tx.paymentMethod || '—').toUpperCase(),
         tx.type === 'DEBIT' ? tx.amount.toLocaleString() : '',
         tx.type === 'CREDIT' ? tx.amount.toLocaleString() : '',
-        (tx.runningBalance >= 0 ? '' : '-') + currency + Math.abs(tx.runningBalance).toLocaleString(),
+        (tx.runningBalance >= 0 ? '' : '-') + pdfCurr + Math.abs(tx.runningBalance).toLocaleString(),
       ]),
-      foot: [['', '', '', '', 'TOTALS', totals.expense.toLocaleString(), totals.income.toLocaleString(), currency + (totals.income - totals.expense).toLocaleString()]],
+      foot: [['', '', '', '', 'TOTALS', totals.expense.toLocaleString(), totals.income.toLocaleString(), pdfCurr + (totals.income - totals.expense).toLocaleString()]],
       theme: 'grid',
       headStyles: { fillColor: [26, 35, 126], fontSize: 7, cellPadding: 2 },
       footStyles: { fillColor: [240, 240, 250], textColor: [26, 35, 126], fontStyle: 'bold', fontSize: 7 },

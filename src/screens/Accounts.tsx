@@ -129,6 +129,8 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
       ? format(dateRange.start, 'MMMM yyyy') 
       : `${format(dateRange.start, 'dd MMM yyyy')} - ${format(dateRange.end, 'dd MMM yyyy')}`;
 
+    const pdfCurr = (!currency || currency === '₹' || /[^\x00-\x7F]/.test(currency)) ? 'Rs. ' : `${currency} `;
+
     // Header Background Accent Bar
     doc.setFillColor(15, 23, 42); // Deep Navy
     doc.rect(0, 0, pageWidth, 12, 'F');
@@ -170,7 +172,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
     doc.setTextColor(22, 101, 52);
     doc.text('TOTAL INFLOW', margin + 6, boxY + 6);
     doc.setFontSize(11);
-    doc.text(`+${currency}${totalInflow.toLocaleString('en-IN')}`, margin + 6, boxY + 14);
+    doc.text(`+${pdfCurr}${totalInflow.toLocaleString('en-IN')}`, margin + 6, boxY + 14);
 
     // Card 2: Total Outflow
     doc.setFillColor(254, 242, 242); // light red
@@ -179,7 +181,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
     doc.setTextColor(153, 27, 27);
     doc.text('TOTAL OUTFLOW', margin + cardW + 6 + 6, boxY + 6);
     doc.setFontSize(11);
-    doc.text(`-${currency}${totalOutflow.toLocaleString('en-IN')}`, margin + cardW + 6 + 6, boxY + 14);
+    doc.text(`-${pdfCurr}${totalOutflow.toLocaleString('en-IN')}`, margin + cardW + 6 + 6, boxY + 14);
 
     // Card 3: Net Movement
     const netFlow = totalInflow - totalOutflow;
@@ -190,7 +192,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
     doc.text('NET MOVEMENT', margin + (cardW + 6) * 2 + 6, boxY + 6);
     doc.setFontSize(11);
     doc.setTextColor(netFlow >= 0 ? 22 : 153, netFlow >= 0 ? 101 : 27, netFlow >= 0 ? 52 : 27);
-    doc.text(`${netFlow >= 0 ? '+' : '-'}${currency}${Math.abs(netFlow).toLocaleString('en-IN')}`, margin + (cardW + 6) * 2 + 6, boxY + 14);
+    doc.text(`${netFlow >= 0 ? '+' : '-'}${pdfCurr}${Math.abs(netFlow).toLocaleString('en-IN')}`, margin + (cardW + 6) * 2 + 6, boxY + 14);
 
     // Table Headers
     const headers = ['Date'];
@@ -224,8 +226,8 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
       if (showTagCol) row.push(tx.expenseType || '-');
       if (showRemarksCol) row.push(tx.note || tx.type || '-');
       if (showPaymentMethodCol) row.push(tx.paymentMethod || '-');
-      row.push(type === 'DEBIT' ? `${currency}${amount.toLocaleString('en-IN')}` : '-');
-      row.push(type === 'CREDIT' ? `${currency}${amount.toLocaleString('en-IN')}` : '-');
+      row.push(type === 'DEBIT' ? `${pdfCurr}${amount.toLocaleString('en-IN')}` : '-');
+      row.push(type === 'CREDIT' ? `${pdfCurr}${amount.toLocaleString('en-IN')}` : '-');
       return row;
     });
 
@@ -1717,6 +1719,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     else if (granularity === 'DAY') periodStr = format(referenceDate, 'dd MMM yyyy');
     else if (granularity === 'CUSTOM') periodStr = `${format(new Date(customRange.start), 'dd MMM yyyy')} - ${format(new Date(customRange.end), 'dd MMM yyyy')}`;
 
+    const pdfCurr = (!currency || currency === '₹' || /[^\x00-\x7F]/.test(currency)) ? 'Rs. ' : `${currency} `;
+
     // Header Accent Bar
     doc.setFillColor(15, 23, 42); // Deep Navy
     doc.rect(0, 0, pageWidth, 12, 'F');
@@ -1759,7 +1763,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     doc.setTextColor(71, 85, 105);
     doc.text('OPENING BALANCE', margin + 4, boxY + 6);
     doc.setFontSize(10);
-    doc.text(`${currency}${openingBalanceForView.toLocaleString('en-IN')}`, margin + 4, boxY + 14);
+    doc.text(`${pdfCurr}${openingBalanceForView.toLocaleString('en-IN')}`, margin + 4, boxY + 14);
 
     // Box 2: Total Credits (Inflow)
     doc.setFillColor(240, 253, 244);
@@ -1768,7 +1772,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     doc.setTextColor(22, 101, 52);
     doc.text('TOTAL INFLOW (+)', margin + cardW + 10, boxY + 6);
     doc.setFontSize(10);
-    doc.text(`+${currency}${totalCredit.toLocaleString('en-IN')}`, margin + cardW + 10, boxY + 14);
+    doc.text(`+${pdfCurr}${totalCredit.toLocaleString('en-IN')}`, margin + cardW + 10, boxY + 14);
 
     // Box 3: Total Debits (Outflow)
     doc.setFillColor(254, 242, 242);
@@ -1777,7 +1781,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     doc.setTextColor(153, 27, 27);
     doc.text('TOTAL OUTFLOW (-)', margin + (cardW + 6) * 2 + 10, boxY + 6);
     doc.setFontSize(10);
-    doc.text(`-${currency}${totalDebit.toLocaleString('en-IN')}`, margin + (cardW + 6) * 2 + 10, boxY + 14);
+    doc.text(`-${pdfCurr}${totalDebit.toLocaleString('en-IN')}`, margin + (cardW + 6) * 2 + 10, boxY + 14);
 
     // Box 4: Closing Balance
     doc.setFillColor(238, 242, 255);
@@ -1786,7 +1790,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     doc.setTextColor(49, 46, 129);
     doc.text('CLOSING BALANCE', margin + (cardW + 6) * 3 + 10, boxY + 6);
     doc.setFontSize(10);
-    doc.text(`${currency}${currentViewStateBalance.toLocaleString('en-IN')}`, margin + (cardW + 6) * 3 + 10, boxY + 14);
+    doc.text(`${pdfCurr}${currentViewStateBalance.toLocaleString('en-IN')}`, margin + (cardW + 6) * 3 + 10, boxY + 14);
 
     // Table Data
     const headers = ['Date', 'Particulars / Note', 'Category', 'Debit (Dr)', 'Credit (Cr)', 'Balance'];
@@ -1797,9 +1801,9 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         format(new Date(tx.dateTime), 'dd MMM yyyy'),
         (tx.note || tx.type || '-').toUpperCase(),
         tx.category || '-',
-        type === 'DEBIT' ? `${currency}${amount.toLocaleString('en-IN')}` : '-',
-        type === 'CREDIT' ? `${currency}${amount.toLocaleString('en-IN')}` : '-',
-        `${currency}${tx.runningBalance.toLocaleString('en-IN')}`
+        type === 'DEBIT' ? `${pdfCurr}${amount.toLocaleString('en-IN')}` : '-',
+        type === 'CREDIT' ? `${pdfCurr}${amount.toLocaleString('en-IN')}` : '-',
+        `${pdfCurr}${tx.runningBalance.toLocaleString('en-IN')}`
       ];
     });
 
