@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Transaction, normalizeType } from '../models/db';
@@ -49,9 +50,9 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
     else if (type === 'DEBIT') totalOutflow += amount;
   });
 
-  const initialScale = Math.min((window.innerWidth - 32) / 800, 1);
+  const initialScale = window.innerWidth / 800;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-[#F9FBFF] dark:bg-[#0C0C0F] z-[9999] flex flex-col overflow-hidden animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between p-4 bg-white dark:bg-[#111111] border-b border-neutral-100 dark:border-white/5 shadow-sm shrink-0 z-10">
@@ -157,7 +158,8 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
           </TransformComponent>
         </TransformWrapper>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
