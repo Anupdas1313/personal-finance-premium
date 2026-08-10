@@ -35,6 +35,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedTransactionTypes, setSelectedTransactionTypes] = useState<string[]>([]);
   
   const [showAccountCol, setShowAccountCol] = useState(true);
   const [showCategoryCol, setShowCategoryCol] = useState(false);
@@ -56,11 +57,15 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
         if (selectedCategories.length > 0 && !selectedCategories.includes(tx.category)) return false;
         if (selectedPaymentMethods.length > 0 && tx.paymentMethod && !selectedPaymentMethods.includes(tx.paymentMethod)) return false;
         if (selectedTags.length > 0 && (!tx.expenseType || !selectedTags.includes(tx.expenseType))) return false;
+        if (selectedTransactionTypes.length > 0) {
+          const type = normalizeType(tx.type);
+          if (!selectedTransactionTypes.includes(type)) return false;
+        }
         
         return true;
       })
       .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
-  }, [allTransactions, monthStart, monthEnd, selectedAccounts, selectedCategories, selectedPaymentMethods, selectedTags]);
+  }, [allTransactions, monthStart, monthEnd, selectedAccounts, selectedCategories, selectedPaymentMethods, selectedTags, selectedTransactionTypes]);
   
   const getAccountName = (id: number) => {
     return allAccounts.find(a => a.id === id)?.bankName || 'Unknown';
@@ -262,19 +267,45 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                     <div className="space-y-8">
                       <div className="flex items-center justify-between">
                         <p className="text-[10px] font-bold text-neutral-400">Filter your transactions.</p>
-                        {(selectedAccounts.length > 0 || selectedCategories.length > 0 || selectedTags.length > 0 || selectedPaymentMethods.length > 0) && (
+                        {(selectedAccounts.length > 0 || selectedCategories.length > 0 || selectedTags.length > 0 || selectedPaymentMethods.length > 0 || selectedTransactionTypes.length > 0) && (
                           <button 
                             onClick={() => {
                               setSelectedAccounts([]);
                               setSelectedCategories([]);
                               setSelectedTags([]);
                               setSelectedPaymentMethods([]);
+                              setSelectedTransactionTypes([]);
                             }}
                             className="text-[10px] font-black text-rose-500 hover:text-rose-600 uppercase tracking-wider"
                           >
                             Clear All
                           </button>
                         )}
+                      </div>
+
+                      {/* Transaction Type Filter */}
+                      <div>
+                        <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Transaction Type</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { key: 'DEBIT', label: 'Outflow', color: 'bg-rose-600 border-rose-600 text-white' },
+                            { key: 'CREDIT', label: 'Inflow', color: 'bg-emerald-600 border-emerald-600 text-white' }
+                          ].map(t => {
+                            const isSelected = selectedTransactionTypes.includes(t.key);
+                            return (
+                              <button
+                                key={t.key}
+                                onClick={() => {
+                                  if (isSelected) setSelectedTransactionTypes(selectedTransactionTypes.filter(type => type !== t.key));
+                                  else setSelectedTransactionTypes([...selectedTransactionTypes, t.key]);
+                                }}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${isSelected ? t.color : 'border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300'}`}
+                              >
+                                {t.label}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
 
                       {/* Account Filter */}
