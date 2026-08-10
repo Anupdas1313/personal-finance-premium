@@ -38,6 +38,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
   const [selectedTransactionTypes, setSelectedTransactionTypes] = useState<string[]>([]);
   
   const [showAccountCol, setShowAccountCol] = useState(true);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const [showCategoryCol, setShowCategoryCol] = useState(false);
   const [showTagCol, setShowTagCol] = useState(false);
   const [showRemarksCol, setShowRemarksCol] = useState(true);
@@ -217,35 +218,6 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
         
         {/* Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Share PDF Button */}
-          <button 
-            onClick={handleSharePDF} 
-            title="Share PDF"
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-50 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors"
-          >
-            <Share2 className="w-4 h-4" />
-          </button>
-
-          {/* Export CSV Button */}
-          <button 
-            onClick={handleDownloadCSV} 
-            title="Download CSV"
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-neutral-50 dark:bg-white/5 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors text-xs font-semibold"
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">CSV</span>
-          </button>
-
-          {/* Export PDF Button */}
-          <button 
-            onClick={handleDownloadPDF} 
-            title="Download PDF"
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-brand-blue text-white hover:bg-blue-700 transition-colors text-xs font-semibold shadow-sm"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">PDF</span>
-          </button>
-
           {/* Filter Toggle */}
           <button onClick={() => setIsFilterPanelOpen(true)} className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${isFilterPanelOpen ? 'bg-brand-blue text-white' : 'bg-neutral-50 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10'}`}>
             <Filter className="w-4 h-4" />
@@ -273,14 +245,65 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
             <div className="bg-white text-black w-[800px] min-h-[1131px] p-8 pb-24 shadow-xl m-0 relative print:m-0 print:shadow-none" style={{ fontFamily: '"Inter", "Satoshi", sans-serif' }}>
               
               {/* Doc Header */}
-              <div className="flex justify-between items-start border-b border-neutral-300 pb-3 mb-5">
+              <div className="flex justify-between items-start border-b border-neutral-300 pb-3 mb-5 relative">
                 <div>
                   <h1 className="text-xl font-heading font-bold text-neutral-900 mb-0.5">Account Statement</h1>
                   <p className="text-xs text-neutral-500 font-medium">Consolidated view for all accounts</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs font-medium text-neutral-400 mb-0.5">Period</p>
-                  <p className="text-sm font-bold text-neutral-900">{format(referenceDate, 'MMMM yyyy')}</p>
+                <div className="flex gap-6 items-start">
+                  <div className="text-right">
+                    <p className="text-xs font-medium text-neutral-400 mb-0.5">Period</p>
+                    <p className="text-sm font-bold text-neutral-900">{format(referenceDate, 'MMMM yyyy')}</p>
+                  </div>
+                  <div className="flex items-center gap-2 print:hidden relative">
+                    <button 
+                      onClick={handleSharePDF} 
+                      title="Share Statement"
+                      className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-neutral-100 text-neutral-600 transition-colors"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </button>
+                    <div className="relative">
+                      <button 
+                        onClick={() => setShowExportMenu(!showExportMenu)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors text-sm font-semibold"
+                      >
+                        <Download className="w-4 h-4" />
+                        Download
+                      </button>
+                      <AnimatePresence>
+                        {showExportMenu && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 5 }}
+                            className="absolute right-0 top-full mt-2 w-36 bg-white border border-neutral-200 shadow-xl rounded-xl overflow-hidden z-20"
+                          >
+                            <button
+                              onClick={() => {
+                                handleDownloadPDF();
+                                setShowExportMenu(false);
+                              }}
+                              className="w-full text-left px-4 py-2.5 text-sm hover:bg-neutral-50 text-neutral-700 font-medium flex items-center gap-2 border-b border-neutral-100"
+                            >
+                              <FileText className="w-4 h-4 text-brand-blue" />
+                              PDF
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleDownloadCSV();
+                                setShowExportMenu(false);
+                              }}
+                              className="w-full text-left px-4 py-2.5 text-sm hover:bg-neutral-50 text-neutral-700 font-medium flex items-center gap-2"
+                            >
+                              <FileText className="w-4 h-4 text-emerald-600" />
+                              CSV
+                            </button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
                 </div>
               </div>
               
