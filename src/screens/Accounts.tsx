@@ -54,28 +54,28 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
 
   return createPortal(
     <div className="fixed inset-0 bg-[#F9FBFF] dark:bg-[#0C0C0F] z-[9999] flex flex-col overflow-hidden animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-white dark:bg-[#111111] border-b border-neutral-100 dark:border-white/5 shadow-sm shrink-0 z-10">
-        <div className="flex items-center gap-3">
-          <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-neutral-50 dark:hover:bg-white/5 text-neutral-600 dark:text-neutral-300 transition-colors">
-            <X className="w-5 h-5" />
+      {/* Compact Header */}
+      <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-[#111111] border-b border-neutral-100 dark:border-white/5 shadow-sm shrink-0 z-10">
+        <div className="flex items-center gap-2.5">
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-50 dark:hover:bg-white/5 text-neutral-600 dark:text-neutral-300 transition-colors">
+            <X className="w-4 h-4" />
           </button>
           <div>
-            <h2 className="font-heading font-black text-brand-blue dark:text-white uppercase tracking-wider text-lg leading-none">Accounts Report</h2>
-            <p className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase mt-1">Consolidated Statement</p>
+            <h2 className="font-heading font-black text-brand-blue dark:text-white uppercase tracking-wider text-sm leading-none">Accounts Report</h2>
+            <p className="text-[8px] font-bold text-neutral-400 tracking-widest uppercase mt-0.5">Consolidated</p>
           </div>
         </div>
         
         {/* Filter */}
-        <div className="flex items-center gap-2 bg-neutral-50 dark:bg-white/5 p-1 rounded-2xl border border-neutral-100 dark:border-white/5">
-          <button onClick={() => setReferenceDate(subMonths(referenceDate, 1))} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white dark:hover:bg-[#222] shadow-sm text-neutral-600 dark:text-neutral-300 transition-colors">
-            <ChevronLeft className="w-4 h-4" />
+        <div className="flex items-center gap-1.5 bg-neutral-50 dark:bg-white/5 p-0.5 rounded-full border border-neutral-100 dark:border-white/5">
+          <button onClick={() => setReferenceDate(subMonths(referenceDate, 1))} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white dark:hover:bg-[#222] shadow-sm text-neutral-600 dark:text-neutral-300 transition-colors">
+            <ChevronLeft className="w-3 h-3" />
           </button>
-          <span className="text-xs font-black uppercase tracking-wider px-2 text-brand-blue dark:text-white min-w-[100px] text-center">
-            {format(referenceDate, 'MMMM yyyy')}
+          <span className="text-[10px] font-black uppercase tracking-wider px-1 text-brand-blue dark:text-white min-w-[75px] text-center">
+            {format(referenceDate, 'MMM yyyy')}
           </span>
-          <button onClick={() => setReferenceDate(addMonths(referenceDate, 1))} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white dark:hover:bg-[#222] shadow-sm text-neutral-600 dark:text-neutral-300 transition-colors">
-            <ChevronRight className="w-4 h-4" />
+          <button onClick={() => setReferenceDate(addMonths(referenceDate, 1))} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white dark:hover:bg-[#222] shadow-sm text-neutral-600 dark:text-neutral-300 transition-colors">
+            <ChevronRight className="w-3 h-3" />
           </button>
         </div>
       </div>
