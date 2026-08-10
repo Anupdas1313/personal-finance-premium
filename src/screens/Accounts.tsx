@@ -82,10 +82,10 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
       
       {/* Zoomable PDF-like Document Area */}
       <div className="flex-1 overflow-hidden bg-neutral-100/50 dark:bg-black/80 relative">
-        <TransformWrapper initialScale={initialScale} minScale={initialScale} maxScale={3} centerOnInit centerZoomedOut>
+        <TransformWrapper initialScale={initialScale} minScale={initialScale} maxScale={3} limitToBounds={true}>
           <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }}>
             {/* The Document */}
-            <div className="bg-white text-black w-[800px] min-h-[1131px] p-12 shadow-xl mx-auto relative print:m-0 print:shadow-none" style={{ fontFamily: '"Inter", "Satoshi", sans-serif' }}>
+            <div className="bg-white text-black w-[800px] min-h-[1131px] p-12 shadow-xl m-0 relative print:m-0 print:shadow-none" style={{ fontFamily: '"Inter", "Satoshi", sans-serif' }}>
               
               {/* Doc Header */}
               <div className="flex justify-between items-start border-b-2 border-black pb-6 mb-8">
