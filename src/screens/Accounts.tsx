@@ -245,64 +245,62 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
             <div className="bg-white text-black w-[800px] min-h-[1131px] p-8 pb-24 shadow-xl m-0 relative print:m-0 print:shadow-none" style={{ fontFamily: '"Inter", "Satoshi", sans-serif' }}>
               
               {/* Doc Header */}
-              <div className="flex justify-between items-start border-b border-neutral-300 pb-3 mb-5 relative">
+              <div className="flex justify-between items-center border-b border-neutral-300 pb-4 mb-6 relative">
                 <div>
-                  <h1 className="text-xl font-heading font-bold text-neutral-900 mb-0.5">Account Statement</h1>
-                  <p className="text-xs text-neutral-500 font-medium">Consolidated view for all accounts</p>
+                  <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-1">Period</p>
+                  <h1 className="text-2xl font-heading font-black text-brand-blue">{format(referenceDate, 'MMMM yyyy')}</h1>
                 </div>
-                <div className="flex gap-6 items-start">
-                  <div className="text-right">
-                    <p className="text-xs font-medium text-neutral-400 mb-0.5">Period</p>
-                    <p className="text-sm font-bold text-neutral-900">{format(referenceDate, 'MMMM yyyy')}</p>
-                  </div>
-                  <div className="flex items-center gap-2 print:hidden relative">
+                <div className="flex items-center gap-3 print:hidden relative">
+                  <button 
+                    onClick={handleSharePDF} 
+                    title="Share Statement"
+                    className="w-11 h-11 flex items-center justify-center rounded-2xl bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue transition-colors"
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                  <div className="relative">
                     <button 
-                      onClick={handleSharePDF} 
-                      title="Share Statement"
-                      className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-neutral-100 text-neutral-600 transition-colors"
+                      onClick={() => setShowExportMenu(!showExportMenu)}
+                      className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-brand-blue hover:bg-blue-700 text-white transition-all text-sm font-bold shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:shadow-brand-blue/30 active:scale-95"
                     >
-                      <Share2 className="w-4 h-4" />
+                      <Download className="w-4 h-4" />
+                      Download
                     </button>
-                    <div className="relative">
-                      <button 
-                        onClick={() => setShowExportMenu(!showExportMenu)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors text-sm font-semibold"
-                      >
-                        <Download className="w-4 h-4" />
-                        Download
-                      </button>
-                      <AnimatePresence>
-                        {showExportMenu && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 5 }}
-                            className="absolute right-0 top-full mt-2 w-36 bg-white border border-neutral-200 shadow-xl rounded-xl overflow-hidden z-20"
+                    <AnimatePresence>
+                      {showExportMenu && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          className="absolute right-0 top-full mt-3 w-48 bg-white border border-neutral-100 shadow-2xl shadow-black/10 rounded-2xl overflow-hidden z-20"
+                        >
+                          <button
+                            onClick={() => {
+                              handleDownloadPDF();
+                              setShowExportMenu(false);
+                            }}
+                            className="w-full text-left px-5 py-3 text-sm hover:bg-rose-50 text-neutral-800 font-bold flex items-center gap-3 border-b border-neutral-100 transition-colors group"
                           >
-                            <button
-                              onClick={() => {
-                                handleDownloadPDF();
-                                setShowExportMenu(false);
-                              }}
-                              className="w-full text-left px-4 py-2.5 text-sm hover:bg-neutral-50 text-neutral-700 font-medium flex items-center gap-2 border-b border-neutral-100"
-                            >
-                              <FileText className="w-4 h-4 text-brand-blue" />
-                              PDF
-                            </button>
-                            <button
-                              onClick={() => {
-                                handleDownloadCSV();
-                                setShowExportMenu(false);
-                              }}
-                              className="w-full text-left px-4 py-2.5 text-sm hover:bg-neutral-50 text-neutral-700 font-medium flex items-center gap-2"
-                            >
+                            <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                              <FileText className="w-4 h-4 text-rose-600" />
+                            </div>
+                            PDF Format
+                          </button>
+                          <button
+                            onClick={() => {
+                              handleDownloadCSV();
+                              setShowExportMenu(false);
+                            }}
+                            className="w-full text-left px-5 py-3 text-sm hover:bg-emerald-50 text-neutral-800 font-bold flex items-center gap-3 transition-colors group"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center group-hover:scale-110 transition-transform">
                               <FileText className="w-4 h-4 text-emerald-600" />
-                              CSV
-                            </button>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
+                            </div>
+                            CSV Format
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
               </div>
