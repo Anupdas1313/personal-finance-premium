@@ -206,10 +206,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 bg-[#F9FBFF] dark:bg-[#0C0C0F] z-[9999] flex flex-col overflow-hidden animate-fade-in">
       {/* Compact Header */}
       <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-[#111111] border-b border-neutral-100 dark:border-white/5 shadow-sm shrink-0 z-10">
-        <div className="flex items-center gap-2.5">
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-50 dark:hover:bg-white/5 text-neutral-600 dark:text-neutral-300 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+        <div className="flex items-center gap-2.5 pl-2">
           <div>
             <h2 className="font-heading font-bold text-brand-blue dark:text-white text-sm leading-none">Account Statement</h2>
             <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Consolidated report</p>
@@ -223,15 +220,15 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
             <Filter className="w-4 h-4" />
           </button>
           
-          <div className="flex items-center justify-between bg-white dark:bg-[#111111] border border-neutral-200 dark:border-white/5 rounded-xl p-0.5 shadow-sm min-w-[120px] h-8">
-            <button onClick={() => setReferenceDate(subMonths(referenceDate, 1))} className="p-1 hover:bg-neutral-100 dark:hover:bg-[#222] rounded-lg transition-all">
-              <ChevronLeft className="w-3.5 h-3.5 text-neutral-500" />
+          <div className="flex items-center justify-between bg-white dark:bg-[#111111] border border-neutral-200 dark:border-white/5 rounded-xl p-1 shadow-sm min-w-[140px]">
+            <button onClick={() => setReferenceDate(subMonths(referenceDate, 1))} className="p-1.5 hover:bg-neutral-100 dark:hover:bg-[#222] rounded-lg transition-all">
+              <ChevronLeft className="w-4 h-4 text-neutral-500" />
             </button>
-            <span className="flex-1 text-center font-heading font-black text-brand-blue dark:text-white uppercase tracking-widest text-[10px]">
-              {format(referenceDate, 'MMM yyyy')}
-            </span>
-            <button onClick={() => setReferenceDate(addMonths(referenceDate, 1))} className="p-1 hover:bg-neutral-100 dark:hover:bg-[#222] rounded-lg transition-all">
-              <ChevronRight className="w-3.5 h-3.5 text-neutral-500" />
+            <div className="flex-1 text-center font-heading font-black text-brand-blue dark:text-white uppercase tracking-widest text-[10px]">
+              {format(referenceDate, 'MMMM yyyy')}
+            </div>
+            <button onClick={() => setReferenceDate(addMonths(referenceDate, 1))} className="p-1.5 hover:bg-neutral-100 dark:hover:bg-[#222] rounded-lg transition-all">
+              <ChevronRight className="w-4 h-4 text-neutral-500" />
             </button>
           </div>
         </div>
@@ -250,7 +247,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                   <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-1">Period</p>
                   <h1 className="text-2xl font-heading font-black text-brand-blue">{format(referenceDate, 'MMMM yyyy')}</h1>
                 </div>
-                <div className="flex items-center gap-3 print:hidden relative">
+                <div className="flex items-center gap-5 print:hidden relative">
                   <button 
                     onClick={handleSharePDF} 
                     title="Share Statement"
