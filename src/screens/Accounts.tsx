@@ -49,8 +49,10 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
     else if (type === 'DEBIT') totalOutflow += amount;
   });
 
+  const initialScale = Math.min((window.innerWidth - 32) / 800, 1);
+
   return (
-    <div className="fixed inset-0 bg-[#F9FBFF] dark:bg-[#0C0C0F] z-50 flex flex-col overflow-hidden animate-fade-in">
+    <div className="fixed inset-0 bg-[#F9FBFF] dark:bg-[#0C0C0F] z-[9999] flex flex-col overflow-hidden animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between p-4 bg-white dark:bg-[#111111] border-b border-neutral-100 dark:border-white/5 shadow-sm shrink-0 z-10">
         <div className="flex items-center gap-3">
@@ -79,10 +81,10 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
       
       {/* Zoomable PDF-like Document Area */}
       <div className="flex-1 overflow-hidden bg-neutral-100/50 dark:bg-black/80 relative">
-        <TransformWrapper initialScale={1} minScale={0.5} maxScale={3} centerOnInit>
+        <TransformWrapper initialScale={initialScale} minScale={initialScale} maxScale={3} centerOnInit centerZoomedOut>
           <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }}>
             {/* The Document */}
-            <div className="bg-white text-black w-[800px] min-h-[1131px] p-12 shadow-xl my-8 mx-auto relative print:m-0 print:shadow-none" style={{ fontFamily: '"Inter", "Satoshi", sans-serif' }}>
+            <div className="bg-white text-black w-[800px] min-h-[1131px] p-12 shadow-xl mx-auto relative print:m-0 print:shadow-none" style={{ fontFamily: '"Inter", "Satoshi", sans-serif' }}>
               
               {/* Doc Header */}
               <div className="flex justify-between items-start border-b-2 border-black pb-6 mb-8">
