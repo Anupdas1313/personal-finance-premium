@@ -33,6 +33,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
   
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [filterTab, setFilterTab] = useState<'filters' | 'columns'>('filters');
+  const [periodMode, setPeriodMode] = useState<'MONTH' | 'CUSTOM'>('MONTH');
   
   const [selectedAccounts, setSelectedAccounts] = useState<number[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -443,45 +444,53 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
 
                       {/* Period Selection */}
                       <div>
-                        <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Period</h4>
-                        <div className="flex flex-col gap-2 w-full sm:w-64">
-                          <div className="flex items-center justify-between bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl p-1 w-full">
-                            <button onClick={() => setDateRange(prev => ({ start: subMonths(prev.start, 1), end: endOfMonth(subMonths(prev.start, 1)) }))} className="p-2 hover:bg-white dark:hover:bg-[#222] rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-white/10">
-                              <ChevronLeft className="w-4 h-4 text-neutral-500" />
-                            </button>
-                            <div className="flex-1 text-center font-heading font-black text-brand-blue dark:text-white uppercase tracking-widest text-[11px]">
-                              {format(dateRange.start, 'MMMM yyyy')}
-                            </div>
-                            <button onClick={() => setDateRange(prev => ({ start: addMonths(prev.start, 1), end: endOfMonth(addMonths(prev.start, 1)) }))} className="p-2 hover:bg-white dark:hover:bg-[#222] rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-white/10">
-                              <ChevronRight className="w-4 h-4 text-neutral-500" />
-                            </button>
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400">Period</h4>
+                          <div className="flex bg-neutral-100 dark:bg-white/5 p-0.5 rounded-lg">
+                            <button onClick={() => setPeriodMode('MONTH')} className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-colors ${periodMode === 'MONTH' ? 'bg-white dark:bg-[#333] text-brand-blue dark:text-white shadow-sm' : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'}`}>Month</button>
+                            <button onClick={() => setPeriodMode('CUSTOM')} className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-colors ${periodMode === 'CUSTOM' ? 'bg-white dark:bg-[#333] text-brand-blue dark:text-white shadow-sm' : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'}`}>Custom</button>
                           </div>
-                          
-                          <div className="flex items-center gap-2 mt-1">
-                            <div className="flex-1 relative group">
-                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-brand-blue transition-colors">
-                                <Calendar className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="w-full sm:w-64">
+                          {periodMode === 'MONTH' ? (
+                            <div className="flex items-center justify-between bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl p-1 w-full">
+                              <button onClick={() => setDateRange(prev => ({ start: subMonths(prev.start, 1), end: endOfMonth(subMonths(prev.start, 1)) }))} className="p-2 hover:bg-white dark:hover:bg-[#222] rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-white/10">
+                                <ChevronLeft className="w-4 h-4 text-neutral-500" />
+                              </button>
+                              <div className="flex-1 text-center font-heading font-black text-brand-blue dark:text-white uppercase tracking-widest text-[11px]">
+                                {format(dateRange.start, 'MMMM yyyy')}
                               </div>
-                              <input
-                                type="date"
-                                value={format(dateRange.start, 'yyyy-MM-dd')}
-                                onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value ? new Date(e.target.value) : new Date() }))}
-                                className="w-full pl-8 pr-2 py-2 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none text-[10px] font-bold text-neutral-800 dark:text-neutral-200 transition-all uppercase tracking-wider"
-                              />
+                              <button onClick={() => setDateRange(prev => ({ start: addMonths(prev.start, 1), end: endOfMonth(addMonths(prev.start, 1)) }))} className="p-2 hover:bg-white dark:hover:bg-[#222] rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-white/10">
+                                <ChevronRight className="w-4 h-4 text-neutral-500" />
+                              </button>
                             </div>
-                            <span className="text-neutral-400 font-medium text-[10px] uppercase">to</span>
-                            <div className="flex-1 relative group">
-                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-brand-blue transition-colors">
-                                <Calendar className="w-3.5 h-3.5" />
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 relative group">
+                                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-brand-blue transition-colors">
+                                  <Calendar className="w-3.5 h-3.5" />
+                                </div>
+                                <input
+                                  type="date"
+                                  value={format(dateRange.start, 'yyyy-MM-dd')}
+                                  onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value ? new Date(e.target.value) : new Date() }))}
+                                  className="w-full pl-8 pr-2 py-2 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none text-[10px] font-bold text-neutral-800 dark:text-neutral-200 transition-all uppercase tracking-wider"
+                                />
                               </div>
-                              <input
-                                type="date"
-                                value={format(dateRange.end, 'yyyy-MM-dd')}
-                                onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value ? new Date(e.target.value) : new Date() }))}
-                                className="w-full pl-8 pr-2 py-2 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none text-[10px] font-bold text-neutral-800 dark:text-neutral-200 transition-all uppercase tracking-wider"
-                              />
+                              <span className="text-neutral-400 font-medium text-[10px] uppercase">to</span>
+                              <div className="flex-1 relative group">
+                                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-brand-blue transition-colors">
+                                  <Calendar className="w-3.5 h-3.5" />
+                                </div>
+                                <input
+                                  type="date"
+                                  value={format(dateRange.end, 'yyyy-MM-dd')}
+                                  onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value ? new Date(e.target.value) : new Date() }))}
+                                  className="w-full pl-8 pr-2 py-2 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none text-[10px] font-bold text-neutral-800 dark:text-neutral-200 transition-all uppercase tracking-wider"
+                                />
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </div>
                       </div>
 
