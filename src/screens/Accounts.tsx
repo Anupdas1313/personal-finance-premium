@@ -131,7 +131,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100);
-    doc.text(`Consolidated view for all accounts | Period: ${format(dateRange.start, 'dd MMM yyyy')} - ${format(dateRange.end, 'dd MMM yyyy')}`, 14, 26);
+    doc.text(`Consolidated view for all accounts | Period: ${periodMode === 'MONTH' ? format(dateRange.start, 'MMMM yyyy') : `${format(dateRange.start, 'dd MMM yyyy')} - ${format(dateRange.end, 'dd MMM yyyy')}`}`, 14, 26);
     
     // Summary
     doc.setFontSize(10);
@@ -191,8 +191,8 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
       try {
         await navigator.share({
           files: [file],
-          title: `Account Statement - ${format(dateRange.start, 'MMM yyyy')}`,
-          text: `Here is the consolidated account statement for ${format(dateRange.start, 'dd MMM yyyy')} to ${format(dateRange.end, 'dd MMM yyyy')}.`
+          title: `Account Statement - ${periodMode === 'MONTH' ? format(dateRange.start, 'MMMM yyyy') : format(dateRange.start, 'MMM yyyy')}`,
+          text: `Here is the consolidated account statement for ${periodMode === 'MONTH' ? format(dateRange.start, 'MMMM yyyy') : `${format(dateRange.start, 'dd MMM yyyy')} to ${format(dateRange.end, 'dd MMM yyyy')}`}.`
         });
       } catch (err: any) {
         if (err.name !== 'AbortError') {
@@ -238,7 +238,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
               <div className="flex justify-between items-center border-b border-neutral-300 pb-4 mb-6 relative">
                 <div>
                   <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-1">Period</p>
-                  <h1 className="text-2xl font-heading font-black text-brand-blue">{format(dateRange.start, 'MMM d, yyyy')} - {format(dateRange.end, 'MMM d, yyyy')}</h1>
+                  <h1 className="text-2xl font-heading font-black text-brand-blue">{periodMode === 'MONTH' ? format(dateRange.start, 'MMMM yyyy') : `${format(dateRange.start, 'MMM d, yyyy')} - ${format(dateRange.end, 'MMM d, yyyy')}`}</h1>
                 </div>
                 <div className="flex items-center gap-5 print:hidden relative">
                   <button 
