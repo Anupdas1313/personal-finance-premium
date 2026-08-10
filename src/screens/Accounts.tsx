@@ -26,14 +26,17 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
   const allTransactions = useLiveQuery(() => db.transactions.toArray(), [user?.uid]) || [];
   
   const allCategories = useLiveQuery(() => db.categories.toArray(), [user?.uid]) || [];
+  const allTags = useLiveQuery(() => db.tags.toArray(), [user?.uid]) || [];
   
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [selectedAccounts, setSelectedAccounts] = useState<number[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   
   const [showAccountCol, setShowAccountCol] = useState(true);
   const [showCategoryCol, setShowCategoryCol] = useState(false);
+  const [showTagCol, setShowTagCol] = useState(false);
   const [showRemarksCol, setShowRemarksCol] = useState(true);
   const [showPaymentMethodCol, setShowPaymentMethodCol] = useState(false);
 
@@ -50,11 +53,12 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
         if (selectedAccounts.length > 0 && !selectedAccounts.includes(tx.accountId)) return false;
         if (selectedCategories.length > 0 && !selectedCategories.includes(tx.category)) return false;
         if (selectedPaymentMethods.length > 0 && tx.paymentMethod && !selectedPaymentMethods.includes(tx.paymentMethod)) return false;
+        if (selectedTags.length > 0 && (!tx.expenseType || !selectedTags.includes(tx.expenseType))) return false;
         
         return true;
       })
       .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
-  }, [allTransactions, monthStart, monthEnd, selectedAccounts, selectedCategories, selectedPaymentMethods]);
+  }, [allTransactions, monthStart, monthEnd, selectedAccounts, selectedCategories, selectedPaymentMethods, selectedTags]);
   
   const getAccountName = (id: number) => {
     return allAccounts.find(a => a.id === id)?.bankName || 'Unknown';
@@ -150,6 +154,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                     <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Date</th>
                     {showAccountCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Account</th>}
                     {showCategoryCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Category</th>}
+                    {showTagCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Tag</th>}
                     {showRemarksCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Remarks</th>}
                     {showPaymentMethodCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Method</th>}
                     <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-right">Outflow</th>
@@ -165,6 +170,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                         <td className="py-3 px-2 font-medium whitespace-nowrap">{format(new Date(tx.dateTime), 'dd MMM yy')}</td>
                         {showAccountCol && <td className="py-3 px-2 font-bold">{getAccountName(tx.accountId)}</td>}
                         {showCategoryCol && <td className="py-3 px-2 font-medium">{tx.category || '-'}</td>}
+                        {showTagCol && <td className="py-3 px-2 font-medium text-brand-blue">{tx.expenseType || '-'}</td>}
                         {showRemarksCol && <td className="py-3 px-2 text-neutral-600 max-w-[200px] truncate" title={tx.note || tx.type}>{tx.note || tx.type}</td>}
                         {showPaymentMethodCol && <td className="py-3 px-2 text-neutral-600">{tx.paymentMethod || '-'}</td>}
                         <td className="py-3 px-2 text-right font-medium text-rose-600">{type === 'DEBIT' ? amount.toLocaleString('en-IN') : '-'}</td>
@@ -227,6 +233,10 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                         <span className="text-sm font-bold">Category</span>
                       </label>
                       <label className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 cursor-pointer">
+                        <input type="checkbox" checked={showTagCol} onChange={(e) => setShowTagCol(e.target.checked)} className="w-4 h-4 rounded border-neutral-300 text-brand-blue" />
+                        <span className="text-sm font-bold">Tag</span>
+                      </label>
+                      <label className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 cursor-pointer">
                         <input type="checkbox" checked={showRemarksCol} onChange={(e) => setShowRemarksCol(e.target.checked)} className="w-4 h-4 rounded border-neutral-300 text-brand-blue" />
                         <span className="text-sm font-bold">Remarks</span>
                       </label>
@@ -274,6 +284,27 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                             className="w-4 h-4 rounded border-neutral-300 text-brand-blue" 
                           />
                           <span className="text-sm font-bold truncate">{cat.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Tag Filter */}
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-neutral-400 mb-3">Tags</h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                      {allTags.map(tag => (
+                        <label key={tag.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={selectedTags.includes(tag.name)} 
+                            onChange={(e) => {
+                              if (e.target.checked) setSelectedTags([...selectedTags, tag.name]);
+                              else setSelectedTags(selectedTags.filter(name => name !== tag.name));
+                            }} 
+                            className="w-4 h-4 rounded border-neutral-300 text-brand-blue" 
+                          />
+                          <span className="text-sm font-bold truncate">{tag.name}</span>
                         </label>
                       ))}
                     </div>
