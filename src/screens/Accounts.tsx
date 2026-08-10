@@ -13,6 +13,151 @@ import { useAuth } from '../context/AuthContext';
 import { useCurrency, useCurrencyFormatter } from '../hooks/useCurrency';
 import { cn, roundCurrency } from '../logic/utils';
 import { useToast } from '../context/ToastContext';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+
+function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
+  const currency = useCurrency();
+  const { user } = useAuth();
+  
+  const [referenceDate, setReferenceDate] = useState(new Date());
+  
+  const allAccounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
+  const allTransactions = useLiveQuery(() => db.transactions.toArray(), [user?.uid]) || [];
+  
+  const monthStart = startOfMonth(referenceDate).getTime();
+  const monthEnd = endOfMonth(referenceDate).getTime();
+  
+  const statementTxs = useMemo(() => {
+    return allTransactions
+      .filter(tx => {
+        const time = new Date(tx.dateTime).getTime();
+        return time >= monthStart && time <= monthEnd;
+      })
+      .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+  }, [allTransactions, monthStart, monthEnd]);
+  
+  const getAccountName = (id: number) => {
+    return allAccounts.find(a => a.id === id)?.bankName || 'Unknown';
+  };
+  
+  let totalInflow = 0;
+  let totalOutflow = 0;
+  statementTxs.forEach(tx => {
+    const amount = Number(tx.amount) || 0;
+    const type = normalizeType(tx.type);
+    if (type === 'CREDIT') totalInflow += amount;
+    else if (type === 'DEBIT') totalOutflow += amount;
+  });
+
+  return (
+    <div className="fixed inset-0 bg-[#F9FBFF] dark:bg-[#0C0C0F] z-50 flex flex-col overflow-hidden animate-fade-in">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 bg-white dark:bg-[#111111] border-b border-neutral-100 dark:border-white/5 shadow-sm shrink-0 z-10">
+        <div className="flex items-center gap-3">
+          <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-neutral-50 dark:hover:bg-white/5 text-neutral-600 dark:text-neutral-300 transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+          <div>
+            <h2 className="font-heading font-black text-brand-blue dark:text-white uppercase tracking-wider text-lg leading-none">Accounts Report</h2>
+            <p className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase mt-1">Consolidated Statement</p>
+          </div>
+        </div>
+        
+        {/* Filter */}
+        <div className="flex items-center gap-2 bg-neutral-50 dark:bg-white/5 p-1 rounded-2xl border border-neutral-100 dark:border-white/5">
+          <button onClick={() => setReferenceDate(subMonths(referenceDate, 1))} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white dark:hover:bg-[#222] shadow-sm text-neutral-600 dark:text-neutral-300 transition-colors">
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="text-xs font-black uppercase tracking-wider px-2 text-brand-blue dark:text-white min-w-[100px] text-center">
+            {format(referenceDate, 'MMMM yyyy')}
+          </span>
+          <button onClick={() => setReferenceDate(addMonths(referenceDate, 1))} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white dark:hover:bg-[#222] shadow-sm text-neutral-600 dark:text-neutral-300 transition-colors">
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+      
+      {/* Zoomable PDF-like Document Area */}
+      <div className="flex-1 overflow-hidden bg-neutral-100/50 dark:bg-black/80 relative">
+        <TransformWrapper initialScale={1} minScale={0.5} maxScale={3} centerOnInit>
+          <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }}>
+            {/* The Document */}
+            <div className="bg-white text-black w-[800px] min-h-[1131px] p-12 shadow-xl my-8 mx-auto relative print:m-0 print:shadow-none" style={{ fontFamily: '"Inter", "Satoshi", sans-serif' }}>
+              
+              {/* Doc Header */}
+              <div className="flex justify-between items-start border-b-2 border-black pb-6 mb-8">
+                <div>
+                  <h1 className="text-4xl font-black uppercase tracking-tighter mb-2 text-black">Consolidated Report</h1>
+                  <p className="text-sm font-bold text-neutral-500 uppercase tracking-widest">Statement of Accounts</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-1">Period</p>
+                  <p className="text-lg font-black uppercase">{format(referenceDate, 'MMMM yyyy')}</p>
+                </div>
+              </div>
+              
+              {/* Summary Metrics */}
+              <div className="flex gap-12 mb-10">
+                <div>
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Total Inflow</p>
+                  <p className="text-xl font-black text-emerald-600">{currency}{totalInflow.toLocaleString('en-IN')}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Total Outflow</p>
+                  <p className="text-xl font-black text-rose-600">{currency}{totalOutflow.toLocaleString('en-IN')}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Net Flow</p>
+                  <p className={`text-xl font-black ${totalInflow >= totalOutflow ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {totalInflow >= totalOutflow ? '+' : '-'}{currency}{Math.abs(totalInflow - totalOutflow).toLocaleString('en-IN')}
+                  </p>
+                </div>
+              </div>
+
+              {/* Transactions Table */}
+              <table className="w-full text-left text-sm border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-black">
+                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Date</th>
+                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Account</th>
+                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Remarks</th>
+                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-right">Outflow</th>
+                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-right">Inflow</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {statementTxs.length > 0 ? statementTxs.map((tx, idx) => {
+                    const type = normalizeType(tx.type);
+                    const amount = Number(tx.amount) || 0;
+                    return (
+                      <tr key={idx} className="border-b border-neutral-200">
+                        <td className="py-3 px-2 font-medium whitespace-nowrap">{format(new Date(tx.dateTime), 'dd MMM yy')}</td>
+                        <td className="py-3 px-2 font-bold">{getAccountName(tx.accountId)}</td>
+                        <td className="py-3 px-2 text-neutral-600 max-w-[200px] truncate" title={tx.note || tx.type}>{tx.note || tx.type}</td>
+                        <td className="py-3 px-2 text-right font-medium text-rose-600">{type === 'DEBIT' ? amount.toLocaleString('en-IN') : '-'}</td>
+                        <td className="py-3 px-2 text-right font-medium text-emerald-600">{type === 'CREDIT' ? amount.toLocaleString('en-IN') : '-'}</td>
+                      </tr>
+                    );
+                  }) : (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-neutral-400 font-medium">No transactions for this period</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+
+              {/* Footer */}
+              <div className="absolute bottom-12 left-12 right-12 pt-6 border-t border-neutral-200 flex justify-between items-center">
+                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Generated by Expensify</p>
+                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Page 1 of 1</p>
+              </div>
+            </div>
+          </TransformComponent>
+        </TransformWrapper>
+      </div>
+    </div>
+  );
+}
 
 export default function Accounts() {
   const { currency, hideDecimals, formatAmount } = useCurrencyFormatter();
@@ -41,6 +186,7 @@ export default function Accounts() {
   const [statementDate, setStatementDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [isReorderOpen, setIsReorderOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
   const isSectionCollapsed = (type: string, index: number) => {
@@ -284,14 +430,26 @@ export default function Accounts() {
             <p className="text-[10px] font-medium text-neutral-400 dark:text-neutral-500 mt-0.5">Manage your financial accounts, cash & credit lines</p>
           </div>
 
-          {/* Arrange Accounts Button in Top Right */}
-          <button
-            onClick={() => setIsReorderOpen(true)}
-            className="w-9 h-9 flex items-center justify-center bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 text-neutral-600 dark:text-neutral-300 rounded-full hover:bg-neutral-50 dark:hover:bg-white/5 transition-all shadow-sm shrink-0"
-            title="Arrange Accounts"
-          >
-            <ArrowUpDown className="w-4 h-4 text-brand-cyan" />
-          </button>
+          {/* Top Right Actions */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Download Report Button */}
+            <button
+              onClick={() => setIsReportOpen(true)}
+              className="w-9 h-9 flex items-center justify-center bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 text-neutral-600 dark:text-neutral-300 rounded-full hover:bg-neutral-50 dark:hover:bg-white/5 transition-all shadow-sm"
+              title="Download Statement"
+            >
+              <Download className="w-4 h-4 text-brand-green" />
+            </button>
+
+            {/* Arrange Accounts Button */}
+            <button
+              onClick={() => setIsReorderOpen(true)}
+              className="w-9 h-9 flex items-center justify-center bg-white dark:bg-[#111111] border border-neutral-100 dark:border-white/10 text-neutral-600 dark:text-neutral-300 rounded-full hover:bg-neutral-50 dark:hover:bg-white/5 transition-all shadow-sm"
+              title="Arrange Accounts"
+            >
+              <ArrowUpDown className="w-4 h-4 text-brand-cyan" />
+            </button>
+          </div>
         </div>
 
         {/* Action Pills Toolbar - Equally Spaced */}
@@ -808,6 +966,12 @@ export default function Accounts() {
       {isReorderOpen && (
         <AccountsReorderModal onClose={() => setIsReorderOpen(false)} />
       )}
+
+      <AnimatePresence>
+        {isReportOpen && (
+          <AllAccountsStatementModal onClose={() => setIsReportOpen(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
