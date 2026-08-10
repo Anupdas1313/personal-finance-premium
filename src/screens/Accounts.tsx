@@ -29,6 +29,8 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
   const allTags = useLiveQuery(() => db.tags.toArray(), [user?.uid]) || [];
   
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [filterTab, setFilterTab] = useState<'filters' | 'columns'>('filters');
+  
   const [selectedAccounts, setSelectedAccounts] = useState<number[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>([]);
@@ -212,123 +214,162 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                 className="absolute top-0 right-0 bottom-0 w-80 max-w-full bg-white dark:bg-[#111111] z-30 shadow-2xl flex flex-col"
               >
-                <div className="p-4 border-b border-neutral-100 dark:border-white/5 flex items-center justify-between shrink-0">
-                  <h3 className="font-heading font-black uppercase text-sm">Filters & Display</h3>
-                  <button onClick={() => setIsFilterPanelOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-white/5">
-                    <X className="w-4 h-4" />
-                  </button>
+                <div className="p-4 border-b border-neutral-100 dark:border-white/5 flex flex-col gap-4 shrink-0">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-heading font-black uppercase text-sm">Report Settings</h3>
+                    <button onClick={() => setIsFilterPanelOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-white/5">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  {/* Tabs */}
+                  <div className="flex bg-neutral-100 dark:bg-white/5 p-1 rounded-xl">
+                    <button 
+                      onClick={() => setFilterTab('filters')} 
+                      className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${filterTab === 'filters' ? 'bg-white dark:bg-[#222] shadow-sm text-brand-blue dark:text-white' : 'text-neutral-500'}`}
+                    >
+                      Filters
+                    </button>
+                    <button 
+                      onClick={() => setFilterTab('columns')} 
+                      className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${filterTab === 'columns' ? 'bg-white dark:bg-[#222] shadow-sm text-brand-blue dark:text-white' : 'text-neutral-500'}`}
+                    >
+                      Columns
+                    </button>
+                  </div>
                 </div>
                 
-                <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                  {/* Display Columns */}
-                  <div>
-                    <h4 className="text-xs font-black uppercase tracking-wider text-neutral-400 mb-3">Columns</h4>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 cursor-pointer">
-                        <input type="checkbox" checked={showAccountCol} onChange={(e) => setShowAccountCol(e.target.checked)} className="w-4 h-4 rounded border-neutral-300 text-brand-blue" />
-                        <span className="text-sm font-bold">Account</span>
-                      </label>
-                      <label className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 cursor-pointer">
-                        <input type="checkbox" checked={showCategoryCol} onChange={(e) => setShowCategoryCol(e.target.checked)} className="w-4 h-4 rounded border-neutral-300 text-brand-blue" />
-                        <span className="text-sm font-bold">Category</span>
-                      </label>
-                      <label className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 cursor-pointer">
-                        <input type="checkbox" checked={showTagCol} onChange={(e) => setShowTagCol(e.target.checked)} className="w-4 h-4 rounded border-neutral-300 text-brand-blue" />
-                        <span className="text-sm font-bold">Tag</span>
-                      </label>
-                      <label className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 cursor-pointer">
-                        <input type="checkbox" checked={showRemarksCol} onChange={(e) => setShowRemarksCol(e.target.checked)} className="w-4 h-4 rounded border-neutral-300 text-brand-blue" />
-                        <span className="text-sm font-bold">Remarks</span>
-                      </label>
-                      <label className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 cursor-pointer">
-                        <input type="checkbox" checked={showPaymentMethodCol} onChange={(e) => setShowPaymentMethodCol(e.target.checked)} className="w-4 h-4 rounded border-neutral-300 text-brand-blue" />
-                        <span className="text-sm font-bold">Payment Method</span>
-                      </label>
+                <div className="flex-1 overflow-y-auto p-4 space-y-8">
+                  {filterTab === 'columns' ? (
+                    <div className="space-y-4">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-neutral-400 mb-2">Display Columns</h4>
+                      <p className="text-[10px] font-bold text-neutral-400 mb-4">Toggle the columns you want to appear in the PDF report.</p>
+                      <div className="space-y-2">
+                        {[
+                          { id: 'account', label: 'Account', state: showAccountCol, set: setShowAccountCol },
+                          { id: 'category', label: 'Category', state: showCategoryCol, set: setShowCategoryCol },
+                          { id: 'tag', label: 'Tag', state: showTagCol, set: setShowTagCol },
+                          { id: 'remarks', label: 'Remarks', state: showRemarksCol, set: setShowRemarksCol },
+                          { id: 'method', label: 'Payment Method', state: showPaymentMethodCol, set: setShowPaymentMethodCol },
+                        ].map(col => (
+                          <label key={col.id} className="flex items-center justify-between p-3 rounded-2xl border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors">
+                            <span className="text-sm font-bold">{col.label}</span>
+                            <input type="checkbox" checked={col.state} onChange={(e) => col.set(e.target.checked)} className="w-5 h-5 rounded-md border-neutral-300 text-brand-blue focus:ring-brand-blue focus:ring-offset-0" />
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="space-y-8">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-bold text-neutral-400">Filter your transactions.</p>
+                        {(selectedAccounts.length > 0 || selectedCategories.length > 0 || selectedTags.length > 0 || selectedPaymentMethods.length > 0) && (
+                          <button 
+                            onClick={() => {
+                              setSelectedAccounts([]);
+                              setSelectedCategories([]);
+                              setSelectedTags([]);
+                              setSelectedPaymentMethods([]);
+                            }}
+                            className="text-[10px] font-black text-rose-500 hover:text-rose-600 uppercase tracking-wider"
+                          >
+                            Clear All
+                          </button>
+                        )}
+                      </div>
 
-                  {/* Account Filter */}
-                  <div>
-                    <h4 className="text-xs font-black uppercase tracking-wider text-neutral-400 mb-3">Accounts</h4>
-                    <div className="space-y-2">
-                      {allAccounts.map(acc => (
-                        <label key={acc.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={selectedAccounts.includes(acc.id as number)} 
-                            onChange={(e) => {
-                              if (e.target.checked) setSelectedAccounts([...selectedAccounts, acc.id as number]);
-                              else setSelectedAccounts(selectedAccounts.filter(id => id !== acc.id));
-                            }} 
-                            className="w-4 h-4 rounded border-neutral-300 text-brand-blue" 
-                          />
-                          <span className="text-sm font-bold truncate">{acc.bankName}</span>
-                        </label>
-                      ))}
+                      {/* Account Filter */}
+                      <div>
+                        <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Accounts</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {allAccounts.map(acc => {
+                            const isSelected = selectedAccounts.includes(acc.id as number);
+                            return (
+                              <button
+                                key={acc.id}
+                                onClick={() => {
+                                  if (isSelected) setSelectedAccounts(selectedAccounts.filter(id => id !== acc.id));
+                                  else setSelectedAccounts([...selectedAccounts, acc.id as number]);
+                                }}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300'}`}
+                              >
+                                {acc.bankName}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Payment Methods */}
+                      <div>
+                        <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Payment Methods</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {['Bank', 'UPI', 'Credit Card', 'Cash', 'Bank Transfer'].map(method => {
+                            const isSelected = selectedPaymentMethods.includes(method);
+                            return (
+                              <button
+                                key={method}
+                                onClick={() => {
+                                  if (isSelected) setSelectedPaymentMethods(selectedPaymentMethods.filter(m => m !== method));
+                                  else setSelectedPaymentMethods([...selectedPaymentMethods, method]);
+                                }}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${isSelected ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300'}`}
+                              >
+                                {method}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Category Filter */}
+                      <div>
+                        <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Categories</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {allCategories.map(cat => {
+                            const isSelected = selectedCategories.includes(cat.name);
+                            return (
+                              <button
+                                key={cat.id}
+                                onClick={() => {
+                                  if (isSelected) setSelectedCategories(selectedCategories.filter(name => name !== cat.name));
+                                  else setSelectedCategories([...selectedCategories, cat.name]);
+                                }}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${isSelected ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300'}`}
+                              >
+                                {cat.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Tag Filter */}
+                      {allTags.length > 0 && (
+                        <div>
+                          <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Tags</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {allTags.map(tag => {
+                              const isSelected = selectedTags.includes(tag.name);
+                              return (
+                                <button
+                                  key={tag.id}
+                                  onClick={() => {
+                                    if (isSelected) setSelectedTags(selectedTags.filter(name => name !== tag.name));
+                                    else setSelectedTags([...selectedTags, tag.name]);
+                                  }}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${isSelected ? 'bg-orange-500 border-orange-500 text-white' : 'border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300'}`}
+                                >
+                                  {tag.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
                     </div>
-                  </div>
-
-                  {/* Category Filter */}
-                  <div>
-                    <h4 className="text-xs font-black uppercase tracking-wider text-neutral-400 mb-3">Categories</h4>
-                    <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                      {allCategories.map(cat => (
-                        <label key={cat.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={selectedCategories.includes(cat.name)} 
-                            onChange={(e) => {
-                              if (e.target.checked) setSelectedCategories([...selectedCategories, cat.name]);
-                              else setSelectedCategories(selectedCategories.filter(name => name !== cat.name));
-                            }} 
-                            className="w-4 h-4 rounded border-neutral-300 text-brand-blue" 
-                          />
-                          <span className="text-sm font-bold truncate">{cat.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Tag Filter */}
-                  <div>
-                    <h4 className="text-xs font-black uppercase tracking-wider text-neutral-400 mb-3">Tags</h4>
-                    <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                      {allTags.map(tag => (
-                        <label key={tag.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={selectedTags.includes(tag.name)} 
-                            onChange={(e) => {
-                              if (e.target.checked) setSelectedTags([...selectedTags, tag.name]);
-                              else setSelectedTags(selectedTags.filter(name => name !== tag.name));
-                            }} 
-                            className="w-4 h-4 rounded border-neutral-300 text-brand-blue" 
-                          />
-                          <span className="text-sm font-bold truncate">{tag.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Payment Methods */}
-                  <div>
-                    <h4 className="text-xs font-black uppercase tracking-wider text-neutral-400 mb-3">Payment Methods</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {['Bank', 'UPI', 'Credit Card', 'Cash', 'Bank Transfer'].map(method => (
-                        <button
-                          key={method}
-                          onClick={() => {
-                            if (selectedPaymentMethods.includes(method)) setSelectedPaymentMethods(selectedPaymentMethods.filter(m => m !== method));
-                            else setSelectedPaymentMethods([...selectedPaymentMethods, method]);
-                          }}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${selectedPaymentMethods.includes(method) ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300'}`}
-                        >
-                          {method}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
+                  )}
                 </div>
               </motion.div>
             </>
