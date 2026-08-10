@@ -220,15 +220,15 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
             <Filter className="w-4 h-4" />
           </button>
           
-          <div className="flex items-center justify-between bg-white dark:bg-[#111111] border border-neutral-200 dark:border-white/5 rounded-xl p-1 shadow-sm min-w-[140px]">
-            <button onClick={() => setReferenceDate(subMonths(referenceDate, 1))} className="p-1.5 hover:bg-neutral-100 dark:hover:bg-[#222] rounded-lg transition-all">
-              <ChevronLeft className="w-4 h-4 text-neutral-500" />
+          <div className="flex items-center gap-1 bg-white dark:bg-[#111111] border border-neutral-200 dark:border-white/5 rounded-xl p-0.5 shadow-sm">
+            <button onClick={() => setReferenceDate(subMonths(referenceDate, 1))} className="p-1 hover:bg-neutral-100 dark:hover:bg-[#222] rounded-lg transition-all">
+              <ChevronLeft className="w-3.5 h-3.5 text-neutral-500" />
             </button>
-            <div className="flex-1 text-center font-heading font-black text-brand-blue dark:text-white uppercase tracking-widest text-[10px]">
-              {format(referenceDate, 'MMMM yyyy')}
+            <div className="text-center font-heading font-black text-brand-blue dark:text-white uppercase tracking-widest text-[10px] min-w-[75px]">
+              {format(referenceDate, 'MMM yyyy')}
             </div>
-            <button onClick={() => setReferenceDate(addMonths(referenceDate, 1))} className="p-1.5 hover:bg-neutral-100 dark:hover:bg-[#222] rounded-lg transition-all">
-              <ChevronRight className="w-4 h-4 text-neutral-500" />
+            <button onClick={() => setReferenceDate(addMonths(referenceDate, 1))} className="p-1 hover:bg-neutral-100 dark:hover:bg-[#222] rounded-lg transition-all">
+              <ChevronRight className="w-3.5 h-3.5 text-neutral-500" />
             </button>
           </div>
         </div>
