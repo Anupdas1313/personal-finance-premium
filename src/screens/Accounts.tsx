@@ -20,7 +20,10 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
   const currency = useCurrency();
   const { user } = useAuth();
   
-  const [referenceDate, setReferenceDate] = useState(new Date());
+  const [dateRange, setDateRange] = useState({
+    start: startOfMonth(new Date()),
+    end: endOfMonth(new Date())
+  });
   
   const allAccounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
   const allTransactions = useLiveQuery(() => db.transactions.toArray(), [user?.uid]) || [];
@@ -44,8 +47,8 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
   const [showRemarksCol, setShowRemarksCol] = useState(true);
   const [showPaymentMethodCol, setShowPaymentMethodCol] = useState(false);
 
-  const monthStart = startOfMonth(referenceDate).getTime();
-  const monthEnd = endOfMonth(referenceDate).getTime();
+  const monthStart = startOfDay(dateRange.start).getTime();
+  const monthEnd = endOfDay(dateRange.end).getTime();
   
   const statementTxs = useMemo(() => {
     return allTransactions
@@ -108,7 +111,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', `Account_Statement_${format(referenceDate, 'MMM_yyyy')}.csv`);
+    link.setAttribute('download', `Account_Statement_${format(dateRange.start, 'MMM_yyyy')}_to_${format(dateRange.end, 'MMM_yyyy')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -127,7 +130,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100);
-    doc.text(`Consolidated view for all accounts | Period: ${format(referenceDate, 'MMMM yyyy')}`, 14, 26);
+    doc.text(`Consolidated view for all accounts | Period: ${format(dateRange.start, 'dd MMM yyyy')} - ${format(dateRange.end, 'dd MMM yyyy')}`, 14, 26);
     
     // Summary
     doc.setFontSize(10);
@@ -174,21 +177,21 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
 
   const handleDownloadPDF = async () => {
     const doc = await generatePDFDoc();
-    doc.save(`Account_Statement_${format(referenceDate, 'MMM_yyyy')}.pdf`);
+    doc.save(`Account_Statement_${format(dateRange.start, 'MMM_yyyy')}_to_${format(dateRange.end, 'MMM_yyyy')}.pdf`);
   };
 
   const handleSharePDF = async () => {
     const doc = await generatePDFDoc();
     const pdfBlob = doc.output('blob');
-    const filename = `Account_Statement_${format(referenceDate, 'MMM_yyyy')}.pdf`;
+    const filename = `Account_Statement_${format(dateRange.start, 'MMM_yyyy')}_to_${format(dateRange.end, 'MMM_yyyy')}.pdf`;
     const file = new File([pdfBlob], filename, { type: 'application/pdf' });
 
     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({
           files: [file],
-          title: `Account Statement - ${format(referenceDate, 'MMMM yyyy')}`,
-          text: `Here is the consolidated account statement for ${format(referenceDate, 'MMMM yyyy')}.`
+          title: `Account Statement - ${format(dateRange.start, 'MMM yyyy')}`,
+          text: `Here is the consolidated account statement for ${format(dateRange.start, 'dd MMM yyyy')} to ${format(dateRange.end, 'dd MMM yyyy')}.`
         });
       } catch (err: any) {
         if (err.name !== 'AbortError') {
@@ -234,7 +237,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
               <div className="flex justify-between items-center border-b border-neutral-300 pb-4 mb-6 relative">
                 <div>
                   <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-1">Period</p>
-                  <h1 className="text-2xl font-heading font-black text-brand-blue">{format(referenceDate, 'MMMM yyyy')}</h1>
+                  <h1 className="text-2xl font-heading font-black text-brand-blue">{format(dateRange.start, 'MMM d, yyyy')} - {format(dateRange.end, 'MMM d, yyyy')}</h1>
                 </div>
                 <div className="flex items-center gap-5 print:hidden relative">
                   <button 
@@ -441,16 +444,44 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                       {/* Period Selection */}
                       <div>
                         <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Period</h4>
-                        <div className="flex items-center justify-between bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl p-1 w-full sm:w-64">
-                          <button onClick={() => setReferenceDate(subMonths(referenceDate, 1))} className="p-2 hover:bg-white dark:hover:bg-[#222] rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-white/10">
-                            <ChevronLeft className="w-4 h-4 text-neutral-500" />
-                          </button>
-                          <div className="flex-1 text-center font-heading font-black text-brand-blue dark:text-white uppercase tracking-widest text-[11px]">
-                            {format(referenceDate, 'MMMM yyyy')}
+                        <div className="flex flex-col gap-2 w-full sm:w-64">
+                          <div className="flex items-center justify-between bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl p-1 w-full">
+                            <button onClick={() => setDateRange(prev => ({ start: subMonths(prev.start, 1), end: endOfMonth(subMonths(prev.start, 1)) }))} className="p-2 hover:bg-white dark:hover:bg-[#222] rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-white/10">
+                              <ChevronLeft className="w-4 h-4 text-neutral-500" />
+                            </button>
+                            <div className="flex-1 text-center font-heading font-black text-brand-blue dark:text-white uppercase tracking-widest text-[11px]">
+                              {format(dateRange.start, 'MMMM yyyy')}
+                            </div>
+                            <button onClick={() => setDateRange(prev => ({ start: addMonths(prev.start, 1), end: endOfMonth(addMonths(prev.start, 1)) }))} className="p-2 hover:bg-white dark:hover:bg-[#222] rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-white/10">
+                              <ChevronRight className="w-4 h-4 text-neutral-500" />
+                            </button>
                           </div>
-                          <button onClick={() => setReferenceDate(addMonths(referenceDate, 1))} className="p-2 hover:bg-white dark:hover:bg-[#222] rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-white/10">
-                            <ChevronRight className="w-4 h-4 text-neutral-500" />
-                          </button>
+                          
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="flex-1 relative group">
+                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-brand-blue transition-colors">
+                                <Calendar className="w-3.5 h-3.5" />
+                              </div>
+                              <input
+                                type="date"
+                                value={format(dateRange.start, 'yyyy-MM-dd')}
+                                onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value ? new Date(e.target.value) : new Date() }))}
+                                className="w-full pl-8 pr-2 py-2 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none text-[10px] font-bold text-neutral-800 dark:text-neutral-200 transition-all uppercase tracking-wider"
+                              />
+                            </div>
+                            <span className="text-neutral-400 font-medium text-[10px] uppercase">to</span>
+                            <div className="flex-1 relative group">
+                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-brand-blue transition-colors">
+                                <Calendar className="w-3.5 h-3.5" />
+                              </div>
+                              <input
+                                type="date"
+                                value={format(dateRange.end, 'yyyy-MM-dd')}
+                                onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value ? new Date(e.target.value) : new Date() }))}
+                                className="w-full pl-8 pr-2 py-2 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none text-[10px] font-bold text-neutral-800 dark:text-neutral-200 transition-all uppercase tracking-wider"
+                              />
+                            </div>
+                          </div>
                         </div>
                       </div>
 
