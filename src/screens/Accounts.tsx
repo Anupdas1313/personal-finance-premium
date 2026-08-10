@@ -25,6 +25,18 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
   const allAccounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
   const allTransactions = useLiveQuery(() => db.transactions.toArray(), [user?.uid]) || [];
   
+  const allCategories = useLiveQuery(() => db.categories.toArray(), [user?.uid]) || [];
+  
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [selectedAccounts, setSelectedAccounts] = useState<number[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>([]);
+  
+  const [showAccountCol, setShowAccountCol] = useState(true);
+  const [showCategoryCol, setShowCategoryCol] = useState(false);
+  const [showRemarksCol, setShowRemarksCol] = useState(true);
+  const [showPaymentMethodCol, setShowPaymentMethodCol] = useState(false);
+
   const monthStart = startOfMonth(referenceDate).getTime();
   const monthEnd = endOfMonth(referenceDate).getTime();
   
@@ -32,10 +44,17 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
     return allTransactions
       .filter(tx => {
         const time = new Date(tx.dateTime).getTime();
-        return time >= monthStart && time <= monthEnd;
+        const inMonth = time >= monthStart && time <= monthEnd;
+        if (!inMonth) return false;
+        
+        if (selectedAccounts.length > 0 && !selectedAccounts.includes(tx.accountId)) return false;
+        if (selectedCategories.length > 0 && !selectedCategories.includes(tx.category)) return false;
+        if (selectedPaymentMethods.length > 0 && tx.paymentMethod && !selectedPaymentMethods.includes(tx.paymentMethod)) return false;
+        
+        return true;
       })
       .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
-  }, [allTransactions, monthStart, monthEnd]);
+  }, [allTransactions, monthStart, monthEnd, selectedAccounts, selectedCategories, selectedPaymentMethods]);
   
   const getAccountName = (id: number) => {
     return allAccounts.find(a => a.id === id)?.bankName || 'Unknown';
@@ -66,17 +85,24 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
         
-        {/* Filter */}
-        <div className="flex items-center gap-1.5 bg-neutral-50 dark:bg-white/5 p-0.5 rounded-full border border-neutral-100 dark:border-white/5">
-          <button onClick={() => setReferenceDate(subMonths(referenceDate, 1))} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white dark:hover:bg-[#222] shadow-sm text-neutral-600 dark:text-neutral-300 transition-colors">
-            <ChevronLeft className="w-3 h-3" />
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          {/* Filter Toggle */}
+          <button onClick={() => setIsFilterPanelOpen(true)} className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${isFilterPanelOpen ? 'bg-brand-blue text-white' : 'bg-neutral-50 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10'}`}>
+            <Filter className="w-4 h-4" />
           </button>
-          <span className="text-[10px] font-black uppercase tracking-wider px-1 text-brand-blue dark:text-white min-w-[75px] text-center">
-            {format(referenceDate, 'MMM yyyy')}
-          </span>
-          <button onClick={() => setReferenceDate(addMonths(referenceDate, 1))} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white dark:hover:bg-[#222] shadow-sm text-neutral-600 dark:text-neutral-300 transition-colors">
-            <ChevronRight className="w-3 h-3" />
-          </button>
+          
+          <div className="flex items-center gap-1.5 bg-neutral-50 dark:bg-white/5 p-0.5 rounded-full border border-neutral-100 dark:border-white/5">
+            <button onClick={() => setReferenceDate(subMonths(referenceDate, 1))} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white dark:hover:bg-[#222] shadow-sm text-neutral-600 dark:text-neutral-300 transition-colors">
+              <ChevronLeft className="w-3 h-3" />
+            </button>
+            <span className="text-[10px] font-black uppercase tracking-wider px-1 text-brand-blue dark:text-white min-w-[75px] text-center">
+              {format(referenceDate, 'MMM yyyy')}
+            </span>
+            <button onClick={() => setReferenceDate(addMonths(referenceDate, 1))} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white dark:hover:bg-[#222] shadow-sm text-neutral-600 dark:text-neutral-300 transition-colors">
+              <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
         </div>
       </div>
       
@@ -122,8 +148,10 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                 <thead>
                   <tr className="border-b-2 border-black">
                     <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Date</th>
-                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Account</th>
-                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Remarks</th>
+                    {showAccountCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Account</th>}
+                    {showCategoryCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Category</th>}
+                    {showRemarksCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Remarks</th>}
+                    {showPaymentMethodCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Method</th>}
                     <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-right">Outflow</th>
                     <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-right">Inflow</th>
                   </tr>
@@ -135,8 +163,10 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                     return (
                       <tr key={idx} className="border-b border-neutral-200">
                         <td className="py-3 px-2 font-medium whitespace-nowrap">{format(new Date(tx.dateTime), 'dd MMM yy')}</td>
-                        <td className="py-3 px-2 font-bold">{getAccountName(tx.accountId)}</td>
-                        <td className="py-3 px-2 text-neutral-600 max-w-[200px] truncate" title={tx.note || tx.type}>{tx.note || tx.type}</td>
+                        {showAccountCol && <td className="py-3 px-2 font-bold">{getAccountName(tx.accountId)}</td>}
+                        {showCategoryCol && <td className="py-3 px-2 font-medium">{tx.category || '-'}</td>}
+                        {showRemarksCol && <td className="py-3 px-2 text-neutral-600 max-w-[200px] truncate" title={tx.note || tx.type}>{tx.note || tx.type}</td>}
+                        {showPaymentMethodCol && <td className="py-3 px-2 text-neutral-600">{tx.paymentMethod || '-'}</td>}
                         <td className="py-3 px-2 text-right font-medium text-rose-600">{type === 'DEBIT' ? amount.toLocaleString('en-IN') : '-'}</td>
                         <td className="py-3 px-2 text-right font-medium text-emerald-600">{type === 'CREDIT' ? amount.toLocaleString('en-IN') : '-'}</td>
                       </tr>
@@ -157,6 +187,122 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
             </div>
           </TransformComponent>
         </TransformWrapper>
+
+        {/* Filter Panel */}
+        <AnimatePresence>
+          {isFilterPanelOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsFilterPanelOpen(false)}
+                className="absolute inset-0 bg-black/40 z-20"
+              />
+              <motion.div
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="absolute top-0 right-0 bottom-0 w-80 max-w-full bg-white dark:bg-[#111111] z-30 shadow-2xl flex flex-col"
+              >
+                <div className="p-4 border-b border-neutral-100 dark:border-white/5 flex items-center justify-between shrink-0">
+                  <h3 className="font-heading font-black uppercase text-sm">Filters & Display</h3>
+                  <button onClick={() => setIsFilterPanelOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-white/5">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                  {/* Display Columns */}
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-neutral-400 mb-3">Columns</h4>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 cursor-pointer">
+                        <input type="checkbox" checked={showAccountCol} onChange={(e) => setShowAccountCol(e.target.checked)} className="w-4 h-4 rounded border-neutral-300 text-brand-blue" />
+                        <span className="text-sm font-bold">Account</span>
+                      </label>
+                      <label className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 cursor-pointer">
+                        <input type="checkbox" checked={showCategoryCol} onChange={(e) => setShowCategoryCol(e.target.checked)} className="w-4 h-4 rounded border-neutral-300 text-brand-blue" />
+                        <span className="text-sm font-bold">Category</span>
+                      </label>
+                      <label className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 cursor-pointer">
+                        <input type="checkbox" checked={showRemarksCol} onChange={(e) => setShowRemarksCol(e.target.checked)} className="w-4 h-4 rounded border-neutral-300 text-brand-blue" />
+                        <span className="text-sm font-bold">Remarks</span>
+                      </label>
+                      <label className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 cursor-pointer">
+                        <input type="checkbox" checked={showPaymentMethodCol} onChange={(e) => setShowPaymentMethodCol(e.target.checked)} className="w-4 h-4 rounded border-neutral-300 text-brand-blue" />
+                        <span className="text-sm font-bold">Payment Method</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Account Filter */}
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-neutral-400 mb-3">Accounts</h4>
+                    <div className="space-y-2">
+                      {allAccounts.map(acc => (
+                        <label key={acc.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={selectedAccounts.includes(acc.id as number)} 
+                            onChange={(e) => {
+                              if (e.target.checked) setSelectedAccounts([...selectedAccounts, acc.id as number]);
+                              else setSelectedAccounts(selectedAccounts.filter(id => id !== acc.id));
+                            }} 
+                            className="w-4 h-4 rounded border-neutral-300 text-brand-blue" 
+                          />
+                          <span className="text-sm font-bold truncate">{acc.bankName}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Category Filter */}
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-neutral-400 mb-3">Categories</h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                      {allCategories.map(cat => (
+                        <label key={cat.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-white/5 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={selectedCategories.includes(cat.name)} 
+                            onChange={(e) => {
+                              if (e.target.checked) setSelectedCategories([...selectedCategories, cat.name]);
+                              else setSelectedCategories(selectedCategories.filter(name => name !== cat.name));
+                            }} 
+                            className="w-4 h-4 rounded border-neutral-300 text-brand-blue" 
+                          />
+                          <span className="text-sm font-bold truncate">{cat.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Payment Methods */}
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-neutral-400 mb-3">Payment Methods</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {['Bank', 'UPI', 'Credit Card', 'Cash', 'Bank Transfer'].map(method => (
+                        <button
+                          key={method}
+                          onClick={() => {
+                            if (selectedPaymentMethods.includes(method)) setSelectedPaymentMethods(selectedPaymentMethods.filter(m => m !== method));
+                            else setSelectedPaymentMethods([...selectedPaymentMethods, method]);
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${selectedPaymentMethods.includes(method) ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300'}`}
+                        >
+                          {method}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
     </div>,
     document.body
