@@ -289,7 +289,8 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                         <div className="flex flex-wrap gap-2">
                           {[
                             { key: 'DEBIT', label: 'Outflow', color: 'bg-rose-600 border-rose-600 text-white' },
-                            { key: 'CREDIT', label: 'Inflow', color: 'bg-emerald-600 border-emerald-600 text-white' }
+                            { key: 'CREDIT', label: 'Inflow', color: 'bg-emerald-600 border-emerald-600 text-white' },
+                            { key: 'TRANSFER', label: 'Transfers', color: 'bg-sky-600 border-sky-600 text-white' }
                           ].map(t => {
                             const isSelected = selectedTransactionTypes.includes(t.key);
                             return (
