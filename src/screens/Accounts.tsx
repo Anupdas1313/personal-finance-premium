@@ -1562,18 +1562,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
   const transactions = useLiveQuery(() => db.transactions.where('accountId').equals(accountId).sortBy('dateTime'), [accountId, user?.uid]) || [];
   const closings = useLiveQuery(() => db.accountClosings.where('accountId').equals(accountId).sortBy('closingDate'), [accountId, user?.uid]) || [];
 
-  const [initialScale, setInitialScale] = useState(0.8);
-  useEffect(() => {
-    const updateScale = () => {
-      const width = window.innerWidth;
-      if (width < 640) setInitialScale(0.35); // Mobile
-      else if (width < 1024) setInitialScale(0.6); // Tablet
-      else setInitialScale(0.8); // Desktop
-    };
-    updateScale();
-    window.addEventListener('resize', updateScale);
-    return () => window.removeEventListener('resize', updateScale);
-  }, []);
+  const initialScale = typeof window !== 'undefined' ? window.innerWidth / 800 : 0.8;
 
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [granularity, setGranularity] = useState<'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'ALL' | 'CUSTOM'>('MONTH');
