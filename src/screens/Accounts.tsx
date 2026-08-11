@@ -406,7 +406,8 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
               </div>
 
               {/* Transactions Table */}
-              <table className="w-full text-left text-sm border-collapse">
+              <div className="overflow-x-auto w-full pb-4">
+                <table className="w-full text-left text-sm border-collapse whitespace-nowrap min-w-[700px]">
                 <thead>
                   <tr className="border-b-2 border-black">
                     <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Date</th>
@@ -442,6 +443,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                   )}
                 </tbody>
               </table>
+              </div>
 
               {/* Footer */}
               <div className="absolute bottom-6 left-8 right-8 pt-3 border-t border-neutral-200 flex justify-end items-center">
@@ -1957,55 +1959,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
           </div>
         </div>
 
-        {showFilterMenu && (
-          <div className="mt-2 p-1 bg-neutral-100 dark:bg-[#1A1A1A] rounded-xl flex overflow-x-auto gap-1 animate-in slide-in-from-top-2 duration-200">
-            {(['ALL', 'YEAR', 'MONTH', 'WEEK', 'DAY', 'CUSTOM'] as const).map((g) => (
-              <button key={g} onClick={() => { setGranularity(g); setShowFilterMenu(false); }} className={`flex-1 px-2.5 py-1.5 rounded-lg text-[8px] font-semibold uppercase tracking-[0.1em] transition-all shrink-0 ${granularity === g ? 'bg-white dark:bg-[#333333] text-brand-blue dark:text-white shadow-sm' : 'text-neutral-400 hover:text-neutral-500'}`}>{g}</button>
-            ))}
-          </div>
-        )}
 
-        {/* Search & Flow Filters Row */}
-        <div className="mt-2 flex flex-col sm:flex-row gap-2 items-center">
-          {/* Search Input */}
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
-            <input
-              type="text"
-              placeholder="Search notes, category, tags..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-8 pl-8 pr-8 bg-white dark:bg-[#111111] border border-neutral-200 dark:border-white/5 rounded-xl text-[10px] font-bold outline-none focus:ring-2 focus:ring-brand-blue/15 dark:focus:ring-white/5 transition-all text-brand-blue dark:text-white"
-            />
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={() => setSearchTerm('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-white"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
-          </div>
-          
-          {/* Flow Tabs */}
-          <div className="flex bg-neutral-100 dark:bg-[#1A1A1A] p-0.5 rounded-xl shrink-0 w-full sm:w-auto">
-            {(['ALL', 'CREDIT', 'DEBIT'] as const).map((f) => (
-              <button
-                key={f}
-                type="button"
-                onClick={() => setTypeFilter(f)}
-                className={`flex-1 sm:flex-initial px-3 h-7 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                  typeFilter === f
-                    ? 'bg-white dark:bg-[#333333] text-brand-blue dark:text-white shadow-sm'
-                    : 'text-neutral-400 hover:text-neutral-500'
-                }`}
-              >
-                {f === 'CREDIT' ? 'Inflow' : f === 'DEBIT' ? 'Outflow' : 'All'}
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* Date Navigator */}
         {granularity !== 'ALL' && granularity !== 'CUSTOM' && (
@@ -2111,8 +2065,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
       </div>
 
 
-      <div className="flex-1 overflow-y-auto pb-32" style={{ WebkitOverflowScrolling: 'touch' }}>
-        <table className="w-full border-collapse">
+      <div className="flex-1 overflow-auto overflow-x-auto pb-32" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <table className="w-full border-collapse min-w-[500px]">
           <thead className="sticky top-0 bg-white dark:bg-[#0C0C0F] z-10 border-b border-neutral-100 dark:border-[#222222]">
             <tr>
               <th className="px-2 py-1.5 text-left text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em] w-20">Date</th>
@@ -2185,6 +2139,102 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
           </tbody>
         </table>
       </div>
+
+      {/* Slide-out Filter Panel */}
+      <AnimatePresence>
+        {showFilterMenu && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowFilterMenu(false)}
+              className="absolute inset-0 bg-black/40 z-20"
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="absolute top-0 right-0 bottom-0 w-80 max-w-full bg-white dark:bg-[#111111] z-30 shadow-2xl flex flex-col"
+            >
+              <div className="p-4 border-b border-neutral-100 dark:border-white/5 flex flex-col gap-4 shrink-0">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-heading font-black uppercase text-sm">Statement Filters</h3>
+                  <button onClick={() => setShowFilterMenu(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-white/5">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="p-4 overflow-y-auto space-y-6 flex-1">
+                {/* Search Input */}
+                <div>
+                  <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Search</h4>
+                  <div className="relative w-full">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                    <input
+                      type="text"
+                      placeholder="Search notes, category, tags..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full h-10 pl-9 pr-8 bg-neutral-50 dark:bg-[#1A1A1A] border border-neutral-200 dark:border-white/10 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-brand-blue/15 dark:focus:ring-white/5 transition-all text-brand-blue dark:text-white"
+                    />
+                    {searchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchTerm('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-white"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Granularity */}
+                <div>
+                  <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Time Period</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(['ALL', 'YEAR', 'MONTH', 'WEEK', 'DAY', 'CUSTOM'] as const).map((g) => (
+                      <button 
+                        key={g} 
+                        onClick={() => setGranularity(g)} 
+                        className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${granularity === g ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300'}`}
+                      >
+                        {g}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Flow Tabs */}
+                <div>
+                  <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Transaction Type</h4>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['ALL', 'CREDIT', 'DEBIT'] as const).map((f) => (
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => setTypeFilter(f)}
+                        className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-colors ${
+                          typeFilter === f
+                            ? (f === 'CREDIT' ? 'bg-emerald-600 border-emerald-600 text-white' : f === 'DEBIT' ? 'bg-rose-600 border-rose-600 text-white' : 'bg-brand-blue border-brand-blue text-white')
+                            : 'border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300'
+                        }`}
+                      >
+                        {f === 'CREDIT' ? 'Inflow' : f === 'DEBIT' ? 'Outflow' : 'All'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 border-t border-neutral-100 dark:border-white/5 shrink-0 bg-neutral-50 dark:bg-[#0C0C0F]">
+                <button onClick={() => setShowFilterMenu(false)} className="w-full py-3 bg-brand-blue text-white rounded-xl font-bold uppercase tracking-widest text-xs shadow-lg active:scale-95 transition-all">Apply Filters</button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
