@@ -1562,6 +1562,19 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
   const transactions = useLiveQuery(() => db.transactions.where('accountId').equals(accountId).sortBy('dateTime'), [accountId, user?.uid]) || [];
   const closings = useLiveQuery(() => db.accountClosings.where('accountId').equals(accountId).sortBy('closingDate'), [accountId, user?.uid]) || [];
 
+  const [initialScale, setInitialScale] = useState(0.8);
+  useEffect(() => {
+    const updateScale = () => {
+      const width = window.innerWidth;
+      if (width < 640) setInitialScale(0.35); // Mobile
+      else if (width < 1024) setInitialScale(0.6); // Tablet
+      else setInitialScale(0.8); // Desktop
+    };
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, []);
+
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [granularity, setGranularity] = useState<'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'ALL' | 'CUSTOM'>('MONTH');
   const [referenceDate, setReferenceDate] = useState(new Date());
@@ -1951,8 +1964,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
       
       {/* Zoomable PDF-like Document Area */}
       <div className="flex-1 overflow-hidden bg-neutral-100/50 dark:bg-black/80 relative">
-        <TransformWrapper initialScale={typeof window !== 'undefined' && window.innerWidth < 768 ? 0.4 : 0.8} minScale={0.2} maxScale={3} centerOnInit={true} limitToBounds={true}>
-          <TransformComponent wrapperClass="!w-full !h-full flex items-center justify-center bg-[#E5E7EB] dark:bg-[#060608]">
+        <TransformWrapper initialScale={initialScale} minScale={initialScale} maxScale={3} limitToBounds={true}>
+          <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }}>
             {/* The Document */}
             <div className="bg-white text-black w-[800px] min-h-[1131px] p-8 md:p-12 shadow-xl m-0 relative print:m-0 print:shadow-none" style={{ fontFamily: '"Inter", "Satoshi", sans-serif' }}>
               
