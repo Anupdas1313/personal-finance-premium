@@ -302,7 +302,10 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 bg-[#F9FBFF] dark:bg-[#0C0C0F] z-[9999] flex flex-col overflow-hidden animate-fade-in">
       {/* Compact Header */}
       <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-[#111111] border-b border-neutral-100 dark:border-white/5 shadow-sm shrink-0 z-10">
-        <div className="flex items-center gap-2.5 pl-2">
+        <div className="flex items-center gap-2.5 pl-1">
+          <button onClick={onClose} className="p-1 -ml-1 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/10 rounded-full transition-colors">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
           <div>
             <h2 className="font-heading font-bold text-brand-blue dark:text-white text-sm leading-none">Account Statement</h2>
             <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Consolidated report</p>
@@ -1926,7 +1929,10 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     <div className="fixed inset-0 bg-[#F9FBFF] dark:bg-[#0C0C0F] z-[9999] flex flex-col overflow-hidden animate-fade-in" style={{ WebkitOverflowScrolling: 'touch' }}>
       {/* Compact Header */}
       <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-[#111111] border-b border-neutral-100 dark:border-white/5 shadow-sm shrink-0 z-10">
-        <div className="flex items-center gap-2.5 pl-2">
+        <div className="flex items-center gap-2.5 pl-1">
+          <button onClick={onClose} className="p-1 -ml-1 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/10 rounded-full transition-colors">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
           <div>
             <h2 className="font-heading font-bold text-brand-blue dark:text-white text-sm leading-none">Account Statement</h2>
             <p className="text-[10px] font-medium text-neutral-400 mt-0.5">{account.bankName}</p>
@@ -1935,18 +1941,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         
         {/* Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          <button 
-            onClick={() => navigate(`/add-money?accountId=${accountId}`)} 
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-brand-green text-white shadow-sm hover:bg-brand-green/90 transition-colors"
-            title="Add Transaction"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
           <button onClick={() => setShowFilterMenu(true)} className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${showFilterMenu ? 'bg-brand-blue text-white' : 'bg-neutral-50 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10'}`}>
             <Filter className="w-4 h-4" />
-          </button>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-50 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors ml-1">
-            <X className="w-4 h-4" />
           </button>
         </div>
       </div>
