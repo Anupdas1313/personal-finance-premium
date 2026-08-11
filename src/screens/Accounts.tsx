@@ -1921,223 +1921,229 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
   if (!account) return null;
 
   return (
-    <div className="fixed inset-0 bg-white dark:bg-[#060608] z-[100] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300 touch-pan-y overscroll-none" style={{ WebkitOverflowScrolling: 'touch' }}>
-      <div className="bg-neutral-50 dark:bg-[#0C0C0F] border-b border-neutral-200 dark:border-[#222222] px-4 py-3 shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <div className="w-6 h-6 bg-white dark:bg-[#1A1A1A] rounded-lg flex items-center justify-center p-0.5 border border-neutral-100 dark:border-[#333333]">
-              <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <h2 className="text-[11px] font-semibold text-brand-blue dark:text-[#F7F7F7] uppercase tracking-widest leading-none">{account.bankName}</h2>
-                <span className="text-[7px] font-black bg-neutral-200 dark:bg-white/10 text-brand-blue dark:text-white px-1.5 py-0.5 rounded-sm uppercase tracking-widest">Statement</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest leading-none">
-                  {account.type === 'CASH' ? 'CASH' : `•••• ${account.accountLast4}`}
-                </p>
-                <div className="w-0.5 h-0.5 rounded-full bg-neutral-300" />
-                <p className="text-[8px] font-semibold text-brand-blue/60 dark:text-white/60 uppercase">{currency}{actualTotalBalance.toLocaleString()}</p>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <button 
-              onClick={() => navigate(`/add-money?accountId=${accountId}`)} 
-              className="w-7 h-7 rounded-full bg-brand-green text-white flex items-center justify-center hover:bg-brand-green/90 active:scale-95 transition-all"
-              title="Add Transaction"
-            >
-              <Plus className="w-3.5 h-3.5" />
-            </button>
-            <button onClick={() => setShowFilterMenu(!showFilterMenu)} className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${showFilterMenu ? 'bg-brand-blue text-white' : 'bg-neutral-200 dark:bg-[#222222] text-brand-blue dark:text-[#F7F7F7] hover:bg-neutral-300'}`}>
-              <Filter className="w-3.5 h-3.5" />
-            </button>
-            <button onClick={onClose} className="w-7 h-7 rounded-full bg-neutral-200 dark:bg-[#222222] flex items-center justify-center text-brand-blue dark:text-[#F7F7F7] hover:bg-neutral-300 transition-all">
-              <Plus className="w-5 h-5 rotate-45" />
-            </button>
+    <div className="fixed inset-0 bg-[#F9FBFF] dark:bg-[#0C0C0F] z-[9999] flex flex-col overflow-hidden animate-fade-in" style={{ WebkitOverflowScrolling: 'touch' }}>
+      {/* Compact Header */}
+      <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-[#111111] border-b border-neutral-100 dark:border-white/5 shadow-sm shrink-0 z-10">
+        <div className="flex items-center gap-2.5 pl-2">
+          <div>
+            <h2 className="font-heading font-bold text-brand-blue dark:text-white text-sm leading-none">Account Statement</h2>
+            <p className="text-[10px] font-medium text-neutral-400 mt-0.5">{account.bankName}</p>
           </div>
         </div>
-
-
-
-        {/* Date Navigator */}
-        {granularity !== 'ALL' && granularity !== 'CUSTOM' && (
-          <div className="mt-2 flex items-center justify-between bg-white dark:bg-[#111111] border border-neutral-200 dark:border-white/5 rounded-xl p-1 shadow-sm">
-            <button 
-              onClick={() => {
-                if (granularity === 'MONTH') setReferenceDate(subMonths(referenceDate, 1));
-                else if (granularity === 'YEAR') setReferenceDate(subYears(referenceDate, 1));
-                else if (granularity === 'WEEK') setReferenceDate(subWeeks(referenceDate, 1));
-                else if (granularity === 'DAY') setReferenceDate(subDays(referenceDate, 1));
-              }}
-              className="p-1.5 hover:bg-neutral-100 dark:hover:bg-[#222] rounded-lg transition-all"
-            >
-              <ChevronLeft className="w-4 h-4 text-neutral-500" />
-            </button>
-            <div className="flex-1 text-center font-heading font-black text-brand-blue dark:text-white uppercase tracking-widest text-[10px]">
-              {granularity === 'YEAR' && format(referenceDate, 'yyyy')}
-              {granularity === 'MONTH' && format(referenceDate, 'MMMM yyyy')}
-              {granularity === 'WEEK' && `Week of ${format(startOfWeek(referenceDate, { weekStartsOn: 1 }), 'MMM d')}`}
-              {granularity === 'DAY' && format(referenceDate, 'MMM d, yyyy')}
-            </div>
-            <button 
-              onClick={() => {
-                if (granularity === 'MONTH') setReferenceDate(addMonths(referenceDate, 1));
-                else if (granularity === 'YEAR') setReferenceDate(addYears(referenceDate, 1));
-                else if (granularity === 'WEEK') setReferenceDate(addWeeks(referenceDate, 1));
-                else if (granularity === 'DAY') setReferenceDate(addDays(referenceDate, 1));
-              }}
-              className="p-1.5 hover:bg-neutral-100 dark:hover:bg-[#222] rounded-lg transition-all"
-            >
-              <ChevronRight className="w-4 h-4 text-neutral-500" />
-            </button>
-          </div>
-        )}
-
-        <div className="mt-2 flex flex-col gap-1.5">
-          <div className="bg-white dark:bg-[#111111] px-2 py-1.5 rounded-xl shadow-sm border border-neutral-100 dark:border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex flex-col">
-                <p className="text-[6px] font-semibold text-neutral-400 uppercase tracking-[0.1em]">Opening</p>
-                <p className="text-[10px] font-semibold text-brand-blue/50 dark:text-white/40">{currency}{openingBalanceForView.toLocaleString()}</p>
+        
+        {/* Actions */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <button 
+            onClick={() => navigate(`/add-money?accountId=${accountId}`)} 
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-brand-green text-white shadow-sm hover:bg-brand-green/90 transition-colors"
+            title="Add Transaction"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+          <button onClick={() => setShowFilterMenu(true)} className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${showFilterMenu ? 'bg-brand-blue text-white' : 'bg-neutral-50 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10'}`}>
+            <Filter className="w-4 h-4" />
+          </button>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-50 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors ml-1">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+      
+      {/* Zoomable PDF-like Document Area */}
+      <div className="flex-1 overflow-hidden bg-neutral-100/50 dark:bg-black/80 relative">
+        <TransformWrapper initialScale={typeof window !== 'undefined' && window.innerWidth < 768 ? 0.4 : 0.8} minScale={0.2} maxScale={3} centerOnInit={true} limitToBounds={true}>
+          <TransformComponent wrapperClass="!w-full !h-full flex items-center justify-center bg-[#E5E7EB] dark:bg-[#060608]">
+            {/* The Document */}
+            <div className="bg-white text-black w-[800px] min-h-[1131px] p-8 md:p-12 shadow-xl m-0 relative print:m-0 print:shadow-none" style={{ fontFamily: '"Inter", "Satoshi", sans-serif' }}>
+              
+              {/* Doc Header */}
+              <div className="flex justify-between items-start border-b border-neutral-300 pb-6 mb-8 relative">
+                <div>
+                  <div className="flex items-center gap-4 mb-2">
+                    <div className="w-12 h-12 border border-neutral-200 rounded-xl flex items-center justify-center p-1.5 shadow-sm">
+                      <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
+                    </div>
+                    <div>
+                      <h1 className="text-3xl font-heading font-black text-brand-blue uppercase">{account.bankName}</h1>
+                      <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest mt-1">
+                        {account.type === 'CASH' ? 'CASH ACCOUNT' : `•••• ${account.accountLast4}`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-1">Period</p>
+                  <h2 className="text-xl font-black text-brand-blue">
+                    {granularity === 'YEAR' && format(referenceDate, 'yyyy')}
+                    {granularity === 'MONTH' && format(referenceDate, 'MMMM yyyy')}
+                    {granularity === 'WEEK' && `Week of ${format(startOfWeek(referenceDate, { weekStartsOn: 1 }), 'MMM d')}`}
+                    {granularity === 'DAY' && format(referenceDate, 'MMM d, yyyy')}
+                    {granularity === 'ALL' && 'All Time'}
+                  </h2>
+                  <div className="flex items-center gap-2 mt-4 justify-end relative z-50 print:hidden">
+                    <div className="relative">
+                      <button onClick={() => setShowExportMenu(!showExportMenu)} className="px-4 py-2 bg-brand-blue hover:bg-blue-700 text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-sm transition-colors">
+                        <Download className="w-3.5 h-3.5" /> Export
+                      </button>
+                      {showExportMenu && (
+                        <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-neutral-200 shadow-xl rounded-xl overflow-hidden z-[9999]">
+                          <button onClick={() => { downloadPDF(); setShowExportMenu(false); }} className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-neutral-50 text-neutral-800 flex items-center gap-2 border-b border-neutral-100 transition-colors">
+                            <FileText className="w-4 h-4 text-rose-500" /> PDF Document
+                          </button>
+                          <button onClick={() => { downloadCSV(); setShowExportMenu(false); }} className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-neutral-50 text-neutral-800 flex items-center gap-2 border-b border-neutral-100 transition-colors">
+                            <FileText className="w-4 h-4 text-green-500" /> CSV Spreadsheet
+                          </button>
+                          <button onClick={() => navigate('/reports')} className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-neutral-50 text-neutral-800 flex items-center gap-2 transition-colors">
+                            <History className="w-4 h-4 text-brand-blue" /> Advanced Audit
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <button 
+                      onClick={handleStartNewBalance} 
+                      disabled={isProcessingPartition || showPartitionSuccess}
+                      className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-sm transition-all disabled:opacity-70 ${
+                        showPartitionSuccess ? 'bg-emerald-500 text-white' : 'bg-brand-green text-white hover:bg-green-600'
+                      }`}
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" /> {showPartitionSuccess ? 'Closed!' : isProcessingPartition ? 'Reconciling...' : 'Close Period'}
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="w-px h-5 bg-neutral-100 dark:bg-white/10" />
-              <div className="flex flex-col">
-                <p className="text-[6px] font-semibold text-neutral-400 uppercase tracking-[0.1em]">Closing</p>
-                <p className="text-[10px] font-semibold text-brand-blue dark:text-white">{currency}{currentViewStateBalance.toLocaleString()}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 italic">
-              <span className="text-[8px] font-bold text-brand-green">IN: {currency}{totalCredit.toLocaleString()}</span>
-              <span className="text-[8px] font-bold text-brand-red">OUT: {currency}{totalDebit.toLocaleString()}</span>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-1.5">
-            <button 
-              onClick={handleStartNewBalance} 
-              disabled={isProcessingPartition || showPartitionSuccess}
-              className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg font-black text-[8px] uppercase tracking-widest transition-all shadow-lg active:scale-95 ${
-                showPartitionSuccess 
-                  ? 'bg-emerald-500 text-white shadow-emerald-500/20' 
-                  : 'bg-brand-green text-white shadow-brand-green/20'
-              } disabled:opacity-70`}
-            >
-              {isProcessingPartition ? (
-                <>
-                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Reconciling...</span>
-                </>
-              ) : showPartitionSuccess ? (
-                <>
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Closed!</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-3 h-3" />
-                  <span>Close Period</span>
-                </>
-              )}
-            </button>
-            <div className="relative">
-              <button onClick={() => setShowExportMenu(!showExportMenu)} className="w-full h-full flex items-center justify-center gap-1.5 bg-brand-blue dark:bg-white/10 text-white py-1.5 rounded-lg font-black text-[8px] uppercase tracking-widest active:scale-95 transition-all">
-                <Download className="w-3 h-3" />
-                Export
-              </button>
-              {showExportMenu && (
-                <div className="absolute top-full right-0 mt-1 bg-white dark:bg-[#1A1A1A] border border-neutral-200 dark:border-[#333333] rounded-lg shadow-xl py-1 w-32 z-10 overflow-hidden">
-                  <button onClick={downloadPDF} className="w-full px-3 py-2 text-left text-[9px] font-bold hover:bg-neutral-50 dark:hover:bg-[#222222] transition-colors flex items-center gap-2 border-b border-neutral-100 dark:border-white/5">
-                    <FileText className="w-3 h-3 text-red-500" /> PDF Document
+              {/* Date Navigator */}
+              {granularity !== 'ALL' && granularity !== 'CUSTOM' && (
+                <div className="flex items-center justify-between bg-neutral-50 border border-neutral-200 rounded-xl p-1 mb-8 print:hidden max-w-sm mx-auto shadow-sm">
+                  <button 
+                    onClick={() => {
+                      if (granularity === 'MONTH') setReferenceDate(subMonths(referenceDate, 1));
+                      else if (granularity === 'YEAR') setReferenceDate(subYears(referenceDate, 1));
+                      else if (granularity === 'WEEK') setReferenceDate(subWeeks(referenceDate, 1));
+                      else if (granularity === 'DAY') setReferenceDate(subDays(referenceDate, 1));
+                    }}
+                    className="p-2 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-neutral-200 shadow-sm"
+                  >
+                    <ChevronLeft className="w-4 h-4 text-neutral-600" />
                   </button>
-                  <button onClick={downloadCSV} className="w-full px-3 py-2 text-left text-[9px] font-bold hover:bg-neutral-50 dark:hover:bg-[#222222] transition-colors flex items-center gap-2 border-b border-neutral-100 dark:border-white/5">
-                    <FileText className="w-3 h-3 text-green-500" /> CSV Spreadsheet
-                  </button>
-                  <button onClick={() => navigate('/reports')} className="w-full px-3 py-2 text-left text-[9px] font-bold hover:bg-neutral-50 dark:hover:bg-[#222222] transition-colors flex items-center gap-2">
-                    <History className="w-3 h-3 text-brand-blue" /> Advanced Audit
+                  <span className="text-xs font-black uppercase tracking-widest text-brand-blue">
+                    {granularity === 'YEAR' && format(referenceDate, 'yyyy')}
+                    {granularity === 'MONTH' && format(referenceDate, 'MMMM yyyy')}
+                    {granularity === 'WEEK' && `Week of ${format(startOfWeek(referenceDate, { weekStartsOn: 1 }), 'MMM d')}`}
+                    {granularity === 'DAY' && format(referenceDate, 'MMM d, yyyy')}
+                  </span>
+                  <button 
+                    onClick={() => {
+                      if (granularity === 'MONTH') setReferenceDate(addMonths(referenceDate, 1));
+                      else if (granularity === 'YEAR') setReferenceDate(addYears(referenceDate, 1));
+                      else if (granularity === 'WEEK') setReferenceDate(addWeeks(referenceDate, 1));
+                      else if (granularity === 'DAY') setReferenceDate(addDays(referenceDate, 1));
+                    }}
+                    className="p-2 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-neutral-200 shadow-sm"
+                  >
+                    <ChevronRight className="w-4 h-4 text-neutral-600" />
                   </button>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-      </div>
 
+              {/* Summary Metrics */}
+              <div className="flex gap-12 mb-10 bg-neutral-50 border border-neutral-200 p-6 rounded-2xl">
+                <div>
+                  <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5">Opening Balance</p>
+                  <p className="text-xl font-black text-brand-blue">{currency}{openingBalanceForView.toLocaleString('en-IN')}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5">Total Inflow</p>
+                  <p className="text-xl font-black text-emerald-600">+{currency}{totalCredit.toLocaleString('en-IN')}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5">Total Outflow</p>
+                  <p className="text-xl font-black text-rose-600">-{currency}{totalDebit.toLocaleString('en-IN')}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5">Closing Balance</p>
+                  <p className="text-xl font-black text-brand-blue">{currency}{currentViewStateBalance.toLocaleString('en-IN')}</p>
+                </div>
+              </div>
 
-      <div className="flex-1 overflow-auto overflow-x-auto pb-32" style={{ WebkitOverflowScrolling: 'touch' }}>
-        <table className="w-full border-collapse min-w-[500px]">
-          <thead className="sticky top-0 bg-white dark:bg-[#0C0C0F] z-10 border-b border-neutral-100 dark:border-[#222222]">
-            <tr>
-              <th className="px-2 py-1.5 text-left text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em] w-20">Date</th>
-              <th className="px-2 py-1.5 text-left text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em]">Particulars</th>
-              <th className="px-2 py-1.5 text-left text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em] md:w-48 whitespace-nowrap overflow-hidden">Remarks</th>
-              <th className="px-2 py-1.5 text-right text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em] w-20">Amount</th>
-              <th className="px-2 py-1.5 text-right text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em] w-20">Balance</th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* Opening Balance Row */}
-            {granularity === 'ALL' && (
-              <tr className="bg-brand-blue/[0.02] dark:bg-white/[0.01] border-b border-neutral-100/50 dark:border-[#222222]">
-                <td className="px-2 py-2 whitespace-nowrap"><span className="text-[9px] font-black text-neutral-400 uppercase tracking-tighter">
-                  {account.startingBalanceDate ? format(new Date(account.startingBalanceDate), 'dd MMM yyyy') : '-'}
-                </span></td>
-                <td className="px-2 py-2"><span className="text-[9px] font-black text-brand-blue/50 dark:text-white/40 uppercase tracking-widest">
-                  System Start Balance
-                </span></td>
-                <td className="px-2 py-2 opacity-50"><span className="text-[9px]">-</span></td>
-                <td className="px-2 py-2 text-right whitespace-nowrap"><span className="text-[11px] font-black text-neutral-200">-</span></td>
-                <td className="px-2 py-2 text-right whitespace-nowrap"><span className="text-[10px] font-black text-brand-blue/70 dark:text-white/60 tracking-tighter">{currency}{account.startingBalance.toLocaleString()}</span></td>
-              </tr>
-            )}
-
-            {filteredStatementData.map((tx, idx) => {
-              // Find any partitions that occurred between the previous transaction and this one
-              const txTime = new Date(tx.dateTime).getTime();
-              const originalIdx = statementData.findIndex(t => t.id === tx.id);
-              const prevTxTime = originalIdx > 0 
-                ? new Date(statementData[originalIdx - 1].dateTime).getTime() 
-                : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
-              
-              const matchingClosings = closings.filter(c => {
-                const cTime = new Date(c.closingDate).getTime();
-                return cTime > prevTxTime && cTime <= txTime;
-              });
-
-              return (
-                <React.Fragment key={tx.id}>
-                  {matchingClosings.map(c => (
-                    <PartitionRow key={c.id} partition={c} />
-                  ))}
-                  <tr onDoubleClick={() => handleCreatePartitionAt(tx)} className="border-b border-neutral-50 dark:border-white/[0.02] hover:bg-neutral-50/50 dark:hover:bg-white/[0.01] transition-colors">
-                    <td className="px-2 py-2 whitespace-nowrap"><span className="text-[9px] font-bold text-neutral-400 uppercase tracking-tighter">{format(new Date(tx.dateTime), 'dd MMM HH:mm')}</span></td>
-                    <td className="px-2 py-2"><span className="text-[10px] font-black text-neutral-700 dark:text-neutral-300 uppercase truncate max-w-[120px] block">{tx.party || '-'}</span></td>
-                    <td className="px-2 py-2"><span className="text-[8px] font-bold text-neutral-400 dark:text-neutral-500 italic truncate max-w-[150px] block">{tx.note || '-'}</span></td>
-                    <td className="px-2 py-2 text-right whitespace-nowrap"><span className={`text-[11px] font-black tracking-tighter ${normalizeType(tx.type) === 'CREDIT' ? 'text-emerald-500' : 'text-rose-500'}`}>{normalizeType(tx.type) === 'CREDIT' ? '+' : '-'}{currency}{tx.amount.toLocaleString()}</span></td>
-                    <td className="px-2 py-2 text-right whitespace-nowrap"><span className="text-[10px] font-black text-brand-blue/70 dark:text-white/60 tracking-tighter">{currency}{tx.runningBalance.toLocaleString()}</span></td>
+              {/* Transactions Table */}
+              <table className="w-full text-left text-sm border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-black">
+                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 w-28">Date</th>
+                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800">Particulars</th>
+                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 w-56">Remarks</th>
+                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 text-right w-28">Amount</th>
+                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 text-right w-28">Balance</th>
                   </tr>
-                </React.Fragment>
-              );
-            })}
+                </thead>
+                <tbody>
+                  {granularity === 'ALL' && (
+                    <tr className="bg-neutral-50 border-b border-neutral-200">
+                      <td className="px-2 py-4 whitespace-nowrap text-xs font-bold text-neutral-500 uppercase tracking-wider">
+                        {account.startingBalanceDate ? format(new Date(account.startingBalanceDate), 'dd MMM yyyy') : '-'}
+                      </td>
+                      <td className="px-2 py-4 text-sm font-black text-brand-blue uppercase tracking-widest">
+                        System Start Balance
+                      </td>
+                      <td className="px-2 py-4 text-neutral-400 text-sm">-</td>
+                      <td className="px-2 py-4 text-right text-neutral-400 text-sm">-</td>
+                      <td className="px-2 py-4 text-right whitespace-nowrap text-sm font-black text-brand-blue">{currency}{account.startingBalance.toLocaleString('en-IN')}</td>
+                    </tr>
+                  )}
 
-            {/* Handle Partitions that happened AFTER the last transaction in the current view */}
-            {(() => {
-                const lastTxTimeInView = filteredStatementData.length > 0 
-                    ? new Date(filteredStatementData[filteredStatementData.length - 1].dateTime).getTime() 
-                    : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
-                
-                const trailingClosings = closings.filter(c => {
-                    const cTime = new Date(c.closingDate).getTime();
-                    return cTime > lastTxTimeInView && cTime <= endDateLimit;
-                });
+                  {filteredStatementData.length > 0 ? filteredStatementData.map((tx, idx) => {
+                    const txTime = new Date(tx.dateTime).getTime();
+                    const originalIdx = statementData.findIndex(t => t.id === tx.id);
+                    const prevTxTime = originalIdx > 0 
+                      ? new Date(statementData[originalIdx - 1].dateTime).getTime() 
+                      : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
+                    
+                    const matchingClosings = closings.filter(c => {
+                      const cTime = new Date(c.closingDate).getTime();
+                      return cTime > prevTxTime && cTime <= txTime;
+                    });
 
-                return trailingClosings.map(c => (
-                    <PartitionRow key={c.id} partition={c} />
-                ));
-            })()}
-          </tbody>
-        </table>
+                    return (
+                      <React.Fragment key={tx.id}>
+                        {matchingClosings.map(c => (
+                          <PartitionRow key={c.id} partition={c} />
+                        ))}
+                        <tr onDoubleClick={() => handleCreatePartitionAt(tx)} className="border-b border-neutral-200 hover:bg-neutral-50 transition-colors">
+                          <td className="px-2 py-4 whitespace-nowrap text-xs font-bold text-neutral-600 uppercase tracking-wider">{format(new Date(tx.dateTime), 'dd MMM HH:mm')}</td>
+                          <td className="px-2 py-4 text-sm font-bold text-neutral-800">{tx.party || '-'}</td>
+                          <td className="px-2 py-4 text-xs font-medium text-neutral-500 italic max-w-[200px] truncate">{tx.note || '-'}</td>
+                          <td className={`px-2 py-4 text-right whitespace-nowrap text-sm font-black ${normalizeType(tx.type) === 'CREDIT' ? 'text-emerald-600' : 'text-rose-600'}`}>{normalizeType(tx.type) === 'CREDIT' ? '+' : '-'}{currency}{tx.amount.toLocaleString('en-IN')}</td>
+                          <td className="px-2 py-4 text-right whitespace-nowrap text-sm font-black text-brand-blue">{currency}{tx.runningBalance.toLocaleString('en-IN')}</td>
+                        </tr>
+                      </React.Fragment>
+                    );
+                  }) : (
+                    <tr>
+                      <td colSpan={5} className="py-16 text-center text-neutral-400 font-medium">No transactions found for this period</td>
+                    </tr>
+                  )}
+
+                  {(() => {
+                      const lastTxTimeInView = filteredStatementData.length > 0 
+                          ? new Date(filteredStatementData[filteredStatementData.length - 1].dateTime).getTime() 
+                          : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
+                      
+                      const trailingClosings = closings.filter(c => {
+                          const cTime = new Date(c.closingDate).getTime();
+                          return cTime > lastTxTimeInView && cTime <= endDateLimit;
+                      });
+
+                      return trailingClosings.map(c => (
+                          <PartitionRow key={c.id} partition={c} />
+                      ));
+                  })()}
+                </tbody>
+              </table>
+
+            </div>
+          </TransformComponent>
+        </TransformWrapper>
       </div>
 
       {/* Slide-out Filter Panel */}
