@@ -1954,110 +1954,122 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
             {/* The Document */}
             <div className="bg-white text-black w-[800px] min-h-[1131px] p-8 md:p-12 shadow-xl m-0 relative print:m-0 print:shadow-none" style={{ fontFamily: '"Inter", "Satoshi", sans-serif' }}>
               
-              {/* Doc Header */}
-              <div className="flex justify-between items-start border-b border-neutral-300 pb-6 mb-8 relative">
-                <div>
-                  <div className="flex items-center gap-4 mb-2">
-                    <div className="w-12 h-12 border border-neutral-200 rounded-xl flex items-center justify-center p-1.5 shadow-sm">
-                      <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
-                    </div>
-                    <div>
-                      <h1 className="text-3xl font-heading font-black text-brand-blue uppercase">{account.bankName}</h1>
-                      <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest mt-1">
-                        {account.type === 'CASH' ? 'CASH ACCOUNT' : `•••• ${account.accountLast4}`}
-                      </p>
+              {/* Doc Header & Top Controls */}
+              <div className="flex justify-between items-end pb-5 mb-5 border-b border-neutral-200 relative">
+                {/* Left: Bank Info */}
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 border border-neutral-200/80 bg-neutral-50/50 rounded-2xl flex items-center justify-center p-2 shadow-sm">
+                    <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-heading font-black text-brand-blue uppercase tracking-tight">{account.bankName}</h1>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="px-2 py-0.5 rounded bg-neutral-100 text-[9px] font-bold text-neutral-500 uppercase tracking-widest">
+                        {account.type === 'CASH' ? 'CASH' : account.accountLast4}
+                      </span>
+                      <span className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider">Statement</span>
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-1">Period</p>
-                  <h2 className="text-xl font-black text-brand-blue">
+
+                {/* Right: Modern Actions */}
+                <div className="flex items-center gap-3 print:hidden">
+                  <div className="relative">
+                    <button onClick={() => setShowExportMenu(!showExportMenu)} className="h-8 px-4 bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-600 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-colors">
+                      <Download className="w-3.5 h-3.5" /> Export
+                    </button>
+                    {showExportMenu && (
+                      <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-neutral-200 shadow-xl rounded-xl overflow-hidden z-[9999]">
+                        <button onClick={() => { downloadPDF(); setShowExportMenu(false); }} className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-neutral-50 text-neutral-800 flex items-center gap-2 border-b border-neutral-100 transition-colors">
+                          <FileText className="w-4 h-4 text-rose-500" /> PDF Document
+                        </button>
+                        <button onClick={() => { downloadCSV(); setShowExportMenu(false); }} className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-neutral-50 text-neutral-800 flex items-center gap-2 transition-colors">
+                          <FileText className="w-4 h-4 text-green-500" /> CSV Spreadsheet
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <button 
+                    onClick={handleStartNewBalance} 
+                    disabled={isProcessingPartition || showPartitionSuccess}
+                    className={`h-8 px-4 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-70 ${
+                      showPartitionSuccess ? 'bg-emerald-500 text-white' : 'bg-brand-blue text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {showPartitionSuccess ? 'Closed!' : isProcessingPartition ? 'Reconciling...' : 'Close Period'}
+                  </button>
+                </div>
+
+                {/* Print Only Period Label */}
+                <div className="hidden print:block text-right">
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-0.5">Period</p>
+                  <h2 className="text-sm font-black text-brand-blue">
                     {granularity === 'YEAR' && format(referenceDate, 'yyyy')}
                     {granularity === 'MONTH' && format(referenceDate, 'MMMM yyyy')}
                     {granularity === 'WEEK' && `Week of ${format(startOfWeek(referenceDate, { weekStartsOn: 1 }), 'MMM d')}`}
                     {granularity === 'DAY' && format(referenceDate, 'MMM d, yyyy')}
                     {granularity === 'ALL' && 'All Time'}
                   </h2>
-                  <div className="flex items-center gap-2 mt-4 justify-end relative z-50 print:hidden">
-                    <div className="relative">
-                      <button onClick={() => setShowExportMenu(!showExportMenu)} className="px-4 py-2 bg-brand-blue hover:bg-blue-700 text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-sm transition-colors">
-                        <Download className="w-3.5 h-3.5" /> Export
-                      </button>
-                      {showExportMenu && (
-                        <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-neutral-200 shadow-xl rounded-xl overflow-hidden z-[9999]">
-                          <button onClick={() => { downloadPDF(); setShowExportMenu(false); }} className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-neutral-50 text-neutral-800 flex items-center gap-2 border-b border-neutral-100 transition-colors">
-                            <FileText className="w-4 h-4 text-rose-500" /> PDF Document
-                          </button>
-                          <button onClick={() => { downloadCSV(); setShowExportMenu(false); }} className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-neutral-50 text-neutral-800 flex items-center gap-2 transition-colors">
-                            <FileText className="w-4 h-4 text-green-500" /> CSV Spreadsheet
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <button 
-                      onClick={handleStartNewBalance} 
-                      disabled={isProcessingPartition || showPartitionSuccess}
-                      className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-sm transition-all disabled:opacity-70 ${
-                        showPartitionSuccess ? 'bg-emerald-500 text-white' : 'bg-brand-green text-white hover:bg-green-600'
-                      }`}
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" /> {showPartitionSuccess ? 'Closed!' : isProcessingPartition ? 'Reconciling...' : 'Close Period'}
-                    </button>
-                  </div>
                 </div>
               </div>
 
-              {/* Date Navigator */}
-              {granularity !== 'ALL' && granularity !== 'CUSTOM' && (
-                <div className="flex items-center justify-between bg-neutral-50 border border-neutral-200 rounded-xl p-1 mb-8 print:hidden max-w-sm mx-auto shadow-sm">
-                  <button 
-                    onClick={() => {
-                      if (granularity === 'MONTH') setReferenceDate(subMonths(referenceDate, 1));
-                      else if (granularity === 'YEAR') setReferenceDate(subYears(referenceDate, 1));
-                      else if (granularity === 'WEEK') setReferenceDate(subWeeks(referenceDate, 1));
-                      else if (granularity === 'DAY') setReferenceDate(subDays(referenceDate, 1));
-                    }}
-                    className="p-2 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-neutral-200 shadow-sm"
-                  >
-                    <ChevronLeft className="w-4 h-4 text-neutral-600" />
-                  </button>
-                  <span className="text-xs font-black uppercase tracking-widest text-brand-blue">
-                    {granularity === 'YEAR' && format(referenceDate, 'yyyy')}
-                    {granularity === 'MONTH' && format(referenceDate, 'MMMM yyyy')}
-                    {granularity === 'WEEK' && `Week of ${format(startOfWeek(referenceDate, { weekStartsOn: 1 }), 'MMM d')}`}
-                    {granularity === 'DAY' && format(referenceDate, 'MMM d, yyyy')}
-                  </span>
-                  <button 
-                    onClick={() => {
-                      if (granularity === 'MONTH') setReferenceDate(addMonths(referenceDate, 1));
-                      else if (granularity === 'YEAR') setReferenceDate(addYears(referenceDate, 1));
-                      else if (granularity === 'WEEK') setReferenceDate(addWeeks(referenceDate, 1));
-                      else if (granularity === 'DAY') setReferenceDate(addDays(referenceDate, 1));
-                    }}
-                    className="p-2 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-neutral-200 shadow-sm"
-                  >
-                    <ChevronRight className="w-4 h-4 text-neutral-600" />
-                  </button>
-                </div>
-              )}
-
-              {/* Summary Metrics */}
-              <div className="flex gap-12 mb-10 bg-neutral-50 border border-neutral-200 p-6 rounded-2xl">
-                <div>
-                  <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5">Opening Balance</p>
-                  <p className="text-xl font-black text-brand-blue">{currency}{openingBalanceForView.toLocaleString('en-IN')}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5">Total Inflow</p>
-                  <p className="text-xl font-black text-emerald-600">+{currency}{totalCredit.toLocaleString('en-IN')}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5">Total Outflow</p>
-                  <p className="text-xl font-black text-rose-600">-{currency}{totalDebit.toLocaleString('en-IN')}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5">Closing Balance</p>
-                  <p className="text-xl font-black text-brand-blue">{currency}{currentViewStateBalance.toLocaleString('en-IN')}</p>
+              {/* Navigation & Summary Metrics Row */}
+              <div className="flex items-center justify-between mb-8">
+                {/* Date Navigator */}
+                {granularity !== 'ALL' && granularity !== 'CUSTOM' && (
+                  <div className="flex items-center bg-white border border-neutral-200/80 rounded-xl p-1 shadow-sm print:hidden">
+                    <button 
+                      onClick={() => {
+                        if (granularity === 'MONTH') setReferenceDate(subMonths(referenceDate, 1));
+                        else if (granularity === 'YEAR') setReferenceDate(subYears(referenceDate, 1));
+                        else if (granularity === 'WEEK') setReferenceDate(subWeeks(referenceDate, 1));
+                        else if (granularity === 'DAY') setReferenceDate(subDays(referenceDate, 1));
+                      }}
+                      className="p-1.5 hover:bg-neutral-50 rounded-lg transition-colors border border-transparent hover:border-neutral-200 text-neutral-400 hover:text-brand-blue shadow-sm"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="px-4 text-[10px] font-black uppercase tracking-widest text-brand-blue min-w-[110px] text-center">
+                      {granularity === 'YEAR' && format(referenceDate, 'yyyy')}
+                      {granularity === 'MONTH' && format(referenceDate, 'MMMM yyyy')}
+                      {granularity === 'WEEK' && `Week of ${format(startOfWeek(referenceDate, { weekStartsOn: 1 }), 'MMM d')}`}
+                      {granularity === 'DAY' && format(referenceDate, 'MMM d, yyyy')}
+                    </span>
+                    <button 
+                      onClick={() => {
+                        if (granularity === 'MONTH') setReferenceDate(addMonths(referenceDate, 1));
+                        else if (granularity === 'YEAR') setReferenceDate(addYears(referenceDate, 1));
+                        else if (granularity === 'WEEK') setReferenceDate(addWeeks(referenceDate, 1));
+                        else if (granularity === 'DAY') setReferenceDate(addDays(referenceDate, 1));
+                      }}
+                      className="p-1.5 hover:bg-neutral-50 rounded-lg transition-colors border border-transparent hover:border-neutral-200 text-neutral-400 hover:text-brand-blue shadow-sm"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+                
+                {/* Compact Premium Summary Metrics */}
+                <div className="flex items-center gap-5 bg-white border border-neutral-200/80 shadow-sm rounded-xl px-6 py-3 ml-auto relative">
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest mb-0.5">Opening</span>
+                    <span className="text-sm font-black text-brand-blue">{currency}{openingBalanceForView.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="w-px h-8 bg-neutral-200"></div>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest mb-0.5">Inflow</span>
+                    <span className="text-sm font-black text-emerald-500">+{currency}{totalCredit.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="w-px h-8 bg-neutral-200"></div>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest mb-0.5">Outflow</span>
+                    <span className="text-sm font-black text-rose-500">-{currency}{totalDebit.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="w-px h-8 bg-neutral-200"></div>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest mb-0.5">Closing</span>
+                    <span className="text-sm font-black text-brand-blue">{currency}{currentViewStateBalance.toLocaleString('en-IN')}</span>
+                  </div>
                 </div>
               </div>
 
