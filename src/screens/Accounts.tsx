@@ -1927,7 +1927,10 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               <BankLogo bankName={account.bankName} type={account.type} className="w-full h-full object-contain" />
             </div>
             <div>
-              <h2 className="text-[11px] font-semibold text-brand-blue dark:text-[#F7F7F7] uppercase tracking-widest leading-none mb-0.5">{account.bankName}</h2>
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <h2 className="text-[11px] font-semibold text-brand-blue dark:text-[#F7F7F7] uppercase tracking-widest leading-none">{account.bankName}</h2>
+                <span className="text-[7px] font-black bg-neutral-200 dark:bg-white/10 text-brand-blue dark:text-white px-1.5 py-0.5 rounded-sm uppercase tracking-widest">Statement</span>
+              </div>
               <div className="flex items-center gap-1">
                 <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest leading-none">
                   {account.type === 'CASH' ? 'CASH' : `•••• ${account.accountLast4}`}
