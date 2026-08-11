@@ -1988,11 +1988,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                           <button onClick={() => { downloadPDF(); setShowExportMenu(false); }} className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-neutral-50 text-neutral-800 flex items-center gap-2 border-b border-neutral-100 transition-colors">
                             <FileText className="w-4 h-4 text-rose-500" /> PDF Document
                           </button>
-                          <button onClick={() => { downloadCSV(); setShowExportMenu(false); }} className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-neutral-50 text-neutral-800 flex items-center gap-2 border-b border-neutral-100 transition-colors">
+                          <button onClick={() => { downloadCSV(); setShowExportMenu(false); }} className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-neutral-50 text-neutral-800 flex items-center gap-2 transition-colors">
                             <FileText className="w-4 h-4 text-green-500" /> CSV Spreadsheet
-                          </button>
-                          <button onClick={() => navigate('/reports')} className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-neutral-50 text-neutral-800 flex items-center gap-2 transition-colors">
-                            <History className="w-4 h-4 text-brand-blue" /> Advanced Audit
                           </button>
                         </div>
                       )}
