@@ -327,8 +327,11 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
         <TransformWrapper initialScale={initialScale} minScale={initialScale} maxScale={3} limitToBounds={true} panning={{ velocityDisabled: true }}>
           <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }}>
             {/* The Document */}
-            <div className="bg-white text-black w-[800px] min-h-[1131px] p-8 pb-24 shadow-xl m-0 relative print:m-0 print:shadow-none" style={{ fontFamily: '"Inter", "Satoshi", sans-serif' }}>
-              
+            <div 
+              className="bg-white text-black w-[800px] h-[var(--doc-height)] print:h-auto print:min-h-[1131px] flex flex-col shadow-xl m-0 relative print:m-0 print:shadow-none" 
+              style={{ fontFamily: '"Inter", "Satoshi", sans-serif', '--doc-height': `calc((100vh - 48px) / ${initialScale})` } as React.CSSProperties}
+            >
+              <div className="shrink-0 p-8 pb-4 print:p-0 print:pb-4">
               {/* Doc Header */}
               <div className="flex justify-between items-center border-b border-neutral-300 pb-4 mb-6 relative">
                 <div>
@@ -408,8 +411,13 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
 
+              </div>
               {/* Transactions Table */}
-              <div className="overflow-x-auto w-full pb-4">
+              <div 
+                className="flex-1 overflow-y-auto overflow-x-hidden w-full px-8 pb-4 print:px-0 print:pb-0 print:overflow-visible print:h-auto"
+                onWheelCapture={(e) => e.stopPropagation()} 
+                onTouchMoveCapture={(e) => e.stopPropagation()}
+              >
                 <table className="w-full text-left text-sm border-collapse whitespace-nowrap min-w-[700px]">
                 <thead>
                   <tr className="border-b-2 border-black">
@@ -449,7 +457,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
               </div>
 
               {/* Footer */}
-              <div className="absolute bottom-6 left-8 right-8 pt-3 border-t border-neutral-200 flex justify-end items-center">
+              <div className="shrink-0 pt-3 pb-6 px-8 border-t border-neutral-200 flex justify-end items-center w-full print:px-0">
                 <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Page 1 of 1</p>
               </div>
             </div>
@@ -1975,8 +1983,11 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
         <TransformWrapper initialScale={initialScale} minScale={initialScale} maxScale={3} limitToBounds={true} panning={{ velocityDisabled: true }}>
           <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }}>
             {/* The Document */}
-            <div className="bg-white text-black w-[800px] min-h-[1131px] p-8 md:p-12 shadow-xl m-0 relative print:m-0 print:shadow-none" style={{ fontFamily: '"Inter", "Satoshi", sans-serif' }}>
-              
+            <div 
+              className="bg-white text-black w-[800px] h-[var(--doc-height)] print:h-auto print:min-h-[1131px] flex flex-col shadow-xl m-0 relative print:m-0 print:shadow-none" 
+              style={{ fontFamily: '"Inter", "Satoshi", sans-serif', '--doc-height': `calc((100vh - 48px) / ${initialScale})` } as React.CSSProperties}
+            >
+              <div className="shrink-0 p-8 md:p-12 pb-4 print:p-0 print:pb-4">
               {/* Doc Header & Top Controls */}
               <div className="flex justify-between items-end pb-5 mb-5 border-b border-neutral-200 relative">
                 {/* Left: Bank Info */}
@@ -2030,8 +2041,14 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                 </div>
               </div>
 
+              </div>
               {/* Transactions Table */}
-              <table className="w-full text-left text-sm border-collapse">
+              <div 
+                className="flex-1 overflow-y-auto w-full px-8 md:px-12 pb-8 print:px-0 print:pb-0 print:overflow-visible print:h-auto"
+                onWheelCapture={(e) => e.stopPropagation()} 
+                onTouchMoveCapture={(e) => e.stopPropagation()}
+              >
+                <table className="w-full text-left text-sm border-collapse">
                 <thead>
                   <tr className="border-b-2 border-black">
                     <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 w-28">Date</th>
@@ -2104,7 +2121,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                   })()}
                 </tbody>
               </table>
-
+              </div>
             </div>
           </TransformComponent>
         </TransformWrapper>
