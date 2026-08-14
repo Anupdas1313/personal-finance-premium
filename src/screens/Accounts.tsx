@@ -418,7 +418,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                 onWheelCapture={(e) => e.stopPropagation()} 
                 onTouchMoveCapture={(e) => e.stopPropagation()}
               >
-                <table className="w-full text-left text-sm border-collapse whitespace-nowrap min-w-[700px]">
+                <table className="w-full text-left text-sm border-collapse">
                 <thead>
                   <tr className="border-b-2 border-black">
                     <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Date</th>
@@ -443,8 +443,8 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                         {showTagCol && <td className="py-3 px-2 font-medium text-brand-blue">{tx.expenseType || '-'}</td>}
                         {showRemarksCol && <td className="py-3 px-2 text-neutral-600 max-w-[200px] truncate" title={tx.note || tx.type}>{tx.note || tx.type}</td>}
                         {showPaymentMethodCol && <td className="py-3 px-2 text-neutral-600">{tx.paymentMethod || '-'}</td>}
-                        <td className="py-3 px-2 text-right font-medium text-rose-600">{type === 'DEBIT' ? amount.toLocaleString('en-IN') : '-'}</td>
-                        <td className="py-3 px-2 text-right font-medium text-emerald-600">{type === 'CREDIT' ? amount.toLocaleString('en-IN') : '-'}</td>
+                        <td className="py-3 px-2 text-right font-medium text-rose-600 whitespace-nowrap">{type === 'DEBIT' ? amount.toLocaleString('en-IN') : '-'}</td>
+                        <td className="py-3 px-2 text-right font-medium text-emerald-600 whitespace-nowrap">{type === 'CREDIT' ? amount.toLocaleString('en-IN') : '-'}</td>
                       </tr>
                     );
                   }) : (
