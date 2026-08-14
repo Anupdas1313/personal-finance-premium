@@ -414,7 +414,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
               </div>
               {/* Transactions Table */}
               <div 
-                className="flex-1 overflow-y-auto overflow-x-hidden w-full px-8 pb-4 print:px-0 print:pb-0 print:overflow-visible print:h-auto"
+                className="flex-1 overflow-auto w-full px-8 pb-4 print:px-0 print:pb-0 print:overflow-visible print:h-auto"
                 onWheelCapture={(e) => e.stopPropagation()} 
                 onTouchMoveCapture={(e) => e.stopPropagation()}
               >
@@ -2044,7 +2044,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               </div>
               {/* Transactions Table */}
               <div 
-                className="flex-1 overflow-y-auto w-full px-8 md:px-12 pb-8 print:px-0 print:pb-0 print:overflow-visible print:h-auto"
+                className="flex-1 overflow-auto w-full px-8 md:px-12 pb-8 print:px-0 print:pb-0 print:overflow-visible print:h-auto"
                 onWheelCapture={(e) => e.stopPropagation()} 
                 onTouchMoveCapture={(e) => e.stopPropagation()}
               >
