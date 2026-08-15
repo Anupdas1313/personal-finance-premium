@@ -558,14 +558,14 @@ export default function Transactions() {
                     </div>
                     <div className="w-full">
                       {granularity === 'MONTH' || granularity === 'LAST_MONTH' ? (
-                        <div className="flex items-center justify-between bg-neutral-50 dark:bg-white/5 border border-neutral-200/80 dark:border-white/10 rounded-xl p-1 w-full">
-                          <button onClick={() => setReferenceDate(subMonths(referenceDate, 1))} className="p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-white/10 active:scale-95 text-neutral-500 dark:text-neutral-400 hover:text-brand-blue dark:hover:text-white">
+                        <div className="flex items-center justify-between px-1 py-1">
+                          <button onClick={() => setReferenceDate(subMonths(referenceDate, 1))} className="w-8 h-8 flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-white/10 rounded-full transition-colors active:scale-95 text-neutral-400 hover:text-brand-blue dark:hover:text-white">
                             <ChevronLeft className="w-4 h-4" />
                           </button>
-                          <div className="flex-1 text-center font-heading font-black text-brand-blue dark:text-white uppercase tracking-widest text-[11px]">
+                          <div className="flex-1 text-center font-bold text-neutral-700 dark:text-neutral-200 text-xs">
                             {format(referenceDate, 'MMMM yyyy')}
                           </div>
-                          <button onClick={() => setReferenceDate(addMonths(referenceDate, 1))} className="p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-white/10 active:scale-95 text-neutral-500 dark:text-neutral-400 hover:text-brand-blue dark:hover:text-white">
+                          <button onClick={() => setReferenceDate(addMonths(referenceDate, 1))} className="w-8 h-8 flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-white/10 rounded-full transition-colors active:scale-95 text-neutral-400 hover:text-brand-blue dark:hover:text-white">
                             <ChevronRight className="w-4 h-4" />
                           </button>
                         </div>
