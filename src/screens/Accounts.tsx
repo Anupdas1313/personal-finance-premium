@@ -451,7 +451,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                     const type = normalizeType(tx.type);
                     const amount = Number(tx.amount) || 0;
                     return (
-                      <tr key={idx} className="even:bg-neutral-50/70 hover:bg-neutral-100/50 transition-colors">
+                      <tr key={idx} className="even:bg-[#F8F9FF] hover:bg-blue-50/50 transition-colors">
                         <td className="py-3 px-3 font-medium whitespace-nowrap">{format(new Date(tx.dateTime), 'dd MMM yy')}</td>
                         {showAccountCol && <td className="py-3 px-3 font-bold">{getAccountName(tx.accountId)}</td>}
                         {showCategoryCol && <td className="py-3 px-3 font-medium">{tx.category || '-'}</td>}
@@ -2121,7 +2121,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                         {matchingClosings.map(c => (
                           <PartitionRow key={c.id} partition={c} />
                         ))}
-                        <tr onDoubleClick={() => handleCreatePartitionAt(tx)} className="even:bg-neutral-50/70 hover:bg-neutral-100/50 transition-colors">
+                        <tr onDoubleClick={() => handleCreatePartitionAt(tx)} className="even:bg-[#F8F9FF] hover:bg-blue-50/50 transition-colors">
                           <td className="px-3 py-4 whitespace-nowrap text-xs font-bold text-neutral-600 uppercase tracking-wider">{format(new Date(tx.dateTime), 'dd MMM HH:mm')}</td>
                           <td className="px-3 py-4 text-sm font-bold text-neutral-800">{tx.party || '-'}</td>
                           <td className="px-3 py-4 text-xs font-medium text-neutral-500 italic max-w-[200px] truncate">{tx.note || '-'}</td>
