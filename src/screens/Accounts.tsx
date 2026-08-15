@@ -296,7 +296,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const initialScale = window.innerWidth / 800;
+  const initialScale = window.innerWidth / 1000;
 
   return createPortal(
     <div className="fixed inset-0 bg-[#F9FBFF] dark:bg-[#0C0C0F] z-[9999] flex flex-col overflow-hidden animate-fade-in">
@@ -328,7 +328,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
           <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }}>
             {/* The Document */}
             <div 
-              className="bg-white text-black w-[800px] h-[var(--doc-height)] print:h-auto print:min-h-[1131px] flex flex-col shadow-xl m-0 relative print:m-0 print:shadow-none" 
+              className="bg-white text-black w-[1000px] h-[var(--doc-height)] print:h-auto print:min-h-[1414px] flex flex-col shadow-xl m-0 relative print:m-0 print:shadow-none" 
               style={{ fontFamily: '"Inter", "Satoshi", sans-serif', '--doc-height': `calc((100vh - 48px) / ${initialScale})` } as React.CSSProperties}
             >
               <div className="shrink-0 p-8 pb-4 print:p-0 print:pb-4">
