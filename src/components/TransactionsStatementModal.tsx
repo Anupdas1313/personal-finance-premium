@@ -1,42 +1,89 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, addMonths, subMonths } from 'date-fns';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Filter, Share2, Download, FileText, ArrowDownLeft, ArrowUpRight, ArrowRightLeft, X, Check } from 'lucide-react';
-import { Transaction, normalizeType, Account } from '../models/db';
+import { ChevronLeft, ChevronRight, Filter, Share2, Download, FileText, ArrowDownLeft, ArrowUpRight, ArrowRightLeft, X, Check, Calendar } from 'lucide-react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db, normalizeType } from '../models/db';
 import { useCurrency } from '../hooks/useCurrency';
+import { useAuth } from '../context/AuthContext';
+import { AppDatePicker } from './AppDatePicker';
 
-interface TransactionsStatementModalProps {
-  filteredTxs: Transaction[];
-  totals: { income: number; expense: number };
-  periodText: string;
-  accountsMap: Record<string, Account>;
-  onClose: () => void;
-}
-
-export function TransactionsStatementModal({
-  filteredTxs,
-  totals,
-  periodText,
-  accountsMap,
-  onClose
-}: TransactionsStatementModalProps) {
+export function TransactionsStatementModal({ onClose }: { onClose: () => void }) {
   const currency = useCurrency();
-  const touchStart = React.useRef({ x: 0, y: 0 });
-  
-  const [showExportMenu, setShowExportMenu] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  
+  const { user } = useAuth();
+  const touchStart = useRef({ x: 0, y: 0 });
+
+  const [dateRange, setDateRange] = useState({
+    start: startOfMonth(new Date()),
+    end: endOfMonth(new Date())
+  });
+
+  const allAccounts = useLiveQuery(() => db.accounts.toArray(), [user?.uid]) || [];
+  const allTransactions = useLiveQuery(() => db.transactions.toArray(), [user?.uid]) || [];
+  const allCategories = useLiveQuery(() => db.categories.toArray(), [user?.uid]) || [];
+  const allTags = useLiveQuery(() => db.tags.toArray(), [user?.uid]) || [];
+
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [filterTab, setFilterTab] = useState<'filters' | 'columns'>('filters');
+  const [periodMode, setPeriodMode] = useState<'MONTH' | 'CUSTOM'>('MONTH');
+
+  const [selectedAccounts, setSelectedAccounts] = useState<number[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedTransactionTypes, setSelectedTransactionTypes] = useState<string[]>([]);
+
   const [showAccountCol, setShowAccountCol] = useState(true);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const [showCategoryCol, setShowCategoryCol] = useState(true);
   const [showTagCol, setShowTagCol] = useState(true);
   const [showRemarksCol, setShowRemarksCol] = useState(true);
   const [showPaymentMethodCol, setShowPaymentMethodCol] = useState(true);
 
+  const [openDatePicker, setOpenDatePicker] = useState<'start' | 'end' | null>(null);
+
+  const monthStart = startOfDay(dateRange.start).getTime();
+  const monthEnd = endOfDay(dateRange.end).getTime();
+
+  const filteredTxs = useMemo(() => {
+    return allTransactions
+      .filter(tx => {
+        const time = new Date(tx.dateTime).getTime();
+        const inMonth = time >= monthStart && time <= monthEnd;
+        if (!inMonth) return false;
+
+        if (selectedAccounts.length > 0 && !selectedAccounts.includes(tx.accountId)) return false;
+        if (selectedCategories.length > 0 && !selectedCategories.includes(tx.category)) return false;
+        if (selectedPaymentMethods.length > 0 && tx.paymentMethod && !selectedPaymentMethods.includes(tx.paymentMethod)) return false;
+        if (selectedTags.length > 0 && (!tx.expenseType || !selectedTags.includes(tx.expenseType))) return false;
+        if (selectedTransactionTypes.length > 0) {
+          const type = normalizeType(tx.type);
+          if (!selectedTransactionTypes.includes(type)) return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+  }, [allTransactions, monthStart, monthEnd, selectedAccounts, selectedCategories, selectedPaymentMethods, selectedTags, selectedTransactionTypes]);
+
   const getAccountName = (id: number) => {
-    return accountsMap[String(id)]?.bankName || 'Unknown';
+    return allAccounts.find(a => a.id === id)?.bankName || 'Unknown';
   };
+
+  let totalInflow = 0;
+  let totalOutflow = 0;
+  filteredTxs.forEach(tx => {
+    const amount = Number(tx.amount) || 0;
+    const type = normalizeType(tx.type);
+    if (type === 'CREDIT') totalInflow += amount;
+    else if (type === 'DEBIT') totalOutflow += amount;
+  });
+
+  const periodText = periodMode === 'MONTH'
+    ? format(dateRange.start, 'MMMM yyyy')
+    : `${format(dateRange.start, 'dd MMM yyyy')} - ${format(dateRange.end, 'dd MMM yyyy')}`;
 
   const handleDownloadCSV = () => {
     const headers = ['Date'];
@@ -114,27 +161,27 @@ export function TransactionsStatementModal({
     const cardW = (totalW - 12) / 3;
 
     // Card 1: Total Inflow
-    doc.setFillColor(240, 253, 244); // light green
+    doc.setFillColor(240, 253, 244);
     doc.roundedRect(margin, boxY, cardW, boxHeight, 2, 2, 'F');
     doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(22, 101, 52);
     doc.text('TOTAL INFLOW', margin + 6, boxY + 6);
     doc.setFontSize(11);
-    doc.text(`+${pdfCurr}${totals.income.toLocaleString('en-IN')}`, margin + 6, boxY + 14);
+    doc.text(`+${pdfCurr}${totalInflow.toLocaleString('en-IN')}`, margin + 6, boxY + 14);
 
     // Card 2: Total Outflow
-    doc.setFillColor(254, 242, 242); // light red
+    doc.setFillColor(254, 242, 242);
     doc.roundedRect(margin + cardW + 6, boxY, cardW, boxHeight, 2, 2, 'F');
     doc.setFontSize(7);
     doc.setTextColor(153, 27, 27);
     doc.text('TOTAL OUTFLOW', margin + cardW + 6 + 6, boxY + 6);
     doc.setFontSize(11);
-    doc.text(`-${pdfCurr}${totals.expense.toLocaleString('en-IN')}`, margin + cardW + 6 + 6, boxY + 14);
+    doc.text(`-${pdfCurr}${totalOutflow.toLocaleString('en-IN')}`, margin + cardW + 6 + 6, boxY + 14);
 
     // Card 3: Net Movement
-    const netFlow = totals.income - totals.expense;
-    doc.setFillColor(241, 245, 249); // light slate
+    const netFlow = totalInflow - totalOutflow;
+    doc.setFillColor(241, 245, 249);
     doc.roundedRect(margin + (cardW + 6) * 2, boxY, cardW, boxHeight, 2, 2, 'F');
     doc.setFontSize(7);
     doc.setTextColor(51, 65, 85);
@@ -236,9 +283,7 @@ export function TransactionsStatementModal({
           text: `Here is the filtered transactions statement for ${periodText}.`
         });
       } catch (err: any) {
-        if (err.name !== 'AbortError') {
-          handleDownloadPDF();
-        }
+        if (err.name !== 'AbortError') handleDownloadPDF();
       }
     } else {
       handleDownloadPDF();
@@ -256,13 +301,13 @@ export function TransactionsStatementModal({
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div>
-            <h2 className="font-heading font-bold text-brand-blue dark:text-white text-sm leading-none">Statement Preview</h2>
-            <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Based on current filters</p>
+            <h2 className="font-heading font-bold text-brand-blue dark:text-white text-sm leading-none">Transactions Statement</h2>
+            <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Filter and customize</p>
           </div>
         </div>
         
         <div className="flex items-center gap-1.5 sm:gap-2">
-          <button onClick={() => setIsSettingsOpen(true)} className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${isSettingsOpen ? 'bg-brand-blue text-white' : 'bg-neutral-50 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10'}`}>
+          <button onClick={() => setIsFilterPanelOpen(true)} className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${isFilterPanelOpen ? 'bg-brand-blue text-white' : 'bg-neutral-50 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10'}`}>
             <Filter className="w-4 h-4" />
           </button>
         </div>
@@ -338,7 +383,7 @@ export function TransactionsStatementModal({
                   </div>
                   <div className="text-left">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block mb-0.5">Total Inflow</span>
-                    <span className="text-lg font-black text-emerald-600 tracking-tight">+{currency}{totals.income.toLocaleString('en-IN')}</span>
+                    <span className="text-lg font-black text-emerald-600 tracking-tight">+{currency}{totalInflow.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
                 <div className="px-5 py-2 flex items-center justify-center gap-3.5">
@@ -347,17 +392,17 @@ export function TransactionsStatementModal({
                   </div>
                   <div className="text-left">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block mb-0.5">Total Outflow</span>
-                    <span className="text-lg font-black text-rose-600 tracking-tight">-{currency}{totals.expense.toLocaleString('en-IN')}</span>
+                    <span className="text-lg font-black text-rose-600 tracking-tight">-{currency}{totalOutflow.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
                 <div className="px-5 py-2 flex items-center justify-center gap-3.5">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border shadow-xs ${totals.income >= totals.expense ? 'bg-brand-blue/10 text-brand-blue border-brand-blue/20' : 'bg-rose-500/10 text-rose-600 border-rose-500/20'}`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border shadow-xs ${totalInflow >= totalOutflow ? 'bg-brand-blue/10 text-brand-blue border-brand-blue/20' : 'bg-rose-500/10 text-rose-600 border-rose-500/20'}`}>
                     <ArrowRightLeft className="w-5 h-5" />
                   </div>
                   <div className="text-left">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block mb-0.5">Net Flow</span>
-                    <span className={`text-lg font-black tracking-tight ${totals.income >= totals.expense ? 'text-brand-blue' : 'text-rose-600'}`}>
-                      {totals.income >= totals.expense ? '+' : '-'}{currency}{Math.abs(totals.income - totals.expense).toLocaleString('en-IN')}
+                    <span className={`text-lg font-black tracking-tight ${totalInflow >= totalOutflow ? 'text-brand-blue' : 'text-rose-600'}`}>
+                      {totalInflow >= totalOutflow ? '+' : '-'}{currency}{Math.abs(totalInflow - totalOutflow).toLocaleString('en-IN')}
                     </span>
                   </div>
                 </div>
@@ -424,14 +469,15 @@ export function TransactionsStatementModal({
           </TransformComponent>
         </TransformWrapper>
 
+        {/* Filter Panel */}
         <AnimatePresence>
-          {isSettingsOpen && (
+          {isFilterPanelOpen && (
             <>
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                onClick={() => setIsSettingsOpen(false)}
+                onClick={() => setIsFilterPanelOpen(false)}
                 className="absolute inset-0 bg-black/40 z-20"
               />
               <motion.div
@@ -444,31 +490,224 @@ export function TransactionsStatementModal({
                 <div className="p-4 border-b border-neutral-100 dark:border-white/5 flex flex-col gap-4 shrink-0 bg-neutral-50/30">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-heading font-black text-brand-blue text-lg leading-none">Columns</h3>
-                      <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mt-1">Visible Fields</p>
+                      <h3 className="font-heading font-black text-brand-blue text-lg leading-none">Report Settings</h3>
+                      <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mt-1">Customize Output</p>
                     </div>
-                    <button onClick={() => setIsSettingsOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors">
+                    <button onClick={() => setIsFilterPanelOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors">
                       <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  {/* Tabs */}
+                  <div className="flex bg-neutral-100/80 p-1.5 rounded-2xl">
+                    <button 
+                      onClick={() => setFilterTab('filters')} 
+                      className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${filterTab === 'filters' ? 'bg-white shadow-sm text-brand-blue' : 'text-neutral-500 hover:text-neutral-700'}`}
+                    >
+                      Filters
+                    </button>
+                    <button 
+                      onClick={() => setFilterTab('columns')} 
+                      className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${filterTab === 'columns' ? 'bg-white shadow-sm text-brand-blue' : 'text-neutral-500 hover:text-neutral-700'}`}
+                    >
+                      Columns
                     </button>
                   </div>
                 </div>
                 
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {[
-                    { id: 'account', label: 'Account', state: showAccountCol, setter: setShowAccountCol },
-                    { id: 'category', label: 'Category', state: showCategoryCol, setter: setShowCategoryCol },
-                    { id: 'tag', label: 'Tag', state: showTagCol, setter: setShowTagCol },
-                    { id: 'remarks', label: 'Remarks', state: showRemarksCol, setter: setShowRemarksCol },
-                    { id: 'method', label: 'Payment Method', state: showPaymentMethodCol, setter: setShowPaymentMethodCol }
-                  ].map(col => (
-                    <label key={col.id} className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-all border ${col.state ? 'bg-brand-blue/5 border-brand-blue/20' : 'bg-neutral-50 dark:bg-white/5 border-neutral-200 dark:border-white/10 hover:border-brand-blue/30'}`}>
-                      <span className={`text-xs font-bold ${col.state ? 'text-brand-blue dark:text-brand-cyan' : 'text-neutral-700 dark:text-neutral-300'}`}>{col.label}</span>
-                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${col.state ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
-                        {col.state && <Check className="w-3 h-3" />}
+                <div className="flex-1 overflow-y-auto p-4 space-y-8">
+                  {filterTab === 'columns' ? (
+                    <div className="space-y-4 px-2">
+                      <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-2">Display Columns</h4>
+                      <p className="text-[11px] font-medium text-neutral-500 mb-4">Toggle the columns you want to appear in the PDF report.</p>
+                      <div className="space-y-3">
+                        {[
+                          { id: 'account', label: 'Account', state: showAccountCol, set: setShowAccountCol },
+                          { id: 'category', label: 'Category', state: showCategoryCol, set: setShowCategoryCol },
+                          { id: 'tag', label: 'Tag', state: showTagCol, set: setShowTagCol },
+                          { id: 'remarks', label: 'Remarks', state: showRemarksCol, set: setShowRemarksCol },
+                          { id: 'method', label: 'Payment Method', state: showPaymentMethodCol, set: setShowPaymentMethodCol },
+                        ].map(col => (
+                          <label key={col.id} className="flex items-center justify-between p-4 rounded-2xl border border-neutral-100 cursor-pointer hover:bg-brand-blue/5 hover:border-brand-blue/20 transition-all group">
+                            <span className="text-sm font-bold text-neutral-700 group-hover:text-brand-blue transition-colors">{col.label}</span>
+                            <input type="checkbox" checked={col.state} onChange={(e) => col.set(e.target.checked)} className="w-5 h-5 rounded-lg border-neutral-300 text-brand-blue focus:ring-brand-blue focus:ring-offset-0 transition-colors" />
+                          </label>
+                        ))}
                       </div>
-                      <input type="checkbox" checked={col.state} onChange={() => col.setter(!col.state)} className="hidden" />
-                    </label>
-                  ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-8 px-2 pb-8">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-bold text-neutral-500">Filter your transactions.</p>
+                        {(selectedAccounts.length > 0 || selectedCategories.length > 0 || selectedTags.length > 0 || selectedPaymentMethods.length > 0 || selectedTransactionTypes.length > 0) && (
+                          <button 
+                            onClick={() => {
+                              setSelectedAccounts([]);
+                              setSelectedCategories([]);
+                              setSelectedTags([]);
+                              setSelectedPaymentMethods([]);
+                              setSelectedTransactionTypes([]);
+                            }}
+                            className="px-3 py-1.5 rounded-full bg-rose-50 text-[10px] font-black text-rose-600 hover:bg-rose-100 transition-colors uppercase tracking-wider"
+                          >
+                            Clear All
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Period Selection */}
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400">Time Period</h4>
+                          <div className="flex bg-neutral-100/80 p-0.5 rounded-lg">
+                            <button onClick={() => {
+                              setPeriodMode('MONTH');
+                              setDateRange(prev => ({ start: startOfMonth(prev.start), end: endOfMonth(prev.start) }));
+                            }} className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all ${periodMode === 'MONTH' ? 'bg-white text-brand-blue shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}>Month</button>
+                            <button onClick={() => setPeriodMode('CUSTOM')} className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all ${periodMode === 'CUSTOM' ? 'bg-white text-brand-blue shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}>Custom</button>
+                          </div>
+                        </div>
+                        <div className="w-full">
+                          {periodMode === 'MONTH' ? (
+                            <div className="flex items-center justify-between bg-neutral-50 border border-neutral-100 rounded-xl p-1 w-full">
+                              <button onClick={() => setDateRange(prev => ({ start: startOfMonth(subMonths(prev.start, 1)), end: endOfMonth(subMonths(prev.start, 1)) }))} className="p-2 hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 active:scale-95 text-neutral-500 hover:text-brand-blue">
+                                <ChevronLeft className="w-4 h-4" />
+                              </button>
+                              <div className="flex-1 text-center font-heading font-black text-brand-blue uppercase tracking-widest text-[11px]">
+                                {format(dateRange.start, 'MMMM yyyy')}
+                              </div>
+                              <button onClick={() => setDateRange(prev => ({ start: startOfMonth(addMonths(prev.start, 1)), end: endOfMonth(addMonths(prev.start, 1)) }))} className="p-2 hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 active:scale-95 text-neutral-500 hover:text-brand-blue">
+                                <ChevronRight className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-2">
+                              <AppDatePicker
+                                label="Start"
+                                value={format(dateRange.start, 'yyyy-MM-dd')}
+                                isOpen={openDatePicker === 'start'}
+                                onToggle={() => setOpenDatePicker(prev => prev === 'start' ? null : 'start')}
+                                onChange={(val) => setDateRange(prev => ({ ...prev, start: new Date(val) }))}
+                              />
+                              <AppDatePicker
+                                label="End"
+                                value={format(dateRange.end, 'yyyy-MM-dd')}
+                                isOpen={openDatePicker === 'end'}
+                                onToggle={() => setOpenDatePicker(prev => prev === 'end' ? null : 'end')}
+                                onChange={(val) => setDateRange(prev => ({ ...prev, end: new Date(val) }))}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Transaction Type Filter */}
+                      <div>
+                        <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Transaction Type</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { key: 'DEBIT', label: 'Outflow' },
+                            { key: 'CREDIT', label: 'Inflow' },
+                            { key: 'TRANSFER', label: 'Transfers' }
+                          ].map(t => {
+                            const isSelected = selectedTransactionTypes.includes(t.key);
+                            return (
+                              <button
+                                key={t.key}
+                                onClick={() => setSelectedTransactionTypes(prev => isSelected ? prev.filter(x => x !== t.key) : [...prev, t.key])}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-brand-blue text-white border-brand-blue shadow-md' : 'bg-white text-neutral-600 border-neutral-200 hover:border-brand-blue/30'}`}
+                              >
+                                {t.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Accounts Filter */}
+                      {allAccounts.length > 0 && (
+                        <div>
+                          <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Accounts</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {allAccounts.map(acc => {
+                              const isSelected = selectedAccounts.includes(acc.id!);
+                              return (
+                                <button
+                                  key={acc.id}
+                                  onClick={() => setSelectedAccounts(prev => isSelected ? prev.filter(id => id !== acc.id) : [...prev, acc.id!])}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-brand-blue/10 text-brand-blue border-brand-blue/30' : 'bg-white text-neutral-600 border-neutral-200 hover:border-brand-blue/30'}`}
+                                >
+                                  {acc.bankName}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Categories Filter */}
+                      {allCategories.length > 0 && (
+                        <div>
+                          <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Categories</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {allCategories.map(cat => {
+                              const isSelected = selectedCategories.includes(cat.name);
+                              return (
+                                <button
+                                  key={cat.id}
+                                  onClick={() => setSelectedCategories(prev => isSelected ? prev.filter(c => c !== cat.name) : [...prev, cat.name])}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-brand-blue/10 text-brand-blue border-brand-blue/30' : 'bg-white text-neutral-600 border-neutral-200 hover:border-brand-blue/30'}`}
+                                >
+                                  {cat.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tags Filter */}
+                      {allTags.length > 0 && (
+                        <div>
+                          <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Tags</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {allTags.map(tag => {
+                              const isSelected = selectedTags.includes(tag.name);
+                              return (
+                                <button
+                                  key={tag.id}
+                                  onClick={() => setSelectedTags(prev => isSelected ? prev.filter(t => t !== tag.name) : [...prev, tag.name])}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-brand-blue/10 text-brand-blue border-brand-blue/30' : 'bg-white text-neutral-600 border-neutral-200 hover:border-brand-blue/30'}`}
+                                >
+                                  #{tag.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Payment Methods */}
+                      <div>
+                        <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Payment Methods</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {['UPI', 'Credit Card', 'Debit Card', 'Net Banking', 'Cash', 'Cheque'].map(pm => {
+                            const isSelected = selectedPaymentMethods.includes(pm);
+                            return (
+                              <button
+                                key={pm}
+                                onClick={() => setSelectedPaymentMethods(prev => isSelected ? prev.filter(p => p !== pm) : [...prev, pm])}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-brand-blue/10 text-brand-blue border-brand-blue/30' : 'bg-white text-neutral-600 border-neutral-200 hover:border-brand-blue/30'}`}
+                              >
+                                {pm}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </>
