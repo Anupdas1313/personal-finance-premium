@@ -18,6 +18,7 @@ import { useCurrency } from '../hooks/useCurrency';
 import { useToast } from '../context/ToastContext';
 
 import { CATEGORY_ICONS } from '../constants';
+import { TransactionsStatementModal } from '../components/TransactionsStatementModal';
 
 const CATEGORY_COLORS: Record<string, string> = {
   'Food': 'bg-orange-50 text-orange-600 border-orange-100',
@@ -145,6 +146,7 @@ export default function Transactions() {
     end: format(new Date(), 'yyyy-MM-dd')
   });
   const [openDatePicker, setOpenDatePicker] = useState<'start' | 'end' | null>(null);
+  const [isStatementOpen, setIsStatementOpen] = useState(false);
 
   // ── Filters ───────────────────────────────────────────────────
   const [searchTerm, setSearchTerm] = useState(initialSearch);
@@ -284,6 +286,14 @@ export default function Transactions() {
   };
 
   // ── Render ────────────────────────────────────────────────────
+  const periodText = useMemo(() => {
+    if (granularity === 'MONTH') return format(referenceDate, 'MMMM yyyy');
+    if (granularity === 'LAST_MONTH') return format(subMonths(referenceDate, 1), 'MMMM yyyy');
+    if (granularity === 'YEAR') return format(referenceDate, 'yyyy');
+    if (granularity === 'ALL') return 'All Time';
+    return `${format(new Date(customRange.start), 'dd MMM yyyy')} - ${format(new Date(customRange.end), 'dd MMM yyyy')}`;
+  }, [granularity, referenceDate, customRange]);
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-4xl mx-auto space-y-3 pb-32 px-2 md:px-0">
 
@@ -293,6 +303,13 @@ export default function Transactions() {
           <h1 className="text-xl font-heading font-bold text-brand-blue dark:text-white tracking-tight leading-none">Transactions</h1>
           <p className="text-[10px] font-medium text-neutral-400 mt-0.5">Activity History</p>
         </div>
+        <button 
+          onClick={() => setIsStatementOpen(true)}
+          className="flex items-center justify-center w-9 h-9 rounded-full bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue transition-colors"
+          title="View Statement"
+        >
+          <FileText className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Summary strip */}
@@ -786,6 +803,16 @@ export default function Transactions() {
           </>
         )}
       </AnimatePresence>
+
+      {isStatementOpen && (
+        <TransactionsStatementModal
+          filteredTxs={filteredTxs}
+          totals={totals}
+          periodText={periodText}
+          accountsMap={accountsMap}
+          onClose={() => setIsStatementOpen(false)}
+        />
+      )}
     </motion.div>
   );
 }
