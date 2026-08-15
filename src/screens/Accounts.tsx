@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -19,6 +19,7 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
   const currency = useCurrency();
   const { user } = useAuth();
+  const touchStart = useRef({ x: 0, y: 0 });
   
   const [dateRange, setDateRange] = useState({
     start: startOfMonth(new Date()),
@@ -440,9 +441,17 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
               <div 
                 className="flex-1 overflow-auto w-full px-8 pb-4 print:px-0 print:pb-0 print:overflow-visible print:h-auto"
                 onWheelCapture={(e) => e.stopPropagation()} 
+                onTouchStartCapture={(e) => {
+                  if (e.touches.length === 1) {
+                    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                  }
+                }}
                 onTouchMoveCapture={(e) => {
-                  // Only stop propagation for single-finger scrolling, allow two-finger pinch-to-zoom
-                  if (e.touches.length === 1) e.stopPropagation();
+                  if (e.touches.length === 1) {
+                    const dx = Math.abs(e.touches[0].clientX - touchStart.current.x);
+                    const dy = Math.abs(e.touches[0].clientY - touchStart.current.y);
+                    if (dy > dx) e.stopPropagation();
+                  }
                 }}
               >
                 <table className="w-full text-left text-sm">
@@ -1596,8 +1605,9 @@ function PartitionRow({ partition }: { partition: any }) {
 
 function AccountStatementDetail({ accountId, onClose }: { accountId: number, onClose: () => void }) {
   const currency = useCurrency();
-  const { confirm } = useToast();
   const { user } = useAuth();
+  const touchStart = useRef({ x: 0, y: 0 });
+  const { confirm } = useToast();
   const navigate = useNavigate();
   const account = useLiveQuery(() => db.accounts.get(accountId), [accountId, user?.uid]);
   const transactions = useLiveQuery(() => db.transactions.where('accountId').equals(accountId).sortBy('dateTime'), [accountId, user?.uid]) || [];
@@ -2096,9 +2106,17 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               <div 
                 className="flex-1 overflow-auto w-full px-8 md:px-12 pb-8 print:px-0 print:pb-0 print:overflow-visible print:h-auto"
                 onWheelCapture={(e) => e.stopPropagation()} 
+                onTouchStartCapture={(e) => {
+                  if (e.touches.length === 1) {
+                    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                  }
+                }}
                 onTouchMoveCapture={(e) => {
-                  // Only stop propagation for single-finger scrolling, allow two-finger pinch-to-zoom
-                  if (e.touches.length === 1) e.stopPropagation();
+                  if (e.touches.length === 1) {
+                    const dx = Math.abs(e.touches[0].clientX - touchStart.current.x);
+                    const dy = Math.abs(e.touches[0].clientY - touchStart.current.y);
+                    if (dy > dx) e.stopPropagation();
+                  }
                 }}
               >
                 <table className="w-full text-left text-sm">
