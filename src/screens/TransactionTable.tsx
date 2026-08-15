@@ -1158,7 +1158,7 @@ export default function TransactionTable() {
 <div className="bg-white dark:bg-[#111111] border border-brand-blue/5 dark:border-[#222222] rounded-[24px] shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-brand-blue text-white uppercase tracking-[0.2em] text-[10px] font-semibold">
+              <thead className="sticky top-0 z-10 bg-brand-blue text-white uppercase tracking-[0.2em] text-[10px] font-semibold">
 
 
                 <tr>

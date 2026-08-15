@@ -419,16 +419,16 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                 onTouchMoveCapture={(e) => e.stopPropagation()}
               >
                 <table className="w-full text-left text-sm border-collapse">
-                <thead>
-                  <tr className="border-b-2 border-black">
-                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Date</th>
-                    {showAccountCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Account</th>}
-                    {showCategoryCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Category</th>}
-                    {showTagCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Tag</th>}
-                    {showRemarksCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Remarks</th>}
-                    {showPaymentMethodCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs">Method</th>}
-                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-right">Outflow</th>
-                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-right">Inflow</th>
+                <thead className="sticky top-0 bg-white z-10">
+                  <tr className="border-b-2 border-black bg-white">
+                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs bg-white">Date</th>
+                    {showAccountCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs bg-white">Account</th>}
+                    {showCategoryCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs bg-white">Category</th>}
+                    {showTagCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs bg-white">Tag</th>}
+                    {showRemarksCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs bg-white">Remarks</th>}
+                    {showPaymentMethodCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs bg-white">Method</th>}
+                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-right bg-white">Outflow</th>
+                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-right bg-white">Inflow</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2049,13 +2049,13 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                 onTouchMoveCapture={(e) => e.stopPropagation()}
               >
                 <table className="w-full text-left text-sm border-collapse">
-                <thead>
-                  <tr className="border-b-2 border-black">
-                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 w-28">Date</th>
-                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800">Particulars</th>
-                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 w-56">Remarks</th>
-                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 text-right w-28">Amount</th>
-                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 text-right w-28">Balance</th>
+                <thead className="sticky top-0 bg-white z-10">
+                  <tr className="border-b-2 border-black bg-white">
+                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 w-28 bg-white">Date</th>
+                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 bg-white">Particulars</th>
+                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 w-56 bg-white">Remarks</th>
+                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 text-right w-28 bg-white">Amount</th>
+                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 text-right w-28 bg-white">Balance</th>
                   </tr>
                 </thead>
                 <tbody>
