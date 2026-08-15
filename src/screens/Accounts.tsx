@@ -440,7 +440,10 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
               <div 
                 className="flex-1 overflow-auto w-full px-8 pb-4 print:px-0 print:pb-0 print:overflow-visible print:h-auto"
                 onWheelCapture={(e) => e.stopPropagation()} 
-                onTouchMoveCapture={(e) => e.stopPropagation()}
+                onTouchMoveCapture={(e) => {
+                  // Only stop propagation for single-finger scrolling, allow two-finger pinch-to-zoom
+                  if (e.touches.length === 1) e.stopPropagation();
+                }}
               >
                 <table className="w-full text-left text-sm">
                 <thead className="sticky top-0 z-20">
@@ -2093,7 +2096,10 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               <div 
                 className="flex-1 overflow-auto w-full px-8 md:px-12 pb-8 print:px-0 print:pb-0 print:overflow-visible print:h-auto"
                 onWheelCapture={(e) => e.stopPropagation()} 
-                onTouchMoveCapture={(e) => e.stopPropagation()}
+                onTouchMoveCapture={(e) => {
+                  // Only stop propagation for single-finger scrolling, allow two-finger pinch-to-zoom
+                  if (e.touches.length === 1) e.stopPropagation();
+                }}
               >
                 <table className="w-full text-left text-sm">
                 <thead className="sticky top-0 z-20">
