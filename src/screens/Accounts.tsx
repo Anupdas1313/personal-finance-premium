@@ -433,17 +433,17 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                 onWheelCapture={(e) => e.stopPropagation()} 
                 onTouchMoveCapture={(e) => e.stopPropagation()}
               >
-                <table className="w-full text-left text-sm border-separate border-spacing-0 border-t border-l border-neutral-200">
+                <table className="w-full text-left text-sm">
                 <thead className="sticky top-0 z-20">
                   <tr>
-                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs border-r border-neutral-200 border-b-2 border-black">Date</th>
-                    {showAccountCol && <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs border-r border-neutral-200 border-b-2 border-black">Account</th>}
-                    {showCategoryCol && <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs border-r border-neutral-200 border-b-2 border-black">Category</th>}
-                    {showTagCol && <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs border-r border-neutral-200 border-b-2 border-black">Tag</th>}
-                    {showRemarksCol && <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs border-r border-neutral-200 border-b-2 border-black">Remarks</th>}
-                    {showPaymentMethodCol && <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs border-r border-neutral-200 border-b-2 border-black">Method</th>}
-                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-right border-r border-neutral-200 border-b-2 border-black">Outflow</th>
-                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-right border-r border-neutral-200 border-b-2 border-black">Inflow</th>
+                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs border-b border-neutral-200">Date</th>
+                    {showAccountCol && <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs border-b border-neutral-200">Account</th>}
+                    {showCategoryCol && <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs border-b border-neutral-200">Category</th>}
+                    {showTagCol && <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs border-b border-neutral-200">Tag</th>}
+                    {showRemarksCol && <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs border-b border-neutral-200">Remarks</th>}
+                    {showPaymentMethodCol && <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs border-b border-neutral-200">Method</th>}
+                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-right border-b border-neutral-200">Outflow</th>
+                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-right border-b border-neutral-200">Inflow</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -451,20 +451,20 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                     const type = normalizeType(tx.type);
                     const amount = Number(tx.amount) || 0;
                     return (
-                      <tr key={idx} className="hover:bg-neutral-50/50">
-                        <td className="py-3 px-3 font-medium whitespace-nowrap border-r border-b border-neutral-200">{format(new Date(tx.dateTime), 'dd MMM yy')}</td>
-                        {showAccountCol && <td className="py-3 px-3 font-bold border-r border-b border-neutral-200">{getAccountName(tx.accountId)}</td>}
-                        {showCategoryCol && <td className="py-3 px-3 font-medium border-r border-b border-neutral-200">{tx.category || '-'}</td>}
-                        {showTagCol && <td className="py-3 px-3 font-medium text-brand-blue border-r border-b border-neutral-200">{tx.expenseType || '-'}</td>}
-                        {showRemarksCol && <td className="py-3 px-3 text-neutral-600 max-w-[200px] truncate border-r border-b border-neutral-200" title={tx.note || tx.type}>{tx.note || tx.type}</td>}
-                        {showPaymentMethodCol && <td className="py-3 px-3 text-neutral-600 border-r border-b border-neutral-200">{tx.paymentMethod || '-'}</td>}
-                        <td className="py-3 px-3 text-right font-medium text-rose-600 whitespace-nowrap border-r border-b border-neutral-200">{type === 'DEBIT' ? amount.toLocaleString('en-IN') : '-'}</td>
-                        <td className="py-3 px-3 text-right font-medium text-emerald-600 whitespace-nowrap border-r border-b border-neutral-200">{type === 'CREDIT' ? amount.toLocaleString('en-IN') : '-'}</td>
+                      <tr key={idx} className="even:bg-neutral-50/70 hover:bg-neutral-100/50 transition-colors">
+                        <td className="py-3 px-3 font-medium whitespace-nowrap">{format(new Date(tx.dateTime), 'dd MMM yy')}</td>
+                        {showAccountCol && <td className="py-3 px-3 font-bold">{getAccountName(tx.accountId)}</td>}
+                        {showCategoryCol && <td className="py-3 px-3 font-medium">{tx.category || '-'}</td>}
+                        {showTagCol && <td className="py-3 px-3 font-medium text-brand-blue">{tx.expenseType || '-'}</td>}
+                        {showRemarksCol && <td className="py-3 px-3 text-neutral-600 max-w-[200px] truncate" title={tx.note || tx.type}>{tx.note || tx.type}</td>}
+                        {showPaymentMethodCol && <td className="py-3 px-3 text-neutral-600">{tx.paymentMethod || '-'}</td>}
+                        <td className="py-3 px-3 text-right font-medium text-rose-600 whitespace-nowrap">{type === 'DEBIT' ? amount.toLocaleString('en-IN') : '-'}</td>
+                        <td className="py-3 px-3 text-right font-medium text-emerald-600 whitespace-nowrap">{type === 'CREDIT' ? amount.toLocaleString('en-IN') : '-'}</td>
                       </tr>
                     );
                   }) : (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-neutral-400 font-medium border-b border-r border-neutral-200">No transactions for this period</td>
+                      <td colSpan={8} className="py-12 text-center text-neutral-400 font-medium border-b border-neutral-200">No transactions for this period</td>
                     </tr>
                   )}
                 </tbody>
@@ -2079,28 +2079,28 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                 onWheelCapture={(e) => e.stopPropagation()} 
                 onTouchMoveCapture={(e) => e.stopPropagation()}
               >
-                <table className="w-full text-left text-sm border-separate border-spacing-0 border-t border-l border-neutral-200">
+                <table className="w-full text-left text-sm">
                 <thead className="sticky top-0 z-20">
                   <tr>
-                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 w-28 border-r border-neutral-200 border-b-2 border-black">Date</th>
-                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 border-r border-neutral-200 border-b-2 border-black">Particulars</th>
-                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 w-56 border-r border-neutral-200 border-b-2 border-black">Remarks</th>
-                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 text-right w-28 border-r border-neutral-200 border-b-2 border-black">Amount</th>
-                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 text-right w-28 border-r border-neutral-200 border-b-2 border-black">Balance</th>
+                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 w-28 border-b border-neutral-200">Date</th>
+                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 border-b border-neutral-200">Particulars</th>
+                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 w-56 border-b border-neutral-200">Remarks</th>
+                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 text-right w-28 border-b border-neutral-200">Amount</th>
+                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 text-right w-28 border-b border-neutral-200">Balance</th>
                   </tr>
                 </thead>
                 <tbody>
                   {granularity === 'ALL' && (
-                    <tr className="bg-neutral-50">
-                      <td className="px-3 py-4 whitespace-nowrap text-xs font-bold text-neutral-500 uppercase tracking-wider border-r border-b border-neutral-200">
+                    <tr className="bg-brand-blue/5">
+                      <td className="px-3 py-4 whitespace-nowrap text-xs font-bold text-neutral-500 uppercase tracking-wider border-b border-neutral-200/50">
                         {account.startingBalanceDate ? format(new Date(account.startingBalanceDate), 'dd MMM yyyy') : '-'}
                       </td>
-                      <td className="px-3 py-4 text-sm font-black text-brand-blue uppercase tracking-widest border-r border-b border-neutral-200">
+                      <td className="px-3 py-4 text-sm font-black text-brand-blue uppercase tracking-widest border-b border-neutral-200/50">
                         System Start Balance
                       </td>
-                      <td className="px-3 py-4 text-neutral-400 text-sm border-r border-b border-neutral-200">-</td>
-                      <td className="px-3 py-4 text-right text-neutral-400 text-sm border-r border-b border-neutral-200">-</td>
-                      <td className="px-3 py-4 text-right whitespace-nowrap text-sm font-black text-brand-blue border-r border-b border-neutral-200">{currency}{account.startingBalance.toLocaleString('en-IN')}</td>
+                      <td className="px-3 py-4 text-neutral-400 text-sm border-b border-neutral-200/50">-</td>
+                      <td className="px-3 py-4 text-right text-neutral-400 text-sm border-b border-neutral-200/50">-</td>
+                      <td className="px-3 py-4 text-right whitespace-nowrap text-sm font-black text-brand-blue border-b border-neutral-200/50">{currency}{account.startingBalance.toLocaleString('en-IN')}</td>
                     </tr>
                   )}
 
@@ -2121,18 +2121,18 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                         {matchingClosings.map(c => (
                           <PartitionRow key={c.id} partition={c} />
                         ))}
-                        <tr onDoubleClick={() => handleCreatePartitionAt(tx)} className="hover:bg-neutral-50 transition-colors">
-                          <td className="px-3 py-4 whitespace-nowrap text-xs font-bold text-neutral-600 uppercase tracking-wider border-r border-b border-neutral-200">{format(new Date(tx.dateTime), 'dd MMM HH:mm')}</td>
-                          <td className="px-3 py-4 text-sm font-bold text-neutral-800 border-r border-b border-neutral-200">{tx.party || '-'}</td>
-                          <td className="px-3 py-4 text-xs font-medium text-neutral-500 italic max-w-[200px] truncate border-r border-b border-neutral-200">{tx.note || '-'}</td>
-                          <td className={`px-3 py-4 text-right whitespace-nowrap text-sm font-black border-r border-b border-neutral-200 ${normalizeType(tx.type) === 'CREDIT' ? 'text-emerald-600' : 'text-rose-600'}`}>{normalizeType(tx.type) === 'CREDIT' ? '+' : '-'}{currency}{tx.amount.toLocaleString('en-IN')}</td>
-                          <td className="px-3 py-4 text-right whitespace-nowrap text-sm font-black text-brand-blue border-r border-b border-neutral-200">{currency}{tx.runningBalance.toLocaleString('en-IN')}</td>
+                        <tr onDoubleClick={() => handleCreatePartitionAt(tx)} className="even:bg-neutral-50/70 hover:bg-neutral-100/50 transition-colors">
+                          <td className="px-3 py-4 whitespace-nowrap text-xs font-bold text-neutral-600 uppercase tracking-wider">{format(new Date(tx.dateTime), 'dd MMM HH:mm')}</td>
+                          <td className="px-3 py-4 text-sm font-bold text-neutral-800">{tx.party || '-'}</td>
+                          <td className="px-3 py-4 text-xs font-medium text-neutral-500 italic max-w-[200px] truncate">{tx.note || '-'}</td>
+                          <td className={`px-3 py-4 text-right whitespace-nowrap text-sm font-black ${normalizeType(tx.type) === 'CREDIT' ? 'text-emerald-600' : 'text-rose-600'}`}>{normalizeType(tx.type) === 'CREDIT' ? '+' : '-'}{currency}{tx.amount.toLocaleString('en-IN')}</td>
+                          <td className="px-3 py-4 text-right whitespace-nowrap text-sm font-black text-brand-blue">{currency}{tx.runningBalance.toLocaleString('en-IN')}</td>
                         </tr>
                       </React.Fragment>
                     );
                   }) : (
                     <tr>
-                      <td colSpan={5} className="py-16 text-center text-neutral-400 font-medium border-b border-r border-neutral-200">No transactions found for this period</td>
+                      <td colSpan={5} className="py-16 text-center text-neutral-400 font-medium border-b border-neutral-200">No transactions found for this period</td>
                     </tr>
                   )}
 
