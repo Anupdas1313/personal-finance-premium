@@ -17,11 +17,8 @@ import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../hooks/useCurrency';
 import { useToast } from '../context/ToastContext';
 
-// ─── Category appearance maps ─────────────────────────────────────
-const CATEGORY_ICONS: Record<string, string> = {
-  'Food': '🍔', 'Transport': '🚗', 'Rent': '🏠', 'Shopping': '🛍️',
-  'Bills': '⚡', 'Entertainment': '🎬', 'Salary': '💰', 'Transfer': '💸', 'Other': '📝'
-};
+import { CATEGORY_ICONS } from '../constants';
+
 const CATEGORY_COLORS: Record<string, string> = {
   'Food': 'bg-orange-50 text-orange-600 border-orange-100',
   'Transport': 'bg-blue-50 text-blue-600 border-blue-100',
