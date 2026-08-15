@@ -267,61 +267,18 @@ export default function Transactions() {
             )}
           </div>
 
-          {/* + Filter Add Button */}
-          <div className="relative">
-            <button
-              onClick={() => togglePopover('addFilter')}
-              className="h-8 px-2.5 bg-neutral-100/60 dark:bg-white/5 hover:bg-neutral-200/50 dark:hover:bg-white/10 border border-transparent rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 flex items-center gap-1 transition-all"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Filter</span>
-            </button>
-
-            {/* Add Filter Popover Menu */}
-            <AnimatePresence>
-              {activePopover === 'addFilter' && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 5 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 5 }}
-                    className="absolute right-0 mt-1.5 w-44 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5"
-                  >
-                    <div className="px-2 py-1 text-[9px] font-black uppercase tracking-wider text-neutral-400">Add filter by</div>
-                    {[
-                      { key: 'category', label: 'Category', icon: '🏷️' },
-                      { key: 'type', label: 'Flow (In/Out)', icon: '⇄' },
-                      { key: 'accountType', label: 'Account Type (Bank/Card/Cash)', icon: '💳' },
-                      { key: 'account', label: 'Specific Account', icon: '🏦' },
-                      { key: 'method', label: 'Payment Method (UPI/Card/Cash)', icon: '📲' },
-                      { key: 'tag', label: 'Tag', icon: '🔖' },
-                      { key: 'granularity', label: 'Timeline', icon: '📅' },
-                    ].map(prop => (
-                      <button
-                        key={prop.key}
-                        onClick={() => {
-                          setActivePopover(null);
-                          if (prop.key === 'category' && categoryFilter.length === 0 && appCategories.length > 0) setCategoryFilter([appCategories[0]]);
-                          if (prop.key === 'type' && typeFilter.length === 0) setTypeFilter(['DEBIT']);
-                          if (prop.key === 'accountType' && accountTypeFilter.length === 0) setAccountTypeFilter(['BANK']);
-                          if (prop.key === 'account' && accountFilter.length === 0 && accounts.length > 0) setAccountFilter([accounts[0].id]);
-                          if (prop.key === 'method' && methodFilter.length === 0) setMethodFilter(['UPI']);
-                          if (prop.key === 'tag' && tagFilter.length === 0 && tags.length > 0) setTagFilter([tags[0]]);
-                          if (prop.key === 'granularity' && granularity === 'ALL') setGranularity('MONTH');
-                          setActivePopover(prop.key);
-                        }}
-                        className="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/5 flex items-center gap-2 transition-all"
-                      >
-                        <span className="text-xs">{prop.icon}</span>
-                        <span>{prop.label}</span>
-                      </button>
-                    ))}
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
+          {/* Filter Button */}
+          <button
+            onClick={() => setIsFilterOpen(true)}
+            className={`h-8 px-2.5 border rounded-xl text-xs font-semibold flex items-center gap-1 transition-all ${
+              (categoryFilter.length > 0 || typeFilter.length > 0 || accountFilter.length > 0 || tagFilter.length > 0 || methodFilter.length > 0 || accountTypeFilter.length > 0 || granularity !== 'ALL')
+                ? 'bg-brand-blue/10 text-brand-blue dark:text-white border-brand-blue/20'
+                : 'bg-neutral-100/60 dark:bg-white/5 border-transparent text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200/50 dark:hover:bg-white/10'
+            }`}
+          >
+            <Filter className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Filter</span>
+          </button>
 
           {/* Sort Button */}
           <div className="relative">
@@ -384,477 +341,6 @@ export default function Transactions() {
             </AnimatePresence>
           </div>
         </div>
-
-        {/* Active Notion-style Filter Badges (Pills) */}
-        {(categoryFilter.length > 0 || typeFilter.length > 0 || accountFilter.length > 0 || tagFilter.length > 0 || granularity !== 'ALL') && (
-          <div className="flex flex-wrap items-center gap-1.5 pt-1">
-            {/* Category Filter Pill */}
-            {categoryFilter.length > 0 && (
-              <div className="relative">
-                <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
-                  <button onClick={() => togglePopover('category')} className="flex items-center gap-1 hover:opacity-80">
-                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Category</span>
-                    <span className="font-bold">{categoryFilter.length === 1 ? categoryFilter[0] : `${categoryFilter[0]} +${categoryFilter.length - 1}`}</span>
-                    <ChevronDown className="w-3 h-3 text-neutral-400" />
-                  </button>
-                  <button onClick={() => setCategoryFilter([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-                <AnimatePresence>
-                  {activePopover === 'category' && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
-                      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                        className="absolute left-0 mt-1.5 w-52 max-h-60 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
-                        <div className="flex items-center justify-between px-2.5 py-1 border-b border-neutral-100 dark:border-white/5 mb-1">
-                          <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Categories</span>
-                          <button onClick={() => setCategoryFilter([])} className="text-[9px] font-bold text-rose-500 hover:underline">Clear</button>
-                        </div>
-                        {appCategories.map(c => {
-                          const isSelected = categoryFilter.includes(c);
-                          return (
-                            <button key={c} onClick={() => toggleCategory(c)}
-                              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${isSelected ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
-                              <div className="flex items-center gap-2">
-                                <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
-                                  {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
-                                </div>
-                                <span>{c}</span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      
-                        <div className="pt-1.5 mt-1 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between gap-2 px-1">
-                          <button onClick={() => setCategoryFilter([])} className="text-[10px] font-bold text-neutral-400 hover:text-rose-500 transition-colors">Reset</button>
-                          <button onClick={() => setActivePopover(null)} className="px-3 py-1 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1">
-                            <span>Apply</span>
-                            <Check className="w-3 h-3" />
-                          </button>
-                        </div>
-</motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
-
-            {/* Flow Filter Pill */}
-            {typeFilter.length > 0 && (
-              <div className="relative">
-                <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
-                  <button onClick={() => togglePopover('type')} className="flex items-center gap-1 hover:opacity-80">
-                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Flow</span>
-                    <span className="font-bold">{typeFilter.length === 1 ? (typeFilter[0] === 'DEBIT' ? 'Outflow' : typeFilter[0] === 'CREDIT' ? 'Inflow' : 'Transfer') : `${typeFilter.length} selected` }</span>
-                    <ChevronDown className="w-3 h-3 text-neutral-400" />
-                  </button>
-                  <button onClick={() => setTypeFilter([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-                <AnimatePresence>
-                  {activePopover === 'type' && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
-                      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                        className="absolute left-0 mt-1.5 w-48 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
-                        <div className="flex items-center justify-between px-2.5 py-1 border-b border-neutral-100 dark:border-white/5 mb-1">
-                          <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Flow Type</span>
-                          <button onClick={() => setTypeFilter([])} className="text-[9px] font-bold text-rose-500 hover:underline">Clear</button>
-                        </div>
-                        {[
-                          { label: 'Outflow (Debit)', val: 'DEBIT' },
-                          { label: 'Inflow (Credit)', val: 'CREDIT' },
-                          { label: 'Inter-Account', val: 'TRANSFER' }
-                        ].map(opt => {
-                          const isSelected = typeFilter.includes(opt.val);
-                          return (
-                            <button key={opt.val} onClick={() => toggleType(opt.val)}
-                              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${isSelected ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
-                              <div className="flex items-center gap-2">
-                                <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
-                                  {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
-                                </div>
-                                <span>{opt.label}</span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                        <div className="pt-1.5 mt-1 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between gap-2 px-1">
-                          <button onClick={() => setTypeFilter([])} className="text-[10px] font-bold text-neutral-400 hover:text-rose-500 transition-colors">Reset</button>
-                          <button onClick={() => setActivePopover(null)} className="px-3 py-1 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1">
-                            <span>Apply</span>
-                            <Check className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
-
-            {/* Account Type Filter Pill */}
-            {accountTypeFilter.length > 0 && (
-              <div className="relative">
-                <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
-                  <button onClick={() => togglePopover('accountType')} className="flex items-center gap-1 hover:opacity-80">
-                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Account Type</span>
-                    <span className="font-bold">{accountTypeFilter.length === 1 ? (accountTypeFilter[0] === 'BANK' ? 'Bank' : accountTypeFilter[0] === 'CREDIT_CARD' ? 'Credit Card' : 'Cash/Wallet') : `${accountTypeFilter.length} selected` }</span>
-                    <ChevronDown className="w-3 h-3 text-neutral-400" />
-                  </button>
-                  <button onClick={() => setAccountTypeFilter([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-                <AnimatePresence>
-                  {activePopover === 'accountType' && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
-                      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                        className="absolute left-0 mt-1.5 w-52 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
-                        <div className="flex items-center justify-between px-2.5 py-1 border-b border-neutral-100 dark:border-white/5 mb-1">
-                          <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Account Classification</span>
-                          <button onClick={() => setAccountTypeFilter([])} className="text-[9px] font-bold text-rose-500 hover:underline">Clear</button>
-                        </div>
-                        {[
-                          { id: 'BANK', label: '🏦 Bank Accounts' },
-                          { id: 'CREDIT_CARD', label: '💳 Credit Cards' },
-                          { id: 'CASH', label: '💵 Cash & Wallets' }
-                        ].map(typeOpt => {
-                          const isSelected = accountTypeFilter.includes(typeOpt.id);
-                          return (
-                            <button key={typeOpt.id} onClick={() => toggleAccountType(typeOpt.id)}
-                              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${isSelected ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
-                              <div className="flex items-center gap-2">
-                                <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
-                                  {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
-                                </div>
-                                <span>{typeOpt.label}</span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                        <div className="pt-1.5 mt-1 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between gap-2 px-1">
-                          <button onClick={() => setAccountTypeFilter([])} className="text-[10px] font-bold text-neutral-400 hover:text-rose-500 transition-colors">Reset</button>
-                          <button onClick={() => setActivePopover(null)} className="px-3 py-1 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1">
-                            <span>Apply</span>
-                            <Check className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
-
-            {/* Payment Method Filter Pill */}
-            {methodFilter.length > 0 && (
-              <div className="relative">
-                <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
-                  <button onClick={() => togglePopover('method')} className="flex items-center gap-1 hover:opacity-80">
-                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Method</span>
-                    <span className="font-bold">{methodFilter.length === 1 ? methodFilter[0] : `${methodFilter[0]} +${methodFilter.length - 1}`}</span>
-                    <ChevronDown className="w-3 h-3 text-neutral-400" />
-                  </button>
-                  <button onClick={() => setMethodFilter([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-                <AnimatePresence>
-                  {activePopover === 'method' && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
-                      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                        className="absolute left-0 mt-1.5 w-52 max-h-60 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
-                        <div className="flex items-center justify-between px-2.5 py-1 border-b border-neutral-100 dark:border-white/5 mb-1">
-                          <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Payment Medium</span>
-                          <button onClick={() => setMethodFilter([])} className="text-[9px] font-bold text-rose-500 hover:underline">Clear</button>
-                        </div>
-                        {['UPI', 'Credit Card', 'Debit Card', 'Cash', 'Bank Transfer', 'Net Banking', 'Wallet'].map(m => {
-                          const isSelected = methodFilter.includes(m);
-                          return (
-                            <button key={m} onClick={() => toggleMethod(m)}
-                              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${isSelected ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
-                              <div className="flex items-center gap-2">
-                                <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
-                                  {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
-                                </div>
-                                <span>{m}</span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                        <div className="pt-1.5 mt-1 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between gap-2 px-1">
-                          <button onClick={() => setMethodFilter([])} className="text-[10px] font-bold text-neutral-400 hover:text-rose-500 transition-colors">Reset</button>
-                          <button onClick={() => setActivePopover(null)} className="px-3 py-1 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1">
-                            <span>Apply</span>
-                            <Check className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
-
-            {/* Grouped Specific Account Filter Pill */}
-            {accountFilter.length > 0 && (
-              <div className="relative">
-                <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
-                  <button onClick={() => togglePopover('account')} className="flex items-center gap-1 hover:opacity-80">
-                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Account</span>
-                    <span className="font-bold">{accountFilter.length === 1 ? (accounts.find(a => a.id === accountFilter[0])?.bankName || accountFilter[0]) : `${accounts.find(a => a.id === accountFilter[0])?.bankName || 'Account'} +${accountFilter.length - 1}`}</span>
-                    <ChevronDown className="w-3 h-3 text-neutral-400" />
-                  </button>
-                  <button onClick={() => setAccountFilter([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-                <AnimatePresence>
-                  {activePopover === 'account' && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
-                      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                        className="absolute left-0 mt-1.5 w-60 max-h-72 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-2 z-50 space-y-2">
-                        <div className="flex items-center justify-between px-2 py-1 border-b border-neutral-100 dark:border-white/5">
-                          <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Specific Accounts</span>
-                          <button onClick={() => setAccountFilter([])} className="text-[9px] font-bold text-rose-500 hover:underline">Clear</button>
-                        </div>
-                        
-                        {[
-                          { title: '🏦 Bank Accounts', typeKey: 'BANK' },
-                          { title: '💳 Credit Cards', typeKey: 'CREDIT_CARD' },
-                          { title: '💵 Cash & Wallets', typeKey: 'CASH' }
-                        ].map(section => {
-                          const sectionAccs = accounts.filter(a => a.type === section.typeKey);
-                          if (sectionAccs.length === 0) return null;
-                          return (
-                            <div key={section.typeKey} className="space-y-1">
-                              <div className="px-2 text-[9px] font-extrabold uppercase tracking-widest text-neutral-400">{section.title}</div>
-                              {sectionAccs.map(acc => {
-                                const isSelected = accountFilter.includes(acc.id);
-                                return (
-                                  <button key={acc.id} onClick={() => toggleAccount(acc.id)}
-                                    className={`w-full px-2.5 py-1 rounded-xl text-left text-xs font-medium flex items-center justify-between ${isSelected ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
-                                    <div className="flex items-center gap-2 truncate">
-                                      <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center shrink-0 ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
-                                        {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
-                                      </div>
-                                      <span className="truncate">{acc.bankName}</span>
-                                    </div>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          );
-                        })}
-                      
-                        <div className="pt-1.5 mt-1 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between gap-2 px-1">
-                          <button onClick={() => setAccountFilter([])} className="text-[10px] font-bold text-neutral-400 hover:text-rose-500 transition-colors">Reset</button>
-                          <button onClick={() => setActivePopover(null)} className="px-3 py-1 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1">
-                            <span>Apply</span>
-                            <Check className="w-3 h-3" />
-                          </button>
-                        </div>
-</motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
-
-            {/* Tag Filter Pill */}
-            {tagFilter.length > 0 && (
-              <div className="relative">
-                <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
-                  <button onClick={() => togglePopover('tag')} className="flex items-center gap-1 hover:opacity-80">
-                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Tag</span>
-                    <span className="font-bold">{tagFilter.length === 1 ? `#${tagFilter[0]}` : `#${tagFilter[0]} +${tagFilter.length - 1}`}</span>
-                    <ChevronDown className="w-3 h-3 text-neutral-400" />
-                  </button>
-                  <button onClick={() => setTagFilter([])} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-                <AnimatePresence>
-                  {activePopover === 'tag' && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
-                      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                        className="absolute left-0 mt-1.5 w-52 max-h-60 overflow-y-auto bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
-                        <div className="flex items-center justify-between px-2.5 py-1 border-b border-neutral-100 dark:border-white/5 mb-1">
-                          <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Tags</span>
-                          <button onClick={() => setTagFilter([])} className="text-[9px] font-bold text-rose-500 hover:underline">Clear</button>
-                        </div>
-                        {tags.map(t => {
-                          const isSelected = tagFilter.includes(t);
-                          return (
-                            <button key={t} onClick={() => toggleTag(t)}
-                              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${isSelected ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
-                              <div className="flex items-center gap-2">
-                                <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-300 dark:border-neutral-600'}`}>
-                                  {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
-                                </div>
-                                <span>#{t}</span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      
-                        <div className="pt-1.5 mt-1 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between gap-2 px-1">
-                          <button onClick={() => setTagFilter([])} className="text-[10px] font-bold text-neutral-400 hover:text-rose-500 transition-colors">Reset</button>
-                          <button onClick={() => setActivePopover(null)} className="px-3 py-1 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1">
-                            <span>Apply</span>
-                            <Check className="w-3 h-3" />
-                          </button>
-                        </div>
-</motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
-
-            {/* Timeline Granularity Pill */}
-            {granularity !== 'ALL' && (
-              <div className="relative">
-                <div className="flex items-center gap-1 pl-2.5 pr-1.5 py-1 bg-brand-blue/10 dark:bg-white/10 border border-brand-blue/20 dark:border-white/10 rounded-xl text-xs font-semibold text-brand-blue dark:text-white">
-                  <button onClick={() => togglePopover('granularity')} className="flex items-center gap-1 hover:opacity-80">
-                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider">Time</span>
-                    <span className="font-bold">
-                      {granularity === 'CUSTOM'
-                        ? `${format(new Date(customRange.start + 'T00:00:00'), 'MMM d')} – ${format(new Date(customRange.end + 'T00:00:00'), 'MMM d')}`
-                        : granularity === 'MONTH'
-                        ? format(referenceDate, 'MMM yyyy')
-                        : granularity === 'LAST_MONTH'
-                        ? format(subMonths(referenceDate, 1), 'MMM yyyy')
-                        : granularity}
-                    </span>
-                    <ChevronDown className="w-3 h-3 text-neutral-400" />
-                  </button>
-                  <button onClick={() => setGranularity('ALL')} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-white/20 rounded-md transition-colors text-neutral-400 hover:text-neutral-700 dark:hover:text-white">
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-                <AnimatePresence>
-                  {activePopover === 'granularity' && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setActivePopover(null)} />
-                      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
-                        className="absolute left-0 mt-1.5 w-60 bg-white dark:bg-[#18181B] border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-xl p-2.5 z-50 space-y-1">
-                        <div className="px-2 py-1 text-[9px] font-black uppercase tracking-wider text-neutral-400">Timeline</div>
-                        {[
-                          { id: 'MONTH', label: 'This Month' },
-                          { id: 'LAST_MONTH', label: 'Last Month' },
-                          { id: 'YEAR', label: 'This Year' },
-                          { id: 'ALL', label: 'All Time' },
-                          { id: 'CUSTOM', label: 'Custom Range...' }
-                        ].map(g => (
-                          <button key={g.id} onClick={() => { setGranularity(g.id as any); if (g.id !== 'CUSTOM') setActivePopover(null); }}
-                            className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between ${granularity === g.id ? 'bg-brand-blue/10 text-brand-blue dark:text-white font-bold' : 'hover:bg-neutral-100 dark:hover:bg-white/5 text-neutral-700 dark:text-neutral-200'}`}>
-                            <span>{g.label}</span>
-                            {granularity === g.id && <CheckCircle2 className="w-3.5 h-3.5 text-brand-blue dark:text-white" />}
-                          </button>
-                        ))}
-
-                        {granularity === 'CUSTOM' && (
-                          <div className="pt-2.5 mt-1 border-t border-neutral-100 dark:border-white/10 space-y-2.5">
-                            <div className="flex items-center justify-between px-1">
-                              <span className="text-[9px] font-extrabold uppercase tracking-widest text-brand-blue dark:text-brand-cyan flex items-center gap-1">
-                                <Calendar className="w-3 h-3" /> Custom Date Range
-                              </span>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="bg-neutral-50 dark:bg-white/5 border border-neutral-200/80 dark:border-white/10 p-2 rounded-xl transition-all focus-within:border-brand-blue dark:focus-within:border-brand-cyan">
-                                <span className="text-[8px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest block mb-1">Start Date</span>
-                                <input
-                                  type="date"
-                                  value={customRange.start}
-                                  onChange={e => setCustomRange(prev => ({ ...prev, start: e.target.value }))}
-                                  className="w-full bg-transparent text-[11px] font-semibold text-neutral-800 dark:text-white focus:outline-none cursor-pointer"
-                                />
-                              </div>
-                              <div className="bg-neutral-50 dark:bg-white/5 border border-neutral-200/80 dark:border-white/10 p-2 rounded-xl transition-all focus-within:border-brand-blue dark:focus-within:border-brand-cyan">
-                                <span className="text-[8px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest block mb-1">End Date</span>
-                                <input
-                                  type="date"
-                                  value={customRange.end}
-                                  onChange={e => setCustomRange(prev => ({ ...prev, end: e.target.value }))}
-                                  className="w-full bg-transparent text-[11px] font-semibold text-neutral-800 dark:text-white focus:outline-none cursor-pointer"
-                                />
-                              </div>
-                            </div>
-                            
-                            <div className="space-y-1">
-                              <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest px-1">Quick Presets</span>
-                              <div className="grid grid-cols-3 gap-1">
-                                <button
-                                  onClick={() => {
-                                    setCustomRange({
-                                      start: format(subDays(new Date(), 7), 'yyyy-MM-dd'),
-                                      end: format(new Date(), 'yyyy-MM-dd')
-                                    });
-                                  }}
-                                  className="py-1 px-1.5 bg-neutral-100/80 dark:bg-white/5 hover:bg-brand-blue/10 hover:text-brand-blue dark:hover:text-brand-cyan rounded-lg text-[10px] font-bold text-neutral-600 dark:text-neutral-300 transition-all text-center">
-                                  Last 7d
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setCustomRange({
-                                      start: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
-                                      end: format(new Date(), 'yyyy-MM-dd')
-                                    });
-                                  }}
-                                  className="py-1 px-1.5 bg-neutral-100/80 dark:bg-white/5 hover:bg-brand-blue/10 hover:text-brand-blue dark:hover:text-brand-cyan rounded-lg text-[10px] font-bold text-neutral-600 dark:text-neutral-300 transition-all text-center">
-                                  Last 30d
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setCustomRange({
-                                      start: format(startOfYear(new Date()), 'yyyy-MM-dd'),
-                                      end: format(new Date(), 'yyyy-MM-dd')
-                                    });
-                                  }}
-                                  className="py-1 px-1.5 bg-neutral-100/80 dark:bg-white/5 hover:bg-brand-blue/10 hover:text-brand-blue dark:hover:text-brand-cyan rounded-lg text-[10px] font-bold text-neutral-600 dark:text-neutral-300 transition-all text-center">
-                                  This Year
-                                </button>
-                              </div>
-                            </div>
-
-                            <button
-                              onClick={() => setActivePopover(null)}
-                              className="w-full py-2 bg-gradient-to-r from-brand-blue to-indigo-600 dark:from-brand-blue dark:to-cyan-600 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-blue/20 hover:opacity-95 active:scale-98 transition-all flex items-center justify-center gap-1.5">
-                              <span>Apply Custom Range</span>
-                            </button>
-                          </div>
-                        )}
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
-
-            {/* Clear All Text Button */}
-            <button
-              onClick={() => {
-                setCategoryFilter([]);
-                setTypeFilter([]);
-                setAccountFilter([]);
-                setTagFilter([]);
-                setGranularity('ALL');
-              }}
-              className="text-[10px] font-bold text-rose-500 hover:text-rose-600 hover:underline uppercase tracking-wider ml-1"
-            >
-              Clear All
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Transaction list */}
@@ -1004,6 +490,221 @@ export default function Transactions() {
 
 
 
+
+      {/* Filter Panel */}
+      <AnimatePresence>
+        {isFilterOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsFilterOpen(false)}
+              className="fixed inset-0 bg-black/40 z-50"
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 bottom-0 w-80 max-w-full bg-white dark:bg-[#111111] z-50 shadow-2xl flex flex-col"
+            >
+              <div className="p-4 border-b border-neutral-100 dark:border-white/5 flex flex-col gap-4 shrink-0 bg-neutral-50/30">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-heading font-black text-brand-blue text-lg leading-none">Filter Transactions</h3>
+                    <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mt-1">Refine View</p>
+                  </div>
+                  <button onClick={() => setIsFilterOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-4 space-y-8 pb-8">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-neutral-500">Filter your transactions.</p>
+                  {(accountFilter.length > 0 || categoryFilter.length > 0 || tagFilter.length > 0 || methodFilter.length > 0 || typeFilter.length > 0 || accountTypeFilter.length > 0 || granularity !== 'ALL') && (
+                    <button 
+                      onClick={() => {
+                        setAccountFilter([]);
+                        setCategoryFilter([]);
+                        setTagFilter([]);
+                        setMethodFilter([]);
+                        setTypeFilter([]);
+                        setAccountTypeFilter([]);
+                        setGranularity('ALL');
+                      }}
+                      className="px-3 py-1.5 rounded-full bg-rose-50 text-[10px] font-black text-rose-600 hover:bg-rose-100 transition-colors uppercase tracking-wider"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                </div>
+
+                {/* Period Selection */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400">Time Period</h4>
+                    <div className="flex bg-neutral-100/80 p-0.5 rounded-lg">
+                      <button onClick={() => {
+                        setGranularity('ALL');
+                      }} className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all ${granularity === 'ALL' ? 'bg-white text-brand-blue shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}>All</button>
+                      <button onClick={() => {
+                        setGranularity('MONTH');
+                        setReferenceDate(new Date());
+                      }} className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all ${granularity === 'MONTH' ? 'bg-white text-brand-blue shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}>Month</button>
+                      <button onClick={() => setGranularity('CUSTOM')} className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all ${granularity === 'CUSTOM' ? 'bg-white text-brand-blue shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}>Custom</button>
+                    </div>
+                  </div>
+                  <div className="w-full">
+                    {granularity === 'MONTH' || granularity === 'LAST_MONTH' ? (
+                      <div className="flex items-center justify-between bg-neutral-50 border border-neutral-100 rounded-xl p-1 w-full">
+                        <button onClick={() => setReferenceDate(subMonths(referenceDate, 1))} className="p-2 hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 active:scale-95 text-neutral-500 hover:text-brand-blue">
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <div className="flex-1 text-center font-heading font-black text-brand-blue uppercase tracking-widest text-[11px]">
+                          {format(referenceDate, 'MMMM yyyy')}
+                        </div>
+                        <button onClick={() => setReferenceDate(addMonths(referenceDate, 1))} className="p-2 hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 active:scale-95 text-neutral-500 hover:text-brand-blue">
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : granularity === 'CUSTOM' ? (
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 relative group">
+                          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-brand-blue transition-colors">
+                            <Calendar className="w-3.5 h-3.5" />
+                          </div>
+                          <input
+                            type="date"
+                            value={customRange.start}
+                            onChange={(e) => setCustomRange(prev => ({ ...prev, start: e.target.value }))}
+                            className="w-full pl-8 pr-2 py-2 bg-neutral-50 border border-neutral-200 rounded-xl focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none text-[10px] font-bold text-neutral-800 transition-all uppercase tracking-wider"
+                          />
+                        </div>
+                        <span className="text-neutral-400 font-bold text-[10px] uppercase">to</span>
+                        <div className="flex-1 relative group">
+                          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-brand-blue transition-colors">
+                            <Calendar className="w-3.5 h-3.5" />
+                          </div>
+                          <input
+                            type="date"
+                            value={customRange.end}
+                            onChange={(e) => setCustomRange(prev => ({ ...prev, end: e.target.value }))}
+                            className="w-full pl-8 pr-2 py-2 bg-neutral-50 border border-neutral-200 rounded-xl focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none text-[10px] font-bold text-neutral-800 transition-all uppercase tracking-wider"
+                          />
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+
+                {/* Transaction Type Filter */}
+                <div>
+                  <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Transaction Type</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { key: 'DEBIT', label: 'Outflow' },
+                      { key: 'CREDIT', label: 'Inflow' },
+                      { key: 'TRANSFER', label: 'Transfers' }
+                    ].map(t => {
+                      const isSelected = typeFilter.includes(t.key);
+                      return (
+                        <button
+                          key={t.key}
+                          onClick={() => toggleType(t.key)}
+                          className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
+                        >
+                          {t.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Account Filter */}
+                <div>
+                  <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Accounts</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {accounts.map(acc => {
+                      const isSelected = accountFilter.includes(acc.id);
+                      return (
+                        <button
+                          key={acc.id}
+                          onClick={() => toggleAccount(acc.id)}
+                          className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
+                        >
+                          {acc.bankName}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Payment Methods */}
+                <div>
+                  <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Payment Methods</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {['Bank', 'UPI', 'Credit Card', 'Cash', 'Bank Transfer', 'Net Banking', 'Wallet'].map(method => {
+                      const isSelected = methodFilter.includes(method);
+                      return (
+                        <button
+                          key={method}
+                          onClick={() => toggleMethod(method)}
+                          className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
+                        >
+                          {method}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Category Filter */}
+                <div>
+                  <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Categories</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {appCategories.map(cat => {
+                      const isSelected = categoryFilter.includes(cat);
+                      return (
+                        <button
+                          key={cat}
+                          onClick={() => toggleCategory(cat)}
+                          className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
+                        >
+                          {cat}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Tag Filter */}
+                {tags.length > 0 && (
+                  <div>
+                    <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Tags</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map(tag => {
+                        const isSelected = tagFilter.includes(tag);
+                        return (
+                          <button
+                            key={tag}
+                            onClick={() => toggleTag(tag)}
+                            className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
+                          >
+                            #{tag}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
