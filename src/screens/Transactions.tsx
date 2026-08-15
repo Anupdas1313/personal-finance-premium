@@ -154,7 +154,7 @@ export default function Transactions() {
       if (typeFilter.length > 0 && !typeFilter.includes(tx.type)) return false;
       if (categoryFilter.length > 0 && !categoryFilter.includes(tx.category || 'Other')) return false;
       if (accountFilter.length > 0 && !accountFilter.includes(Number(tx.accountId))) return false;
-      if (tagFilter.length > 0 && !tagFilter.includes((tx.expenseType || '').toLowerCase())) return false;
+      if (tagFilter.length > 0 && !tagFilter.some(t => t.toLowerCase() === (tx.expenseType || '').toLowerCase())) return false;
       
       const budgetIdParam = searchParams.get('budgetId');
       if (budgetIdParam) {
