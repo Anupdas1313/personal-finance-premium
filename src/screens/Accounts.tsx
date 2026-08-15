@@ -494,28 +494,31 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                 initial={{ x: '100%' }}
                 animate={{ x: 0 }}
                 exit={{ x: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="absolute top-0 right-0 bottom-0 w-80 max-w-full bg-white dark:bg-[#111111] z-30 shadow-2xl flex flex-col"
+                transition={{ type: 'spring', damping: 30, stiffness: 300, mass: 0.8 }}
+                className="absolute top-0 right-0 bottom-0 w-96 max-w-full bg-white dark:bg-[#111111] z-30 shadow-[0_0_40px_rgba(0,0,0,0.1)] flex flex-col"
               >
-                <div className="p-4 border-b border-neutral-100 dark:border-white/5 flex flex-col gap-4 shrink-0">
+                <div className="p-6 border-b border-neutral-100 dark:border-white/5 flex flex-col gap-6 shrink-0 bg-neutral-50/30">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-heading font-black uppercase text-sm">Report Settings</h3>
-                    <button onClick={() => setIsFilterPanelOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-white/5">
+                    <div>
+                      <h3 className="font-heading font-black text-brand-blue text-lg leading-none">Report Settings</h3>
+                      <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mt-1">Customize Output</p>
+                    </div>
+                    <button onClick={() => setIsFilterPanelOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                   
                   {/* Tabs */}
-                  <div className="flex bg-neutral-100 dark:bg-white/5 p-1 rounded-xl">
+                  <div className="flex bg-neutral-100/80 p-1.5 rounded-2xl">
                     <button 
                       onClick={() => setFilterTab('filters')} 
-                      className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${filterTab === 'filters' ? 'bg-white dark:bg-[#222] shadow-sm text-brand-blue dark:text-white' : 'text-neutral-500'}`}
+                      className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${filterTab === 'filters' ? 'bg-white shadow-sm text-brand-blue' : 'text-neutral-500 hover:text-neutral-700'}`}
                     >
                       Filters
                     </button>
                     <button 
                       onClick={() => setFilterTab('columns')} 
-                      className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${filterTab === 'columns' ? 'bg-white dark:bg-[#222] shadow-sm text-brand-blue dark:text-white' : 'text-neutral-500'}`}
+                      className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${filterTab === 'columns' ? 'bg-white shadow-sm text-brand-blue' : 'text-neutral-500 hover:text-neutral-700'}`}
                     >
                       Columns
                     </button>
@@ -524,10 +527,10 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                 
                 <div className="flex-1 overflow-y-auto p-4 space-y-8">
                   {filterTab === 'columns' ? (
-                    <div className="space-y-4">
-                      <h4 className="text-xs font-black uppercase tracking-wider text-neutral-400 mb-2">Display Columns</h4>
-                      <p className="text-[10px] font-bold text-neutral-400 mb-4">Toggle the columns you want to appear in the PDF report.</p>
-                      <div className="space-y-2">
+                    <div className="space-y-4 px-2">
+                      <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-2">Display Columns</h4>
+                      <p className="text-[11px] font-medium text-neutral-500 mb-4">Toggle the columns you want to appear in the PDF report.</p>
+                      <div className="space-y-3">
                         {[
                           { id: 'account', label: 'Account', state: showAccountCol, set: setShowAccountCol },
                           { id: 'category', label: 'Category', state: showCategoryCol, set: setShowCategoryCol },
@@ -535,17 +538,17 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                           { id: 'remarks', label: 'Remarks', state: showRemarksCol, set: setShowRemarksCol },
                           { id: 'method', label: 'Payment Method', state: showPaymentMethodCol, set: setShowPaymentMethodCol },
                         ].map(col => (
-                          <label key={col.id} className="flex items-center justify-between p-3 rounded-2xl border border-neutral-100 dark:border-white/5 cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors">
-                            <span className="text-sm font-bold">{col.label}</span>
-                            <input type="checkbox" checked={col.state} onChange={(e) => col.set(e.target.checked)} className="w-5 h-5 rounded-md border-neutral-300 text-brand-blue focus:ring-brand-blue focus:ring-offset-0" />
+                          <label key={col.id} className="flex items-center justify-between p-4 rounded-2xl border border-neutral-100 cursor-pointer hover:bg-brand-blue/5 hover:border-brand-blue/20 transition-all group">
+                            <span className="text-sm font-bold text-neutral-700 group-hover:text-brand-blue transition-colors">{col.label}</span>
+                            <input type="checkbox" checked={col.state} onChange={(e) => col.set(e.target.checked)} className="w-5 h-5 rounded-lg border-neutral-300 text-brand-blue focus:ring-brand-blue focus:ring-offset-0 transition-colors" />
                           </label>
                         ))}
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-8">
+                    <div className="space-y-8 px-2 pb-8">
                       <div className="flex items-center justify-between">
-                        <p className="text-[10px] font-bold text-neutral-400">Filter your transactions.</p>
+                        <p className="text-xs font-bold text-neutral-500">Filter your transactions.</p>
                         {(selectedAccounts.length > 0 || selectedCategories.length > 0 || selectedTags.length > 0 || selectedPaymentMethods.length > 0 || selectedTransactionTypes.length > 0) && (
                           <button 
                             onClick={() => {
@@ -555,7 +558,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                               setSelectedPaymentMethods([]);
                               setSelectedTransactionTypes([]);
                             }}
-                            className="text-[10px] font-black text-rose-500 hover:text-rose-600 uppercase tracking-wider"
+                            className="px-3 py-1.5 rounded-full bg-rose-50 text-[10px] font-black text-rose-600 hover:bg-rose-100 transition-colors uppercase tracking-wider"
                           >
                             Clear All
                           </button>
@@ -563,53 +566,53 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                       </div>
 
                       {/* Period Selection */}
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400">Period</h4>
-                          <div className="flex bg-neutral-100 dark:bg-white/5 p-0.5 rounded-lg">
+                      <div className="bg-white rounded-3xl p-5 border border-neutral-100 shadow-sm shadow-black/5">
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400">Time Period</h4>
+                          <div className="flex bg-neutral-100/80 p-1 rounded-xl">
                             <button onClick={() => {
                               setPeriodMode('MONTH');
                               setDateRange(prev => ({ start: startOfMonth(prev.start), end: endOfMonth(prev.start) }));
-                            }} className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-colors ${periodMode === 'MONTH' ? 'bg-white dark:bg-[#333] text-brand-blue dark:text-white shadow-sm' : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'}`}>Month</button>
-                            <button onClick={() => setPeriodMode('CUSTOM')} className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-colors ${periodMode === 'CUSTOM' ? 'bg-white dark:bg-[#333] text-brand-blue dark:text-white shadow-sm' : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'}`}>Custom</button>
+                            }} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${periodMode === 'MONTH' ? 'bg-white text-brand-blue shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}>Month</button>
+                            <button onClick={() => setPeriodMode('CUSTOM')} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${periodMode === 'CUSTOM' ? 'bg-white text-brand-blue shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}>Custom</button>
                           </div>
                         </div>
-                        <div className="w-full sm:w-64">
+                        <div className="w-full">
                           {periodMode === 'MONTH' ? (
-                            <div className="flex items-center justify-between bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl p-1 w-full">
-                              <button onClick={() => setDateRange(prev => ({ start: startOfMonth(subMonths(prev.start, 1)), end: endOfMonth(subMonths(prev.start, 1)) }))} className="p-2 hover:bg-white dark:hover:bg-[#222] rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-white/10">
-                                <ChevronLeft className="w-4 h-4 text-neutral-500" />
+                            <div className="flex items-center justify-between bg-neutral-50 border border-neutral-100 rounded-2xl p-1.5 w-full">
+                              <button onClick={() => setDateRange(prev => ({ start: startOfMonth(subMonths(prev.start, 1)), end: endOfMonth(subMonths(prev.start, 1)) }))} className="p-2.5 hover:bg-white rounded-xl transition-all shadow-sm border border-transparent hover:border-neutral-200 active:scale-95 text-neutral-500 hover:text-brand-blue">
+                                <ChevronLeft className="w-5 h-5" />
                               </button>
-                              <div className="flex-1 text-center font-heading font-black text-brand-blue dark:text-white uppercase tracking-widest text-[11px]">
+                              <div className="flex-1 text-center font-heading font-black text-brand-blue uppercase tracking-widest text-sm">
                                 {format(dateRange.start, 'MMMM yyyy')}
                               </div>
-                              <button onClick={() => setDateRange(prev => ({ start: startOfMonth(addMonths(prev.start, 1)), end: endOfMonth(addMonths(prev.start, 1)) }))} className="p-2 hover:bg-white dark:hover:bg-[#222] rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-white/10">
-                                <ChevronRight className="w-4 h-4 text-neutral-500" />
+                              <button onClick={() => setDateRange(prev => ({ start: startOfMonth(addMonths(prev.start, 1)), end: endOfMonth(addMonths(prev.start, 1)) }))} className="p-2.5 hover:bg-white rounded-xl transition-all shadow-sm border border-transparent hover:border-neutral-200 active:scale-95 text-neutral-500 hover:text-brand-blue">
+                                <ChevronRight className="w-5 h-5" />
                               </button>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-3">
                               <div className="flex-1 relative group">
-                                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-brand-blue transition-colors">
-                                  <Calendar className="w-3.5 h-3.5" />
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-brand-blue transition-colors">
+                                  <Calendar className="w-4 h-4" />
                                 </div>
                                 <input
                                   type="date"
                                   value={format(dateRange.start, 'yyyy-MM-dd')}
                                   onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value ? new Date(e.target.value) : new Date() }))}
-                                  className="w-full pl-8 pr-2 py-2 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none text-[10px] font-bold text-neutral-800 dark:text-neutral-200 transition-all uppercase tracking-wider"
+                                  className="w-full pl-10 pr-3 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none text-xs font-bold text-neutral-800 transition-all uppercase tracking-wider"
                                 />
                               </div>
-                              <span className="text-neutral-400 font-medium text-[10px] uppercase">to</span>
+                              <span className="text-neutral-400 font-bold text-[10px] uppercase">to</span>
                               <div className="flex-1 relative group">
-                                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-brand-blue transition-colors">
-                                  <Calendar className="w-3.5 h-3.5" />
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-brand-blue transition-colors">
+                                  <Calendar className="w-4 h-4" />
                                 </div>
                                 <input
                                   type="date"
                                   value={format(dateRange.end, 'yyyy-MM-dd')}
                                   onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value ? new Date(e.target.value) : new Date() }))}
-                                  className="w-full pl-8 pr-2 py-2 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none text-[10px] font-bold text-neutral-800 dark:text-neutral-200 transition-all uppercase tracking-wider"
+                                  className="w-full pl-10 pr-3 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none text-xs font-bold text-neutral-800 transition-all uppercase tracking-wider"
                                 />
                               </div>
                             </div>
@@ -622,9 +625,9 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                         <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Transaction Type</h4>
                         <div className="flex flex-wrap gap-2">
                           {[
-                            { key: 'DEBIT', label: 'Outflow', color: 'bg-rose-600 border-rose-600 text-white' },
-                            { key: 'CREDIT', label: 'Inflow', color: 'bg-emerald-600 border-emerald-600 text-white' },
-                            { key: 'TRANSFER', label: 'Transfers', color: 'bg-sky-600 border-sky-600 text-white' }
+                            { key: 'DEBIT', label: 'Outflow' },
+                            { key: 'CREDIT', label: 'Inflow' },
+                            { key: 'TRANSFER', label: 'Transfers' }
                           ].map(t => {
                             const isSelected = selectedTransactionTypes.includes(t.key);
                             return (
@@ -634,7 +637,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                                   if (isSelected) setSelectedTransactionTypes(selectedTransactionTypes.filter(type => type !== t.key));
                                   else setSelectedTransactionTypes([...selectedTransactionTypes, t.key]);
                                 }}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${isSelected ? t.color : 'border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300'}`}
+                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
                               >
                                 {t.label}
                               </button>
@@ -656,7 +659,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                                   if (isSelected) setSelectedAccounts(selectedAccounts.filter(id => id !== acc.id));
                                   else setSelectedAccounts([...selectedAccounts, acc.id as number]);
                                 }}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${isSelected ? 'bg-brand-blue border-brand-blue text-white' : 'border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300'}`}
+                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
                               >
                                 {acc.bankName}
                               </button>
@@ -678,7 +681,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                                   if (isSelected) setSelectedPaymentMethods(selectedPaymentMethods.filter(m => m !== method));
                                   else setSelectedPaymentMethods([...selectedPaymentMethods, method]);
                                 }}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${isSelected ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300'}`}
+                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
                               >
                                 {method}
                               </button>
@@ -700,7 +703,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                                   if (isSelected) setSelectedCategories(selectedCategories.filter(name => name !== cat.name));
                                   else setSelectedCategories([...selectedCategories, cat.name]);
                                 }}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${isSelected ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300'}`}
+                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
                               >
                                 {cat.name}
                               </button>
@@ -723,7 +726,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                                     if (isSelected) setSelectedTags(selectedTags.filter(name => name !== tag.name));
                                     else setSelectedTags([...selectedTags, tag.name]);
                                   }}
-                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${isSelected ? 'bg-orange-500 border-orange-500 text-white' : 'border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300'}`}
+                                  className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
                                 >
                                   {tag.name}
                                 </button>
