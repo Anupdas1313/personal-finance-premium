@@ -132,13 +132,13 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
     const pdfCurr = (!currency || currency === '₹' || /[^\x00-\x7F]/.test(currency)) ? 'Rs. ' : `${currency} `;
 
     // Header Background Accent Bar
-    doc.setFillColor(15, 23, 42); // Deep Navy
+    doc.setFillColor(26, 35, 126); // Brand Blue (#1A237E)
     doc.rect(0, 0, pageWidth, 12, 'F');
 
     // App/Company Header Text
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(18);
-    doc.setTextColor(15, 23, 42);
+    doc.setTextColor(26, 35, 126);
     doc.text('ACCOUNT STATEMENT', 14, 25);
 
     doc.setFontSize(9);
@@ -237,7 +237,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
       body: rows,
       theme: 'striped',
       headStyles: {
-        fillColor: [30, 41, 59],
+        fillColor: [26, 35, 126],
         textColor: 255,
         fontStyle: 'bold',
         fontSize: 8,
@@ -1752,18 +1752,18 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     const pdfCurr = (!currency || currency === '₹' || /[^\x00-\x7F]/.test(currency)) ? 'Rs. ' : `${currency} `;
 
     // Header Accent Bar
-    doc.setFillColor(15, 23, 42); // Deep Navy
+    doc.setFillColor(26, 35, 126); // Brand Blue (#1A237E)
     doc.rect(0, 0, pageWidth, 12, 'F');
 
     // Title
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(18);
-    doc.setTextColor(15, 23, 42);
+    doc.setTextColor(26, 35, 126);
     doc.text('ACCOUNT STATEMENT', 14, 25);
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(37, 99, 235); // Brand Blue
+    doc.setTextColor(26, 35, 126); // Brand Blue
     doc.text(`${account.bankName} ${account.type === 'CASH' ? '(CASH)' : `(•••• ${account.accountLast4})`}`, 14, 31);
 
     // Right Side Metadata
@@ -1843,7 +1843,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
       body: rows,
       theme: 'striped',
       headStyles: {
-        fillColor: [30, 41, 59],
+        fillColor: [26, 35, 126],
         textColor: 255,
         fontStyle: 'bold',
         fontSize: 8,
