@@ -5,7 +5,7 @@ import { db, Transaction, normalizeType } from '../models/db';
 import { format, subDays, startOfMonth, endOfMonth, startOfDay, endOfDay, addMonths, subMonths, startOfYear, endOfYear, isSameDay } from 'date-fns';
 import { X, Trash2, Filter, Search, Edit3, Download, FileText, Plus, CheckSquare, Calendar,
   ChevronLeft, ChevronRight, ListOrdered, ArrowDownLeft, ArrowUpRight,
-  Layers, Tag as TagIcon, Landmark, Smartphone,
+  Layers, Tag as TagIcon, Landmark, Smartphone, Hash,
   BookOpen, CheckCircle2, ChevronDown, Wallet, CreditCard, Check
 } from 'lucide-react';
 import { useCategories } from '../hooks/useCategories';
