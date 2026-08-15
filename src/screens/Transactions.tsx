@@ -521,9 +521,9 @@ export default function Transactions() {
                 </div>
               </div>
               
-              <div className="flex-1 overflow-y-auto p-4 space-y-8 pb-8">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold text-neutral-500">Filter your transactions.</p>
+              <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-24">
+                <div className="flex items-center justify-between pb-2 border-b border-neutral-100 dark:border-white/5">
+                  <p className="text-[11px] font-bold text-neutral-500">Filter your transactions</p>
                   {(accountFilter.length > 0 || categoryFilter.length > 0 || tagFilter.length > 0 || methodFilter.length > 0 || typeFilter.length > 0 || accountTypeFilter.length > 0 || granularity !== 'ALL') && (
                     <button 
                       onClick={() => {
@@ -535,173 +535,186 @@ export default function Transactions() {
                         setAccountTypeFilter([]);
                         setGranularity('ALL');
                       }}
-                      className="px-3 py-1.5 rounded-full bg-rose-50 text-[10px] font-black text-rose-600 hover:bg-rose-100 transition-colors uppercase tracking-wider"
+                      className="px-2 py-1 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-[9px] font-black text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors uppercase tracking-wider"
                     >
                       Clear All
                     </button>
                   )}
                 </div>
 
-                {/* Period Selection */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400">Time Period</h4>
-                    <div className="flex bg-neutral-100/80 p-0.5 rounded-lg">
-                      <button onClick={() => {
-                        setGranularity('ALL');
-                      }} className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all ${granularity === 'ALL' ? 'bg-white text-brand-blue shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}>All</button>
-                      <button onClick={() => {
-                        setGranularity('MONTH');
-                        setReferenceDate(new Date());
-                      }} className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all ${granularity === 'MONTH' ? 'bg-white text-brand-blue shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}>Month</button>
-                      <button onClick={() => setGranularity('CUSTOM')} className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all ${granularity === 'CUSTOM' ? 'bg-white text-brand-blue shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}>Custom</button>
+                {/* Primary: Time & Flow */}
+                <div className="space-y-6">
+                  {/* Period Selection */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+                        <Calendar className="w-3.5 h-3.5" /> Time Period
+                      </h4>
+                      <div className="flex bg-neutral-100/80 dark:bg-white/5 p-0.5 rounded-lg border border-neutral-200/50 dark:border-white/5">
+                        <button onClick={() => setGranularity('ALL')} className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all ${granularity === 'ALL' ? 'bg-white dark:bg-[#111111] text-brand-blue dark:text-brand-cyan shadow-sm border border-neutral-200/50 dark:border-white/10' : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'}`}>All</button>
+                        <button onClick={() => { setGranularity('MONTH'); setReferenceDate(new Date()); }} className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all ${granularity === 'MONTH' ? 'bg-white dark:bg-[#111111] text-brand-blue dark:text-brand-cyan shadow-sm border border-neutral-200/50 dark:border-white/10' : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'}`}>Month</button>
+                        <button onClick={() => setGranularity('CUSTOM')} className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all ${granularity === 'CUSTOM' ? 'bg-white dark:bg-[#111111] text-brand-blue dark:text-brand-cyan shadow-sm border border-neutral-200/50 dark:border-white/10' : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'}`}>Custom</button>
+                      </div>
+                    </div>
+                    <div className="w-full">
+                      {granularity === 'MONTH' || granularity === 'LAST_MONTH' ? (
+                        <div className="flex items-center justify-between bg-neutral-50 dark:bg-white/5 border border-neutral-200/80 dark:border-white/10 rounded-xl p-1 w-full">
+                          <button onClick={() => setReferenceDate(subMonths(referenceDate, 1))} className="p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-white/10 active:scale-95 text-neutral-500 dark:text-neutral-400 hover:text-brand-blue dark:hover:text-white">
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <div className="flex-1 text-center font-heading font-black text-brand-blue dark:text-white uppercase tracking-widest text-[11px]">
+                            {format(referenceDate, 'MMMM yyyy')}
+                          </div>
+                          <button onClick={() => setReferenceDate(addMonths(referenceDate, 1))} className="p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 dark:hover:border-white/10 active:scale-95 text-neutral-500 dark:text-neutral-400 hover:text-brand-blue dark:hover:text-white">
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : granularity === 'CUSTOM' ? (
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 bg-neutral-50 dark:bg-white/5 border border-neutral-200/80 dark:border-white/10 p-2 rounded-xl transition-all focus-within:border-brand-blue dark:focus-within:border-brand-cyan">
+                            <span className="text-[8px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest block mb-1">Start</span>
+                            <input
+                              type="date"
+                              value={customRange.start}
+                              onChange={e => setCustomRange(prev => ({ ...prev, start: e.target.value }))}
+                              className="w-full bg-transparent text-[11px] font-semibold text-neutral-800 dark:text-white focus:outline-none cursor-pointer"
+                            />
+                          </div>
+                          <div className="flex-1 bg-neutral-50 dark:bg-white/5 border border-neutral-200/80 dark:border-white/10 p-2 rounded-xl transition-all focus-within:border-brand-blue dark:focus-within:border-brand-cyan">
+                            <span className="text-[8px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest block mb-1">End</span>
+                            <input
+                              type="date"
+                              value={customRange.end}
+                              onChange={e => setCustomRange(prev => ({ ...prev, end: e.target.value }))}
+                              className="w-full bg-transparent text-[11px] font-semibold text-neutral-800 dark:text-white focus:outline-none cursor-pointer"
+                            />
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
-                  <div className="w-full">
-                    {granularity === 'MONTH' || granularity === 'LAST_MONTH' ? (
-                      <div className="flex items-center justify-between bg-neutral-50 border border-neutral-100 rounded-xl p-1 w-full">
-                        <button onClick={() => setReferenceDate(subMonths(referenceDate, 1))} className="p-2 hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 active:scale-95 text-neutral-500 hover:text-brand-blue">
-                          <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <div className="flex-1 text-center font-heading font-black text-brand-blue uppercase tracking-widest text-[11px]">
-                          {format(referenceDate, 'MMMM yyyy')}
-                        </div>
-                        <button onClick={() => setReferenceDate(addMonths(referenceDate, 1))} className="p-2 hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-neutral-200 active:scale-95 text-neutral-500 hover:text-brand-blue">
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : granularity === 'CUSTOM' ? (
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 relative group">
-                          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-brand-blue transition-colors">
-                            <Calendar className="w-3.5 h-3.5" />
-                          </div>
-                          <input
-                            type="date"
-                            value={customRange.start}
-                            onChange={(e) => setCustomRange(prev => ({ ...prev, start: e.target.value }))}
-                            className="w-full pl-8 pr-2 py-2 bg-neutral-50 border border-neutral-200 rounded-xl focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none text-[10px] font-bold text-neutral-800 transition-all uppercase tracking-wider"
-                          />
-                        </div>
-                        <span className="text-neutral-400 font-bold text-[10px] uppercase">to</span>
-                        <div className="flex-1 relative group">
-                          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-brand-blue transition-colors">
-                            <Calendar className="w-3.5 h-3.5" />
-                          </div>
-                          <input
-                            type="date"
-                            value={customRange.end}
-                            onChange={(e) => setCustomRange(prev => ({ ...prev, end: e.target.value }))}
-                            className="w-full pl-8 pr-2 py-2 bg-neutral-50 border border-neutral-200 rounded-xl focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none text-[10px] font-bold text-neutral-800 transition-all uppercase tracking-wider"
-                          />
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
 
-                {/* Transaction Type Filter */}
-                <div>
-                  <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Transaction Type</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { key: 'DEBIT', label: 'Outflow' },
-                      { key: 'CREDIT', label: 'Inflow' },
-                      { key: 'TRANSFER', label: 'Transfers' }
-                    ].map(t => {
-                      const isSelected = typeFilter.includes(t.key);
-                      return (
-                        <button
-                          key={t.key}
-                          onClick={() => toggleType(t.key)}
-                          className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
-                        >
-                          {t.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Account Filter */}
-                <div>
-                  <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Accounts</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {accounts.map(acc => {
-                      const isSelected = accountFilter.includes(acc.id);
-                      return (
-                        <button
-                          key={acc.id}
-                          onClick={() => toggleAccount(acc.id)}
-                          className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
-                        >
-                          {acc.bankName}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Payment Methods */}
-                <div>
-                  <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Payment Methods</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {['Bank', 'UPI', 'Credit Card', 'Cash', 'Bank Transfer', 'Net Banking', 'Wallet'].map(method => {
-                      const isSelected = methodFilter.includes(method);
-                      return (
-                        <button
-                          key={method}
-                          onClick={() => toggleMethod(method)}
-                          className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
-                        >
-                          {method}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Category Filter */}
-                <div>
-                  <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Categories</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {appCategories.map(cat => {
-                      const isSelected = categoryFilter.includes(cat);
-                      return (
-                        <button
-                          key={cat}
-                          onClick={() => toggleCategory(cat)}
-                          className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
-                        >
-                          {cat}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Tag Filter */}
-                {tags.length > 0 && (
+                  {/* Transaction Type Filter */}
                   <div>
-                    <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">Tags</h4>
+                    <h4 className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-3">
+                      <Layers className="w-3.5 h-3.5" /> Flow
+                    </h4>
                     <div className="flex flex-wrap gap-2">
-                      {tags.map(tag => {
-                        const isSelected = tagFilter.includes(tag);
+                      {[
+                        { key: 'DEBIT', label: 'Outflow' },
+                        { key: 'CREDIT', label: 'Inflow' },
+                        { key: 'TRANSFER', label: 'Transfers' }
+                      ].map(t => {
+                        const isSelected = typeFilter.includes(t.key);
                         return (
                           <button
-                            key={tag}
-                            onClick={() => toggleTag(tag)}
-                            className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
+                            key={t.key}
+                            onClick={() => toggleType(t.key)}
+                            className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all active:scale-95 border ${isSelected ? 'bg-brand-blue border-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-50 dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/10'}`}
                           >
-                            #{tag}
+                            {t.label}
                           </button>
                         );
                       })}
                     </div>
                   </div>
-                )}
+                </div>
+
+                {/* Sources: Accounts & Methods */}
+                <div className="space-y-6 pt-6 border-t border-neutral-100 dark:border-white/5">
+                  {/* Account Filter */}
+                  <div>
+                    <h4 className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-3">
+                      <Landmark className="w-3.5 h-3.5" /> Source Accounts
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {accounts.map(acc => {
+                        const isSelected = accountFilter.includes(acc.id);
+                        return (
+                          <button
+                            key={acc.id}
+                            onClick={() => toggleAccount(acc.id)}
+                            className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all active:scale-95 border ${isSelected ? 'bg-brand-blue border-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-50 dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/10'}`}
+                          >
+                            {acc.bankName}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Payment Methods */}
+                  <div>
+                    <h4 className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-3">
+                      <Smartphone className="w-3.5 h-3.5" /> Payment Medium
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {['Bank', 'UPI', 'Credit Card', 'Cash', 'Bank Transfer', 'Net Banking', 'Wallet'].map(method => {
+                        const isSelected = methodFilter.includes(method);
+                        return (
+                          <button
+                            key={method}
+                            onClick={() => toggleMethod(method)}
+                            className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all active:scale-95 border ${isSelected ? 'bg-brand-blue border-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-50 dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/10'}`}
+                          >
+                            {method}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Classifications: Categories & Tags */}
+                <div className="space-y-6 pt-6 border-t border-neutral-100 dark:border-white/5">
+                  {/* Category Filter */}
+                  <div>
+                    <h4 className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-3">
+                      <TagIcon className="w-3.5 h-3.5" /> Categories
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {appCategories.map(cat => {
+                        const isSelected = categoryFilter.includes(cat);
+                        return (
+                          <button
+                            key={cat}
+                            onClick={() => toggleCategory(cat)}
+                            className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all active:scale-95 border flex items-center gap-1.5 ${isSelected ? 'bg-brand-blue border-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-50 dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/10'}`}
+                          >
+                            <span>{CATEGORY_ICONS[cat] || '📝'}</span>
+                            <span>{cat}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Tag Filter */}
+                  {tags.length > 0 && (
+                    <div>
+                      <h4 className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-3">
+                        <Hash className="w-3.5 h-3.5" /> Tags
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {tags.map(tag => {
+                          const isSelected = tagFilter.includes(tag);
+                          return (
+                            <button
+                              key={tag}
+                              onClick={() => toggleTag(tag)}
+                              className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all active:scale-95 border flex items-center gap-1 ${isSelected ? 'bg-brand-blue border-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-50 dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/10'}`}
+                            >
+                              <span className="opacity-50">#</span>
+                              <span>{tag}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            </motion.div>
+</motion.div>
           </>
         )}
       </AnimatePresence>
