@@ -394,35 +394,35 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
               </div>
               
               {/* Summary Metrics */}
-              <div className="flex gap-4 mb-6">
-                <div className="flex items-center gap-4 bg-emerald-50/50 border border-emerald-100/50 rounded-2xl px-5 py-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-                    <ArrowDownLeft className="w-5 h-5" />
+              <div className="flex items-center gap-8 mb-8 pb-6 border-b border-neutral-100">
+                <div>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-500" />
+                    <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Total Inflow</p>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-0.5">Total Inflow</p>
-                    <p className="text-lg font-black text-emerald-600 leading-none">+{currency}{totalInflow.toLocaleString('en-IN')}</p>
-                  </div>
+                  <p className="text-2xl font-black text-brand-blue tracking-tight">+{currency}{totalInflow.toLocaleString('en-IN')}</p>
                 </div>
-                <div className="flex items-center gap-4 bg-rose-50/50 border border-rose-100/50 rounded-2xl px-5 py-3">
-                  <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
-                    <ArrowUpRight className="w-5 h-5" />
+                
+                <div className="w-px h-10 bg-neutral-200/60" />
+
+                <div>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <ArrowUpRight className="w-3.5 h-3.5 text-rose-500" />
+                    <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Total Outflow</p>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-0.5">Total Outflow</p>
-                    <p className="text-lg font-black text-rose-600 leading-none">-{currency}{totalOutflow.toLocaleString('en-IN')}</p>
-                  </div>
+                  <p className="text-2xl font-black text-brand-blue tracking-tight">-{currency}{totalOutflow.toLocaleString('en-IN')}</p>
                 </div>
-                <div className="flex items-center gap-4 bg-neutral-50/50 border border-neutral-100/80 rounded-2xl px-5 py-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${totalInflow >= totalOutflow ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-                    <ArrowRightLeft className="w-5 h-5" />
+
+                <div className="w-px h-10 bg-neutral-200/60" />
+
+                <div>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <ArrowRightLeft className={`w-3.5 h-3.5 ${totalInflow >= totalOutflow ? 'text-emerald-500' : 'text-rose-500'}`} />
+                    <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Net Flow</p>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-0.5">Net Flow</p>
-                    <p className={`text-lg font-black leading-none ${totalInflow >= totalOutflow ? 'text-emerald-600' : 'text-rose-600'}`}>
-                      {totalInflow >= totalOutflow ? '+' : '-'}{currency}{Math.abs(totalInflow - totalOutflow).toLocaleString('en-IN')}
-                    </p>
-                  </div>
+                  <p className={`text-2xl font-black tracking-tight ${totalInflow >= totalOutflow ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {totalInflow >= totalOutflow ? '+' : '-'}{currency}{Math.abs(totalInflow - totalOutflow).toLocaleString('en-IN')}
+                  </p>
                 </div>
               </div>
 
@@ -2033,42 +2033,39 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               </div>
 
               {/* Summary Metrics Row */}
-              <div className="flex gap-4 mb-8 justify-end flex-wrap">
-                <div className="flex items-center gap-3 bg-neutral-50/50 border border-neutral-100/80 rounded-2xl px-4 py-2.5">
-                  <div className="w-8 h-8 rounded-full bg-neutral-100 text-neutral-600 flex items-center justify-center shrink-0">
-                    <ArrowRightLeft className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest mb-0.5">Opening</p>
-                    <p className="text-sm font-black text-brand-blue leading-none">{currency}{openingBalanceForView.toLocaleString('en-IN')}</p>
-                  </div>
+              <div className="flex items-center gap-8 mb-8 justify-end">
+                <div className="text-right">
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center justify-end gap-1.5">
+                    Opening
+                  </p>
+                  <p className="text-xl font-black text-brand-blue tracking-tight">{currency}{openingBalanceForView.toLocaleString('en-IN')}</p>
                 </div>
-                <div className="flex items-center gap-3 bg-emerald-50/50 border border-emerald-100/50 rounded-2xl px-4 py-2.5">
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-                    <ArrowDownLeft className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest mb-0.5">Inflow</p>
-                    <p className="text-sm font-black text-emerald-600 leading-none">+{currency}{totalCredit.toLocaleString('en-IN')}</p>
-                  </div>
+
+                <div className="w-px h-8 bg-neutral-200/60" />
+
+                <div className="text-right">
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center justify-end gap-1.5">
+                    <ArrowDownLeft className="w-3 h-3 text-emerald-500" /> Inflow
+                  </p>
+                  <p className="text-xl font-black text-emerald-600 tracking-tight">+{currency}{totalCredit.toLocaleString('en-IN')}</p>
                 </div>
-                <div className="flex items-center gap-3 bg-rose-50/50 border border-rose-100/50 rounded-2xl px-4 py-2.5">
-                  <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
-                    <ArrowUpRight className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest mb-0.5">Outflow</p>
-                    <p className="text-sm font-black text-rose-600 leading-none">-{currency}{totalDebit.toLocaleString('en-IN')}</p>
-                  </div>
+
+                <div className="w-px h-8 bg-neutral-200/60" />
+
+                <div className="text-right">
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center justify-end gap-1.5">
+                    <ArrowUpRight className="w-3 h-3 text-rose-500" /> Outflow
+                  </p>
+                  <p className="text-xl font-black text-rose-600 tracking-tight">-{currency}{totalDebit.toLocaleString('en-IN')}</p>
                 </div>
-                <div className="flex items-center gap-3 bg-brand-blue/5 border border-brand-blue/10 rounded-2xl px-4 py-2.5">
-                  <div className="w-8 h-8 rounded-full bg-brand-blue/10 text-brand-blue flex items-center justify-center shrink-0">
-                    <Wallet className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold text-brand-blue/60 uppercase tracking-widest mb-0.5">Closing</p>
-                    <p className="text-sm font-black text-brand-blue leading-none">{currency}{currentViewStateBalance.toLocaleString('en-IN')}</p>
-                  </div>
+
+                <div className="w-px h-8 bg-neutral-200/60" />
+
+                <div className="text-right">
+                  <p className="text-[10px] font-bold text-brand-blue/60 uppercase tracking-widest mb-1.5 flex items-center justify-end gap-1.5">
+                    <Wallet className="w-3 h-3 text-brand-blue/60" /> Closing
+                  </p>
+                  <p className="text-xl font-black text-brand-blue tracking-tight">{currency}{currentViewStateBalance.toLocaleString('en-IN')}</p>
                 </div>
               </div>
 
