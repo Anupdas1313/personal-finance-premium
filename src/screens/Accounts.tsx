@@ -396,29 +396,29 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
               {/* Summary Metrics */}
               <div className="bg-neutral-50/90 border border-neutral-200/80 rounded-2xl p-2.5 mb-6 grid grid-cols-3 divide-x divide-neutral-200/80 shadow-sm">
                 {/* Total Inflow */}
-                <div className="px-5 py-2 flex items-center gap-3.5">
+                <div className="px-5 py-2 flex items-center justify-center gap-3.5">
                   <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-500/20 shadow-xs">
                     <ArrowDownLeft className="w-5 h-5" />
                   </div>
-                  <div>
+                  <div className="text-left">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block mb-0.5">Total Inflow</span>
                     <span className="text-lg font-black text-emerald-600 tracking-tight">+{currency}{totalInflow.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
                 {/* Total Outflow */}
-                <div className="px-5 py-2 flex items-center gap-3.5">
+                <div className="px-5 py-2 flex items-center justify-center gap-3.5">
                   <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0 border border-rose-500/20 shadow-xs">
                     <ArrowUpRight className="w-5 h-5" />
                   </div>
-                  <div>
+                  <div className="text-left">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block mb-0.5">Total Outflow</span>
                     <span className="text-lg font-black text-rose-600 tracking-tight">-{currency}{totalOutflow.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
                 {/* Net Flow */}
-                <div className="px-5 py-2 flex items-center gap-3.5">
+                <div className="px-5 py-2 flex items-center justify-center gap-3.5">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border shadow-xs ${
                     totalInflow >= totalOutflow 
                       ? 'bg-brand-blue/10 text-brand-blue border-brand-blue/20' 
@@ -426,7 +426,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                   }`}>
                     <ArrowRightLeft className="w-5 h-5" />
                   </div>
-                  <div>
+                  <div className="text-left">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block mb-0.5">Net Flow</span>
                     <span className={`text-lg font-black tracking-tight ${totalInflow >= totalOutflow ? 'text-brand-blue' : 'text-rose-600'}`}>
                       {totalInflow >= totalOutflow ? '+' : '-'}{currency}{Math.abs(totalInflow - totalOutflow).toLocaleString('en-IN')}
@@ -2044,44 +2044,44 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               {/* Summary Metrics Row */}
               <div className="bg-neutral-50/90 border border-neutral-200/80 rounded-2xl p-2 mb-6 grid grid-cols-4 divide-x divide-neutral-200/80 shadow-sm">
                 {/* Opening */}
-                <div className="px-4 py-2 flex items-center gap-3">
+                <div className="px-4 py-2 flex items-center justify-center gap-3">
                   <div className="w-8 h-8 rounded-xl bg-neutral-200/60 text-neutral-600 flex items-center justify-center shrink-0 border border-neutral-300/40">
                     <ArrowRightLeft className="w-3.5 h-3.5" />
                   </div>
-                  <div>
+                  <div className="text-left">
                     <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-0.5">Opening</span>
                     <span className="text-sm font-black text-neutral-800 tracking-tight">{currency}{openingBalanceForView.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
                 {/* Inflow */}
-                <div className="px-4 py-2 flex items-center gap-3">
+                <div className="px-4 py-2 flex items-center justify-center gap-3">
                   <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-500/20">
                     <ArrowDownLeft className="w-3.5 h-3.5" />
                   </div>
-                  <div>
+                  <div className="text-left">
                     <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-0.5">Inflow</span>
                     <span className="text-sm font-black text-emerald-600 tracking-tight">+{currency}{totalCredit.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
                 {/* Outflow */}
-                <div className="px-4 py-2 flex items-center gap-3">
+                <div className="px-4 py-2 flex items-center justify-center gap-3">
                   <div className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0 border border-rose-500/20">
                     <ArrowUpRight className="w-3.5 h-3.5" />
                   </div>
-                  <div>
+                  <div className="text-left">
                     <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-0.5">Outflow</span>
                     <span className="text-sm font-black text-rose-600 tracking-tight">-{currency}{totalDebit.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
                 {/* Closing */}
-                <div className="px-4 py-2 flex items-center gap-3">
+                <div className="px-4 py-2 flex items-center justify-center gap-3">
                   <div className="w-8 h-8 rounded-xl bg-brand-blue/10 text-brand-blue flex items-center justify-center shrink-0 border border-brand-blue/20">
                     <Wallet className="w-3.5 h-3.5" />
                   </div>
-                  <div>
+                  <div className="text-left">
                     <span className="text-[9px] font-bold uppercase tracking-wider text-brand-blue/60 block mb-0.5">Closing</span>
                     <span className="text-sm font-black text-brand-blue tracking-tight">{currency}{currentViewStateBalance.toLocaleString('en-IN')}</span>
                   </div>
