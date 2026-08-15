@@ -667,28 +667,6 @@ export default function Transactions() {
 
                 {/* Classifications: Categories & Tags */}
                 <div className="space-y-6 pt-6 border-t border-neutral-100 dark:border-white/5">
-                  {/* Category Filter */}
-                  <div>
-                    <h4 className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-3">
-                      <TagIcon className="w-3.5 h-3.5" /> Categories
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {appCategories.map(cat => {
-                        const isSelected = categoryFilter.includes(cat);
-                        return (
-                          <button
-                            key={cat}
-                            onClick={() => toggleCategory(cat)}
-                            className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all active:scale-95 border flex items-center gap-1.5 ${isSelected ? 'bg-brand-blue border-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-50 dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/10'}`}
-                          >
-                            <span>{CATEGORY_ICONS[cat] || '📝'}</span>
-                            <span>{cat}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
                   {/* Tag Filter */}
                   {tags.length > 0 && (
                     <div>
@@ -712,6 +690,28 @@ export default function Transactions() {
                       </div>
                     </div>
                   )}
+
+                  {/* Category Filter */}
+                  <div>
+                    <h4 className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-3">
+                      <TagIcon className="w-3.5 h-3.5" /> Categories
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {appCategories.map(cat => {
+                        const isSelected = categoryFilter.includes(cat);
+                        return (
+                          <button
+                            key={cat}
+                            onClick={() => toggleCategory(cat)}
+                            className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all active:scale-95 border flex items-center gap-1.5 ${isSelected ? 'bg-brand-blue border-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-50 dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/10'}`}
+                          >
+                            <span>{CATEGORY_ICONS[cat] || '📝'}</span>
+                            <span>{cat}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
 </motion.div>
