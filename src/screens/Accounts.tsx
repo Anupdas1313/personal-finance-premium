@@ -1068,10 +1068,10 @@ export default function Accounts() {
           {/* Add Account Pill */}
           <button
             onClick={() => setIsAdding(!isAdding)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-brand-green/10 text-brand-green border border-brand-green/20 dark:border-brand-green/30 rounded-2xl hover:bg-brand-green/20 transition-all font-black uppercase text-[10px] tracking-wider"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-neutral-50 dark:bg-white/5 border border-neutral-100 dark:border-white/5 text-neutral-600 dark:text-neutral-300 rounded-2xl hover:bg-neutral-100 dark:hover:bg-white/10 transition-all font-bold uppercase text-[10px] tracking-wider"
             title="Add Account"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3.5 h-3.5 text-brand-blue" />
             <span>Add Account</span>
           </button>
 
