@@ -1157,23 +1157,21 @@ export default function TransactionTable() {
         </div>
 <div className="bg-white dark:bg-[#111111] border border-brand-blue/5 dark:border-[#222222] rounded-[24px] shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="sticky top-0 z-10 bg-brand-blue text-white uppercase tracking-[0.2em] text-[10px] font-semibold">
-
-
+            <table className="w-full text-left text-sm whitespace-nowrap border-separate border-spacing-0">
+              <thead className="sticky top-0 z-20 bg-brand-blue text-white uppercase tracking-[0.2em] text-[10px] font-semibold">
                 <tr>
-                  <th className="px-4 py-3 w-10">
-                    <button onClick={handleToggleSelectAll} className="text-brand-blue dark:text-white/70">
+                  <th className="sticky top-0 z-20 bg-brand-blue px-4 py-3 w-10">
+                    <button onClick={handleToggleSelectAll} className="text-white">
                       {paginatedTransactions.length > 0 && selectedTxIds.size === paginatedTransactions.length ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
                     </button>
                   </th>
-                  <th className="px-4 py-3 cursor-pointer" onClick={() => handleSort('date')}>Date <SortIcon columnKey="date" /></th>
-                  <th className="hidden md:table-cell px-4 py-3">Type</th>
-                  <th className="hidden sm:table-cell px-4 py-3">Category</th>
-                  <th className="px-4 py-3">Name</th>
-                  <th className="hidden lg:table-cell px-4 py-3">Note</th>
-                  <th className="px-4 py-3 text-right" onClick={() => handleSort('amount')}>Amount <SortIcon columnKey="amount" /></th>
-                  <th className="hidden md:table-cell px-4 py-3">Account</th>
+                  <th className="sticky top-0 z-20 bg-brand-blue px-4 py-3 cursor-pointer" onClick={() => handleSort('date')}>Date <SortIcon columnKey="date" /></th>
+                  <th className="sticky top-0 z-20 bg-brand-blue hidden md:table-cell px-4 py-3">Type</th>
+                  <th className="sticky top-0 z-20 bg-brand-blue hidden sm:table-cell px-4 py-3">Category</th>
+                  <th className="sticky top-0 z-20 bg-brand-blue px-4 py-3">Name</th>
+                  <th className="sticky top-0 z-20 bg-brand-blue hidden lg:table-cell px-4 py-3">Note</th>
+                  <th className="sticky top-0 z-20 bg-brand-blue px-4 py-3 text-right" onClick={() => handleSort('amount')}>Amount <SortIcon columnKey="amount" /></th>
+                  <th className="sticky top-0 z-20 bg-brand-blue hidden md:table-cell px-4 py-3">Account</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#EBEBEB] dark:divide-[#222222]">

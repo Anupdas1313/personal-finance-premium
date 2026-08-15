@@ -418,17 +418,17 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                 onWheelCapture={(e) => e.stopPropagation()} 
                 onTouchMoveCapture={(e) => e.stopPropagation()}
               >
-                <table className="w-full text-left text-sm border-collapse">
-                <thead className="sticky top-0 bg-white z-10">
-                  <tr className="border-b-2 border-black bg-white">
-                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs bg-white">Date</th>
-                    {showAccountCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs bg-white">Account</th>}
-                    {showCategoryCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs bg-white">Category</th>}
-                    {showTagCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs bg-white">Tag</th>}
-                    {showRemarksCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs bg-white">Remarks</th>}
-                    {showPaymentMethodCol && <th className="py-3 px-2 font-black uppercase tracking-wider text-xs bg-white">Method</th>}
-                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-right bg-white">Outflow</th>
-                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-right bg-white">Inflow</th>
+                <table className="w-full text-left text-sm border-separate border-spacing-0">
+                <thead className="sticky top-0 z-20">
+                  <tr>
+                    <th className="sticky top-0 z-20 bg-white py-3 px-2 font-black uppercase tracking-wider text-xs border-b-2 border-black">Date</th>
+                    {showAccountCol && <th className="sticky top-0 z-20 bg-white py-3 px-2 font-black uppercase tracking-wider text-xs border-b-2 border-black">Account</th>}
+                    {showCategoryCol && <th className="sticky top-0 z-20 bg-white py-3 px-2 font-black uppercase tracking-wider text-xs border-b-2 border-black">Category</th>}
+                    {showTagCol && <th className="sticky top-0 z-20 bg-white py-3 px-2 font-black uppercase tracking-wider text-xs border-b-2 border-black">Tag</th>}
+                    {showRemarksCol && <th className="sticky top-0 z-20 bg-white py-3 px-2 font-black uppercase tracking-wider text-xs border-b-2 border-black">Remarks</th>}
+                    {showPaymentMethodCol && <th className="sticky top-0 z-20 bg-white py-3 px-2 font-black uppercase tracking-wider text-xs border-b-2 border-black">Method</th>}
+                    <th className="sticky top-0 z-20 bg-white py-3 px-2 font-black uppercase tracking-wider text-xs text-right border-b-2 border-black">Outflow</th>
+                    <th className="sticky top-0 z-20 bg-white py-3 px-2 font-black uppercase tracking-wider text-xs text-right border-b-2 border-black">Inflow</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2048,14 +2048,14 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                 onWheelCapture={(e) => e.stopPropagation()} 
                 onTouchMoveCapture={(e) => e.stopPropagation()}
               >
-                <table className="w-full text-left text-sm border-collapse">
-                <thead className="sticky top-0 bg-white z-10">
-                  <tr className="border-b-2 border-black bg-white">
-                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 w-28 bg-white">Date</th>
-                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 bg-white">Particulars</th>
-                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 w-56 bg-white">Remarks</th>
-                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 text-right w-28 bg-white">Amount</th>
-                    <th className="py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 text-right w-28 bg-white">Balance</th>
+                <table className="w-full text-left text-sm border-separate border-spacing-0">
+                <thead className="sticky top-0 z-20">
+                  <tr>
+                    <th className="sticky top-0 z-20 bg-white py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 w-28 border-b-2 border-black">Date</th>
+                    <th className="sticky top-0 z-20 bg-white py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 border-b-2 border-black">Particulars</th>
+                    <th className="sticky top-0 z-20 bg-white py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 w-56 border-b-2 border-black">Remarks</th>
+                    <th className="sticky top-0 z-20 bg-white py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 text-right w-28 border-b-2 border-black">Amount</th>
+                    <th className="sticky top-0 z-20 bg-white py-3 px-2 font-black uppercase tracking-wider text-xs text-neutral-800 text-right w-28 border-b-2 border-black">Balance</th>
                   </tr>
                 </thead>
                 <tbody>
