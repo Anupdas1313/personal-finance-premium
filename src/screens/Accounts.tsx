@@ -845,10 +845,13 @@ export default function Accounts() {
         .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
       
       let totalBalance = Number(account.startingBalance) || 0;
+      const sDate = account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0;
       allAccountTxs.forEach(tx => {
-        const txType = normalizeType(tx.type);
-        if (txType === 'CREDIT') totalBalance += (Number(tx.amount) || 0);
-        else if (txType === 'DEBIT') totalBalance -= (Number(tx.amount) || 0);
+        if (new Date(tx.dateTime).getTime() >= sDate) {
+          const txType = normalizeType(tx.type);
+          if (txType === 'CREDIT') totalBalance += (Number(tx.amount) || 0);
+          else if (txType === 'DEBIT') totalBalance -= (Number(tx.amount) || 0);
+        }
       });
 
       // Calculate Inflow/Outflow for Current Month
@@ -1710,21 +1713,28 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
 
   const actualTotalBalance = useMemo(() => {
     let bal = Number(account?.startingBalance) || 0;
+    const sDate = account?.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0;
     transactions.forEach(tx => {
-       const txType = normalizeType(tx.type);
-       if (txType === 'CREDIT') bal += (Number(tx.amount) || 0);
-       else if (txType === 'DEBIT') bal -= (Number(tx.amount) || 0);
+       if (new Date(tx.dateTime).getTime() >= sDate) {
+         const txType = normalizeType(tx.type);
+         if (txType === 'CREDIT') bal += (Number(tx.amount) || 0);
+         else if (txType === 'DEBIT') bal -= (Number(tx.amount) || 0);
+       }
     });
     return bal;
-  }, [account?.startingBalance, transactions]);
+  }, [account?.startingBalance, account?.startingBalanceDate, transactions]);
 
   const openingBalanceForView = useMemo(() => {
     if (!account) return 0;
     let bal = Number(account.startingBalance) || 0;
+    const sDate = account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0;
     if (granularity === 'ALL') return bal;
     
     const allSortedTxs = [...transactions].sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
-    const txsBefore = allSortedTxs.filter(tx => new Date(tx.dateTime).getTime() < startDateLimit);
+    const txsBefore = allSortedTxs.filter(tx => {
+      const t = new Date(tx.dateTime).getTime();
+      return t >= sDate && t < startDateLimit;
+    });
     
     txsBefore.forEach(tx => {
        const amount = Number(tx.amount) || 0;

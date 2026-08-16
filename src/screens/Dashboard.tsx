@@ -573,7 +573,8 @@ export default function Dashboard() {
     
     const calculatedBalances = accs.map(acc => {
       let bal = Number(acc.startingBalance) || 0;
-      const accountTxs = allTxs.filter(t => Number(t.accountId) === Number(acc.id));
+      const sDate = acc.startingBalanceDate ? new Date(acc.startingBalanceDate).getTime() : 0;
+      const accountTxs = allTxs.filter(t => Number(t.accountId) === Number(acc.id) && new Date(t.dateTime).getTime() >= sDate);
       accountTxs.forEach(tx => {
         const txType = normalizeType(tx.type);
         if (txType === 'CREDIT') bal += (Number(tx.amount) || 0);
