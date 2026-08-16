@@ -1601,22 +1601,6 @@ export default function Accounts() {
   );
 }
 
-function PartitionRow({ partition }: { partition: any }) {
-  const currency = useCurrency();
-  return (
-    <tr className="bg-brand-blue/[0.05] dark:bg-brand-blue/[0.15] border-y border-brand-blue/10 dark:border-brand-blue/30">
-      <td colSpan={4} className="px-2 py-2">
-        <div className="flex items-center justify-end">
-          <div className="flex items-center gap-2.5">
-            <span className="text-[8px] font-semibold text-brand-blue/60 dark:text-white/50 uppercase tracking-[0.2em]">New Start Balance</span>
-            <span className="text-[11px] font-semibold text-brand-blue dark:text-white tracking-tight">{currency}{partition.closingBalance.toLocaleString()}</span>
-          </div>
-        </div>
-      </td>
-    </tr>
-  );
-}
-
 function AccountStatementDetail({ accountId, onClose }: { accountId: number, onClose: () => void }) {
   const currency = useCurrency();
   const { user } = useAuth();
@@ -1625,8 +1609,6 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
   const navigate = useNavigate();
   const account = useLiveQuery(() => db.accounts.get(accountId), [accountId, user?.uid]);
   const transactions = useLiveQuery(() => db.transactions.where('accountId').equals(accountId).sortBy('dateTime'), [accountId, user?.uid]) || [];
-  const closings = useLiveQuery(() => db.accountClosings.where('accountId').equals(accountId).sortBy('closingDate'), [accountId, user?.uid]) || [];
-
   const initialScale = typeof window !== 'undefined' ? window.innerWidth / 800 : 0.8;
 
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -1636,10 +1618,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     start: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
     end: format(endOfMonth(new Date()), 'yyyy-MM-dd')
   });
-  const [showFilterMenu, setShowFilterMenu] = useState(false);
-  const [isProcessingPartition, setIsProcessingPartition] = useState(false);
-  const [showPartitionSuccess, setShowPartitionSuccess] = useState(false);
-  
+  const [showFilterMenu, setShowFilterMenu] = useState(false);  
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'CREDIT' | 'DEBIT'>('ALL');
 
@@ -1926,72 +1905,6 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
     setShowExportMenu(false);
   };
 
-  const handleStartNewBalance = async () => {
-    if (!account) return;
-    const confirmReset = await confirm(`Start a new balance period using the current balance?`);
-    if (!confirmReset) return;
-
-    setIsProcessingPartition(true);
-    try {
-      // Use current time or 1ms after last tx
-      const lastTxTime = transactions.length > 0 
-        ? new Date(transactions[transactions.length - 1].dateTime).getTime() 
-        : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
-      const partitionTime = Math.max(lastTxTime + 1, Date.now());
-
-      const lastClosing = closings.length > 0 ? closings[closings.length - 1] : null;
-      const startLimit = lastClosing ? new Date(lastClosing.closingDate).getTime() : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
-      const liveTxs = transactions.filter(tx => new Date(tx.dateTime).getTime() > startLimit);
-      const inflow = roundCurrency(liveTxs.filter(t => normalizeType(t.type) === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0));
-      const outflow = roundCurrency(liveTxs.filter(t => normalizeType(t.type) === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0));
-      const opening = lastClosing ? lastClosing.closingBalance : account.startingBalance;
-
-      await db.accountClosings.add({
-        accountId: account.id!,
-        closingDate: new Date(partitionTime),
-        closingBalance: actualTotalBalance,
-        periodName: format(new Date(partitionTime), 'dd MMM yyyy'),
-        openingBalance: opening,
-        totalInflow: inflow,
-        totalOutflow: outflow
-      });
-
-      setShowPartitionSuccess(true);
-      setTimeout(() => {
-        setShowPartitionSuccess(false);
-        setIsProcessingPartition(false);
-      }, 700);
-    } catch (err) {
-      console.error(err);
-      setIsProcessingPartition(false);
-    }
-  };
-
-  const handleCreatePartitionAt = async (targetTx: Transaction & { runningBalance: number }) => {
-    if (!account) return;
-    const confirmReset = await confirm(`Start a new balance period from this transaction?`);
-    if (!confirmReset) return;
-    const partitionTime = new Date(targetTx.dateTime).getTime() + 1;
-    const prevClosing = [...closings].filter(c => new Date(c.closingDate).getTime() < partitionTime).sort((a,b) => new Date(b.closingDate).getTime() - new Date(a.closingDate).getTime())[0];
-    const startLimit = prevClosing ? new Date(prevClosing.closingDate).getTime() : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
-    const periodTxs = transactions.filter(tx => {
-        const time = new Date(tx.dateTime).getTime();
-        return time > startLimit && time < partitionTime;
-    });
-    const inflow = roundCurrency(periodTxs.filter(t => normalizeType(t.type) === 'CREDIT').reduce((s, t) => s + (t.amount || 0), 0));
-    const outflow = roundCurrency(periodTxs.filter(t => normalizeType(t.type) === 'DEBIT').reduce((s, t) => s + (t.amount || 0), 0));
-    const opening = prevClosing ? prevClosing.closingBalance : account.startingBalance;
-    await db.accountClosings.add({
-      accountId: account.id!,
-      closingDate: new Date(partitionTime),
-      closingBalance: targetTx.runningBalance,
-      periodName: format(new Date(partitionTime), 'dd MMM yyyy HH:mm'),
-      openingBalance: opening,
-      totalInflow: inflow,
-      totalOutflow: outflow
-    });
-  };
-
   if (!account) return null;
 
   return (
@@ -2025,14 +1938,7 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
               </div>
             )}
           </div>
-          <button 
-            onClick={handleStartNewBalance} 
-            disabled={isProcessingPartition || showPartitionSuccess}
-            className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors disabled:opacity-70 ${showPartitionSuccess ? 'bg-emerald-500 text-white' : 'bg-neutral-50 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10'}`}
-            title={showPartitionSuccess ? 'Closed!' : isProcessingPartition ? 'Reconciling...' : 'Close Period'}
-          >
-            <CheckCircle2 className="w-4 h-4" />
-          </button>
+
           <button onClick={() => setShowFilterMenu(true)} className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${showFilterMenu ? 'bg-brand-blue text-white' : 'bg-neutral-50 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10'}`} title="Filters">
             <Filter className="w-4 h-4" />
           </button>
@@ -2165,52 +2071,19 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                     </tr>
                   )}
 
-                  {filteredStatementData.length > 0 ? filteredStatementData.map((tx, idx) => {
-                    const txTime = new Date(tx.dateTime).getTime();
-                    const originalIdx = statementData.findIndex(t => t.id === tx.id);
-                    const prevTxTime = originalIdx > 0 
-                      ? new Date(statementData[originalIdx - 1].dateTime).getTime() 
-                      : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
-                    
-                    const matchingClosings = closings.filter(c => {
-                      const cTime = new Date(c.closingDate).getTime();
-                      return cTime > prevTxTime && cTime <= txTime;
-                    });
-
-                    return (
-                      <React.Fragment key={tx.id}>
-                        {matchingClosings.map(c => (
-                          <PartitionRow key={c.id} partition={c} />
-                        ))}
-                        <tr onDoubleClick={() => handleCreatePartitionAt(tx)} className="even:bg-[#F8F9FF] hover:bg-blue-50/50 transition-colors">
-                          <td className="px-3 py-4 whitespace-nowrap text-xs font-bold text-neutral-600 uppercase tracking-wider">{format(new Date(tx.dateTime), 'dd MMM HH:mm')}</td>
-                          <td className="px-3 py-4 text-sm font-bold text-neutral-800">{tx.party || '-'}</td>
-                          <td className="px-3 py-4 text-xs font-medium text-neutral-500 italic max-w-[200px] truncate">{tx.note || '-'}</td>
-                          <td className={`px-3 py-4 text-right whitespace-nowrap text-sm font-black ${normalizeType(tx.type) === 'CREDIT' ? 'text-emerald-600' : 'text-rose-600'}`}>{normalizeType(tx.type) === 'CREDIT' ? '+' : '-'}{currency}{tx.amount.toLocaleString('en-IN')}</td>
-                          <td className="px-3 py-4 text-right whitespace-nowrap text-sm font-black text-brand-blue">{currency}{tx.runningBalance.toLocaleString('en-IN')}</td>
-                        </tr>
-                      </React.Fragment>
-                    );
-                  }) : (
+                  {filteredStatementData.length > 0 ? filteredStatementData.map((tx, idx) => (
+                    <tr key={tx.id} className="even:bg-[#F8F9FF] hover:bg-blue-50/50 transition-colors">
+                      <td className="px-3 py-4 whitespace-nowrap text-xs font-bold text-neutral-600 uppercase tracking-wider">{format(new Date(tx.dateTime), 'dd MMM HH:mm')}</td>
+                      <td className="px-3 py-4 text-sm font-bold text-neutral-800">{tx.party || '-'}</td>
+                      <td className="px-3 py-4 text-xs font-medium text-neutral-500 italic max-w-[200px] truncate">{tx.note || '-'}</td>
+                      <td className={`px-3 py-4 text-right whitespace-nowrap text-sm font-black ${normalizeType(tx.type) === 'CREDIT' ? 'text-emerald-600' : 'text-rose-600'}`}>{normalizeType(tx.type) === 'CREDIT' ? '+' : '-'}{currency}{tx.amount.toLocaleString('en-IN')}</td>
+                      <td className="px-3 py-4 text-right whitespace-nowrap text-sm font-black text-brand-blue">{currency}{tx.runningBalance.toLocaleString('en-IN')}</td>
+                    </tr>
+                  )) : (
                     <tr>
                       <td colSpan={5} className="py-16 text-center text-neutral-400 font-medium border-b border-neutral-200">No transactions found for this period</td>
                     </tr>
                   )}
-
-                  {(() => {
-                      const lastTxTimeInView = filteredStatementData.length > 0 
-                          ? new Date(filteredStatementData[filteredStatementData.length - 1].dateTime).getTime() 
-                          : (account.startingBalanceDate ? new Date(account.startingBalanceDate).getTime() : 0);
-                      
-                      const trailingClosings = closings.filter(c => {
-                          const cTime = new Date(c.closingDate).getTime();
-                          return cTime > lastTxTimeInView && cTime <= endDateLimit;
-                      });
-
-                      return trailingClosings.map(c => (
-                          <PartitionRow key={c.id} partition={c} />
-                      ));
-                  })()}
                 </tbody>
               </table>
               </div>
