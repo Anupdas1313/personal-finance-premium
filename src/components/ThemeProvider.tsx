@@ -26,11 +26,11 @@ export function ThemeProvider({
   storageKey = 'expense-tracker-theme',
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>('light');
+  const [theme, setTheme] = useState<Theme>(() => {
+    return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
+  });
 
   useEffect(() => {
-    // Forcefully set it to light mode once to override old localStorage
-    localStorage.setItem(storageKey, 'light');
     
     const root = window.document.documentElement;
 

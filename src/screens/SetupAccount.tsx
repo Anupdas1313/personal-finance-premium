@@ -129,7 +129,7 @@ export default function SetupAccount() {
   );
 
   return (
-    <div className="fixed inset-0 bg-white flex flex-col z-[200] overflow-hidden antialiased">
+    <div className="fixed inset-0 bg-white dark:bg-[#060608] flex flex-col z-[200] overflow-hidden antialiased">
       <div className="flex-1 flex flex-col max-w-md w-full mx-auto p-5 pt-8 relative h-full">
         {renderStepIndicator()}
         
@@ -196,7 +196,7 @@ export default function SetupAccount() {
                               "w-full p-3.5 rounded-xl border flex items-center justify-between transition-all text-left",
                               isSelected 
                                 ? "bg-brand-green border-brand-green text-white shadow-md"
-                                : "bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+                                : "bg-white dark:bg-[#111111] border-neutral-200 dark:border-white/5 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-white/5"
                             )}
                           >
                             <div>
@@ -261,7 +261,7 @@ export default function SetupAccount() {
                             "py-3 rounded-xl border text-[13px] font-semibold transition-all",
                             type === t 
                               ? "bg-brand-green border-brand-green text-white shadow-md"
-                              : "bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50"
+                              : "bg-white dark:bg-[#111111] border-neutral-200 dark:border-white/5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-white/5"
                           )}
                         >
                           {t === 'CREDIT_CARD' ? 'Credit' : t.charAt(0) + t.slice(1).toLowerCase()}
@@ -348,13 +348,13 @@ export default function SetupAccount() {
               </h1>
               
               <div className="bg-brand-green/5 border border-brand-green/10 rounded-2xl p-5 mb-6 shadow-sm relative overflow-hidden flex-shrink-0">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white dark:bg-brand-green/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                 <div className="relative z-10">
                   <p className="text-[15px] text-neutral-700 leading-relaxed mb-3">
                     Knowing you spent {currency}50 on <span className="font-semibold text-brand-green">Food</span> is good...
                   </p>
                   <p className="text-[15px] text-neutral-700 leading-relaxed">
-                    But knowing {currency}40 of it was an impulsive <span className="bg-white px-1.5 py-0.5 rounded-md text-brand-green font-semibold ml-1 border border-brand-green/20 shadow-sm inline-flex items-center gap-1 text-sm"><Tag className="w-3 h-3" /> WANT</span> is what actually changes your financial future.
+                    But knowing {currency}40 of it was an impulsive <span className="bg-white dark:bg-[#111111] px-1.5 py-0.5 rounded-md text-brand-green font-semibold ml-1 border border-brand-green/20 shadow-sm inline-flex items-center gap-1 text-sm"><Tag className="w-3 h-3" /> WANT</span> is what actually changes your financial future.
                   </p>
                 </div>
               </div>
@@ -363,7 +363,7 @@ export default function SetupAccount() {
                 <p className="text-[14px] text-neutral-500 mb-3">We've added standard tags for you. Add more if you like!</p>
                 <div className="flex flex-wrap gap-2 mb-4">
                   {selectedTags.map(tag => (
-                    <div key={tag} className="flex items-center gap-2 px-3 py-1.5 bg-white border border-neutral-200 text-neutral-800 rounded-lg text-[13px] font-semibold shadow-sm">
+                    <div key={tag} className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-[#111111] border border-neutral-200 dark:border-white/5 text-neutral-800 dark:text-neutral-200 rounded-lg text-[13px] font-semibold shadow-sm">
                       #{tag}
                       <button 
                         type="button" 
@@ -447,10 +447,10 @@ export default function SetupAccount() {
 
                 {/* Mock AI Response */}
                 <div className="flex gap-3 items-end">
-                  <div className="w-7 h-7 rounded-full bg-white border border-brand-green/20 flex flex-shrink-0 items-center justify-center shadow-sm">
+                  <div className="w-7 h-7 rounded-full bg-white dark:bg-[#111111] border border-brand-green/20 dark:border-brand-green/40 flex flex-shrink-0 items-center justify-center shadow-sm">
                     <Bot className="w-3.5 h-3.5 text-brand-green" />
                   </div>
-                  <div className="bg-white border border-neutral-200 text-neutral-800 rounded-2xl rounded-bl-sm p-3.5 shadow-sm max-w-[85%]">
+                  <div className="bg-white dark:bg-[#111111] border border-neutral-200 dark:border-white/5 text-neutral-800 dark:text-neutral-200 rounded-2xl rounded-bl-sm p-3.5 shadow-sm max-w-[85%]">
                     <div className="flex items-center gap-1.5 mb-2.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-brand-green" />
                       <span className="text-xs font-bold text-neutral-500">Ready to save</span>
@@ -506,7 +506,7 @@ export default function SetupAccount() {
               <div className="flex-1 overflow-y-auto pr-1">
                 <div className="flex flex-wrap gap-2 mb-5">
                   {selectedCats.map(cat => (
-                    <div key={cat} className="flex items-center gap-2 px-3 py-1.5 bg-white border border-neutral-200 text-neutral-800 rounded-lg text-[13px] font-semibold shadow-sm">
+                    <div key={cat} className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-[#111111] border border-neutral-200 dark:border-white/5 text-neutral-800 dark:text-neutral-200 rounded-lg text-[13px] font-semibold shadow-sm">
                       {cat}
                       <button 
                         type="button" 

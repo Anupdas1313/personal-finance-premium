@@ -37,7 +37,7 @@ export default function Welcome() {
   };
 
   return (
-    <div className="fixed inset-0 bg-white flex flex-col items-center justify-center p-6 z-[200] antialiased">
+    <div className="fixed inset-0 bg-white dark:bg-[#060608] flex flex-col items-center justify-center p-6 z-[200] antialiased">
       <div className="flex-1 w-full max-w-sm flex flex-col items-center justify-center relative">
         <AnimatePresence mode="wait">
           <motion.div
@@ -48,7 +48,7 @@ export default function Welcome() {
             transition={{ duration: 0.3 }}
             className="flex flex-col items-center text-center w-full"
           >
-            <div className="w-32 h-32 mb-8 bg-neutral-50 rounded-[40px] flex items-center justify-center shadow-xl border border-neutral-100">
+            <div className="w-32 h-32 mb-8 bg-neutral-50 dark:bg-[#111111] rounded-[40px] flex items-center justify-center shadow-xl border border-neutral-100 dark:border-white/5">
               {SLIDES[currentSlide].icon}
             </div>
             

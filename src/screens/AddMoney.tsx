@@ -168,9 +168,9 @@ export default function AddMoney() {
                   className="w-full pl-9 pr-3 py-2 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-lg outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30"
                   required
                 >
-                  <option value="" disabled className="text-black">Select an account</option>
+                  <option value="" disabled>Select an account</option>
                   {accounts.map(a => (
-                    <option key={a.id} value={a.id} className="text-black">{a.bankName} (•• {a.accountLast4})</option>
+                    <option key={a.id} value={a.id}>{a.bankName} (•• {a.accountLast4})</option>
                   ))}
                 </select>
               </div>
@@ -214,7 +214,7 @@ export default function AddMoney() {
                   className="w-full pl-9 pr-3 py-2 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-lg outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30"
                 >
                   {DEPOSIT_SOURCES.map(s => (
-                    <option key={s.id} value={s.id} className="text-black">{s.label}</option>
+                    <option key={s.id} value={s.id}>{s.label}</option>
                   ))}
                 </select>
               </div>
@@ -261,10 +261,10 @@ export default function AddMoney() {
                   className="w-full pl-9 pr-3 py-2 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-lg outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30"
                   required
                 >
-                  <option value="Cash" className="text-black">Cash</option>
-                  <option value="UPI" className="text-black">UPI</option>
-                  <option value="Bank Transfer" className="text-black">Bank Transfer (NEFT/IMPS/RTGS)</option>
-                  <option value="Bank" className="text-black">Cheque / Demand Draft</option>
+                  <option value="Cash">Cash</option>
+                  <option value="UPI">UPI</option>
+                  <option value="Bank Transfer">Bank Transfer (NEFT/IMPS/RTGS)</option>
+                  <option value="Bank">Cheque / Demand Draft</option>
                 </select>
               </div>
             </div>
@@ -311,11 +311,11 @@ export default function AddMoney() {
                       className="w-full pl-9 pr-3 py-2 bg-neutral-50 dark:bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-lg outline-none text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all focus:border-brand-green/30 focus:ring-1 focus:ring-brand-green/30"
                       required={paymentMethod === 'UPI'}
                     >
-                      <option value="" disabled className="text-black">Select UPI App</option>
+                      <option value="" disabled>Select UPI App</option>
                       {UPI_APPS_LIST.map(app => (
-                        <option key={app} value={app} className="text-black">{app}</option>
+                        <option key={app} value={app}>{app}</option>
                       ))}
-                      <option value="Other UPI" className="text-black">Other UPI Apps</option>
+                      <option value="Other UPI">Other UPI Apps</option>
                     </select>
                   </div>
                 </div>

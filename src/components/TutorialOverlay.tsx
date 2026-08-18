@@ -62,11 +62,11 @@ export default function TutorialOverlay({ onComplete }: TutorialOverlayProps) {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: -20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl relative flex flex-col border border-neutral-100"
+          className="bg-white dark:bg-[#111111] w-full max-w-sm dark:border-white/5 rounded-3xl overflow-hidden shadow-2xl relative flex flex-col border border-neutral-100"
         >
           <button 
             onClick={onComplete}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200 transition-all z-10"
+            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-neutral-100 dark:bg-white/10 flex items-center justify-center text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-white hover:bg-neutral-200 dark:bg-white/20 transition-all z-10"
           >
             <X className="w-4 h-4" />
           </button>
@@ -78,7 +78,7 @@ export default function TutorialOverlay({ onComplete }: TutorialOverlayProps) {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: 'spring' }}
-                className="w-24 h-24 rounded-[2rem] bg-white flex items-center justify-center shadow-lg border border-brand-green/10 relative z-10"
+                className="w-24 h-24 rounded-[2rem] bg-white dark:bg-[#1A1A1E] flex items-center justify-center shadow-lg border border-brand-green/10 relative z-10"
               >
                 {steps[step].icon}
               </motion.div>
@@ -86,7 +86,7 @@ export default function TutorialOverlay({ onComplete }: TutorialOverlayProps) {
           ) : (
             <div className={`h-64 ${steps[step].color} border-b p-5 flex flex-col justify-end gap-3 overflow-hidden relative`}>
               <div className="absolute inset-0 bg-gradient-to-b from-brand-green/5 to-transparent" />
-              <div className="absolute top-4 left-4 bg-white px-3 py-1.5 rounded-xl flex items-center gap-1.5 border border-brand-green/10 shadow-sm z-10">
+              <div className="absolute top-4 left-4 bg-white dark:bg-[#1A1A1E] px-3 py-1.5 rounded-xl flex items-center gap-1.5 border border-brand-green/10 shadow-sm z-10">
                 <Bot className="w-4 h-4 text-brand-green" />
                 <span className="text-[13px] font-semibold text-brand-green">Expensify AI</span>
               </div>
@@ -109,7 +109,7 @@ export default function TutorialOverlay({ onComplete }: TutorialOverlayProps) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="bg-white w-fit px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-1.5 border border-brand-green/10 shadow-sm relative z-10"
+                    className="bg-white dark:bg-[#1A1A1E] w-fit px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-1.5 border border-brand-green/10 shadow-sm relative z-10"
                   >
                     <span className="w-1.5 h-1.5 bg-brand-green rounded-full animate-bounce" />
                     <span className="w-1.5 h-1.5 bg-brand-green rounded-full animate-bounce [animation-delay:-0.15s]" />
@@ -123,12 +123,12 @@ export default function TutorialOverlay({ onComplete }: TutorialOverlayProps) {
                   <motion.div 
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    className="bg-white rounded-2xl rounded-tl-sm p-4 shadow-lg border border-brand-green/10 flex items-center justify-between relative z-10"
+                    className="bg-white dark:bg-[#1A1A1E] rounded-2xl rounded-tl-sm p-4 shadow-lg border border-brand-green/10 flex items-center justify-between relative z-10"
                   >
                     <div>
-                      <p className="font-semibold text-neutral-900 text-[15px] truncate max-w-[160px]">Domino's Pizza</p>
+                      <p className="font-semibold text-neutral-900 dark:text-white text-[15px] truncate max-w-[160px]">Domino's Pizza</p>
                       <div className="flex items-center gap-1.5 mt-1.5">
-                        <span className="font-medium bg-neutral-100 px-1.5 py-0.5 rounded text-neutral-600 text-[12px]">Food</span>
+                        <span className="font-medium bg-neutral-100 dark:bg-white/10 px-1.5 py-0.5 rounded text-neutral-600 dark:text-neutral-300 text-[12px]">Food</span>
                         <span className="font-medium bg-brand-green/10 text-brand-green px-1.5 py-0.5 rounded text-[12px]">#WANT</span>
                       </div>
                     </div>
@@ -139,11 +139,11 @@ export default function TutorialOverlay({ onComplete }: TutorialOverlayProps) {
             </div>
           )}
 
-          <div className="p-6 pt-8 text-center bg-white relative z-10">
-            <h2 className="text-[22px] font-extrabold text-neutral-900 mb-2 tracking-tight">
+          <div className="p-6 pt-8 text-center bg-white dark:bg-[#111111] relative z-10">
+            <h2 className="text-[22px] font-extrabold text-neutral-900 dark:text-white mb-2 tracking-tight">
               {steps[step].title}
             </h2>
-            <p className="text-[15px] text-neutral-500 leading-relaxed mb-8">
+            <p className="text-[15px] text-neutral-500 dark:text-neutral-400 leading-relaxed mb-8">
               {steps[step].description}
             </p>
 
@@ -153,7 +153,7 @@ export default function TutorialOverlay({ onComplete }: TutorialOverlayProps) {
                   <div 
                     key={idx}
                     className={`h-1.5 rounded-full transition-all duration-300 ${
-                      step === idx ? 'w-6 bg-brand-green' : 'w-1.5 bg-neutral-200'
+                      step === idx ? 'w-6 bg-brand-green' : 'w-1.5 bg-neutral-200 dark:bg-white/20'
                     }`}
                   />
                 ))}

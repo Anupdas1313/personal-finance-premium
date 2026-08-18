@@ -502,13 +502,13 @@ export function TransactionsStatementModal({ onClose }: { onClose: () => void })
                   <div className="flex bg-neutral-100/80 p-1.5 rounded-2xl">
                     <button 
                       onClick={() => setFilterTab('filters')} 
-                      className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${filterTab === 'filters' ? 'bg-white shadow-sm text-brand-blue' : 'text-neutral-500 hover:text-neutral-700'}`}
+                      className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${filterTab === 'filters' ? 'bg-white dark:bg-[#1A1A1E] shadow-sm text-brand-blue dark:text-brand-cyan' : 'text-neutral-500 hover:text-neutral-700'}`}
                     >
                       Filters
                     </button>
                     <button 
                       onClick={() => setFilterTab('columns')} 
-                      className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${filterTab === 'columns' ? 'bg-white shadow-sm text-brand-blue' : 'text-neutral-500 hover:text-neutral-700'}`}
+                      className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${filterTab === 'columns' ? 'bg-white dark:bg-[#1A1A1E] shadow-sm text-brand-blue dark:text-brand-cyan' : 'text-neutral-500 hover:text-neutral-700'}`}
                     >
                       Columns
                     </button>
@@ -615,7 +615,7 @@ export function TransactionsStatementModal({ onClose }: { onClose: () => void })
                               <button
                                 key={t.key}
                                 onClick={() => setSelectedTransactionTypes(prev => isSelected ? prev.filter(x => x !== t.key) : [...prev, t.key])}
-                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-brand-blue text-white border-brand-blue shadow-md' : 'bg-white text-neutral-600 border-neutral-200 hover:border-brand-blue/30'}`}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-brand-blue text-white border-brand-blue shadow-md' : 'bg-white dark:bg-[#1A1A1E] text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-white/5 hover:border-brand-blue/30 dark:hover:border-white/10'}`}
                               >
                                 {t.label}
                               </button>
@@ -635,7 +635,7 @@ export function TransactionsStatementModal({ onClose }: { onClose: () => void })
                                 <button
                                   key={acc.id}
                                   onClick={() => setSelectedAccounts(prev => isSelected ? prev.filter(id => id !== acc.id) : [...prev, acc.id!])}
-                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-brand-blue/10 text-brand-blue border-brand-blue/30' : 'bg-white text-neutral-600 border-neutral-200 hover:border-brand-blue/30'}`}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-brand-blue/10 text-brand-blue border-brand-blue/30' : 'bg-white dark:bg-[#1A1A1E] text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-white/5 hover:border-brand-blue/30 dark:hover:border-white/10'}`}
                                 >
                                   {acc.bankName}
                                 </button>
@@ -656,7 +656,7 @@ export function TransactionsStatementModal({ onClose }: { onClose: () => void })
                                 <button
                                   key={cat.id}
                                   onClick={() => setSelectedCategories(prev => isSelected ? prev.filter(c => c !== cat.name) : [...prev, cat.name])}
-                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-brand-blue/10 text-brand-blue border-brand-blue/30' : 'bg-white text-neutral-600 border-neutral-200 hover:border-brand-blue/30'}`}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-brand-blue/10 text-brand-blue border-brand-blue/30' : 'bg-white dark:bg-[#1A1A1E] text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-white/5 hover:border-brand-blue/30 dark:hover:border-white/10'}`}
                                 >
                                   {cat.name}
                                 </button>
@@ -677,7 +677,7 @@ export function TransactionsStatementModal({ onClose }: { onClose: () => void })
                                 <button
                                   key={tag.id}
                                   onClick={() => setSelectedTags(prev => isSelected ? prev.filter(t => t !== tag.name) : [...prev, tag.name])}
-                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-brand-blue/10 text-brand-blue border-brand-blue/30' : 'bg-white text-neutral-600 border-neutral-200 hover:border-brand-blue/30'}`}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-brand-blue/10 text-brand-blue border-brand-blue/30' : 'bg-white dark:bg-[#1A1A1E] text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-white/5 hover:border-brand-blue/30 dark:hover:border-white/10'}`}
                                 >
                                   #{tag.name}
                                 </button>
@@ -697,7 +697,7 @@ export function TransactionsStatementModal({ onClose }: { onClose: () => void })
                               <button
                                 key={pm}
                                 onClick={() => setSelectedPaymentMethods(prev => isSelected ? prev.filter(p => p !== pm) : [...prev, pm])}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-brand-blue/10 text-brand-blue border-brand-blue/30' : 'bg-white text-neutral-600 border-neutral-200 hover:border-brand-blue/30'}`}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-brand-blue/10 text-brand-blue border-brand-blue/30' : 'bg-white dark:bg-[#1A1A1E] text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-white/5 hover:border-brand-blue/30 dark:hover:border-white/10'}`}
                               >
                                 {pm}
                               </button>
