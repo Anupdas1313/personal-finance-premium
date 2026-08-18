@@ -329,15 +329,15 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
           <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }}>
             {/* The Document */}
             <div 
-              className="bg-white text-black w-[1000px] h-[var(--doc-height)] print:h-auto print:min-h-[1414px] flex flex-col shadow-xl m-0 relative print:m-0 print:shadow-none" 
+              className="bg-white dark:bg-[#1C1C1E] text-black dark:text-neutral-200 w-[1000px] h-[var(--doc-height)] print:h-auto print:min-h-[1414px] flex flex-col shadow-xl m-0 relative print:m-0 print:shadow-none" 
               style={{ fontFamily: '"Inter", "Satoshi", sans-serif', '--doc-height': `calc((100vh - 48px) / ${initialScale})` } as React.CSSProperties}
             >
               <div className="shrink-0 p-8 pb-4 print:p-0 print:pb-4">
               {/* Doc Header */}
               <div className="flex justify-between items-center border-b border-neutral-300 pb-4 mb-6 relative">
                 <div>
-                  <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-1">Period</p>
-                  <h1 className="text-2xl font-heading font-black text-brand-blue">{periodMode === 'MONTH' ? format(dateRange.start, 'MMMM yyyy') : `${format(dateRange.start, 'MMM d, yyyy')} - ${format(dateRange.end, 'MMM d, yyyy')}`}</h1>
+                  <p className="text-xs font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mb-1">Period</p>
+                  <h1 className="text-2xl font-heading font-black text-brand-blue dark:text-blue-400">{periodMode === 'MONTH' ? format(dateRange.start, 'MMMM yyyy') : `${format(dateRange.start, 'MMM d, yyyy')} - ${format(dateRange.end, 'MMM d, yyyy')}`}</h1>
                 </div>
                 <div className="flex items-center gap-5 print:hidden relative">
                   <button 
@@ -361,14 +361,14 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 10 }}
-                          className="absolute right-0 top-full mt-3 w-48 bg-white border border-neutral-100 shadow-2xl shadow-black/10 rounded-2xl overflow-hidden z-20"
+                          className="absolute right-0 top-full mt-3 w-48 bg-white dark:bg-[#2C2C2E] border border-neutral-100 dark:border-white/5 shadow-2xl shadow-black/10 rounded-2xl overflow-hidden z-20"
                         >
                           <button
                             onClick={() => {
                               handleDownloadPDF();
                               setShowExportMenu(false);
                             }}
-                            className="w-full text-left px-5 py-3 text-sm hover:bg-rose-50 text-neutral-800 font-bold flex items-center gap-3 border-b border-neutral-100 transition-colors group"
+                            className="w-full text-left px-5 py-3 text-sm hover:bg-rose-50 dark:hover:bg-rose-500/10 text-neutral-800 dark:text-neutral-200 font-bold flex items-center gap-3 border-b border-neutral-100 dark:border-white/5 transition-colors group"
                           >
                             <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center group-hover:scale-110 transition-transform">
                               <FileText className="w-4 h-4 text-rose-600" />
@@ -380,7 +380,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                               handleDownloadCSV();
                               setShowExportMenu(false);
                             }}
-                            className="w-full text-left px-5 py-3 text-sm hover:bg-emerald-50 text-neutral-800 font-bold flex items-center gap-3 transition-colors group"
+                            className="w-full text-left px-5 py-3 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-500/10 text-neutral-800 dark:text-neutral-200 font-bold flex items-center gap-3 transition-colors group"
                           >
                             <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center group-hover:scale-110 transition-transform">
                               <FileText className="w-4 h-4 text-emerald-600" />
@@ -395,26 +395,26 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
               </div>
               
               {/* Summary Metrics */}
-              <div className="bg-neutral-50/90 border border-neutral-200/80 rounded-2xl p-2.5 mb-6 grid grid-cols-3 divide-x divide-neutral-200/80 shadow-sm">
+              <div className="bg-neutral-50/90 dark:bg-white/5 border border-neutral-200/80 dark:border-white/10 rounded-2xl p-2.5 mb-6 grid grid-cols-3 divide-x divide-neutral-200/80 dark:divide-white/10 shadow-sm">
                 {/* Total Inflow */}
                 <div className="px-5 py-2 flex items-center justify-center gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-500/20 shadow-xs">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20 shadow-xs">
                     <ArrowDownLeft className="w-5 h-5" />
                   </div>
                   <div className="text-left">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block mb-0.5">Total Inflow</span>
-                    <span className="text-lg font-black text-emerald-600 tracking-tight">+{currency}{totalInflow.toLocaleString('en-IN')}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 block mb-0.5">Total Inflow</span>
+                    <span className="text-lg font-black text-emerald-600 dark:text-emerald-400 tracking-tight">+{currency}{totalInflow.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
                 {/* Total Outflow */}
                 <div className="px-5 py-2 flex items-center justify-center gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0 border border-rose-500/20 shadow-xs">
+                  <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/20 shadow-xs">
                     <ArrowUpRight className="w-5 h-5" />
                   </div>
                   <div className="text-left">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block mb-0.5">Total Outflow</span>
-                    <span className="text-lg font-black text-rose-600 tracking-tight">-{currency}{totalOutflow.toLocaleString('en-IN')}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 block mb-0.5">Total Outflow</span>
+                    <span className="text-lg font-black text-rose-600 dark:text-rose-400 tracking-tight">-{currency}{totalOutflow.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
@@ -422,14 +422,14 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                 <div className="px-5 py-2 flex items-center justify-center gap-3.5">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border shadow-xs ${
                     totalInflow >= totalOutflow 
-                      ? 'bg-brand-blue/10 text-brand-blue border-brand-blue/20' 
-                      : 'bg-rose-500/10 text-rose-600 border-rose-500/20'
+                      ? 'bg-brand-blue/10 text-brand-blue dark:text-blue-400 border-brand-blue/20' 
+                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
                   }`}>
                     <ArrowRightLeft className="w-5 h-5" />
                   </div>
                   <div className="text-left">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block mb-0.5">Net Flow</span>
-                    <span className={`text-lg font-black tracking-tight ${totalInflow >= totalOutflow ? 'text-brand-blue' : 'text-rose-600'}`}>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 block mb-0.5">Net Flow</span>
+                    <span className={`text-lg font-black tracking-tight ${totalInflow >= totalOutflow ? 'text-brand-blue dark:text-blue-400' : 'text-rose-600 dark:text-rose-400'}`}>
                       {totalInflow >= totalOutflow ? '+' : '-'}{currency}{Math.abs(totalInflow - totalOutflow).toLocaleString('en-IN')}
                     </span>
                   </div>
@@ -457,14 +457,14 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                 <table className="w-full text-left text-sm">
                 <thead className="sticky top-0 z-20">
                   <tr>
-                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs border-b border-neutral-200">Date</th>
-                    {showAccountCol && <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs border-b border-neutral-200">Account</th>}
-                    {showCategoryCol && <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs border-b border-neutral-200">Category</th>}
-                    {showTagCol && <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs border-b border-neutral-200">Tag</th>}
-                    {showRemarksCol && <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs border-b border-neutral-200">Remarks</th>}
-                    {showPaymentMethodCol && <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs border-b border-neutral-200">Method</th>}
-                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-right border-b border-neutral-200">Outflow</th>
-                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-right border-b border-neutral-200">Inflow</th>
+                    <th className="sticky top-0 z-20 bg-white dark:bg-[#1C1C1E] py-3 px-3 font-black uppercase tracking-wider text-xs border-b border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-neutral-300">Date</th>
+                    {showAccountCol && <th className="sticky top-0 z-20 bg-white dark:bg-[#1C1C1E] py-3 px-3 font-black uppercase tracking-wider text-xs border-b border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-neutral-300">Account</th>}
+                    {showCategoryCol && <th className="sticky top-0 z-20 bg-white dark:bg-[#1C1C1E] py-3 px-3 font-black uppercase tracking-wider text-xs border-b border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-neutral-300">Category</th>}
+                    {showTagCol && <th className="sticky top-0 z-20 bg-white dark:bg-[#1C1C1E] py-3 px-3 font-black uppercase tracking-wider text-xs border-b border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-neutral-300">Tag</th>}
+                    {showRemarksCol && <th className="sticky top-0 z-20 bg-white dark:bg-[#1C1C1E] py-3 px-3 font-black uppercase tracking-wider text-xs border-b border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-neutral-300">Remarks</th>}
+                    {showPaymentMethodCol && <th className="sticky top-0 z-20 bg-white dark:bg-[#1C1C1E] py-3 px-3 font-black uppercase tracking-wider text-xs border-b border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-neutral-300">Method</th>}
+                    <th className="sticky top-0 z-20 bg-white dark:bg-[#1C1C1E] py-3 px-3 font-black uppercase tracking-wider text-xs text-right border-b border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-neutral-300">Outflow</th>
+                    <th className="sticky top-0 z-20 bg-white dark:bg-[#1C1C1E] py-3 px-3 font-black uppercase tracking-wider text-xs text-right border-b border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-neutral-300">Inflow</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -472,20 +472,20 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                     const type = normalizeType(tx.type);
                     const amount = Number(tx.amount) || 0;
                     return (
-                      <tr key={idx} className="even:bg-[#F8F9FF] hover:bg-blue-50/50 transition-colors">
-                        <td className="py-3 px-3 font-medium whitespace-nowrap">{format(new Date(tx.dateTime), 'dd MMM yy')}</td>
-                        {showAccountCol && <td className="py-3 px-3 font-bold">{getAccountName(tx.accountId)}</td>}
-                        {showCategoryCol && <td className="py-3 px-3 font-medium">{tx.category || '-'}</td>}
-                        {showTagCol && <td className="py-3 px-3 font-medium text-brand-blue">{tx.expenseType || '-'}</td>}
-                        {showRemarksCol && <td className="py-3 px-3 text-neutral-600 max-w-[200px] truncate" title={tx.note || tx.type}>{tx.note || tx.type}</td>}
-                        {showPaymentMethodCol && <td className="py-3 px-3 text-neutral-600">{tx.paymentMethod || '-'}</td>}
+                      <tr key={idx} className="even:bg-[#F8F9FF] dark:even:bg-white/5 hover:bg-blue-50/50 dark:hover:bg-white/10 transition-colors">
+                        <td className="py-3 px-3 font-medium whitespace-nowrap text-neutral-800 dark:text-neutral-200">{format(new Date(tx.dateTime), 'dd MMM yy')}</td>
+                        {showAccountCol && <td className="py-3 px-3 font-bold text-neutral-800 dark:text-neutral-200">{getAccountName(tx.accountId)}</td>}
+                        {showCategoryCol && <td className="py-3 px-3 font-medium text-neutral-800 dark:text-neutral-200">{tx.category || '-'}</td>}
+                        {showTagCol && <td className="py-3 px-3 font-medium text-brand-blue dark:text-blue-400">{tx.expenseType || '-'}</td>}
+                        {showRemarksCol && <td className="py-3 px-3 text-neutral-600 dark:text-neutral-400 max-w-[200px] truncate" title={tx.note || tx.type}>{tx.note || tx.type}</td>}
+                        {showPaymentMethodCol && <td className="py-3 px-3 text-neutral-600 dark:text-neutral-400">{tx.paymentMethod || '-'}</td>}
                         <td className="py-3 px-3 text-right font-medium text-rose-600 whitespace-nowrap">{type === 'DEBIT' ? amount.toLocaleString('en-IN') : '-'}</td>
                         <td className="py-3 px-3 text-right font-medium text-emerald-600 whitespace-nowrap">{type === 'CREDIT' ? amount.toLocaleString('en-IN') : '-'}</td>
                       </tr>
                     );
                   }) : (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-neutral-400 font-medium border-b border-neutral-200">No transactions for this period</td>
+                      <td colSpan={8} className="py-12 text-center text-neutral-400 dark:text-neutral-500 font-medium border-b border-neutral-200 dark:border-white/10">No transactions for this period</td>
                     </tr>
                   )}
                 </tbody>
@@ -493,7 +493,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
               </div>
 
               {/* Footer */}
-              <div className="shrink-0 pt-3 pb-6 px-8 border-t border-neutral-200 flex justify-end items-center w-full print:px-0">
+              <div className="shrink-0 pt-3 pb-6 px-8 border-t border-neutral-200 dark:border-white/10 flex justify-end items-center w-full print:px-0">
                 <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Page 1 of 1</p>
               </div>
             </div>
@@ -518,7 +518,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                 className="absolute top-0 right-0 bottom-0 w-80 max-w-full bg-white dark:bg-[#111111] z-30 shadow-2xl flex flex-col"
               >
-                <div className="p-4 border-b border-neutral-100 dark:border-white/5 flex flex-col gap-4 shrink-0 bg-neutral-50/30">
+                <div className="p-4 border-b border-neutral-100 dark:border-white/5 flex flex-col gap-4 shrink-0 bg-neutral-50/30 dark:bg-white/5">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-heading font-black text-brand-blue text-lg leading-none">Report Settings</h3>
@@ -530,16 +530,16 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                   </div>
                   
                   {/* Tabs */}
-                  <div className="flex bg-neutral-100/80 p-1.5 rounded-2xl">
+                  <div className="flex bg-neutral-100/80 dark:bg-white/5 p-1.5 rounded-2xl">
                     <button 
                       onClick={() => setFilterTab('filters')} 
-                      className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${filterTab === 'filters' ? 'bg-white shadow-sm text-brand-blue' : 'text-neutral-500 hover:text-neutral-700'}`}
+                      className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${filterTab === 'filters' ? 'bg-white dark:bg-[#2C2C2E] shadow-sm text-brand-blue dark:text-blue-400' : 'text-neutral-500 hover:text-neutral-700'}`}
                     >
                       Filters
                     </button>
                     <button 
                       onClick={() => setFilterTab('columns')} 
-                      className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${filterTab === 'columns' ? 'bg-white shadow-sm text-brand-blue' : 'text-neutral-500 hover:text-neutral-700'}`}
+                      className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${filterTab === 'columns' ? 'bg-white dark:bg-[#2C2C2E] shadow-sm text-brand-blue dark:text-blue-400' : 'text-neutral-500 hover:text-neutral-700'}`}
                     >
                       Columns
                     </button>
@@ -590,7 +590,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                       <div>
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-400">Time Period</h4>
-                          <div className="flex bg-neutral-100/80 p-0.5 rounded-lg">
+                          <div className="flex bg-neutral-100/80 dark:bg-white/5 p-0.5 rounded-lg">
                             <button onClick={() => {
                               setPeriodMode('MONTH');
                               setDateRange(prev => ({ start: startOfMonth(prev.start), end: endOfMonth(prev.start) }));
@@ -658,7 +658,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                                   if (isSelected) setSelectedTransactionTypes(selectedTransactionTypes.filter(type => type !== t.key));
                                   else setSelectedTransactionTypes([...selectedTransactionTypes, t.key]);
                                 }}
-                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
+                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-white/10'}`}
                               >
                                 {t.label}
                               </button>
@@ -680,7 +680,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                                   if (isSelected) setSelectedAccounts(selectedAccounts.filter(id => id !== acc.id));
                                   else setSelectedAccounts([...selectedAccounts, acc.id as number]);
                                 }}
-                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
+                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-white/10'}`}
                               >
                                 {acc.bankName}
                               </button>
@@ -702,7 +702,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                                   if (isSelected) setSelectedPaymentMethods(selectedPaymentMethods.filter(m => m !== method));
                                   else setSelectedPaymentMethods([...selectedPaymentMethods, method]);
                                 }}
-                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
+                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-white/10'}`}
                               >
                                 {method}
                               </button>
@@ -724,7 +724,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                                   if (isSelected) setSelectedCategories(selectedCategories.filter(name => name !== cat.name));
                                   else setSelectedCategories([...selectedCategories, cat.name]);
                                 }}
-                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
+                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-white/10'}`}
                               >
                                 {cat.name}
                               </button>
@@ -747,7 +747,7 @@ function AllAccountsStatementModal({ onClose }: { onClose: () => void }) {
                                     if (isSelected) setSelectedTags(selectedTags.filter(name => name !== tag.name));
                                     else setSelectedTags([...selectedTags, tag.name]);
                                   }}
-                                  className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
+                                  className={`px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${isSelected ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' : 'bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-white/10'}`}
                                 >
                                   {tag.name}
                                 </button>
@@ -1989,30 +1989,30 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                     <ArrowRightLeft className="w-3.5 h-3.5" />
                   </div>
                   <div className="text-left">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-0.5">Opening</span>
-                    <span className="text-sm font-black text-neutral-800 tracking-tight">{currency}{openingBalanceForView.toLocaleString('en-IN')}</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 block mb-0.5">Opening</span>
+                    <span className="text-sm font-black text-neutral-800 dark:text-neutral-200 tracking-tight">{currency}{openingBalanceForView.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
                 {/* Inflow */}
                 <div className="px-4 py-2 flex items-center justify-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-500/20">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
                     <ArrowDownLeft className="w-3.5 h-3.5" />
                   </div>
                   <div className="text-left">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-0.5">Inflow</span>
-                    <span className="text-sm font-black text-emerald-600 tracking-tight">+{currency}{totalCredit.toLocaleString('en-IN')}</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 block mb-0.5">Inflow</span>
+                    <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 tracking-tight">+{currency}{totalCredit.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
                 {/* Outflow */}
                 <div className="px-4 py-2 flex items-center justify-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0 border border-rose-500/20">
+                  <div className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/20">
                     <ArrowUpRight className="w-3.5 h-3.5" />
                   </div>
                   <div className="text-left">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-0.5">Outflow</span>
-                    <span className="text-sm font-black text-rose-600 tracking-tight">-{currency}{totalDebit.toLocaleString('en-IN')}</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 block mb-0.5">Outflow</span>
+                    <span className="text-sm font-black text-rose-600 dark:text-rose-400 tracking-tight">-{currency}{totalDebit.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
@@ -2022,8 +2022,8 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                     <Wallet className="w-3.5 h-3.5" />
                   </div>
                   <div className="text-left">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-brand-blue/60 block mb-0.5">Closing</span>
-                    <span className="text-sm font-black text-brand-blue tracking-tight">{currency}{currentViewStateBalance.toLocaleString('en-IN')}</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-brand-blue/60 dark:text-blue-400/60 block mb-0.5">Closing</span>
+                    <span className="text-sm font-black text-brand-blue dark:text-blue-400 tracking-tight">{currency}{currentViewStateBalance.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               </div>
@@ -2049,11 +2049,11 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                 <table className="w-full text-left text-sm">
                 <thead className="sticky top-0 z-20">
                   <tr>
-                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 w-28 border-b border-neutral-200">Date</th>
-                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 border-b border-neutral-200">Particulars</th>
-                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 w-56 border-b border-neutral-200">Remarks</th>
-                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 text-right w-28 border-b border-neutral-200">Amount</th>
-                    <th className="sticky top-0 z-20 bg-white py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 text-right w-28 border-b border-neutral-200">Balance</th>
+                    <th className="sticky top-0 z-20 bg-white dark:bg-[#1C1C1E] py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 dark:text-neutral-300 w-28 border-b border-neutral-200 dark:border-white/10">Date</th>
+                    <th className="sticky top-0 z-20 bg-white dark:bg-[#1C1C1E] py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 dark:text-neutral-300 border-b border-neutral-200 dark:border-white/10">Particulars</th>
+                    <th className="sticky top-0 z-20 bg-white dark:bg-[#1C1C1E] py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 dark:text-neutral-300 w-56 border-b border-neutral-200 dark:border-white/10">Remarks</th>
+                    <th className="sticky top-0 z-20 bg-white dark:bg-[#1C1C1E] py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 dark:text-neutral-300 text-right w-28 border-b border-neutral-200 dark:border-white/10">Amount</th>
+                    <th className="sticky top-0 z-20 bg-white dark:bg-[#1C1C1E] py-3 px-3 font-black uppercase tracking-wider text-xs text-neutral-800 dark:text-neutral-300 text-right w-28 border-b border-neutral-200 dark:border-white/10">Balance</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2072,16 +2072,16 @@ function AccountStatementDetail({ accountId, onClose }: { accountId: number, onC
                   )}
 
                   {filteredStatementData.length > 0 ? filteredStatementData.map((tx, idx) => (
-                    <tr key={tx.id} className="even:bg-[#F8F9FF] hover:bg-blue-50/50 transition-colors">
-                      <td className="px-3 py-4 whitespace-nowrap text-xs font-bold text-neutral-600 uppercase tracking-wider">{format(new Date(tx.dateTime), 'dd MMM HH:mm')}</td>
-                      <td className="px-3 py-4 text-sm font-bold text-neutral-800">{tx.party || '-'}</td>
-                      <td className="px-3 py-4 text-xs font-medium text-neutral-500 italic max-w-[200px] truncate">{tx.note || '-'}</td>
+                    <tr key={tx.id} className="even:bg-[#F8F9FF] dark:even:bg-white/5 hover:bg-blue-50/50 dark:hover:bg-white/10 transition-colors">
+                      <td className="px-3 py-4 whitespace-nowrap text-xs font-bold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">{format(new Date(tx.dateTime), 'dd MMM HH:mm')}</td>
+                      <td className="px-3 py-4 text-sm font-bold text-neutral-800 dark:text-neutral-200">{tx.party || '-'}</td>
+                      <td className="px-3 py-4 text-xs font-medium text-neutral-500 dark:text-neutral-400 italic max-w-[200px] truncate">{tx.note || '-'}</td>
                       <td className={`px-3 py-4 text-right whitespace-nowrap text-sm font-black ${normalizeType(tx.type) === 'CREDIT' ? 'text-emerald-600' : 'text-rose-600'}`}>{normalizeType(tx.type) === 'CREDIT' ? '+' : '-'}{currency}{tx.amount.toLocaleString('en-IN')}</td>
                       <td className="px-3 py-4 text-right whitespace-nowrap text-sm font-black text-brand-blue">{currency}{tx.runningBalance.toLocaleString('en-IN')}</td>
                     </tr>
                   )) : (
                     <tr>
-                      <td colSpan={5} className="py-16 text-center text-neutral-400 font-medium border-b border-neutral-200">No transactions found for this period</td>
+                      <td colSpan={5} className="py-16 text-center text-neutral-400 dark:text-neutral-500 font-medium border-b border-neutral-200 dark:border-white/10">No transactions found for this period</td>
                     </tr>
                   )}
                 </tbody>
